@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0A0A0B">
+    <title>Política de privacidad — BERSERKERMOD</title>
+    <meta name="description" content="Política de privacidad de BERSERKERMOD: qué datos recopilamos, dónde se guardan, qué no recopilamos.">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0A0A0B; --sf1: #141416; --sf2: #1C1C1E; --sf3: #2C2C2E;
+            --accent: #00D4AA; --orange: #FDCB6E; --red: #FF6B6B;
+            --text: #F5F5F7; --text2: #A1A1A6; --text3: #636366; --border: #2C2C2E;
+        }
+        html { scroll-behavior: smooth; scroll-padding-top: 80px; -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .bg-glow {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(800px circle at 15% 5%, rgba(0,212,170,.05), transparent 50%),
+                radial-gradient(600px circle at 85% 90%, rgba(162,155,254,.04), transparent 50%);
+        }
+
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            padding: 18px 24px;
+            background: rgba(10, 10, 11, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 800px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        }
+        .brand {
+            font-size: 16px; font-weight: 900; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text);
+        }
+        .brand-emoji { font-size: 20px; filter: drop-shadow(0 0 12px #00D4AA66); }
+        .brand .accent { color: var(--accent); }
+        .back-link {
+            font-size: 13px; font-weight: 700; color: var(--text2);
+        }
+        .back-link:hover { color: var(--accent); text-decoration: none; }
+
+        main {
+            max-width: 800px; margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+        .kicker {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 14px;
+        }
+        h1 {
+            font-size: 42px; font-weight: 900; line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 14px;
+        }
+        .updated {
+            font-size: 13px; color: var(--text3);
+            margin-bottom: 50px;
+        }
+        h2 {
+            font-size: 24px; font-weight: 900;
+            letter-spacing: -0.01em;
+            margin: 48px 0 16px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        h2:first-of-type { border-top: none; padding-top: 0; }
+        h3 {
+            font-size: 17px; font-weight: 800;
+            margin: 24px 0 10px;
+            color: var(--text);
+        }
+        p, li {
+            font-size: 15px; color: var(--text2);
+            line-height: 1.65;
+        }
+        p { margin-bottom: 14px; }
+        ul, ol {
+            margin: 10px 0 18px 22px;
+            color: var(--text2);
+        }
+        li { margin-bottom: 8px; }
+        strong { color: var(--text); font-weight: 700; }
+        code {
+            background: var(--sf2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            color: var(--accent);
+        }
+        .callout {
+            background: linear-gradient(135deg, rgba(0,212,170,.06), var(--sf1));
+            border: 1px solid rgba(0,212,170,.2);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 18px 0;
+            font-size: 14px;
+            color: var(--text);
+        }
+        .callout strong { color: var(--accent); }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 24px 40px;
+            text-align: center;
+            font-size: 13px; color: var(--text3);
+        }
+        footer a { margin: 0 10px; }
+
+        @media (max-width: 640px) {
+            main { padding: 40px 18px 60px; }
+            h1 { font-size: 32px; }
+            h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="brand">
+                <span class="brand-emoji" aria-hidden="true">💪</span>
+                BERSERKER<span class="accent">MOD</span>
+            </a>
+            <a href="index.html" class="back-link">← Volver</a>
+        </div>
+    </header>
+
+    <main>
+        <p class="kicker">Privacidad</p>
+        <h1>Política de privacidad</h1>
+        <p class="updated">Última actualización: 23 de mayo de 2026</p>
+
+        <div class="callout">
+            <strong>Resumen rápido:</strong> BERSERKERMOD guarda tus datos en tu propio teléfono (localStorage del navegador). No tenemos servidor que reciba tu información mientras no actives la sincronización con cuenta. No usamos Google Analytics, Facebook Pixel ni ningún otro tracker. Vendemos cero datos. Tu información es tuya.
+        </div>
+
+        <h2>1. Qué datos recopilamos</h2>
+        <p>BERSERKERMOD recopila <strong>solamente</strong> los datos que vos ingresás o autorizás durante el uso de la app:</p>
+        <ul>
+            <li><strong>Perfil físico</strong>: nombre, edad, sexo, peso, altura, país, objetivo de entrenamiento y nivel.</li>
+            <li><strong>Rutinas y sesiones</strong>: ejercicios, series, repeticiones, peso, tiempo de descanso, fecha de cada entrenamiento.</li>
+            <li><strong>Cardio</strong>: deporte, duración, intensidad, calorías estimadas.</li>
+            <li><strong>Nutrición</strong>: alimentos registrados, plan nutricional generado, macros calculados.</li>
+            <li><strong>Frecuencia cardíaca</strong> (opcional): solo si emparejás un smartwatch vía Bluetooth Web. Las lecturas en vivo se muestran en pantalla; no se persisten por sesión todavía.</li>
+            <li><strong>Configuración</strong>: idioma, tier (Free/Premium), preferencias.</li>
+        </ul>
+
+        <h2>2. Dónde se guardan tus datos</h2>
+        <p>Por defecto, <strong>todo se guarda exclusivamente en tu dispositivo</strong>, dentro del almacenamiento local del navegador (<code>localStorage</code>). Nada sale de tu teléfono.</p>
+        <p>Si en el futuro activás la sincronización con cuenta (función opcional Premium), tus datos se enviarán cifrados al endpoint <code>/api/health-data</code> para que puedas acceder desde otro dispositivo. La sincronización es opt-in y se puede desactivar en cualquier momento.</p>
+
+        <h2>3. Servicios de terceros</h2>
+        <p>La app usa los siguientes servicios externos, todos opt-in u opcionales:</p>
+        <ul>
+            <li><strong>Anthropic API (Oracle IA)</strong>: si querés usar el análisis personalizado con Claude, ingresás <em>tu propia</em> API key en la configuración. La key se guarda solo en tu teléfono. BERSERKERMOD nunca recibe ni almacena tu key. Las consultas se envían directamente a <code>api.anthropic.com</code> bajo tu cuenta.</li>
+            <li><strong>OpenFoodFacts</strong>: usado para búsqueda de productos por nombre o código de barras (Premium). Las consultas se hacen anónimamente a su API pública (<code>world.openfoodfacts.org</code>).</li>
+            <li><strong>Google Fonts</strong>: la app carga la tipografía Inter desde <code>fonts.googleapis.com</code>. Google puede registrar el IP y user-agent en su CDN. Si te importa, podés bloquear el dominio en tu DNS — la app sigue funcionando con la fuente fallback del sistema.</li>
+        </ul>
+
+        <h2>4. Qué NO recopilamos</h2>
+        <ul>
+            <li><strong>Sin GPS ni geolocalización</strong>: la app no pide tu ubicación.</li>
+            <li><strong>Sin acceso a fotos, contactos o calendario</strong>.</li>
+            <li><strong>Sin Google Analytics ni Facebook Pixel</strong>. Sin cookies de terceros.</li>
+            <li><strong>Sin tracking publicitario</strong>. No hay anuncios, ni en Free ni en Premium.</li>
+            <li><strong>Sin identificadores publicitarios</strong> (Android Advertising ID, IDFA, etc.).</li>
+            <li><strong>Sin recopilación de datos biométricos faciales</strong>.</li>
+        </ul>
+
+        <h2>5. Modo Coach (cuando corresponda)</h2>
+        <p>Si usás el modo Coach (Premium), las rutinas que creés para tus alumnos se guardan en el servidor que vos mismo levantes (<code>serve.ps1</code>) o en el deploy oficial. Cada alumno accede vía un link único + QR. No se requiere cuenta del alumno: solo abre el link en su navegador.</p>
+        <p>Las ediciones del alumno sobre la rutina se sincronizan en tiempo real al dashboard del coach. Esos datos viven en <code>data/routines.json</code> y <code>data/edits.json</code> del servidor.</p>
+
+        <h2>6. Tus derechos sobre tus datos</h2>
+        <ul>
+            <li><strong>Acceder</strong>: usá el botón "Exportar Datos" en tu perfil para descargar un backup JSON con todo lo que la app guardó.</li>
+            <li><strong>Eliminar</strong>: el botón "Reset" en tu perfil borra todo el <code>localStorage</code> del navegador. Acción irreversible.</li>
+            <li><strong>Portabilidad</strong>: el archivo JSON exportado contiene toda tu información en formato legible.</li>
+            <li><strong>Rectificación</strong>: podés editar cualquier dato directamente en la app.</li>
+            <li><strong>Oposición y revocación</strong>: si tenés sincronización activa y querés revocarla, alcanza con cerrar sesión desde el perfil; tus datos locales no se ven afectados.</li>
+        </ul>
+
+        <h2>7. Menores de edad</h2>
+        <p>La app está diseñada para mayores de 13 años. Si sos menor, usá BERSERKERMOD bajo supervisión de un adulto o un coach autorizado. No recopilamos a sabiendas datos de menores de 13 años.</p>
+
+        <h2>8. Seguridad</h2>
+        <p>Los datos viven en el <code>localStorage</code> del navegador del dispositivo, lo que significa que solo son accesibles desde el mismo navegador donde se generaron. Si compartís tu dispositivo, otra persona podría ver tu información si abre la app sin cerrar tu sesión.</p>
+        <p>Para sincronización con cuenta (cuando esté disponible), se usará HTTPS y autenticación con OAuth (Google) o token de email. Las contraseñas nunca se almacenan en texto plano.</p>
+
+        <h2>9. Cambios en esta política</h2>
+        <p>Si actualizamos esta política, vas a ver un aviso en la app la próxima vez que la abras, con un resumen claro de qué cambió. La fecha de "Última actualización" arriba siempre va a reflejar la versión vigente.</p>
+
+        <h2>10. Contacto</h2>
+        <p>Para consultas sobre esta política, ejercer tus derechos sobre tus datos, o reportar un incidente de seguridad:</p>
+        <ul>
+            <li>Email: <a href="mailto:privacy@berserkermod.app">privacy@berserkermod.app</a></li>
+            <li>Repositorio público: link al repo en el footer</li>
+        </ul>
+
+        <div class="callout" style="margin-top: 40px;">
+            <strong>Filosofía:</strong> Si la app es buena, no hace falta vender tus datos para sostenerla. Premium es opcional, pago único, sin suscripción. Eso paga el desarrollo. Tus datos no son producto.
+        </div>
+    </main>
+
+    <footer>
+        <a href="index.html">Inicio</a> ·
+        <a href="BERSERKERMOD.html">Abrir app</a> ·
+        <a href="privacy.html">Privacidad</a>
+        <p style="margin-top: 14px;">© 2026 BERSERKERMOD</p>
+    </footer>
+</body>
+</html>

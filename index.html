@@ -1,0 +1,1955 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0A0A0B">
+    <title>BERSERKERMOD â€” Tu entrenador personal inteligente | Rutinas, nutriciÃ³n, stats</title>
+    <meta name="description" content="Rutinas personalizadas que se adaptan a tu nivel y objetivo. Plan nutricional con macros. Biblioteca de 30 ejercicios. Modo coach para entrenadores. Gratis. Sin app store. Funciona offline.">
+    <meta name="author" content="BERSERKERMOD">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="BERSERKERMOD â€” Entrenador personal en tu telÃ©fono">
+    <meta property="og:description" content="Rutinas IA, plan nutricional, biblioteca de ejercicios, modo coach. Gratis. Sin app store.">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BERSERKERMOD â€” Tu entrenador personal inteligente">
+    <meta name="twitter:description" content="Rutinas IA, plan nutricional, biblioteca de ejercicios. Gratis. Sin app store.">
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "BERSERKERMOD",
+      "applicationCategory": "HealthApplication",
+      "operatingSystem": "Web, iOS, Android (PWA)",
+      "description": "Entrenador personal inteligente con rutinas IA, plan nutricional, biblioteca de ejercicios y modo coach.",
+      "inLanguage": ["es", "en", "pt"],
+      "offers": {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <style>
+        /* ============================================
+           RESET + BASE
+           ============================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0A0A0B;
+            --sf1: #141416;
+            --sf2: #1C1C1E;
+            --sf3: #2C2C2E;
+            --accent: #00D4AA;
+            --accent2: #00B894;
+            --accent-glow: #00D4AA33;
+            --red: #FF6B6B;
+            --orange: #FDCB6E;
+            --blue: #74B9FF;
+            --purple: #A29BFE;
+            --text: #F5F5F7;
+            --text2: #A1A1A6;
+            --text3: #636366;
+            --border: #2C2C2E;
+            --radius: 14px;
+            --max-w: 1200px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        a { color: inherit; text-decoration: none; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+        /* Skip link */
+        .skip-link {
+            position: absolute; top: -100px; left: 16px; z-index: 1000;
+            padding: 12px 16px; background: var(--accent); color: var(--bg);
+            font-weight: 800; border-radius: 8px;
+            transition: top .2s;
+        }
+        .skip-link:focus { top: 16px; }
+
+        /* ============================================
+           BACKGROUND GLOW
+           ============================================ */
+        .bg-glow {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(800px circle at 20% 10%, rgba(0,212,170,.08), transparent 50%),
+                radial-gradient(600px circle at 85% 80%, rgba(162,155,254,.06), transparent 50%);
+        }
+        .bg-grain {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .03;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.5'/></svg>");
+        }
+
+        /* ============================================
+           HEADER STICKY
+           ============================================ */
+        .header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 24px;
+            background: transparent;
+            border-bottom: 1px solid transparent;
+            transition: background .3s ease, border-color .3s ease, backdrop-filter .3s ease;
+        }
+        .header.scrolled {
+            background: rgba(10, 10, 11, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+        .header-inner {
+            max-width: var(--max-w); margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        }
+        .brand {
+            font-size: 16px; font-weight: 900; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .brand-emoji {
+            font-size: 20px;
+            filter: drop-shadow(0 0 12px #00D4AA66);
+        }
+        .brand span { color: var(--accent); }
+        .nav-links {
+            display: flex; gap: 28px;
+            font-size: 14px; font-weight: 700;
+            color: var(--text2);
+        }
+        .nav-links a {
+            transition: color .2s;
+            padding: 6px 0;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .header-cta {
+            padding: 9px 18px;
+            background: var(--accent); color: var(--bg);
+            font-weight: 800; font-size: 13px;
+            border-radius: 10px;
+            letter-spacing: 0.02em;
+            transition: transform .2s, box-shadow .2s;
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+        .header-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 18px var(--accent-glow); }
+
+        @media (max-width: 767px) {
+            .nav-links { display: none; }
+            .header { padding: 12px 16px; }
+            .brand { font-size: 14px; }
+            .header-cta { padding: 8px 14px; font-size: 12px; }
+        }
+
+        /* ============================================
+           SECTIONS
+           ============================================ */
+        .section {
+            padding: 100px 24px;
+            position: relative;
+        }
+        .section-inner {
+            max-width: var(--max-w); margin: 0 auto;
+        }
+        .section-kicker {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 14px;
+        }
+        .section-title {
+            font-size: 42px; font-weight: 900; line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+        .section-sub {
+            font-size: 18px; color: var(--text2); max-width: 600px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 767px) {
+            .section { padding: 70px 16px; }
+            .section-title { font-size: 30px; }
+            .section-sub { font-size: 16px; }
+        }
+
+        /* ============================================
+           HERO
+           ============================================ */
+        .hero {
+            min-height: 100vh;
+            padding: 140px 24px 60px;
+            display: flex; align-items: center;
+            position: relative;
+        }
+        .hero-inner {
+            max-width: var(--max-w); margin: 0 auto; width: 100%;
+            display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px;
+            align-items: center;
+        }
+        .hero-copy { max-width: 640px; }
+        .hero-kicker {
+            display: inline-block;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
+            text-transform: uppercase; color: var(--accent);
+            padding: 6px 12px;
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            border-radius: 999px;
+            background: rgba(0, 212, 170, 0.08);
+            margin-bottom: 28px;
+        }
+        .hero-title {
+            font-size: 64px; font-weight: 900; line-height: 1.02;
+            letter-spacing: -0.03em;
+            margin-bottom: 22px;
+        }
+        .hero-title .accent { color: var(--accent); }
+        .hero-sub {
+            font-size: 19px; color: var(--text2); line-height: 1.55;
+            margin-bottom: 36px;
+            max-width: 560px;
+        }
+        .hero-ctas {
+            display: flex; gap: 14px; flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 16px 28px;
+            font-weight: 800; font-size: 15px;
+            border-radius: 12px;
+            letter-spacing: 0.01em;
+            transition: transform .2s, box-shadow .2s, background .2s;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent); color: var(--bg);
+            box-shadow: 0 4px 24px var(--accent-glow);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px var(--accent-glow); }
+        .btn-ghost {
+            background: transparent; color: var(--text);
+            border: 1.5px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--text2); background: var(--sf1); }
+        .btn-lg { padding: 18px 36px; font-size: 16px; }
+
+        .hero-meta {
+            font-size: 13px; color: var(--text3);
+            display: flex; gap: 18px; flex-wrap: wrap;
+        }
+        .hero-meta-item { display: flex; align-items: center; gap: 6px; }
+        .hero-meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+        .hero-visual {
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+        }
+        .hero-visual::before {
+            content: ''; position: absolute; inset: -40px;
+            background: radial-gradient(circle, var(--accent-glow), transparent 60%);
+            filter: blur(40px); z-index: 0;
+        }
+        .hero-phone {
+            position: relative; z-index: 1;
+            animation: float 5s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(-6px); }
+            50% { transform: translateY(6px); }
+        }
+
+        @media (max-width: 1023px) {
+            .hero-inner { grid-template-columns: 1fr; gap: 50px; text-align: center; }
+            .hero-copy { max-width: 100%; margin: 0 auto; }
+            .hero-sub { margin-left: auto; margin-right: auto; }
+            .hero-ctas { justify-content: center; }
+            .hero-meta { justify-content: center; }
+        }
+        @media (max-width: 767px) {
+            .hero { padding: 110px 16px 40px; min-height: auto; }
+            .hero-title { font-size: 40px; }
+            .hero-sub { font-size: 16px; }
+            .btn { padding: 14px 22px; font-size: 14px; width: 100%; }
+            .hero-ctas { flex-direction: column; width: 100%; max-width: 320px; margin-left: auto; margin-right: auto; }
+        }
+
+        /* ============================================
+           PHONE MOCKUP
+           ============================================ */
+        .phone-frame {
+            width: 280px; height: 580px;
+            background: #1C1C1E;
+            border-radius: 38px;
+            border: 8px solid #050505;
+            box-shadow:
+                0 0 0 2px #2C2C2E,
+                0 60px 100px -30px rgba(0, 212, 170, 0.2),
+                0 30px 60px rgba(0, 0, 0, 0.6);
+            padding: 14px 10px 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .phone-frame::before {
+            content: ''; position: absolute; top: 12px; left: 50%;
+            transform: translateX(-50%);
+            width: 90px; height: 24px;
+            background: #050505;
+            border-radius: 0 0 14px 14px;
+            z-index: 2;
+        }
+        .phone-screen {
+            width: 100%; height: 100%;
+            background: #0A0A0B;
+            border-radius: 26px;
+            padding: 36px 10px 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Mockup home â€” racha + rutina + chart */
+        .mk-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px; border-radius: 999px;
+            background: rgba(0,212,170,.12); color: var(--accent);
+            font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+        }
+        .mk-label {
+            font-size: 8px; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--text3);
+            margin-bottom: 6px;
+        }
+        .mk-card {
+            background: var(--sf1); border-radius: 11px;
+            border: 1px solid var(--border);
+            padding: 10px 11px;
+            margin-bottom: 8px;
+        }
+        .mk-h1 { font-size: 13px; font-weight: 900; margin-bottom: 2px; }
+        .mk-h2 { font-size: 11px; font-weight: 800; }
+        .mk-text { font-size: 9px; color: var(--text2); line-height: 1.4; }
+        .mk-text-sm { font-size: 8px; color: var(--text3); }
+        .mk-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+
+        .mk-greet { padding: 0 6px; margin-bottom: 12px; }
+        .mk-greet-name { font-size: 14px; font-weight: 900; }
+        .mk-greet-sub { font-size: 9px; color: var(--text2); margin-top: 2px; }
+
+        .mk-streak {
+            background: linear-gradient(135deg, rgba(0,212,170,.16), rgba(0,212,170,.04));
+            border: 1px solid rgba(0,212,170,.2);
+            padding: 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .mk-streak-num {
+            font-size: 26px; font-weight: 900; color: var(--accent);
+            line-height: 1;
+        }
+        .mk-routine-day {
+            display: inline-block; padding: 2px 8px;
+            background: rgba(116,185,255,.15); color: var(--blue);
+            border-radius: 4px;
+            font-size: 8px; font-weight: 800; letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+        .mk-ex {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 5px 0;
+            font-size: 9px;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+        .mk-ex:last-child { border-bottom: none; }
+        .mk-ex-name { color: var(--text); font-weight: 700; }
+        .mk-ex-sets { color: var(--text3); font-size: 8px; }
+
+        .mk-chart {
+            display: flex; align-items: end; gap: 4px;
+            height: 50px; padding: 4px 0;
+        }
+        .mk-bar {
+            flex: 1; background: linear-gradient(180deg, var(--accent), var(--accent2));
+            border-radius: 2px 2px 0 0;
+            opacity: .8;
+        }
+
+        .mk-nav {
+            position: absolute; bottom: 6px; left: 6px; right: 6px;
+            background: rgba(20,20,22,.92); backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 6px;
+            display: flex; justify-content: space-around;
+        }
+        .mk-nav-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 1px;
+            font-size: 7px; color: var(--text3); font-weight: 700;
+            padding: 2px 4px;
+        }
+        .mk-nav-btn.active { color: var(--accent); }
+        .mk-nav-icon { font-size: 12px; }
+
+        /* Mockup variants for deep-dive */
+        .mk-meals { display: flex; flex-direction: column; gap: 6px; }
+        .mk-meal {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            background: var(--sf1); border-radius: 9px;
+            border: 1px solid var(--border);
+        }
+        .mk-meal-icon { font-size: 16px; }
+        .mk-meal-info { flex: 1; }
+        .mk-meal-title { font-size: 10px; font-weight: 800; }
+        .mk-meal-cals { font-size: 8px; color: var(--accent); font-weight: 700; }
+
+        .mk-record {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 10px;
+            background: var(--sf1); border-radius: 9px;
+            border: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .mk-record-name { font-size: 10px; font-weight: 800; }
+        .mk-record-val { font-size: 11px; font-weight: 900; color: var(--accent); }
+
+        .mk-alumno {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            background: var(--sf1); border-radius: 9px;
+            border: 1px solid var(--border);
+            margin-bottom: 6px;
+        }
+        .mk-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 900; color: var(--bg);
+        }
+        .mk-alumno-info { flex: 1; }
+        .mk-alumno-name { font-size: 10px; font-weight: 800; }
+        .mk-alumno-meta { font-size: 8px; color: var(--text3); }
+        .mk-badge {
+            background: var(--orange); color: var(--bg);
+            font-size: 8px; font-weight: 900;
+            padding: 2px 6px; border-radius: 999px;
+        }
+
+        /* ============================================
+           STATS STRIP
+           ============================================ */
+        .stats {
+            padding: 60px 24px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            background: rgba(20, 20, 22, 0.4);
+        }
+        .stats-intro {
+            text-align: center;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.15em;
+            text-transform: uppercase; color: var(--text3);
+            margin-bottom: 30px;
+        }
+        .stats-grid {
+            max-width: var(--max-w); margin: 0 auto;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+        .stat {
+            text-align: center;
+            padding: 12px;
+        }
+        .stat-num {
+            font-size: 48px; font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        .stat-label {
+            font-size: 11px; font-weight: 700;
+            color: var(--text2);
+            text-transform: uppercase; letter-spacing: 0.12em;
+        }
+        @media (max-width: 767px) {
+            .stats { padding: 40px 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+            .stat-num { font-size: 36px; }
+        }
+
+        /* ============================================
+           FEATURES GRID
+           ============================================ */
+        .features {
+            padding: 100px 24px;
+        }
+        .features-header {
+            text-align: center;
+            max-width: 700px; margin: 0 auto 60px;
+        }
+        .features-grid {
+            max-width: var(--max-w); margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .feat-card {
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 24px;
+            transition: transform .25s, border-color .25s, background .25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .feat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 212, 170, 0.25);
+            background: linear-gradient(135deg, rgba(0,212,170,.04), var(--sf1));
+        }
+        .feat-icon {
+            font-size: 36px; margin-bottom: 18px;
+            filter: drop-shadow(0 0 10px rgba(0, 212, 170, 0.2));
+        }
+        .feat-title {
+            font-size: 19px; font-weight: 900;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+        .feat-desc {
+            font-size: 14px; color: var(--text2);
+            line-height: 1.5;
+        }
+        @media (max-width: 1023px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 767px) {
+            .features { padding: 70px 16px; }
+            .features-grid { grid-template-columns: 1fr; gap: 14px; }
+            .feat-card { padding: 22px 20px; }
+            .features-header { margin-bottom: 40px; }
+        }
+
+        /* ============================================
+           DEEP-DIVE SCROLL STORY
+           ============================================ */
+        .deepdive {
+            padding: 100px 24px;
+            background: rgba(20, 20, 22, 0.3);
+        }
+        .deepdive-header {
+            text-align: center; max-width: 700px;
+            margin: 0 auto 80px;
+        }
+        .deepdive-grid {
+            max-width: 1100px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 60px;
+        }
+        .deepdive-visual {
+            position: sticky; top: 100px;
+            height: fit-content;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .deepdive-mockups {
+            position: relative;
+            min-height: 580px;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .deepdive-mockup {
+            position: absolute; top: 0; left: 50%;
+            transform: translateX(-50%);
+            opacity: 0; transition: opacity .5s ease;
+            pointer-events: none;
+        }
+        .deepdive-mockup.active { opacity: 1; pointer-events: auto; }
+
+        .deepdive-panels {
+            display: flex; flex-direction: column;
+            gap: 40px;
+        }
+        .deepdive-panel {
+            min-height: 480px;
+            display: flex; flex-direction: column; justify-content: center;
+            padding: 40px 0;
+        }
+        .deepdive-num {
+            display: inline-block;
+            width: 36px; height: 36px;
+            background: var(--accent); color: var(--bg);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 900;
+            margin-bottom: 18px;
+        }
+        .deepdive-title {
+            font-size: 30px; font-weight: 900;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+        }
+        .deepdive-desc {
+            font-size: 16px; color: var(--text2);
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+        .deepdive-bullets {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .deepdive-bullets li {
+            font-size: 14px; color: var(--text2);
+            padding-left: 22px;
+            position: relative;
+        }
+        .deepdive-bullets li::before {
+            content: 'âœ“';
+            position: absolute; left: 0;
+            color: var(--accent); font-weight: 900;
+        }
+
+        @media (max-width: 1023px) {
+            .deepdive-grid { grid-template-columns: 1fr; gap: 30px; }
+            .deepdive-visual { position: static; }
+            .deepdive-mockups { min-height: 0; }
+            .deepdive-mockup { position: relative; left: auto; transform: none; opacity: 1; pointer-events: auto; }
+            .deepdive-panel { min-height: 0; padding: 20px 0; text-align: center; }
+            .deepdive-num { margin-left: auto; margin-right: auto; }
+            .deepdive-bullets { text-align: left; max-width: 400px; margin: 0 auto; }
+        }
+        @media (max-width: 767px) {
+            .deepdive { padding: 70px 16px; }
+            .deepdive-header { margin-bottom: 40px; }
+            .deepdive-title { font-size: 24px; }
+        }
+
+        /* Mobile deepdive: stacked mode (show all mockups) */
+        @media (max-width: 1023px) {
+            .deepdive-stack {
+                display: flex; flex-direction: column; gap: 60px;
+            }
+            .deepdive-stack-item {
+                display: flex; flex-direction: column; align-items: center; gap: 24px;
+            }
+        }
+
+        /* ============================================
+           PRECIO (PREMIUM BLOCK)
+           ============================================ */
+        .precio {
+            padding: 100px 24px;
+        }
+        .precio-header {
+            text-align: center; max-width: 700px;
+            margin: 0 auto 60px;
+        }
+        .precio-cards {
+            max-width: 920px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .precio-card {
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 36px 28px;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+        .precio-card.premium {
+            border: 1.5px solid transparent;
+            background:
+                linear-gradient(var(--sf1), var(--sf1)) padding-box,
+                linear-gradient(135deg, var(--orange), #e17055) border-box;
+            box-shadow: 0 10px 40px rgba(253, 203, 110, 0.08);
+        }
+        .precio-tier {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--text3);
+            margin-bottom: 14px;
+        }
+        .precio-card.premium .precio-tier { color: var(--orange); }
+        .precio-name {
+            font-size: 28px; font-weight: 900;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+        .precio-tag {
+            font-size: 14px; color: var(--text2);
+            margin-bottom: 24px;
+            min-height: 22px;
+        }
+        .precio-price {
+            font-size: 38px; font-weight: 900;
+            margin-bottom: 4px;
+            letter-spacing: -0.03em;
+        }
+        .precio-card.free .precio-price { color: var(--accent); }
+        .precio-card.premium .precio-price { color: var(--orange); }
+        .precio-period {
+            font-size: 13px; color: var(--text3);
+            margin-bottom: 28px;
+        }
+        .precio-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: rgba(253, 203, 110, 0.12);
+            color: var(--orange);
+            border-radius: 999px;
+            margin-bottom: 18px;
+            border: 1px solid rgba(253, 203, 110, 0.25);
+        }
+        .precio-features {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 12px;
+            margin-bottom: 32px;
+            flex: 1;
+        }
+        .precio-features li {
+            font-size: 14px; color: var(--text);
+            padding-left: 26px;
+            position: relative;
+            line-height: 1.45;
+        }
+        .precio-features li::before {
+            content: 'âœ“';
+            position: absolute; left: 0;
+            color: var(--accent); font-weight: 900;
+            font-size: 14px;
+        }
+        .precio-card.premium .precio-features li::before {
+            color: var(--orange);
+        }
+        .precio-features .muted {
+            color: var(--text3);
+        }
+        .precio-features .muted::before { color: var(--text3); content: 'Â·'; font-size: 18px; top: -4px; }
+
+        .precio-cta {
+            width: 100%;
+            padding: 16px;
+            font-weight: 800; font-size: 15px;
+            border-radius: 12px;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .precio-cta-free {
+            background: var(--accent); color: var(--bg);
+            box-shadow: 0 4px 18px var(--accent-glow);
+        }
+        .precio-cta-free:hover { transform: translateY(-2px); }
+        .precio-cta-premium {
+            background: linear-gradient(135deg, var(--orange), #e17055);
+            color: var(--bg);
+            box-shadow: 0 4px 18px rgba(253, 203, 110, 0.25);
+        }
+        .precio-cta-premium:hover { transform: translateY(-2px); }
+
+        @media (max-width: 767px) {
+            .precio { padding: 70px 16px; }
+            .precio-cards { grid-template-columns: 1fr; gap: 16px; }
+            .precio-card { padding: 28px 22px; }
+        }
+
+        /* ============================================
+           COACH MODE
+           ============================================ */
+        .coach {
+            padding: 100px 24px;
+            background: rgba(20, 20, 22, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .coach-inner {
+            max-width: var(--max-w); margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 80px; align-items: center;
+        }
+        .coach-copy { }
+        .coach-tag {
+            display: inline-block;
+            font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--purple);
+            padding: 6px 12px;
+            background: rgba(162, 155, 254, 0.1);
+            border: 1px solid rgba(162, 155, 254, 0.25);
+            border-radius: 999px;
+            margin-bottom: 20px;
+        }
+        .coach-title {
+            font-size: 38px; font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 18px;
+        }
+        .coach-desc {
+            font-size: 17px; color: var(--text2);
+            line-height: 1.55;
+            margin-bottom: 24px;
+        }
+        .coach-features {
+            list-style: none;
+            display: flex; flex-direction: column; gap: 10px;
+            margin-bottom: 32px;
+        }
+        .coach-features li {
+            font-size: 15px; color: var(--text);
+            padding-left: 28px;
+            position: relative;
+            line-height: 1.45;
+        }
+        .coach-features li::before {
+            content: 'ðŸ‘‘'; position: absolute; left: 0; top: -1px;
+            font-size: 16px;
+        }
+        .coach-visual {
+            display: flex; justify-content: center;
+            position: relative;
+        }
+        .coach-visual::before {
+            content: ''; position: absolute; inset: -40px;
+            background: radial-gradient(circle, rgba(162, 155, 254, 0.15), transparent 60%);
+            filter: blur(50px); z-index: 0;
+        }
+
+        @media (max-width: 1023px) {
+            .coach-inner { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+            .coach-features { text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
+        }
+        @media (max-width: 767px) {
+            .coach { padding: 70px 16px; }
+            .coach-title { font-size: 28px; }
+            .coach-desc { font-size: 15px; }
+        }
+
+        /* ============================================
+           PRIVACY-FIRST
+           ============================================ */
+        .privacy {
+            padding: 100px 24px;
+        }
+        .privacy-header {
+            text-align: center; max-width: 700px;
+            margin: 0 auto 50px;
+        }
+        .privacy-grid {
+            max-width: 900px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .privacy-card {
+            text-align: center;
+            padding: 32px 20px;
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+        .privacy-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+        .privacy-title {
+            font-size: 18px; font-weight: 900;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+        .privacy-desc {
+            font-size: 14px; color: var(--text2);
+            line-height: 1.5;
+        }
+        @media (max-width: 767px) {
+            .privacy { padding: 70px 16px; }
+            .privacy-grid { grid-template-columns: 1fr; gap: 14px; }
+            .privacy-header { margin-bottom: 32px; }
+        }
+
+        /* ============================================
+           INSTALL OPTIONS
+           ============================================ */
+        .install {
+            padding: 100px 24px;
+        }
+        .install-header {
+            text-align: center; max-width: 700px;
+            margin: 0 auto 50px;
+        }
+        .install-grid {
+            max-width: 1000px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .install-card {
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 32px 24px;
+            text-align: center;
+            position: relative;
+            transition: transform .25s, border-color .25s, background .25s;
+            display: flex; flex-direction: column;
+        }
+        .install-card.now {
+            border-color: rgba(0, 212, 170, 0.3);
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.06), var(--sf1));
+        }
+        .install-card:hover {
+            transform: translateY(-4px);
+        }
+        .install-card.now:hover { border-color: var(--accent); }
+        .install-icon {
+            font-size: 44px;
+            margin-bottom: 16px;
+            display: inline-block;
+            filter: drop-shadow(0 0 12px rgba(0, 212, 170, 0.18));
+        }
+        .install-title {
+            font-size: 20px; font-weight: 900;
+            margin-bottom: 6px;
+            letter-spacing: -0.01em;
+        }
+        .install-status {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            color: var(--text3);
+        }
+        .install-status.live {
+            color: var(--accent);
+        }
+        .install-desc {
+            font-size: 14px; color: var(--text2);
+            line-height: 1.5;
+            margin-bottom: 22px;
+            flex: 1;
+        }
+        .install-cta {
+            display: inline-block;
+            padding: 12px 20px;
+            font-size: 13px; font-weight: 800;
+            border-radius: 10px;
+            transition: transform .2s, box-shadow .2s;
+            letter-spacing: 0.02em;
+        }
+        .install-cta-primary {
+            background: var(--accent); color: var(--bg);
+            box-shadow: 0 3px 14px var(--accent-glow);
+        }
+        .install-cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px var(--accent-glow);
+        }
+        .install-cta-disabled {
+            background: var(--sf2); color: var(--text3);
+            border: 1px solid var(--border);
+            cursor: not-allowed;
+        }
+        @media (max-width: 1023px) {
+            .install-grid { grid-template-columns: 1fr; gap: 16px; max-width: 480px; }
+        }
+        @media (max-width: 767px) {
+            .install { padding: 70px 16px; }
+            .install-header { margin-bottom: 32px; }
+        }
+
+        /* ============================================
+           FAQ
+           ============================================ */
+        .faq {
+            padding: 100px 24px;
+            background: rgba(20, 20, 22, 0.3);
+        }
+        .faq-header {
+            text-align: center; max-width: 700px;
+            margin: 0 auto 50px;
+        }
+        .faq-list {
+            max-width: 760px; margin: 0 auto;
+        }
+        .faq-item {
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+            margin-bottom: 12px;
+            transition: border-color .25s;
+        }
+        .faq-item[open] { border-color: rgba(0, 212, 170, 0.3); }
+        .faq-summary {
+            padding: 20px 24px;
+            font-size: 16px; font-weight: 800;
+            cursor: pointer;
+            list-style: none;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 16px;
+            user-select: none;
+        }
+        .faq-summary::-webkit-details-marker { display: none; }
+        .faq-summary::after {
+            content: '+';
+            font-size: 24px; font-weight: 300;
+            color: var(--accent);
+            transition: transform .3s;
+            line-height: 1;
+        }
+        .faq-item[open] .faq-summary::after {
+            transform: rotate(45deg);
+        }
+        .faq-body {
+            padding: 0 24px 20px;
+            font-size: 15px; color: var(--text2);
+            line-height: 1.6;
+        }
+        @media (max-width: 767px) {
+            .faq { padding: 70px 16px; }
+            .faq-summary { padding: 16px 18px; font-size: 15px; }
+            .faq-body { padding: 0 18px 16px; font-size: 14px; }
+            .faq-header { margin-bottom: 32px; }
+        }
+
+        /* ============================================
+           FINAL CTA BAND
+           ============================================ */
+        .final-cta {
+            padding: 120px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .final-cta::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                radial-gradient(600px circle at 50% 50%, var(--accent-glow), transparent 70%);
+            pointer-events: none;
+        }
+        .final-cta-inner {
+            max-width: 800px; margin: 0 auto;
+            position: relative; z-index: 1;
+        }
+        .final-cta-title {
+            font-size: 52px; font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 18px;
+        }
+        .final-cta-title .accent { color: var(--accent); }
+        .final-cta-sub {
+            font-size: 18px; color: var(--text2);
+            margin-bottom: 36px;
+            line-height: 1.55;
+        }
+        .final-cta-btn {
+            padding: 22px 48px;
+            font-size: 17px; font-weight: 900;
+            background: var(--accent); color: var(--bg);
+            border-radius: 14px;
+            display: inline-flex; align-items: center; gap: 10px;
+            box-shadow: 0 8px 40px var(--accent-glow);
+            transition: transform .2s, box-shadow .2s;
+            letter-spacing: 0.01em;
+        }
+        .final-cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 50px var(--accent-glow);
+        }
+        @media (max-width: 767px) {
+            .final-cta { padding: 80px 16px; }
+            .final-cta-title { font-size: 32px; }
+            .final-cta-sub { font-size: 15px; }
+            .final-cta-btn { padding: 18px 32px; font-size: 15px; width: 100%; max-width: 320px; }
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .footer {
+            padding: 50px 24px 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .footer-brand {
+            font-size: 14px; font-weight: 900; letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .footer-brand span { color: var(--accent); }
+        .footer-tag {
+            font-size: 13px; color: var(--text3);
+            margin-bottom: 14px;
+        }
+        .footer-copy {
+            font-size: 12px; color: var(--text3);
+        }
+        @media (max-width: 767px) {
+            .footer { padding: 40px 16px 100px; }
+        }
+
+        /* ============================================
+           MOBILE STICKY BAR
+           ============================================ */
+        .sticky-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            background: rgba(10, 10, 11, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            z-index: 90;
+            transform: translateY(120%);
+            transition: transform .35s cubic-bezier(.2, .7, .3, 1);
+            display: none;
+        }
+        .sticky-bar.visible { transform: translateY(0); }
+        .sticky-bar-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--accent); color: var(--bg);
+            font-weight: 800; font-size: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 -2px 20px rgba(0, 212, 170, 0.2);
+        }
+        @media (max-width: 767px) {
+            .sticky-bar { display: block; }
+        }
+
+        /* ============================================
+           SCROLL REVEAL
+           ============================================ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .3, 1);
+        }
+        .reveal.in-view {
+            opacity: 1;
+            transform: none;
+        }
+        .reveal-delay-1 { transition-delay: .08s; }
+        .reveal-delay-2 { transition-delay: .16s; }
+        .reveal-delay-3 { transition-delay: .24s; }
+        .reveal-delay-4 { transition-delay: .32s; }
+        .reveal-delay-5 { transition-delay: .4s; }
+        .reveal-delay-6 { transition-delay: .48s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .reveal { opacity: 1; transform: none; }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main" class="skip-link">Saltar al contenido</a>
+    <div class="bg-glow"></div>
+    <div class="bg-grain"></div>
+
+    <!-- ============================================
+         HEADER
+         ============================================ -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <a href="#hero" class="brand" aria-label="BERSERKERMOD inicio">
+                <span class="brand-emoji" aria-hidden="true">ðŸ’ª</span>
+                BERSERKER<span>MOD</span>
+            </a>
+            <nav class="nav-links" aria-label="NavegaciÃ³n principal">
+                <a href="#features">Features</a>
+                <a href="#precio">Precio</a>
+                <a href="#faq">FAQ</a>
+            </nav>
+            <a href="BERSERKERMOD.html" class="header-cta">Abrir app</a>
+        </div>
+    </header>
+
+    <main id="main">
+
+        <!-- ============================================
+             HERO
+             ============================================ -->
+        <section class="hero" id="hero">
+            <div class="hero-inner">
+                <div class="hero-copy">
+                    <div class="hero-kicker reveal">Lanzamiento 2026 Â· Gratis + Premium one-time</div>
+                    <h1 class="hero-title reveal reveal-delay-1">
+                        Tu entrenador personal.<br>
+                        En tu bolsillo. <span class="accent">Inteligente.</span>
+                    </h1>
+                    <p class="hero-sub reveal reveal-delay-2">
+                        Rutinas que se adaptan a tu nivel, tus dÃ­as y tu objetivo. Plan nutricional con macros calculadas. Biblioteca de 30 ejercicios con tÃ©cnica real. Modo coach para entrenadores. Todo en una app que no tenÃ©s ni que instalar.
+                    </p>
+                    <div class="hero-ctas reveal reveal-delay-3">
+                        <a href="BERSERKERMOD.html" class="btn btn-primary">Empezar gratis â†’</a>
+                        <a href="#features" class="btn btn-ghost">Ver cÃ³mo funciona</a>
+                    </div>
+                    <div class="hero-meta reveal reveal-delay-4">
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Funciona offline</span>
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Cuenta opcional</span>
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Sin publicidad</span>
+                    </div>
+                </div>
+                <div class="hero-visual reveal reveal-delay-2">
+                    <div class="hero-phone phone-frame" aria-hidden="true">
+                        <div class="phone-screen">
+                            <div class="mk-greet">
+                                <div class="mk-greet-name">Â¡Hola, Lucas!</div>
+                                <div class="mk-greet-sub">DÃ­a perfecto para entrenar ðŸ’ª</div>
+                            </div>
+                            <div class="mk-card mk-streak">
+                                <div class="mk-streak-num">7</div>
+                                <div>
+                                    <div class="mk-h2">DÃ­as consecutivos ðŸ”¥</div>
+                                    <div class="mk-text-sm">Tu mejor racha del mes</div>
+                                </div>
+                            </div>
+                            <div class="mk-card">
+                                <div class="mk-routine-day">DÃA 3 Â· PUSH A</div>
+                                <div class="mk-h2" style="margin-bottom:8px">Pecho Â· TrÃ­ceps Â· Hombro</div>
+                                <div class="mk-ex">
+                                    <span class="mk-ex-name">Press banca</span>
+                                    <span class="mk-ex-sets">4 Ã— 6-8</span>
+                                </div>
+                                <div class="mk-ex">
+                                    <span class="mk-ex-name">Press inclinado</span>
+                                    <span class="mk-ex-sets">3 Ã— 8-10</span>
+                                </div>
+                                <div class="mk-ex">
+                                    <span class="mk-ex-name">Aperturas polea</span>
+                                    <span class="mk-ex-sets">3 Ã— 12-15</span>
+                                </div>
+                                <div class="mk-ex">
+                                    <span class="mk-ex-name">Press francÃ©s</span>
+                                    <span class="mk-ex-sets">3 Ã— 10</span>
+                                </div>
+                            </div>
+                            <div class="mk-card">
+                                <div class="mk-label">Progreso Â· 4 semanas</div>
+                                <div class="mk-chart">
+                                    <div class="mk-bar" style="height:30%"></div>
+                                    <div class="mk-bar" style="height:50%"></div>
+                                    <div class="mk-bar" style="height:45%"></div>
+                                    <div class="mk-bar" style="height:65%"></div>
+                                    <div class="mk-bar" style="height:75%"></div>
+                                    <div class="mk-bar" style="height:70%"></div>
+                                    <div class="mk-bar" style="height:90%"></div>
+                                </div>
+                            </div>
+                            <div class="mk-nav">
+                                <div class="mk-nav-btn active"><div class="mk-nav-icon">ðŸ </div>Inicio</div>
+                                <div class="mk-nav-btn"><div class="mk-nav-icon">ðŸ“‹</div>Rutinas</div>
+                                <div class="mk-nav-btn"><div class="mk-nav-icon">ðŸ’ª</div>Libre</div>
+                                <div class="mk-nav-btn"><div class="mk-nav-icon">ðŸ“Š</div>Stats</div>
+                                <div class="mk-nav-btn"><div class="mk-nav-icon">ðŸ‘¤</div>Perfil</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             STATS STRIP
+             ============================================ -->
+        <section class="stats" aria-label="NÃºmeros del producto">
+            <div class="stats-intro reveal">Hecho por gente que entrena. Para gente que entrena.</div>
+            <div class="stats-grid">
+                <div class="stat reveal reveal-delay-1">
+                    <div class="stat-num" data-count="30">0</div>
+                    <div class="stat-label">Ejercicios curados</div>
+                </div>
+                <div class="stat reveal reveal-delay-2">
+                    <div class="stat-num" data-count="45">0</div>
+                    <div class="stat-label">Alimentos en el plan</div>
+                </div>
+                <div class="stat reveal reveal-delay-3">
+                    <div class="stat-num" data-count="3">0</div>
+                    <div class="stat-label">Idiomas</div>
+                </div>
+                <div class="stat reveal reveal-delay-4">
+                    <div class="stat-num" data-count="0">0</div>
+                    <div class="stat-label">Anuncios. Cero.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             FEATURES GRID
+             ============================================ -->
+        <section class="features section" id="features">
+            <div class="features-header reveal">
+                <div class="section-kicker">Lo que hace</div>
+                <h2 class="section-title">Todo lo que necesitÃ¡s.<br>Nada que no.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;">Seis pilares pensados para que entrenes mejor, comas mejor y veas tu progreso real. Sin features inflados ni dashboards vacÃ­os.</p>
+            </div>
+            <div class="features-grid">
+                <article class="feat-card reveal">
+                    <div class="feat-icon">ðŸ§ </div>
+                    <h3 class="feat-title">Rutinas inteligentes</h3>
+                    <p class="feat-desc">CambiÃ¡s tu nivel, dÃ­as o objetivo y la rutina se rearma sola. Splits profesionales (Full Body, Upper-Lower, PPL) con series, reps, descanso y foco muscular.</p>
+                </article>
+                <article class="feat-card reveal reveal-delay-1">
+                    <div class="feat-icon">ðŸ½ï¸</div>
+                    <h3 class="feat-title">Plan nutricional</h3>
+                    <p class="feat-desc">7 dÃ­as, 5 comidas por dÃ­a, macros que cierran. 45 alimentos curados con tips de cocciÃ³n. Swap libre. Cero apps de Excel.</p>
+                </article>
+                <article class="feat-card reveal reveal-delay-2">
+                    <div class="feat-icon">ðŸ’ª</div>
+                    <h3 class="feat-title">Modo entrenamiento</h3>
+                    <p class="feat-desc">RegistrÃ¡ series, peso y reps. DetecciÃ³n automÃ¡tica de PR. CronÃ³metro de descanso. CompartÃ­ el resumen en redes en un toque.</p>
+                </article>
+                <article class="feat-card reveal reveal-delay-3">
+                    <div class="feat-icon">ðŸ“š</div>
+                    <h3 class="feat-title">Biblioteca real</h3>
+                    <p class="feat-desc">30 ejercicios con tÃ©cnica explicada, errores comunes, variaciones y RPE sugerido. Video y GIF cuando los necesites.</p>
+                </article>
+                <article class="feat-card reveal reveal-delay-4">
+                    <div class="feat-icon">ðŸƒ</div>
+                    <h3 class="feat-title">Cardio sin complicar</h3>
+                    <p class="feat-desc">10 deportes, cronÃ³metro integrado, kcal automÃ¡ticas segÃºn tu peso e intensidad. Todo separado del entreno de pesas.</p>
+                </article>
+                <article class="feat-card reveal reveal-delay-5">
+                    <div class="feat-icon">ðŸ“Š</div>
+                    <h3 class="feat-title">Stats que importan</h3>
+                    <p class="feat-desc">RÃ©cords personales, 1RM estimado, volumen por grupo muscular, racha activa. GrÃ¡ficos limpios, sin informaciÃ³n de relleno.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ============================================
+             DEEP-DIVE SCROLL STORY
+             ============================================ -->
+        <section class="deepdive">
+            <div class="deepdive-header reveal">
+                <div class="section-kicker">Por dentro</div>
+                <h2 class="section-title">MirÃ¡ la app por dentro</h2>
+                <p class="section-sub" style="margin: 16px auto 0;">Cuatro pantallas que ya estÃ¡n funcionando. Sin maquetas hechas con humo.</p>
+            </div>
+
+            <!-- Desktop: scroll story with sticky mockup -->
+            <div class="deepdive-grid" id="deepdive-desktop">
+                <div class="deepdive-visual">
+                    <div class="deepdive-mockups">
+                        <div class="deepdive-mockup active" data-panel="0">
+                            <div class="phone-frame">
+                                <div class="phone-screen">
+                                    <div class="mk-greet">
+                                        <div class="mk-greet-name">Â¿CuÃ¡l es tu objetivo?</div>
+                                        <div class="mk-greet-sub">ConfigurÃ¡ tu plan en 1 minuto</div>
+                                    </div>
+                                    <div class="mk-card" style="border-color: var(--accent); background: linear-gradient(135deg, rgba(0,212,170,.1), var(--sf1));">
+                                        <div class="mk-row"><div class="mk-h2">ðŸ’ª Ganar mÃºsculo</div><div style="color:var(--accent);font-size:14px;font-weight:900">âœ“</div></div>
+                                    </div>
+                                    <div class="mk-card"><div class="mk-h2">ðŸ”¥ Perder grasa</div></div>
+                                    <div class="mk-card"><div class="mk-h2">âš¡ Mantener</div></div>
+                                    <div class="mk-card"><div class="mk-h2">ðŸ† Ganar fuerza</div></div>
+                                    <div style="margin-top:12px;padding:10px;background:var(--accent);color:var(--bg);border-radius:8px;font-size:10px;font-weight:900;text-align:center;letter-spacing:.04em">SIGUIENTE</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="deepdive-mockup" data-panel="1">
+                            <div class="phone-frame">
+                                <div class="phone-screen">
+                                    <div class="mk-greet">
+                                        <div class="mk-greet-name">Tu Rutina</div>
+                                        <div class="mk-greet-sub">4 dÃ­as Â· Intermedio Â· Hipertrofia</div>
+                                    </div>
+                                    <div class="mk-card" style="border-color: var(--accent);">
+                                        <div class="mk-routine-day">DÃA 1 Â· PUSH A</div>
+                                        <div class="mk-h2" style="margin-bottom:6px">Pecho Â· TrÃ­ceps</div>
+                                        <div class="mk-text-sm">5 ejercicios Â· ~55 min</div>
+                                    </div>
+                                    <div class="mk-card">
+                                        <div class="mk-routine-day" style="background:rgba(116,185,255,.15);color:var(--blue)">DÃA 2 Â· PULL A</div>
+                                        <div class="mk-h2" style="margin-bottom:6px">Espalda Â· BÃ­ceps</div>
+                                        <div class="mk-text-sm">5 ejercicios Â· ~50 min</div>
+                                    </div>
+                                    <div class="mk-card">
+                                        <div class="mk-routine-day" style="background:rgba(253,203,110,.15);color:var(--orange)">DÃA 3 Â· LEGS</div>
+                                        <div class="mk-h2" style="margin-bottom:6px">Piernas completo</div>
+                                        <div class="mk-text-sm">6 ejercicios Â· ~60 min</div>
+                                    </div>
+                                    <div class="mk-card">
+                                        <div class="mk-routine-day" style="background:rgba(162,155,254,.15);color:var(--purple)">DÃA 4 Â· PUSH B</div>
+                                        <div class="mk-h2" style="margin-bottom:6px">Hombros Â· TrÃ­ceps</div>
+                                        <div class="mk-text-sm">5 ejercicios Â· ~50 min</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="deepdive-mockup" data-panel="2">
+                            <div class="phone-frame">
+                                <div class="phone-screen">
+                                    <div class="mk-greet">
+                                        <div class="mk-greet-name">Plan nutricional</div>
+                                        <div class="mk-greet-sub">2.450 kcal Â· P 180 Â· C 270 Â· G 65</div>
+                                    </div>
+                                    <div class="mk-meals">
+                                        <div class="mk-meal">
+                                            <div class="mk-meal-icon">ðŸŒ…</div>
+                                            <div class="mk-meal-info">
+                                                <div class="mk-meal-title">Desayuno</div>
+                                                <div class="mk-text-sm">Avena Â· Huevos Â· Yogur</div>
+                                            </div>
+                                            <div class="mk-meal-cals">580 kcal</div>
+                                        </div>
+                                        <div class="mk-meal">
+                                            <div class="mk-meal-icon">ðŸŽ</div>
+                                            <div class="mk-meal-info">
+                                                <div class="mk-meal-title">Media maÃ±ana</div>
+                                                <div class="mk-text-sm">Banana Â· Mix de frutos secos</div>
+                                            </div>
+                                            <div class="mk-meal-cals">320 kcal</div>
+                                        </div>
+                                        <div class="mk-meal">
+                                            <div class="mk-meal-icon">ðŸŒž</div>
+                                            <div class="mk-meal-info">
+                                                <div class="mk-meal-title">Almuerzo</div>
+                                                <div class="mk-text-sm">Pollo Â· Arroz Â· Ensalada</div>
+                                            </div>
+                                            <div class="mk-meal-cals">680 kcal</div>
+                                        </div>
+                                        <div class="mk-meal">
+                                            <div class="mk-meal-icon">â˜•</div>
+                                            <div class="mk-meal-info">
+                                                <div class="mk-meal-title">Merienda</div>
+                                                <div class="mk-text-sm">Whey Â· Avena Â· Manteca de manÃ­</div>
+                                            </div>
+                                            <div class="mk-meal-cals">420 kcal</div>
+                                        </div>
+                                        <div class="mk-meal">
+                                            <div class="mk-meal-icon">ðŸŒ™</div>
+                                            <div class="mk-meal-info">
+                                                <div class="mk-meal-title">Cena</div>
+                                                <div class="mk-text-sm">SalmÃ³n Â· Batata Â· BrÃ³coli</div>
+                                            </div>
+                                            <div class="mk-meal-cals">450 kcal</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="deepdive-mockup" data-panel="3">
+                            <div class="phone-frame">
+                                <div class="phone-screen">
+                                    <div class="mk-greet">
+                                        <div class="mk-greet-name">Stats</div>
+                                        <div class="mk-greet-sub">Mensual Â· Mayo 2026</div>
+                                    </div>
+                                    <div class="mk-card" style="background: linear-gradient(135deg, rgba(0,212,170,.16), rgba(0,212,170,.04));border-color: rgba(0,212,170,.2);">
+                                        <div class="mk-row">
+                                            <div>
+                                                <div class="mk-label">Volumen total</div>
+                                                <div class="mk-h1" style="color:var(--accent)">12.450 kg</div>
+                                            </div>
+                                            <div style="font-size:11px;font-weight:900;color:var(--accent)">â†‘ 18%</div>
+                                        </div>
+                                    </div>
+                                    <div class="mk-card">
+                                        <div class="mk-label">Progreso Â· Press banca</div>
+                                        <div class="mk-chart">
+                                            <div class="mk-bar" style="height:35%"></div>
+                                            <div class="mk-bar" style="height:42%"></div>
+                                            <div class="mk-bar" style="height:50%"></div>
+                                            <div class="mk-bar" style="height:55%"></div>
+                                            <div class="mk-bar" style="height:62%"></div>
+                                            <div class="mk-bar" style="height:70%"></div>
+                                            <div class="mk-bar" style="height:80%"></div>
+                                            <div class="mk-bar" style="height:90%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mk-label" style="padding:0 4px">RÃ©cords personales</div>
+                                    <div class="mk-record">
+                                        <div>
+                                            <div class="mk-record-name">ðŸ† Press banca</div>
+                                            <div class="mk-text-sm">Hace 3 dÃ­as</div>
+                                        </div>
+                                        <div class="mk-record-val">95 kg</div>
+                                    </div>
+                                    <div class="mk-record">
+                                        <div>
+                                            <div class="mk-record-name">ðŸ† Sentadilla</div>
+                                            <div class="mk-text-sm">Hace 1 semana</div>
+                                        </div>
+                                        <div class="mk-record-val">130 kg</div>
+                                    </div>
+                                    <div class="mk-record">
+                                        <div>
+                                            <div class="mk-record-name">ðŸ† Peso muerto</div>
+                                            <div class="mk-text-sm">Hace 2 semanas</div>
+                                        </div>
+                                        <div class="mk-record-val">160 kg</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="deepdive-panels">
+                    <article class="deepdive-panel" data-target="0">
+                        <span class="deepdive-num">1</span>
+                        <h3 class="deepdive-title">Onboarding que te conoce en 1 minuto</h3>
+                        <p class="deepdive-desc">Siete pasos. Sin formularios infinitos ni cuenta de email. Le decÃ­s quiÃ©n sos y quÃ© querÃ©s, y la app arma todo: rutina, plan nutricional, macros, equipamiento.</p>
+                        <ul class="deepdive-bullets">
+                            <li>Nivel: principiante, intermedio o avanzado</li>
+                            <li>Objetivo: mÃºsculo, grasa, mantener, fuerza, resistencia</li>
+                            <li>CÃ¡lculo automÃ¡tico de TMB + TDEE</li>
+                            <li>Preview de la rutina antes de empezar</li>
+                        </ul>
+                    </article>
+                    <article class="deepdive-panel" data-target="1">
+                        <span class="deepdive-num">2</span>
+                        <h3 class="deepdive-title">Rutina que se adapta cuando vos cambiÃ¡s</h3>
+                        <p class="deepdive-desc">Â¿Subiste de peso? Se recalcula. Â¿Cambiaste el objetivo? Se rearma. Â¿QuerÃ©s sumar un dÃ­a? Se reordena el split. Todo sin perder tu historial de cargas.</p>
+                        <ul class="deepdive-bullets">
+                            <li>Splits profesionales: Full Body, Upper-Lower, PPL, Body Part</li>
+                            <li>Series, reps, descanso y notas por ejercicio</li>
+                            <li>Tiempo estimado por sesiÃ³n</li>
+                            <li>Exportar a PDF para imprimir o compartir</li>
+                        </ul>
+                    </article>
+                    <article class="deepdive-panel" data-target="2">
+                        <span class="deepdive-num">3</span>
+                        <h3 class="deepdive-title">Plan nutricional que cierra los macros</h3>
+                        <p class="deepdive-desc">Generamos 7 dÃ­as con 5 comidas cada uno. Cada comida tiene su % de kcal y sus ingredientes â€” calculados con un algoritmo de share que deja drift menor al 5%.</p>
+                        <ul class="deepdive-bullets">
+                            <li>45 alimentos curados con tips de cocciÃ³n</li>
+                            <li>Slot-aware: nada de bife magro al desayuno</li>
+                            <li>Swap libre por categorÃ­a</li>
+                            <li>Historial de planes anteriores</li>
+                        </ul>
+                    </article>
+                    <article class="deepdive-panel" data-target="3">
+                        <span class="deepdive-num">4</span>
+                        <h3 class="deepdive-title">Stats que te dicen si estÃ¡s progresando</h3>
+                        <p class="deepdive-desc">Sin dashboards de relleno. Lo que importa: tu volumen real, tu 1RM estimado por ejercicio, tus PRs, tu racha activa. Y si te estancÃ¡s, te avisamos.</p>
+                        <ul class="deepdive-bullets">
+                            <li>GrÃ¡ficos por ejercicio (peso Ã— tiempo)</li>
+                            <li>Series por grupo muscular (semanal)</li>
+                            <li>RÃ©cords personales rankeados</li>
+                            <li>Banners automÃ¡ticos cuando hay estancamiento</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             PRECIO
+             ============================================ -->
+        <section class="precio section" id="precio">
+            <div class="precio-header reveal">
+                <div class="section-kicker">Pricing</div>
+                <h2 class="section-title">Gratis para siempre.<br>Premium si querÃ©s mÃ¡s.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;">Sin suscripciones que se renuevan automÃ¡ticamente. Sin truco. EmpezÃ¡s gratis, y si te enganchaste, desbloqueÃ¡s todo con un solo pago â€” para siempre.</p>
+            </div>
+            <div class="precio-cards">
+                <div class="precio-card free reveal">
+                    <div class="precio-tier">Free</div>
+                    <div class="precio-name">EmpezÃ¡ hoy</div>
+                    <div class="precio-tag">Todo lo que necesitÃ¡s para empezar a entrenar bien.</div>
+                    <div class="precio-price">$0</div>
+                    <div class="precio-period">Para siempre. Sin trial.</div>
+                    <ul class="precio-features">
+                        <li>Onboarding personalizado completo</li>
+                        <li>Rutinas inteligentes (todos los dÃ­as y niveles)</li>
+                        <li>Biblioteca de 30 ejercicios</li>
+                        <li>Modo entrenamiento + tracking de PRs</li>
+                        <li>Cardio tracker con kcal automÃ¡tico</li>
+                        <li>Stats semanales y rÃ©cords personales</li>
+                        <li>Tracking de comidas (OpenFoodFacts)</li>
+                        <li>Compartir resumen en redes</li>
+                        <li>EspaÃ±ol + InglÃ©s</li>
+                        <li class="muted">Sin escÃ¡ner de barras</li>
+                        <li class="muted">Sin Oracle IA</li>
+                        <li class="muted">Sin modo Coach</li>
+                    </ul>
+                    <a href="BERSERKERMOD.html" class="precio-cta precio-cta-free">Empezar gratis â†’</a>
+                </div>
+                <div class="precio-card premium reveal reveal-delay-1">
+                    <div class="precio-tier">ðŸ‘‘ Premium</div>
+                    <div class="precio-name">DesbloqueÃ¡ todo</div>
+                    <div class="precio-tag">Pago Ãºnico. Sin suscripciones. Sin renovaciones automÃ¡ticas.</div>
+                    <div class="precio-price">PrÃ³ximamente</div>
+                    <div class="precio-period">Precio early-adopter al lanzar</div>
+                    <span class="precio-badge">ReservÃ¡ tu lugar</span>
+                    <ul class="precio-features">
+                        <li><b>Todo lo del plan Free</b>, mÃ¡s:</li>
+                        <li><b>Sync entre dispositivos</b> + backup en la nube</li>
+                        <li>Plan nutricional 7 dÃ­as con macros</li>
+                        <li>Editor de rutinas propias ilimitadas</li>
+                        <li>Embed de video YouTube por ejercicio</li>
+                        <li>GIF de demostraciÃ³n por ejercicio</li>
+                        <li>Stats mensuales y anuales</li>
+                        <li>EscÃ¡ner de cÃ³digo de barras</li>
+                        <li>Oracle IA Â· anÃ¡lisis personalizado con Claude</li>
+                        <li><b>Modo Coach</b> Â· alumnos ilimitados</li>
+                        <li>Exportar rutina a PDF</li>
+                        <li>PortuguÃ©s (BR)</li>
+                        <li>Soporte prioritario directo</li>
+                    </ul>
+                    <a href="/app?intent=premium" class="precio-cta precio-cta-premium">Abrir app y avisarme</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             COACH MODE
+             ============================================ -->
+        <section class="coach" id="coach">
+            <div class="coach-inner">
+                <div class="coach-copy">
+                    <div class="coach-tag reveal">ðŸ‘‘ Premium Â· Para entrenadores</div>
+                    <h2 class="coach-title reveal reveal-delay-1">Â¿Sos entrenador?<br>Tus alumnos, una sola pantalla.</h2>
+                    <p class="coach-desc reveal reveal-delay-2">
+                        Olvidate de los Excels, los grupos de WhatsApp y las planillas perdidas. Crea rutinas para tus alumnos en 2 minutos, mandales un link Ãºnico y mirÃ¡ en tiempo real cÃ³mo entrenan.
+                    </p>
+                    <ul class="coach-features reveal reveal-delay-3">
+                        <li>Link Ãºnico + QR por alumno Â· sin instalaciÃ³n</li>
+                        <li>Ediciones del alumno en tiempo real</li>
+                        <li>Dashboard con badge de ediciones pendientes</li>
+                        <li>MarcÃ¡ como revisado y seguÃ­ con el prÃ³ximo</li>
+                        <li>Alumnos ilimitados Â· sin costo por usuario</li>
+                    </ul>
+                    <div class="reveal reveal-delay-4">
+                        <a href="/app?intent=coach" class="btn btn-primary">Probar modo Coach â†’</a>
+                    </div>
+                </div>
+                <div class="coach-visual reveal reveal-delay-2">
+                    <div class="phone-frame" aria-hidden="true">
+                        <div class="phone-screen">
+                            <div class="mk-greet">
+                                <div class="mk-greet-name">Mis alumnos</div>
+                                <div class="mk-greet-sub">3 activos Â· 2 ediciones nuevas</div>
+                            </div>
+                            <div class="mk-alumno">
+                                <div class="mk-avatar">JM</div>
+                                <div class="mk-alumno-info">
+                                    <div class="mk-alumno-name">Juan MartÃ­nez</div>
+                                    <div class="mk-alumno-meta">Visto hace 2h Â· PPL 5 dÃ­as</div>
+                                </div>
+                                <span class="mk-badge">3</span>
+                            </div>
+                            <div class="mk-alumno">
+                                <div class="mk-avatar" style="background:linear-gradient(135deg,var(--purple),var(--blue))">SR</div>
+                                <div class="mk-alumno-info">
+                                    <div class="mk-alumno-name">SofÃ­a Romano</div>
+                                    <div class="mk-alumno-meta">Visto ayer Â· UL 4 dÃ­as</div>
+                                </div>
+                                <span class="mk-badge">1</span>
+                            </div>
+                            <div class="mk-alumno">
+                                <div class="mk-avatar" style="background:linear-gradient(135deg,var(--orange),var(--red))">DL</div>
+                                <div class="mk-alumno-info">
+                                    <div class="mk-alumno-name">Diego LÃ³pez</div>
+                                    <div class="mk-alumno-meta">Visto hoy Â· Full Body 3 dÃ­as</div>
+                                </div>
+                                <span style="font-size:9px;color:var(--accent);font-weight:800">âœ“ Revisado</span>
+                            </div>
+                            <div style="margin-top:14px;padding:12px;background:var(--accent);color:var(--bg);border-radius:10px;font-size:11px;font-weight:900;text-align:center;letter-spacing:.04em">+ CREAR RUTINA NUEVA</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             PRIVACY-FIRST
+             ============================================ -->
+        <section class="privacy section">
+            <div class="privacy-header reveal">
+                <div class="section-kicker">Privacidad</div>
+                <h2 class="section-title">Tus datos son tuyos.<br>Punto.</h2>
+            </div>
+            <div class="privacy-grid">
+                <div class="privacy-card reveal">
+                    <div class="privacy-icon">ðŸ”’</div>
+                    <h3 class="privacy-title">Offline-first</h3>
+                    <p class="privacy-desc">Todo se guarda en tu telÃ©fono. No mandamos tus entrenamientos ni tus comidas a ningÃºn servidor.</p>
+                </div>
+                <div class="privacy-card reveal reveal-delay-1">
+                    <div class="privacy-icon">ðŸ”‘</div>
+                    <h3 class="privacy-title">Cuenta opcional</h3>
+                    <p class="privacy-desc">EmpezÃ¡s sin login. Si despuÃ©s querÃ©s sincronizar entre dispositivos, te logueÃ¡s con Google o email. Vos elegÃ­s cuÃ¡ndo.</p>
+                </div>
+                <div class="privacy-card reveal reveal-delay-2">
+                    <div class="privacy-icon">ðŸ“µ</div>
+                    <h3 class="privacy-title">Sin tracking</h3>
+                    <p class="privacy-desc">No hay Google Analytics. No hay Facebook Pixel. No hay cookies de terceros. No vendemos tus datos.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             INSTALL OPTIONS
+             ============================================ -->
+        <section class="install" id="install">
+            <div class="install-header reveal">
+                <div class="section-kicker">CÃ³mo instalarla</div>
+                <h2 class="section-title">Tres formas.<br>Vos elegÃ­s.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;">Usala directo desde el navegador hoy, o esperÃ¡ las apps nativas en las tiendas. La experiencia y tus datos son los mismos.</p>
+            </div>
+            <div class="install-grid">
+                <div class="install-card now reveal">
+                    <div class="install-icon">ðŸŒ</div>
+                    <div class="install-title">Web App</div>
+                    <div class="install-status live">â— Disponible ahora</div>
+                    <p class="install-desc">Abrila en tu navegador y "Agregar a pantalla de inicio". Queda como app nativa, full screen, sin Play Store. Funciona en iPhone y Android.</p>
+                    <a href="BERSERKERMOD.html" class="install-cta install-cta-primary">Abrir ahora â†’</a>
+                </div>
+                <div class="install-card reveal reveal-delay-1">
+                    <div class="install-icon">ðŸ¤–</div>
+                    <div class="install-title">Google Play</div>
+                    <div class="install-status">PrÃ³ximamente</div>
+                    <p class="install-desc">App nativa Android con notificaciones push, sync automÃ¡tica y acceso desde el cajÃ³n de apps. Misma cuenta, mismos datos.</p>
+                    <span class="install-cta install-cta-disabled">Pronto</span>
+                </div>
+                <div class="install-card reveal reveal-delay-2">
+                    <div class="install-icon">ðŸŽ</div>
+                    <div class="install-title">App Store</div>
+                    <div class="install-status">PrÃ³ximamente</div>
+                    <p class="install-desc">App nativa iOS optimizada para iPhone y iPad. IntegraciÃ³n con HealthKit y Apple Watch (en evaluaciÃ³n).</p>
+                    <span class="install-cta install-cta-disabled">Pronto</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================
+             FAQ
+             ============================================ -->
+        <section class="faq" id="faq">
+            <div class="faq-header reveal">
+                <div class="section-kicker">FAQ</div>
+                <h2 class="section-title">Lo que te estÃ¡s preguntando</h2>
+            </div>
+            <div class="faq-list">
+                <details class="faq-item reveal">
+                    <summary class="faq-summary">Â¿Es realmente gratis?</summary>
+                    <div class="faq-body">
+                        SÃ­. La versiÃ³n Free incluye rutinas inteligentes, biblioteca de ejercicios, modo entrenamiento con tracking de PRs, cardio, stats semanales y tracking de comidas. Para siempre, sin trial. Premium suma plan nutricional, modo Coach, Oracle IA y mÃ¡s â€” un Ãºnico pago cuando lance, sin suscripciones.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-1">
+                    <summary class="faq-summary">Â¿Necesito Play Store o App Store?</summary>
+                    <div class="faq-body">
+                        No. BERSERKERMOD es una PWA (Progressive Web App). EntrÃ¡s desde el navegador, le das "Agregar a pantalla de inicio" y queda como cualquier otra app â€” con su Ã­cono en el home, full screen, sin barra del browser. Funciona idÃ©ntico en iPhone (Safari) y Android (Chrome).
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-2">
+                    <summary class="faq-summary">Â¿Funciona offline?</summary>
+                    <div class="faq-body">
+                        SÃ­. DespuÃ©s de la primera carga, todo funciona sin internet: tus rutinas, tu historial, tus comidas, tus stats. La conexiÃ³n solo se usa para la bÃºsqueda de productos en OpenFoodFacts y para Oracle IA (Premium opcional). Si te quedÃ¡s sin datos, la app sigue andando.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-3">
+                    <summary class="faq-summary">Â¿En iPhone funciona bien?</summary>
+                    <div class="faq-body">
+                        Probada y optimizada para Safari iOS. El escÃ¡ner de cÃ³digo de barras (Premium) usa ZXing como fallback porque Safari no soporta BarcodeDetector nativo. Todo lo demÃ¡s corre idÃ©ntico â€” y mejor que muchas apps "nativas" del App Store.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-4">
+                    <summary class="faq-summary">Â¿Necesito crear una cuenta?</summary>
+                    <div class="faq-body">
+                        No. El login es <b>completamente opcional</b>. PodÃ©s usar BERSERKERMOD entero sin registrarte â€” todo se guarda local en tu telÃ©fono. Solo necesitÃ¡s cuenta si querÃ©s sincronizar entre dos dispositivos (ej: PC + celu) o hacer backup en la nube. El login es con Google o email, en un toque.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-5">
+                    <summary class="faq-summary">Â¿Mis datos van a un servidor?</summary>
+                    <div class="faq-body">
+                        Solo si vos activÃ¡s la sincronizaciÃ³n con tu cuenta. <b>Sin login, cero datos salen de tu telÃ©fono.</b> Tus rutinas, comidas y stats viven en el localStorage del navegador. Si activÃ¡s sync, se encriptan y se suben a nuestro servidor solo para que puedas acceder desde otro dispositivo. Nunca los vendemos, nunca los compartimos, nunca los analizamos.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-5">
+                    <summary class="faq-summary">Â¿Va a tener publicidad?</summary>
+                    <div class="faq-body">
+                        <b>No.</b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad â€” esa decisiÃ³n es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional cuando lance: pago Ãºnico, sin suscripciones, sin trial truchos.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-6">
+                    <summary class="faq-summary">Â¿QuÃ© pasa con mis datos si borro la app?</summary>
+                    <div class="faq-body">
+                        Tus datos viven en el localStorage del navegador del telÃ©fono. Si desinstalÃ¡s la PWA o limpiÃ¡s los datos del navegador, los perdÃ©s â€” a menos que tengas la sincronizaciÃ³n con cuenta activa, donde quedan respaldados. Por eso recomendamos hacer login (Premium) o exportar tu rutina a PDF de vez en cuando.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-6">
+                    <summary class="faq-summary">Â¿Hay versiÃ³n para entrenadores con alumnos?</summary>
+                    <div class="faq-body">
+                        SÃ­, el modo Coach (incluido en Premium). CreÃ¡s rutinas para tus alumnos, generÃ¡s un link Ãºnico + QR por cada uno, y ellos abren su rutina sin instalar nada. Vos ves en tiempo real cÃ³mo entrenan, quÃ© editan, y los marcÃ¡s como revisados. Alumnos ilimitados, sin costo por usuario.
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- ============================================
+             FINAL CTA
+             ============================================ -->
+        <section class="final-cta">
+            <div class="final-cta-inner">
+                <h2 class="final-cta-title reveal">DejÃ¡ de buscar.<br><span class="accent">EmpezÃ¡ a entrenar.</span></h2>
+                <p class="final-cta-sub reveal reveal-delay-1">Mientras leÃ©s esto, otros ya van por el dÃ­a 3 de su racha. Tu prÃ³ximo PR estÃ¡ a un toque.</p>
+                <div class="reveal reveal-delay-2">
+                    <a href="BERSERKERMOD.html" class="final-cta-btn">Abrir BERSERKERMOD â†’</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================
+         FOOTER
+         ============================================ -->
+    <footer class="footer">
+        <div class="footer-brand">
+            <span aria-hidden="true">ðŸ’ª</span>
+            BERSERKER<span>MOD</span>
+        </div>
+        <div class="footer-tag">Tu entrenador personal inteligente Â· Hecho en Argentina</div>
+        <div class="footer-copy">Â© 2026 BERSERKERMOD Â· Todos los derechos reservados</div>
+        <div style="margin-top: 14px; font-size: 12px;">
+            <a href="privacy.html" style="color: var(--text3); margin: 0 8px;">PolÃ­tica de privacidad</a>
+        </div>
+    </footer>
+
+    <!-- ============================================
+         MOBILE STICKY BAR
+         ============================================ -->
+    <div class="sticky-bar" id="sticky-bar" aria-hidden="true">
+        <a href="BERSERKERMOD.html" class="sticky-bar-btn">Abrir BERSERKERMOD â†’</a>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // ===== Header scroll state =====
+            var header = document.getElementById('header');
+            var lastScroll = 0;
+            var ticking = false;
+
+            function onScroll() {
+                lastScroll = window.scrollY;
+                if (!ticking) {
+                    requestAnimationFrame(function () {
+                        if (lastScroll > 40) header.classList.add('scrolled');
+                        else header.classList.remove('scrolled');
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+
+            // ===== Scroll reveal =====
+            var revealIO = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (e.isIntersecting) {
+                        e.target.classList.add('in-view');
+                        revealIO.unobserve(e.target);
+                    }
+                });
+            }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+            document.querySelectorAll('.reveal').forEach(function (el) {
+                revealIO.observe(el);
+            });
+
+            // ===== Count-up stats =====
+            var countIO = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (!e.isIntersecting) return;
+                    var el = e.target;
+                    var target = parseInt(el.getAttribute('data-count'), 10) || 0;
+                    var duration = 1200;
+                    var start = performance.now();
+                    function tick(now) {
+                        var p = Math.min(1, (now - start) / duration);
+                        var eased = 1 - Math.pow(1 - p, 3);
+                        el.textContent = Math.round(target * eased);
+                        if (p < 1) requestAnimationFrame(tick);
+                        else el.textContent = target;
+                    }
+                    requestAnimationFrame(tick);
+                    countIO.unobserve(el);
+                });
+            }, { threshold: 0.5 });
+
+            document.querySelectorAll('[data-count]').forEach(function (el) {
+                countIO.observe(el);
+            });
+
+            // ===== Mobile sticky bar (show after hero) =====
+            var stickyBar = document.getElementById('sticky-bar');
+            var hero = document.getElementById('hero');
+            if (stickyBar && hero) {
+                var heroIO = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (e.isIntersecting) stickyBar.classList.remove('visible');
+                        else stickyBar.classList.add('visible');
+                    });
+                }, { threshold: 0, rootMargin: '-80px 0px 0px 0px' });
+                heroIO.observe(hero);
+            }
+
+            // ===== Deep-dive: switch mockup based on which panel is active =====
+            var panels = document.querySelectorAll('.deepdive-panel');
+            var mockups = document.querySelectorAll('.deepdive-mockup');
+            if (panels.length && mockups.length && window.matchMedia('(min-width: 1024px)').matches) {
+                var panelIO = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) {
+                        if (!e.isIntersecting) return;
+                        var target = e.target.getAttribute('data-target');
+                        mockups.forEach(function (mk) {
+                            if (mk.getAttribute('data-panel') === target) mk.classList.add('active');
+                            else mk.classList.remove('active');
+                        });
+                    });
+                }, { rootMargin: '-40% 0px -40% 0px', threshold: 0 });
+
+                panels.forEach(function (p) { panelIO.observe(p); });
+            }
+        })();
+    </script>
+</body>
+</html>
