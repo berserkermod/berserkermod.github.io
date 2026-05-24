@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.tornatiezequiel0_afk.twa",
+        "sha256_cert_fingerprints": ["B7:B7:F9:D9:84:5E:A2:AD:3C:F9:86:9B:F7:B1:A3:EB:C8:3E:92:37:6F:1E:2B:77:C9:7D:83:34:B7:8B:E9:42"]
+      }
+    }]
