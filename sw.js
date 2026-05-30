@@ -2,7 +2,7 @@
 // Caches the app shell so the PWA opens offline. API calls are never cached
 // so live sync / coach data stay fresh.
 
-const CACHE = 'berserkermod-v2-0';
+const CACHE = 'berserkermod-v2-1';
 // Paths are relative to the SW's scope so the same shell list works both on
 // local serve.ps1 (root scope) and on GitHub Pages subpath (/berserkermod/).
 const SHELL = [
