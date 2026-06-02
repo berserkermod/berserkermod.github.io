@@ -4956,6 +4956,10 @@
                 country: onbData.country || '',
                 routinePlan: onbEditPlan || getRoutinePlan(onbData.goal, onbData.days, onbData.level)
             };
+            // Stamp the plan hash so regenerateRoutineIfNeeded() treats the (possibly
+            // edited) onboarding plan as current and does NOT overwrite the user's
+            // manual edits the first time they open the Rutinas/Home tab.
+            state.user.routinePlanHash = routineInputHash(state.user);
             onbEditPlan = null; onbEditPlanKey = null;
             saveUser(); $('onboarding').style.display = 'none'; $('app').style.display = 'block';
             initApp();
