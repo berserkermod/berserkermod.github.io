@@ -2073,6 +2073,7 @@
                 prof_scanner_soon: "Próximamente en Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para pruebas",
                 food_title: "ALIMENTACIÓN HOY", food_add: "+ Agregar alimento", food_empty: "Sin registros hoy", food_meal: "Comida", food_which_meal: "¿A QUÉ COMIDA?", food_meal_empty: "Sin alimentos",
+                bal_title: "BALANCE CALÓRICO DEL DÍA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Neto", bal_maint: "Mantenim.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Mantenimiento", bal_aligned: "✓ Vas alineado con tu objetivo", bal_warn_surplus: "⚠️ Tu objetivo es ganar peso, pero contando el cardio hoy estás en {s} ({d}). Sumá calorías o reducí el cardio.", bal_warn_deficit: "⚠️ Tu objetivo es bajar grasa, pero contando el cardio hoy estás en {s} ({d}). Reducí calorías o sumá cardio.", bal_warn_maint: "⚠️ Hoy estás en {s} ({d}) respecto a tu mantenimiento.",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Apuntá al código de barras", food_scanner_manual: "✏️ Ingresar manualmente",
@@ -2307,6 +2308,7 @@
                 prof_scanner_soon: "Coming soon in Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simulate tier for testing",
                 food_title: "TODAY'S NUTRITION", food_add: "+ Add food", food_empty: "No entries today", food_meal: "Meal", food_which_meal: "WHICH MEAL?", food_meal_empty: "No foods",
+                bal_title: "TODAY'S CALORIE BALANCE", bal_consumed: "Eaten", bal_cardio: "Cardio", bal_net: "Net", bal_maint: "Maint.", bal_s_surplus: "Surplus", bal_s_deficit: "Deficit", bal_s_maintenance: "Maintenance", bal_aligned: "✓ You're on track with your goal", bal_warn_surplus: "⚠️ Your goal is to gain weight, but counting today's cardio you're at {s} ({d}). Eat more or cut the cardio.", bal_warn_deficit: "⚠️ Your goal is to lose fat, but counting today's cardio you're at {s} ({d}). Eat less or add cardio.", bal_warn_maint: "⚠️ Today you're at {s} ({d}) vs your maintenance.",
                 food_scan: "📷 Scan barcode", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal logged", food_of_target: "of",
                 food_scanner_hint: "Point at barcode", food_scanner_manual: "✏️ Enter manually",
@@ -2541,6 +2543,7 @@
                 prof_scanner_soon: "Em breve no Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para testes",
                 food_title: "ALIMENTAÇÃO HOJE", food_add: "+ Adicionar alimento", food_empty: "Sem registros hoje", food_meal: "Refeição", food_which_meal: "QUAL REFEIÇÃO?", food_meal_empty: "Sem alimentos",
+                bal_title: "BALANÇO CALÓRICO DO DIA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Líquido", bal_maint: "Manut.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Manutenção", bal_aligned: "✓ Você está alinhado com seu objetivo", bal_warn_surplus: "⚠️ Seu objetivo é ganhar peso, mas contando o cardio de hoje você está em {s} ({d}). Coma mais ou reduza o cardio.", bal_warn_deficit: "⚠️ Seu objetivo é perder gordura, mas contando o cardio de hoje você está em {s} ({d}). Coma menos ou adicione cardio.", bal_warn_maint: "⚠️ Hoje você está em {s} ({d}) em relação à sua manutenção.",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Aponte para o código de barras", food_scanner_manual: "✏️ Inserir manualmente",
@@ -3316,6 +3319,45 @@
         function getNutriAdvice(goal) {
             const map = { muscle: 'nutri_strategy_muscle', fat_loss: 'nutri_strategy_fat', strength: 'nutri_strategy_str', recomp: 'nutri_strategy_recomp', endurance: 'nutri_strategy_endurance' };
             return t(map[goal] || 'nutri_strategy_muscle');
+        }
+
+        // Total kcal burned in cardio today (counts toward the daily energy balance).
+        function todayCardioBurned() {
+            const today = todayStr();
+            return (state.cardioSessions || []).filter(s => s.date === today).reduce((a, s) => a + (s.calories || 0), 0);
+        }
+
+        // Daily energy balance: net intake = consumed − cardio burned, classified
+        // against maintenance (TDEE). Then checked against what the user's goal needs
+        // (surplus for muscle/strength, deficit for fat loss, ~maintenance for recomp).
+        // This is what lets the app warn "you wanted a surplus but the cardio put you
+        // in a deficit". BAND avoids flapping near the maintenance line.
+        function calcDailyBalance(u, consumed, burned) {
+            const maintenance = calcTDEE(u);
+            const net = Math.round(consumed - burned);
+            const diff = net - maintenance;            // + = surplus, − = deficit (vs maintenance)
+            const BAND = 100;
+            const status = diff > BAND ? 'surplus' : (diff < -BAND ? 'deficit' : 'maintenance');
+            const adj = { muscle: 400, fat_loss: -400, strength: 300, recomp: 0, endurance: 200 }[u.goal] || 0;
+            const goalWants = adj > 100 ? 'surplus' : (adj < -100 ? 'deficit' : 'maintenance');
+            const aligned = status === goalWants;
+            return { maintenance, consumed: Math.round(consumed), burned: Math.round(burned), net, diff, status, goalWants, aligned };
+        }
+
+        // Context-aware flash after logging cardio: if the burn knocks the user out of
+        // their goal's energy zone (and they've eaten today), warn instead of the plain
+        // kcal message.
+        function flashCardioResult(cals) {
+            const consumed = (typeof todayFoodEntries === 'function')
+                ? todayFoodEntries().reduce((a, e) => a + (e.kcal || 0), 0) : 0;
+            if (state.user && consumed > 0) {
+                const bal = calcDailyBalance(state.user, consumed, todayCardioBurned());
+                if (!bal.aligned) {
+                    flash('🔥 ' + cals + ' kcal · ⚠️ ' + t('bal_s_' + bal.status) + ' ' + (bal.diff >= 0 ? '+' : '') + bal.diff, 'var(--orange)');
+                    return;
+                }
+            }
+            flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
         }
 
         // Distribution % per meal per goal. Numbers sum to ~1.0 per goal.
@@ -6417,7 +6459,7 @@
                 };
                 if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
                 state.cardioSessions.unshift(sess);
-                saveCardio(); flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
+                saveCardio(); flashCardioResult(cals);
             }
             state.cardioTimer = 0; renderCardio();
         }
@@ -6438,7 +6480,7 @@
             if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
             state.cardioSessions.unshift(sess);
             saveCardio();
-            flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
+            flashCardioResult(cals);
             renderCardio();
         }
         function renderCardioTimer() {
@@ -10085,6 +10127,50 @@
                     }
                 });
             }
+
+            // ── Daily energy balance (accounts for cardio burned today) ──
+            const consumedToday = entries.reduce((a, e) => a + (e.kcal || 0), 0);
+            const burnedToday = todayCardioBurned();
+            if (state.user && (entries.length || burnedToday > 0)) {
+                const bal = calcDailyBalance(state.user, consumedToday, burnedToday);
+                const statusColor = bal.status === 'surplus' ? 'var(--blue)' : (bal.status === 'deficit' ? 'var(--orange)' : 'var(--accent)');
+
+                const balSec = h('div', { style: { marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)' } });
+                balSec.appendChild(h('p', { className: 'label', style: { marginBottom: '8px' } }, t('bal_title')));
+
+                const statsRow = h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '6px', marginBottom: '10px' } });
+                [
+                    { l: t('bal_consumed'), v: bal.consumed + '', c: 'var(--text)' },
+                    { l: t('bal_cardio'), v: (burnedToday > 0 ? '−' + burnedToday : '0'), c: 'var(--orange)' },
+                    { l: t('bal_net'), v: bal.net + '', c: 'var(--text)' },
+                    { l: t('bal_maint'), v: bal.maintenance + '', c: 'var(--text3)' }
+                ].forEach(s => {
+                    const cell = h('div', { style: { textAlign: 'center', flex: 1 } });
+                    cell.appendChild(h('div', { style: { fontSize: '15px', fontWeight: 800, color: s.c } }, s.v));
+                    cell.appendChild(h('div', { style: { fontSize: '9px', color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.05em', marginTop: '2px' } }, s.l));
+                    statsRow.appendChild(cell);
+                });
+                balSec.appendChild(statsRow);
+
+                // Status chip
+                const chip = h('div', { style: { display: 'inline-block', padding: '4px 12px', borderRadius: '999px', background: 'var(--sf2)', border: '1px solid ' + statusColor, marginBottom: '8px' } });
+                chip.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 800, color: statusColor } }, t('bal_s_' + bal.status) + ' ' + (bal.diff >= 0 ? '+' : '') + bal.diff + ' kcal'));
+                balSec.appendChild(chip);
+
+                // Goal-aware message
+                let msg, msgColor;
+                if (bal.aligned) {
+                    msg = t('bal_aligned'); msgColor = 'var(--accent)';
+                } else {
+                    const key = bal.goalWants === 'surplus' ? 'bal_warn_surplus' : (bal.goalWants === 'deficit' ? 'bal_warn_deficit' : 'bal_warn_maint');
+                    msg = t(key).replace('{s}', t('bal_s_' + bal.status).toLowerCase()).replace('{d}', (bal.diff >= 0 ? '+' : '') + bal.diff + ' kcal');
+                    msgColor = 'var(--orange)';
+                }
+                balSec.appendChild(h('p', { style: { fontSize: '12px', color: msgColor, lineHeight: '1.5', fontWeight: 600 } }, msg));
+
+                fc.appendChild(balSec);
+            }
+
             container.appendChild(fc);
         }
 
