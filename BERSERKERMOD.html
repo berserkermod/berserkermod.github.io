@@ -2014,6 +2014,7 @@
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
+                draft_title: "Sesión sin guardar", draft_msg: "Quedó una sesión de entrenamiento libre sin guardar ({ex} ejercicios · {sets} series). ¿Qué querés hacer?", draft_save: "💾 Guardar sesión", draft_continue: "▶ Seguir entrenando", draft_discard: "🗑 Eliminar", draft_discarded: "Sesión descartada",
                 cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD", cardio_cals_burned: "kcal quemadas",
                 cardio_manual_title: "AGREGAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Agregar", cardio_manual_hint: "¿Te olvidaste de iniciar el cronómetro? Cargá los minutos y calculamos las kcal.", cardio_manual_invalid: "Ingresá los minutos", cardio_other_name: "Nombre del deporte",
                 stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA",
@@ -2248,7 +2249,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
-                session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", session_merged: "✓ Added to today's session",
+                session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
                 cardio_manual_title: "ADD MANUALLY", cardio_manual_min: "Minutes", cardio_manual_add: "Add", cardio_manual_hint: "Forgot to start the timer? Enter the minutes and we'll calc the kcal.", cardio_manual_invalid: "Enter the minutes", cardio_other_name: "Sport name",
                 stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK",
@@ -2484,6 +2485,7 @@
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
+                draft_title: "Sessão não salva", draft_msg: "Ficou um treino livre não salvo ({ex} exercícios · {sets} séries). O que deseja fazer?", draft_save: "💾 Salvar sessão", draft_continue: "▶ Continuar treinando", draft_discard: "🗑 Descartar", draft_discarded: "Sessão descartada",
                 cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE", cardio_cals_burned: "kcal queimadas",
                 cardio_manual_title: "ADICIONAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Adicionar", cardio_manual_hint: "Esqueceu de iniciar o cronômetro? Informe os minutos e calculamos as kcal.", cardio_manual_invalid: "Informe os minutos", cardio_other_name: "Nome do esporte",
                 stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA",
@@ -3165,7 +3167,7 @@
             coachId: null, myStudents: [], viewMode: 'normal', alumnoData: null, alumnoEdits: [], alumnoLocalPlan: null, alumnoName: '',
             coachActiveRoutineId: null,
             tab: 'home', selDay: DAYS[0], selEx: null, unit: 'kg',
-            sessionSets: [], sessionStart: null,
+            sessionSets: [], sessionStart: null, sessionDate: null,
             exListOpen: false, exSearch: '',
             histFilter: 'TODOS', histExpanded: null,
             statsDay: DAYS[0], statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
@@ -3200,6 +3202,59 @@
             try { state.customVideos = JSON.parse(localStorage.getItem('bm-custom-yt-videos') || '{}'); } catch { state.customVideos = {}; }
             try { state.customGifs = JSON.parse(localStorage.getItem('bm-custom-gifs') || '{}'); } catch { state.customGifs = {}; }
             loadWatchPref();
+            // Restore an in-progress free-training session so it survives reloads /
+            // the PWA being killed by the OS. The resume prompt (showTrainDraftPrompt)
+            // then lets the user save/continue/discard it.
+            try {
+                const draft = loadTrainDraft();
+                if (draft && Array.isArray(draft.sessionSets) && draft.sessionSets.length) {
+                    state.sessionSets = draft.sessionSets;
+                    state.sessionStart = draft.sessionStart || null;
+                    state.sessionDate = draft.sessionDate || todayStr();
+                    if (draft.selDay) state.selDay = draft.selDay;
+                }
+            } catch { }
+        }
+
+        // In-progress free-training session draft (survives reload / app kill).
+        function saveTrainDraft() {
+            try {
+                if (state.sessionSets && state.sessionSets.length) {
+                    localStorage.setItem('bm-train-draft', JSON.stringify({
+                        sessionSets: state.sessionSets,
+                        sessionStart: state.sessionStart,
+                        sessionDate: state.sessionDate || todayStr(),
+                        selDay: state.selDay
+                    }));
+                } else {
+                    localStorage.removeItem('bm-train-draft');
+                }
+            } catch { }
+        }
+        function loadTrainDraft() {
+            try { const r = localStorage.getItem('bm-train-draft'); return r ? JSON.parse(r) : null; } catch { return null; }
+        }
+        function clearTrainDraft() { try { localStorage.removeItem('bm-train-draft'); } catch { } }
+
+        // On app open, if there's an unsaved free-training session, ask the user what
+        // to do: save it, keep training, or discard. The draft is already restored
+        // into state by load(), so "keep training" just drops them back into it.
+        function showTrainDraftPrompt() {
+            const draft = loadTrainDraft();
+            if (!draft || !Array.isArray(draft.sessionSets) || !draft.sessionSets.length) return;
+            const exCount = draft.sessionSets.length;
+            const setCount = draft.sessionSets.reduce((a, e) => a + ((e.sets && e.sets.length) || 0), 0);
+            let done = false;
+            const finish = (cb) => { if (done) return; done = true; ov.remove(); if (cb) cb(); };
+            const ov = h('div', { style: { position: 'fixed', inset: '0', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' } });
+            const card = h('div', { style: { background: 'var(--sf1)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%' } });
+            card.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '10px' } }, '💪 ' + t('draft_title')));
+            card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '20px' } }, t('draft_msg').replace('{ex}', exCount).replace('{sets}', setCount)));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => finish(() => { finishSession(); }) }, t('draft_save')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' }, onclick: () => finish(() => { switchTab('train'); }) }, t('draft_continue')));
+            card.appendChild(h('button', { className: 'btn btn-danger btn-full', onclick: () => finish(() => { state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; clearTrainDraft(); flash(t('draft_discarded'), 'var(--text3)'); if (state.tab === 'train') renderTrain(); }) }, t('draft_discard')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
         }
         function saveWatchPref() {
             try {
@@ -5919,6 +5974,7 @@
                                 const ei = state.sessionSets.findIndex(e => e.exercise === ex.exercise);
                                 state.sessionSets[ei].sets.splice(i, 1);
                                 if (!state.sessionSets[ei].sets.length) state.sessionSets.splice(ei, 1);
+                                saveTrainDraft();
                                 renderTrain();
                             }
                         }, '×'));
@@ -5946,20 +6002,21 @@
             const kg = parseFloat($('inp-kg').value), reps = parseInt($('inp-reps').value), rir = parseInt($('inp-rir').value) || 0;
             if (!state.selEx) { flash(t('train_err_ex'), 'var(--red)'); return; }
             if (!kg) { $('inp-kg').focus(); return; } if (!reps) { $('inp-reps').focus(); return; }
-            if (!state.sessionStart) state.sessionStart = Date.now();
+            if (!state.sessionStart) { state.sessionStart = Date.now(); state.sessionDate = todayStr(); }
             const set = { kg, unit: state.unit, reps, rir };
             const idx = state.sessionSets.findIndex(e => e.exercise === state.selEx);
             if (idx >= 0) state.sessionSets[idx].sets.push(set);
             else state.sessionSets.push({ exercise: state.selEx, sets: [set] });
             $('inp-kg').value = ''; $('inp-reps').value = ''; $('inp-rir').value = '0';
+            saveTrainDraft();
             startRestTimer(); renderTrain();
         }
 
         function finishSession() {
             if (!state.sessionSets.length) return;
             const dur = state.sessionStart ? Math.round((Date.now() - state.sessionStart) / 60000) : 0;
-            const sess = { id: Date.now(), date: todayStr(), day: state.selDay, duration: dur, exercises: JSON.parse(JSON.stringify(state.sessionSets)) };
-            state.sessionSets = []; state.sessionStart = null; stopRestTimer();
+            const sess = { id: Date.now(), date: state.sessionDate || todayStr(), day: state.selDay, duration: dur, exercises: JSON.parse(JSON.stringify(state.sessionSets)) };
+            state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; stopRestTimer(); clearTrainDraft();
             saveWorkoutSession(sess, (saved, merged) => {
                 if (merged) {
                     flash(t('session_merged'), 'var(--accent)');
@@ -11604,6 +11661,8 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             bootAlumnoMode();
         } else if (state.user) {
             $('onboarding').style.display = 'none'; $('app').style.display = 'block'; initApp();
+            // If a free-training session was left unsaved, remind the user on return.
+            setTimeout(() => { try { showTrainDraftPrompt(); } catch { } }, 600);
         } else {
             renderOnboarding();
         }
