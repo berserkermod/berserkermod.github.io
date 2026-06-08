@@ -1827,6 +1827,8 @@
                 <button class="portion-btn" onclick="adjustPortion(10)">+</button>
             </div>
             <div class="portion-presets" id="portion-presets"></div>
+            <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin:4px 0 6px" id="portion-meal-label">¿A QUÉ COMIDA?</p>
+            <div class="portion-presets" id="portion-meal-sel"></div>
             <div class="portion-macros">
                 <div class="portion-macros-kcal"><span id="portion-kcal">0</span><small>kcal</small></div>
                 <div class="portion-macros-row">
@@ -2011,7 +2013,9 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
-                cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD AUTOMÁTICA", cardio_cals_burned: "kcal quemadas",
+                session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
+                cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD", cardio_cals_burned: "kcal quemadas",
+                cardio_manual_title: "AGREGAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Agregar", cardio_manual_hint: "¿Te olvidaste de iniciar el cronómetro? Cargá los minutos y calculamos las kcal.", cardio_manual_invalid: "Ingresá los minutos", cardio_other_name: "Nombre del deporte",
                 stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA",
                 stats_series_group: "SERIES POR GRUPO MUSCULAR", stats_prog: "PROGRESO POR EJERCICIO", stats_records: "RÉCORDS PERSONALES", stats_max: "MÁX", stats_vol: "VOL",
                 stats_hist: "HISTORIAL DE ENTRENAMIENTO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sesión", stats_del_sess: "¿Eliminar esta sesión permanentemente?", stats_sess_upd: "✅ Sesión actualizada", stats_sess_del: "🗑️ Sesión eliminada",
@@ -2068,7 +2072,7 @@
                 prof_scanner: "📷 Escáner de Ejercicios", prof_scanner_sub: "Identificá ejercicios con la cámara",
                 prof_scanner_soon: "Próximamente en Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para pruebas",
-                food_title: "ALIMENTACIÓN HOY", food_add: "+ Agregar alimento", food_empty: "Sin registros hoy",
+                food_title: "ALIMENTACIÓN HOY", food_add: "+ Agregar alimento", food_empty: "Sin registros hoy", food_meal: "Comida", food_which_meal: "¿A QUÉ COMIDA?", food_meal_empty: "Sin alimentos",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Apuntá al código de barras", food_scanner_manual: "✏️ Ingresar manualmente",
@@ -2243,7 +2247,9 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
-                cardio_sel_sport: "SELECT SPORT", cardio_intensity: "AUTOMATIC INTENSITY", cardio_cals_burned: "kcal burned",
+                session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", session_merged: "✓ Added to today's session",
+                cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
+                cardio_manual_title: "ADD MANUALLY", cardio_manual_min: "Minutes", cardio_manual_add: "Add", cardio_manual_hint: "Forgot to start the timer? Enter the minutes and we'll calc the kcal.", cardio_manual_invalid: "Enter the minutes", cardio_other_name: "Sport name",
                 stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK",
                 stats_series_group: "SETS BY MUSCLE GROUP", stats_prog: "PROGRESS BY EXERCISE", stats_records: "PERSONAL RECORDS", stats_max: "MAX", stats_vol: "VOL",
                 stats_hist: "TRAINING HISTORY", stats_edit: "✏️ Edit", stats_edit_sess: "Edit Session", stats_del_sess: "Delete this session permanently?", stats_sess_upd: "✅ Session updated", stats_sess_del: "🗑️ Session deleted",
@@ -2300,7 +2306,7 @@
                 prof_scanner: "📷 Exercise Scanner", prof_scanner_sub: "Identify exercises with your camera",
                 prof_scanner_soon: "Coming soon in Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simulate tier for testing",
-                food_title: "TODAY'S NUTRITION", food_add: "+ Add food", food_empty: "No entries today",
+                food_title: "TODAY'S NUTRITION", food_add: "+ Add food", food_empty: "No entries today", food_meal: "Meal", food_which_meal: "WHICH MEAL?", food_meal_empty: "No foods",
                 food_scan: "📷 Scan barcode", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal logged", food_of_target: "of",
                 food_scanner_hint: "Point at barcode", food_scanner_manual: "✏️ Enter manually",
@@ -2475,7 +2481,9 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
-                cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE AUTOMÁTICA", cardio_cals_burned: "kcal queimadas",
+                session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
+                cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE", cardio_cals_burned: "kcal queimadas",
+                cardio_manual_title: "ADICIONAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Adicionar", cardio_manual_hint: "Esqueceu de iniciar o cronômetro? Informe os minutos e calculamos as kcal.", cardio_manual_invalid: "Informe os minutos", cardio_other_name: "Nome do esporte",
                 stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA",
                 stats_series_group: "SÉRIES POR GRUPO MUSCULAR", stats_prog: "PROGRESSO POR EXERCÍCIO", stats_records: "RECORDES PESSOAIS", stats_max: "MÁX", stats_vol: "VOL",
                 stats_hist: "HISTÓRICO DE TREINO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sessão", stats_del_sess: "Excluir esta sessão permanentemente?", stats_sess_upd: "✅ Sessão atualizada", stats_sess_del: "🗑️ Sessão excluída",
@@ -2532,7 +2540,7 @@
                 prof_scanner: "📷 Scanner de Exercícios", prof_scanner_sub: "Identifique exercícios com a câmera",
                 prof_scanner_soon: "Em breve no Premium",
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para testes",
-                food_title: "ALIMENTAÇÃO HOJE", food_add: "+ Adicionar alimento", food_empty: "Sem registros hoje",
+                food_title: "ALIMENTAÇÃO HOJE", food_add: "+ Adicionar alimento", food_empty: "Sem registros hoje", food_meal: "Refeição", food_which_meal: "QUAL REFEIÇÃO?", food_meal_empty: "Sem alimentos",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Aponte para o código de barras", food_scanner_manual: "✏️ Inserir manualmente",
@@ -2698,6 +2706,8 @@
             "BRAZOS": ["Curl Bíceps Barra", "Curl Mancuernas", "Curl Martillo", "Curl Predicador", "Press Francés", "Pushdown Cuerda", "Extensión Overhead", "Fondos Banco"],
             "FULL BODY": ["Sentadilla", "Press Banca", "Peso Muerto", "Press Militar", "Dominadas", "Remo Barra", "Hip Thrust", "Curl Bíceps", "Pushdown"]
         };
+        // MET = costo metabólico base del deporte. kcal = MET × factor_intensidad × peso(kg) × horas.
+        // Los MET están tomados del Compendium of Physical Activities (valores de intensidad media).
         const SPORTS = [
             { id: "running", name: "Running", met: 9.8, icon: "🏃" },
             { id: "cycling", name: "Ciclismo", met: 7.5, icon: "🚴" },
@@ -2710,7 +2720,22 @@
             { id: "basketball", name: "Basketball", met: 8.0, icon: "🏀" },
             { id: "rowing", name: "Remo", met: 7.0, icon: "🚣" },
             { id: "tennis", name: "Tenis", met: 7.3, icon: "🎾" },
-            { id: "martial", name: "Artes Marciales", met: 10.3, icon: "🥋" }
+            { id: "martial", name: "Artes Marciales", met: 10.3, icon: "🥋" },
+            { id: "padel", name: "Pádel", met: 7.0, icon: "🎾" },
+            { id: "spinning", name: "Spinning", met: 8.5, icon: "🚲" },
+            { id: "elliptical", name: "Elíptica", met: 5.0, icon: "🌀" },
+            { id: "stairs", name: "Escaladora", met: 9.0, icon: "🪜" },
+            { id: "crossfit", name: "CrossFit", met: 8.0, icon: "🏋️" },
+            { id: "functional", name: "Funcional", met: 6.0, icon: "💪" },
+            { id: "dancing", name: "Baile", met: 5.5, icon: "💃" },
+            { id: "hiking", name: "Senderismo", met: 6.0, icon: "🥾" },
+            { id: "volleyball", name: "Vóley", met: 4.0, icon: "🏐" },
+            { id: "skating", name: "Patín", met: 7.0, icon: "🛼" },
+            { id: "climbing", name: "Escalada", met: 8.0, icon: "🧗" },
+            { id: "surfing", name: "Surf", met: 5.0, icon: "🏄" },
+            { id: "yoga", name: "Yoga", met: 3.0, icon: "🧘" },
+            { id: "pilates", name: "Pilates", met: 3.5, icon: "🤸" },
+            { id: "other", name: "Otro", met: 6.0, icon: "➕" }
         ];
 
         // Unified exercise catalog (strength from EX_DB + cardio from SPORTS).
@@ -3141,7 +3166,7 @@
             exListOpen: false, exSearch: '',
             histFilter: 'TODOS', histExpanded: null,
             statsDay: DAYS[0], statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
-            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioIntensity: 1,
+            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioIntensity: 1, cardioOtherName: '',
             restTimer: 0, restInterval: null,
             editSessId: null, editData: null,
             activeRoutineIdx: 0, routineSession: {},
@@ -5378,6 +5403,47 @@
             v.appendChild(h('button', { className: 'btn btn-primary btn-full fade-in', style: { marginTop: '8px', marginBottom: '20px' }, onclick: finishRoutineSession }, t('routines_finish')));
         }
 
+        // ── Same-day session merge ──────────────────────────────────────
+        // If the user finishes a workout and already has a session logged today,
+        // offer to merge (sum the exercises into the existing session) or keep it
+        // separate — covers the case of doing the routine then adding extra work.
+        function mergeIntoSession(existing, incoming) {
+            incoming.exercises.forEach(incEx => {
+                const match = existing.exercises.find(e => e.exercise === incEx.exercise);
+                if (match) match.sets = match.sets.concat(incEx.sets);
+                else existing.exercises.push(incEx);
+            });
+            existing.duration = (existing.duration || 0) + (incoming.duration || 0);
+        }
+
+        function showSessionMergePrompt(onMerge, onSeparate) {
+            let done = false;
+            const finish = (cb) => { if (done) return; done = true; ov.remove(); if (cb) cb(); };
+            const ov = h('div', { style: { position: 'fixed', inset: '0', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' } });
+            const card = h('div', { style: { background: 'var(--sf1)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%' } });
+            card.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '10px' } }, '🔁 ' + t('session_merge_title')));
+            card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '20px' } }, t('session_merge_msg')));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => finish(onMerge) }, t('session_merge_yes')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: () => finish(onSeparate) }, t('session_merge_no')));
+            ov.appendChild(card);
+            ov.addEventListener('click', e => { if (e.target === ov) finish(onSeparate); });   // backdrop = keep separate (safe default)
+            document.body.appendChild(ov);
+        }
+
+        // Persist a finished workout. If another session exists today, prompt to merge.
+        // afterSave(savedSession, wasMerged) runs once the choice is made (sync if no conflict).
+        function saveWorkoutSession(sess, afterSave) {
+            const existing = state.sessions.find(s => s.date === sess.date);
+            if (existing) {
+                showSessionMergePrompt(
+                    () => { mergeIntoSession(existing, sess); saveSessions(); afterSave && afterSave(existing, true); },
+                    () => { state.sessions.unshift(sess); saveSessions(); afterSave && afterSave(sess, false); }
+                );
+            } else {
+                state.sessions.unshift(sess); saveSessions(); afterSave && afterSave(sess, false);
+            }
+        }
+
         function finishRoutineSession() {
             if (!state.routineSession.date) return;
             const rs = state.routineSession;
@@ -5407,13 +5473,12 @@
                 exercises: exData,
                 duration: 60
             };
-            state.sessions.unshift(sess);
-
-            saveSessions();
-            flash(t('routines_saved_ok'));
             state.routineSession = {};
             state.activeRoutineIdx++;
-            openShareModal(sess);
+            saveWorkoutSession(sess, (saved, merged) => {
+                flash(merged ? t('session_merged') : t('routines_saved_ok'));
+                openShareModal(saved);
+            });
         }
 
         // ─────────────────────────────────────────
@@ -5852,13 +5917,17 @@
             if (!state.sessionSets.length) return;
             const dur = state.sessionStart ? Math.round((Date.now() - state.sessionStart) / 60000) : 0;
             const sess = { id: Date.now(), date: todayStr(), day: state.selDay, duration: dur, exercises: JSON.parse(JSON.stringify(state.sessionSets)) };
-            state.sessions.unshift(sess); saveSessions();
             state.sessionSets = []; state.sessionStart = null; stopRestTimer();
-            // Check for PRs
-            const prs = checkPRs(sess);
-            if (prs.length) flash(t('train_pr') + ' ' + prs[0], 'var(--orange)');
-            else flash(t('train_sess_saved') + ' · ' + dur + 'min', 'var(--accent)');
-            openShareModal(sess);
+            saveWorkoutSession(sess, (saved, merged) => {
+                if (merged) {
+                    flash(t('session_merged'), 'var(--accent)');
+                } else {
+                    const prs = checkPRs(sess);
+                    if (prs.length) flash(t('train_pr') + ' ' + prs[0], 'var(--orange)');
+                    else flash(t('train_sess_saved') + ' · ' + dur + 'min', 'var(--accent)');
+                }
+                openShareModal(saved);
+            });
         }
 
         function getPrevSets(exName) {
@@ -6239,6 +6308,17 @@
             if (state.cardioSport) {
                 const sport = SPORTS.find(s => s.id === state.cardioSport);
                 const tc = h('div', { className: 'card card-accent fade-in' });
+
+                // Custom name input for the "Otro" generic sport
+                if (state.cardioSport === 'other') {
+                    const oni = h('input', {
+                        className: 'input', placeholder: t('cardio_other_name'), value: state.cardioOtherName || '',
+                        style: { marginBottom: '12px', textAlign: 'center', fontWeight: 700 }
+                    });
+                    oni.oninput = e => { state.cardioOtherName = e.target.value; };
+                    tc.appendChild(oni);
+                }
+
                 const mins = Math.floor(state.cardioTimer / 60), secs = state.cardioTimer % 60;
                 tc.appendChild(h('p', { className: 'timer-display' },
                     String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0')));
@@ -6256,17 +6336,35 @@
                 }
                 tc.appendChild(controls);
 
-                // Intensity
+                // Intensity (clickable — affects the kcal estimate)
                 tc.appendChild(h('p', { className: 'label', style: { marginTop: '16px' } }, t('cardio_intensity')));
                 const intRow = h('div', { className: 'pills', style: { justifyContent: 'center' } });
                 const intensities = [{ label: t('cardio_low'), val: 0.8 }, { label: t('cardio_med'), val: 1.0 }, { label: t('cardio_high'), val: 1.3 }];
                 intensities.forEach(({ label, val }) => {
-                    intRow.appendChild(h('div', {
+                    intRow.appendChild(h('button', {
                         className: 'pill' + (state.cardioIntensity === val ? ' active' : ''),
-                        style: { fontSize: '11px', opacity: state.cardioIntensity === val ? '1' : '0.4', borderStyle: state.cardioIntensity === val ? 'solid' : 'dashed' }
+                        style: { fontSize: '11px', opacity: state.cardioIntensity === val ? '1' : '0.5', borderStyle: state.cardioIntensity === val ? 'solid' : 'dashed' },
+                        onclick: () => { state.cardioIntensity = val; renderCardio(); }
                     }, label));
                 });
                 tc.appendChild(intRow);
+
+                // Manual entry — for when the user forgot to start the timer
+                tc.appendChild(h('p', { className: 'label', style: { marginTop: '18px' } }, t('cardio_manual_title')));
+                const manualRow = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } });
+                const minInp = h('input', {
+                    id: 'cardio-manual-min', className: 'input', type: 'number', inputmode: 'numeric',
+                    placeholder: t('cardio_manual_min'), style: { flex: 1, textAlign: 'center', fontWeight: 700 }
+                });
+                minInp.addEventListener('keydown', e => { if (e.key === 'Enter') addManualCardio(); });
+                manualRow.appendChild(minInp);
+                manualRow.appendChild(h('button', {
+                    className: 'btn btn-secondary btn-sm', style: { whiteSpace: 'nowrap', padding: '10px 14px' },
+                    onclick: addManualCardio
+                }, '+ ' + t('cardio_manual_add')));
+                tc.appendChild(manualRow);
+                tc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '6px', lineHeight: 1.4 } }, t('cardio_manual_hint')));
+
                 v.appendChild(tc);
             }
 
@@ -6286,7 +6384,7 @@
                     const left = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } });
                     left.appendChild(h('span', { style: { fontSize: '20px' } }, sp.icon));
                     const info = h('div', {});
-                    info.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 700 } }, sp.name));
+                    info.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 700 } }, (s.customName || sp.name) + (s.manual ? ' ✍️' : '')));
                     info.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, s.date + ' · ' + Math.floor(s.duration / 60) + t('train_min')));
                     left.appendChild(info); item.appendChild(left);
                     item.appendChild(h('span', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--orange)' } }, s.calories + ' kcal'));
@@ -6313,13 +6411,35 @@
             if (state.cardioTimer > 0) {
                 const sport = SPORTS.find(s => s.id === state.cardioSport);
                 const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (state.cardioTimer / 3600));
-                state.cardioSessions.unshift({
+                const sess = {
                     id: Date.now(), date: todayStr(), sport: state.cardioSport,
                     duration: state.cardioTimer, calories: cals
-                });
+                };
+                if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
+                state.cardioSessions.unshift(sess);
                 saveCardio(); flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
             }
             state.cardioTimer = 0; renderCardio();
+        }
+
+        // Manual cardio entry — computes kcal from sport MET × intensity × weight × minutes.
+        // For when the user forgot to start the chronometer. Counts in stats like any session.
+        function addManualCardio() {
+            if (!state.cardioSport || !state.user) return;
+            const inp = $('cardio-manual-min');
+            const minutes = parseFloat(inp && inp.value) || 0;
+            if (minutes <= 0) { flash(t('cardio_manual_invalid'), 'var(--orange)'); return; }
+            const sport = SPORTS.find(s => s.id === state.cardioSport);
+            const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (minutes / 60));
+            const sess = {
+                id: Date.now(), date: todayStr(), sport: state.cardioSport,
+                duration: Math.round(minutes * 60), calories: cals, manual: true
+            };
+            if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
+            state.cardioSessions.unshift(sess);
+            saveCardio();
+            flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
+            renderCardio();
         }
         function renderCardioTimer() {
             const tc = document.querySelector('.timer-display');
@@ -9936,15 +10056,34 @@
                 fc.appendChild(bar);
                 fc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginBottom: '8px' } }, totalKcal + ' ' + t('food_total_kcal') + ' · ' + t('food_of_target') + ' ' + target + ' kcal'));
 
-                // Entry list
-                entries.slice(0, 5).forEach(e => {
-                    const row = h('div', { className: 'food-entry' });
-                    row.appendChild(h('span', { className: 'food-entry-name' }, e.name));
-                    row.appendChild(h('span', { className: 'food-entry-kcal' }, (e.kcal || 0) + ' kcal'));
-                    row.appendChild(h('button', { className: 'food-entry-del', onclick: () => { state.foodLog = state.foodLog.filter(x => x.id !== e.id); saveFoodLog(); renderHome(); } }, '✕'));
-                    fc.appendChild(row);
+                // Entries grouped by meal (Comida 1-4). Legacy entries with no meal → Comida 1.
+                [1, 2, 3, 4].forEach(mealNum => {
+                    const mealEntries = entries.filter(e => (e.meal || 1) === mealNum);
+                    const mealKcal = mealEntries.reduce((a, e) => a + (e.kcal || 0), 0);
+
+                    const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', marginBottom: '4px' } });
+                    head.appendChild(h('p', { className: 'label', style: { marginBottom: 0, color: 'var(--accent)' } }, t('food_meal') + ' ' + mealNum));
+                    const headRight = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } });
+                    if (mealKcal > 0) headRight.appendChild(h('span', { style: { fontSize: '11px', fontWeight: 700, color: 'var(--orange)' } }, mealKcal + ' kcal'));
+                    headRight.appendChild(h('button', {
+                        style: { background: 'rgba(0,212,170,.1)', border: '1px solid rgba(0,212,170,.25)', color: 'var(--accent)', fontSize: '14px', fontWeight: 800, width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer', lineHeight: 1 },
+                        onclick: () => { _foodModal.meal = mealNum; openAddFoodModal(); }
+                    }, '+'));
+                    head.appendChild(headRight);
+                    fc.appendChild(head);
+
+                    if (!mealEntries.length) {
+                        fc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', padding: '2px 0 4px' } }, t('food_meal_empty')));
+                    } else {
+                        mealEntries.forEach(e => {
+                            const row = h('div', { className: 'food-entry' });
+                            row.appendChild(h('span', { className: 'food-entry-name' }, e.name));
+                            row.appendChild(h('span', { className: 'food-entry-kcal' }, (e.kcal || 0) + ' kcal'));
+                            row.appendChild(h('button', { className: 'food-entry-del', onclick: () => { state.foodLog = state.foodLog.filter(x => x.id !== e.id); saveFoodLog(); renderHome(); } }, '✕'));
+                            fc.appendChild(row);
+                        });
+                    }
                 });
-                if (entries.length > 5) fc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', textAlign: 'center', padding: '6px 0' } }, '+' + (entries.length - 5) + ' más'));
             }
             container.appendChild(fc);
         }
@@ -9952,10 +10091,12 @@
         // ─────────────────────────────────────────
         // FOOD ADD MODAL v2 — tabs (saludables, buscar, mis alimentos, manual)
         // ─────────────────────────────────────────
-        let _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: null };
+        let _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: null, meal: 1 };
+        let _portionMeal = 1;   // which "Comida 1-4" the portion modal will assign the food to
 
         function openAddFoodModal(prefill) {
-            _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: prefill || null };
+            const keepMeal = _foodModal.meal || 1;   // preserve the meal chosen via the "+" per-section button
+            _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: prefill || null, meal: keepMeal };
             // If a prefill (eg from barcode scanner) is provided, go straight to portion modal
             if (prefill && prefill.name) {
                 openPortionModal({
@@ -10244,6 +10385,23 @@
                 } }, g + 'g');
                 presetsEl.appendChild(btn);
             });
+            // Meal selector (Comida 1-4) — defaults to whatever section the user added from
+            _portionMeal = _foodModal.meal || 1;
+            const mealLabelEl = $('portion-meal-label');
+            if (mealLabelEl) mealLabelEl.textContent = t('food_which_meal');
+            const mealSelEl = $('portion-meal-sel');
+            if (mealSelEl) {
+                mealSelEl.innerHTML = '';
+                [1, 2, 3, 4].forEach(n => {
+                    const btn = h('button', { className: 'portion-preset' + (n === _portionMeal ? ' active' : ''), onclick: () => {
+                        _portionMeal = n;
+                        [...mealSelEl.children].forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    } }, t('food_meal') + ' ' + n);
+                    mealSelEl.appendChild(btn);
+                });
+            }
+
             recalcPortionMacros();
             $('portion-modal').classList.add('show');
         }
@@ -10280,6 +10438,7 @@
             const entry = {
                 id: Date.now() + '', date: todayStr(),
                 name: foodName + ' · ' + g + 'g',
+                meal: _portionMeal || 1,
                 kcal: Math.round((_portionFood.kcal_100g || 0) * m),
                 protein: +((_portionFood.protein_100g || 0) * m).toFixed(1),
                 carbs: +((_portionFood.carbs_100g || 0) * m).toFixed(1),
