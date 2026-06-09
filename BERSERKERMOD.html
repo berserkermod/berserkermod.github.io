@@ -3637,21 +3637,21 @@
                 const card = h('div', { className: 'meal-card' });
                 const head = h('div', { className: 'meal-head' });
                 head.appendChild(h('span', { className: 'meal-name' }, meal.icon + ' ' + meal.slot_name));
-                head.appendChild(h('span', { className: 'meal-kcal' }, meal.actual.kcal + ' kcal'));
+                head.appendChild(h('span', { className: 'meal-kcal' }, Math.round(meal.actual.kcal) + ' kcal'));
                 card.appendChild(head);
 
                 const macroRow = h('div', { className: 'meal-macros' });
-                macroRow.appendChild(h('span', {}, pLabel + ' ', h('b', {}, meal.actual.p + 'g')));
-                macroRow.appendChild(h('span', {}, cLabel + ' ', h('b', {}, meal.actual.c + 'g')));
-                macroRow.appendChild(h('span', {}, fLabel + ' ', h('b', {}, meal.actual.f + 'g')));
+                macroRow.appendChild(h('span', {}, pLabel + ' ', h('b', {}, Math.round(meal.actual.p) + 'g')));
+                macroRow.appendChild(h('span', {}, cLabel + ' ', h('b', {}, Math.round(meal.actual.c) + 'g')));
+                macroRow.appendChild(h('span', {}, fLabel + ' ', h('b', {}, Math.round(meal.actual.f) + 'g')));
                 card.appendChild(macroRow);
 
                 // Items list (each row clickable → swap)
                 meal.items.forEach((item, iIdx) => {
                     const row = h('div', { className: 'meal-item-row', onclick: () => openSwapFoodModal(dayIdx, mIdx, iIdx) });
                     row.appendChild(h('span', { className: 'meal-item-name' }, item.name));
-                    row.appendChild(h('span', { className: 'meal-item-grams' }, item.grams + 'g'));
-                    row.appendChild(h('span', { className: 'meal-item-kcal' }, item.kcal + ' kcal'));
+                    row.appendChild(h('span', { className: 'meal-item-grams' }, Math.round(item.grams) + 'g'));
+                    row.appendChild(h('span', { className: 'meal-item-kcal' }, Math.round(item.kcal) + ' kcal'));
                     row.appendChild(h('span', { className: 'meal-item-swap' }, '↻'));
                     card.appendChild(row);
                 });
@@ -3669,12 +3669,12 @@
             const totalCard = h('div', { className: 'meal-card', style: { borderLeftColor: 'var(--blue)', background: 'rgba(116,185,255,.08)' } });
             totalCard.appendChild(h('div', { className: 'meal-head' },
                 h('span', { className: 'meal-name', style: { color: 'var(--blue)' } }, '📊 ' + t('nutri_day_total')),
-                h('span', { className: 'meal-kcal', style: { color: 'var(--blue)' } }, total.kcal + ' / ' + target.calories + ' kcal')
+                h('span', { className: 'meal-kcal', style: { color: 'var(--blue)' } }, Math.round(total.kcal) + ' / ' + target.calories + ' kcal')
             ));
             const tMacros = h('div', { className: 'meal-macros' });
-            tMacros.appendChild(h('span', {}, pLabel + ' ', h('b', {}, total.p + 'g / ' + target.protein + 'g')));
-            tMacros.appendChild(h('span', {}, cLabel + ' ', h('b', {}, total.c + 'g / ' + target.carbs + 'g')));
-            tMacros.appendChild(h('span', {}, fLabel + ' ', h('b', {}, total.f + 'g / ' + target.fat + 'g')));
+            tMacros.appendChild(h('span', {}, pLabel + ' ', h('b', {}, Math.round(total.p) + 'g / ' + target.protein + 'g')));
+            tMacros.appendChild(h('span', {}, cLabel + ' ', h('b', {}, Math.round(total.c) + 'g / ' + target.carbs + 'g')));
+            tMacros.appendChild(h('span', {}, fLabel + ' ', h('b', {}, Math.round(total.f) + 'g / ' + target.fat + 'g')));
             totalCard.appendChild(tMacros);
             container.appendChild(totalCard);
         }
