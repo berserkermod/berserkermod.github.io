@@ -3376,6 +3376,21 @@
             return t(map[goal] || 'nutri_strategy_muscle');
         }
 
+        // Display a portion in its natural unit: countable foods (eggs) as units,
+        // liquids as ml, everything else as grams. Macros are always computed from
+        // grams — this only changes how the portion reads to the user.
+        function formatPortion(grams, unit) {
+            if (unit && unit.kind === 'count') {
+                const n = Math.max(1, Math.round(grams / (unit.g || 50)));
+                const lbl = n === 1 ? (unit.label || 'u') : (unit.labelP || unit.label || 'u');
+                return n + ' ' + lbl;
+            }
+            if (unit && unit.kind === 'ml') {
+                return Math.round(grams / (unit.density || 1)) + ' ml';
+            }
+            return Math.round(grams) + ' g';
+        }
+
         // Total kcal burned in cardio today (counts toward the daily energy balance).
         function todayCardioBurned() {
             const today = todayStr();
@@ -3434,8 +3449,8 @@
             protein: [
                 { id: 'chicken_breast', name: 'Pollo pechuga', kcal: 165, p: 31, c: 0,    f: 3.6, tip: 'Plancha, horno o hervido sin piel' },
                 { id: 'turkey_breast',  name: 'Pavo pechuga',  kcal: 135, p: 30, c: 0,    f: 1,   tip: 'Más magro que el pollo' },
-                { id: 'eggs',           name: 'Huevos enteros',kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g' },
-                { id: 'egg_whites',     name: 'Claras de huevo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura' },
+                { id: 'eggs',           name: 'Huevos enteros',kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
+                { id: 'egg_whites',     name: 'Claras de huevo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
                 { id: 'lean_beef',      name: 'Bife magro',    kcal: 250, p: 26, c: 0,    f: 15,  tip: 'Cuadril, peceto, lomo · sin grasa visible' },
                 { id: 'salmon',         name: 'Salmón',        kcal: 208, p: 20, c: 0,    f: 13,  tip: 'Omega-3. Plancha o horno' },
                 { id: 'tuna_water',     name: 'Atún en agua',  kcal: 116, p: 26, c: 0,    f: 1,   tip: 'Listo para ensaladas o snack' },
@@ -3475,7 +3490,7 @@
                 { id: 'asparagus', name: 'Espárragos',  kcal: 20, p: 2.2, c: 3.9, f: 0.1, tip: 'Plancha o al vapor' }
             ],
             fat: [
-                { id: 'olive_oil', name: 'Aceite de oliva', kcal: 884, p: 0,  c: 0,  f: 100, tip: '1 cucharada ≈ 10g · usar crudo' },
+                { id: 'olive_oil', name: 'Aceite de oliva', kcal: 884, p: 0,  c: 0,  f: 100, tip: '1 cucharada ≈ 10g · usar crudo', unit: { kind: 'ml', density: 0.91 } },
                 { id: 'avocado',   name: 'Palta',           kcal: 160, p: 2,  c: 9,  f: 15,  tip: '1/2 palta ≈ 75g' },
                 { id: 'almonds',   name: 'Almendras',       kcal: 579, p: 21, c: 22, f: 50,  tip: 'Un puñado ≈ 25g · 23 unidades' },
                 { id: 'walnuts',   name: 'Nueces',          kcal: 654, p: 15, c: 14, f: 65,  tip: 'Omega-3 vegetal · 25g = puñado' },
@@ -3485,6 +3500,11 @@
                 { id: 'dark_choc', name: 'Chocolate 70%',   kcal: 598, p: 8,  c: 46, f: 43,  tip: '1 cuadradito ≈ 10g · postre saludable' }
             ]
         };
+
+        // id → unit lookup, so even plans generated before the unit metadata existed
+        // still render eggs as units / liquids as ml (no regeneration needed).
+        const _FOOD_UNIT_BY_ID = {};
+        Object.values(FOOD_POOL).forEach(arr => arr.forEach(f => { if (f.unit) _FOOD_UNIT_BY_ID[f.id] = f.unit; }));
 
         // Per meal-slot: categories included + kcal share per category.
         // Variety comes from random food selection per day (not multiple templates).
@@ -3557,7 +3577,7 @@
 
                 const factor = grams / 100;
                 items.push({
-                    id: food.id, name: food.name, grams,
+                    id: food.id, name: food.name, grams, unit: food.unit,
                     kcal: Math.round(food.kcal * factor),
                     p: Math.round(food.p * factor * 10) / 10,
                     c: Math.round(food.c * factor * 10) / 10,
@@ -3650,7 +3670,7 @@
                 meal.items.forEach((item, iIdx) => {
                     const row = h('div', { className: 'meal-item-row', onclick: () => openSwapFoodModal(dayIdx, mIdx, iIdx) });
                     row.appendChild(h('span', { className: 'meal-item-name' }, item.name));
-                    row.appendChild(h('span', { className: 'meal-item-grams' }, Math.round(item.grams) + 'g'));
+                    row.appendChild(h('span', { className: 'meal-item-grams' }, formatPortion(item.grams, item.unit || _FOOD_UNIT_BY_ID[item.id])));
                     row.appendChild(h('span', { className: 'meal-item-kcal' }, Math.round(item.kcal) + ' kcal'));
                     row.appendChild(h('span', { className: 'meal-item-swap' }, '↻'));
                     card.appendChild(row);
