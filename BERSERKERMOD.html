@@ -2075,6 +2075,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para pruebas",
                 food_title: "ALIMENTACIÓN HOY", food_add: "+ Agregar alimento", food_empty: "Sin registros hoy", food_meal: "Comida", food_which_meal: "¿A QUÉ COMIDA?", food_meal_empty: "Sin alimentos",
                 bal_title: "BALANCE CALÓRICO DEL DÍA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Neto", bal_maint: "Mantenim.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Mantenimiento", bal_aligned: "✓ Vas alineado con tu objetivo", bal_warn_surplus: "⚠️ Tu objetivo es ganar peso, pero contando el cardio hoy estás en {s} ({d}). Sumá calorías o reducí el cardio.", bal_warn_deficit: "⚠️ Tu objetivo es bajar grasa, pero contando el cardio hoy estás en {s} ({d}). Reducí calorías o sumá cardio.", bal_warn_maint: "⚠️ Hoy estás en {s} ({d}) respecto a tu mantenimiento.",
+                water_title: "Hidratación", water_glass: "Vaso", water_bottle: "Botella", water_done: "✓ ¡Meta de hidratación cumplida!", water_of_goal: "de tu meta", water_undo: "Deshacer",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Apuntá al código de barras", food_scanner_manual: "✏️ Ingresar manualmente",
@@ -2310,6 +2311,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simulate tier for testing",
                 food_title: "TODAY'S NUTRITION", food_add: "+ Add food", food_empty: "No entries today", food_meal: "Meal", food_which_meal: "WHICH MEAL?", food_meal_empty: "No foods",
                 bal_title: "TODAY'S CALORIE BALANCE", bal_consumed: "Eaten", bal_cardio: "Cardio", bal_net: "Net", bal_maint: "Maint.", bal_s_surplus: "Surplus", bal_s_deficit: "Deficit", bal_s_maintenance: "Maintenance", bal_aligned: "✓ You're on track with your goal", bal_warn_surplus: "⚠️ Your goal is to gain weight, but counting today's cardio you're at {s} ({d}). Eat more or cut the cardio.", bal_warn_deficit: "⚠️ Your goal is to lose fat, but counting today's cardio you're at {s} ({d}). Eat less or add cardio.", bal_warn_maint: "⚠️ Today you're at {s} ({d}) vs your maintenance.",
+                water_title: "Hydration", water_glass: "Glass", water_bottle: "Bottle", water_done: "✓ Hydration goal reached!", water_of_goal: "of your goal", water_undo: "Undo",
                 food_scan: "📷 Scan barcode", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal logged", food_of_target: "of",
                 food_scanner_hint: "Point at barcode", food_scanner_manual: "✏️ Enter manually",
@@ -2546,6 +2548,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para testes",
                 food_title: "ALIMENTAÇÃO HOJE", food_add: "+ Adicionar alimento", food_empty: "Sem registros hoje", food_meal: "Refeição", food_which_meal: "QUAL REFEIÇÃO?", food_meal_empty: "Sem alimentos",
                 bal_title: "BALANÇO CALÓRICO DO DIA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Líquido", bal_maint: "Manut.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Manutenção", bal_aligned: "✓ Você está alinhado com seu objetivo", bal_warn_surplus: "⚠️ Seu objetivo é ganhar peso, mas contando o cardio de hoje você está em {s} ({d}). Coma mais ou reduza o cardio.", bal_warn_deficit: "⚠️ Seu objetivo é perder gordura, mas contando o cardio de hoje você está em {s} ({d}). Coma menos ou adicione cardio.", bal_warn_maint: "⚠️ Hoje você está em {s} ({d}) em relação à sua manutenção.",
+                water_title: "Hidratação", water_glass: "Copo", water_bottle: "Garrafa", water_done: "✓ Meta de hidratação atingida!", water_of_goal: "da sua meta", water_undo: "Desfazer",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Aponte para o código de barras", food_scanner_manual: "✏️ Inserir manualmente",
@@ -3069,8 +3072,8 @@
             { id: 'chicken_breast', name: 'Pollo Pechuga', kcal: 165, protein: 31, carbs: 0, fat: 3.6, icon: '🍗', cat: 'protein' },
             { id: 'tuna_water', name: 'Atún en Agua', kcal: 116, protein: 26, carbs: 0, fat: 1, icon: '🐟', cat: 'protein' },
             { id: 'salmon', name: 'Salmón', kcal: 208, protein: 20, carbs: 0, fat: 13, icon: '🐟', cat: 'protein' },
-            { id: 'egg_whole', name: 'Huevo Entero', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein' },
-            { id: 'egg_white', name: 'Clara de Huevo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein' },
+            { id: 'egg_whole', name: 'Huevo Entero', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
+            { id: 'egg_white', name: 'Clara de Huevo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
             { id: 'beef_lean', name: 'Carne Magra (Lomo)', kcal: 250, protein: 26, carbs: 0, fat: 15, icon: '🥩', cat: 'protein' },
             { id: 'ground_beef_lean', name: 'Carne Picada Magra', kcal: 200, protein: 27, carbs: 0, fat: 10, icon: '🥩', cat: 'protein' },
             { id: 'turkey', name: 'Pavo', kcal: 135, protein: 30, carbs: 0, fat: 1, icon: '🦃', cat: 'protein' },
@@ -3114,10 +3117,10 @@
             { id: 'almonds', name: 'Almendras', kcal: 579, protein: 21, carbs: 22, fat: 50, icon: '🌰', cat: 'fat' },
             { id: 'peanuts', name: 'Maní', kcal: 567, protein: 26, carbs: 16, fat: 49, icon: '🥜', cat: 'fat' },
             { id: 'walnuts', name: 'Nueces', kcal: 654, protein: 15, carbs: 14, fat: 65, icon: '🌰', cat: 'fat' },
-            { id: 'olive_oil', name: 'Aceite de Oliva', kcal: 884, protein: 0, carbs: 0, fat: 100, icon: '🫒', cat: 'fat' },
+            { id: 'olive_oil', name: 'Aceite de Oliva', kcal: 884, protein: 0, carbs: 0, fat: 100, icon: '🫒', cat: 'fat', unit: { kind: 'ml', density: 0.91 } },
             // LÁCTEOS
-            { id: 'milk_skim', name: 'Leche Descremada', kcal: 34, protein: 3.4, carbs: 5, fat: 0.1, icon: '🥛', cat: 'dairy' },
-            { id: 'yogurt_natural', name: 'Yogur Natural', kcal: 61, protein: 3.5, carbs: 4.7, fat: 3.3, icon: '🥛', cat: 'dairy' },
+            { id: 'milk_skim', name: 'Leche Descremada', kcal: 34, protein: 3.4, carbs: 5, fat: 0.1, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
+            { id: 'yogurt_natural', name: 'Yogur Natural', kcal: 61, protein: 3.5, carbs: 4.7, fat: 3.3, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
             { id: 'cottage', name: 'Queso Cottage', kcal: 98, protein: 11, carbs: 3.4, fat: 4.3, icon: '🧀', cat: 'dairy' },
             { id: 'cheese_fresh', name: 'Queso Fresco', kcal: 264, protein: 18, carbs: 3, fat: 21, icon: '🧀', cat: 'dairy' },
             { id: 'hummus', name: 'Hummus', kcal: 166, protein: 8, carbs: 14, fat: 10, icon: '🫘', cat: 'dairy' }
@@ -3160,7 +3163,7 @@
             lang: (localStorage.getItem('bm-lang') || 'es'),
             tier: (localStorage.getItem('bm-tier') || 'free'),
             user: null, sessions: [], cardioSessions: [], customEx: [], customRoutines: [],
-            foodLog: [], progHistory: [], customFoods: [], foodSearchCache: {},
+            foodLog: [], waterLog: [], progHistory: [], customFoods: [], foodSearchCache: {},
             nutritionPlan: null, nutritionHistory: [], nutriDayIdx: 0,
             favExercises: [], libSearch: '', libFilter: { target: '', difficulty: '' }, libDetailId: null,
             customVideos: {}, customGifs: {}, libCustomInputOpen: false, libGifInputOpen: false,
@@ -3193,6 +3196,7 @@
             try { state.customEx = JSON.parse(localStorage.getItem('bm-custom') || '[]'); } catch { state.customEx = []; }
             try { state.customRoutines = JSON.parse(localStorage.getItem('bm-routines') || '[]'); } catch { state.customRoutines = []; }
             try { state.foodLog = JSON.parse(localStorage.getItem('bm-food') || '[]'); } catch { state.foodLog = []; }
+            try { state.waterLog = JSON.parse(localStorage.getItem('bm-water') || '[]'); } catch { state.waterLog = []; }
             try { state.progHistory = JSON.parse(localStorage.getItem('bm-prog-history') || '[]'); } catch { state.progHistory = []; }
             try { state.customFoods = JSON.parse(localStorage.getItem('bm-custom-foods') || '[]'); } catch { state.customFoods = []; }
             try { state.foodSearchCache = JSON.parse(localStorage.getItem('bm-food-search-cache') || '{}'); } catch { state.foodSearchCache = {}; }
@@ -5232,6 +5236,9 @@
                 fl.addEventListener('click', () => showUpgradeModal('scanner'));
                 v.appendChild(fl);
             }
+
+            // Water / hydration tracker (free for everyone)
+            renderWaterCard(v);
 
             // Oracle button (premium only)
             if (isPremium()) {
@@ -10136,6 +10143,59 @@
             return state.foodLog.filter(e => e.date === today);
         }
 
+        // ── Water / hydration tracker ──
+        function saveWater() { try { localStorage.setItem('bm-water', JSON.stringify(state.waterLog || [])); } catch { } }
+        function todayWaterMl() {
+            const today = todayStr();
+            return (state.waterLog || []).filter(w => w.date === today).reduce((a, w) => a + (w.ml || 0), 0);
+        }
+        // Daily goal ≈ 35 ml per kg of bodyweight (rounded to 50ml), default 2500ml.
+        function waterGoalMl() {
+            const w = state.user && Number(state.user.weight);
+            return (w && w > 0) ? Math.round(35 * w / 50) * 50 : 2500;
+        }
+        function addWater(ml) {
+            if (!ml) return;
+            state.waterLog.unshift({ id: Date.now() + '', date: todayStr(), ml });
+            saveWater();
+            const total = todayWaterMl();
+            if (total >= waterGoalMl()) flash(t('water_done'), 'var(--accent)');
+            if (state.tab === 'home') renderHome();
+        }
+        function undoLastWater() {
+            const today = todayStr();
+            const idx = (state.waterLog || []).findIndex(w => w.date === today);
+            if (idx >= 0) { state.waterLog.splice(idx, 1); saveWater(); if (state.tab === 'home') renderHome(); }
+        }
+        function renderWaterCard(container) {
+            const total = todayWaterMl();
+            const goal = waterGoalMl();
+            const pct = Math.min(100, Math.round(total / goal * 100));
+            const card = h('div', { className: 'card fade-in' });
+
+            const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' } });
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '💧 ' + t('water_title')));
+            head.appendChild(h('span', { style: { fontSize: '13px', fontWeight: 800, color: 'var(--blue)' } }, total + ' / ' + goal + ' ml'));
+            card.appendChild(head);
+
+            const bar = h('div', { style: { height: '8px', background: 'var(--sf3)', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' } });
+            bar.appendChild(h('div', { style: { height: '100%', width: pct + '%', background: 'linear-gradient(90deg, var(--blue), var(--accent))', borderRadius: '4px', transition: 'width .4s' } }));
+            card.appendChild(bar);
+
+            const row = h('div', { style: { display: 'flex', gap: '8px' } });
+            [{ icon: '🥤', label: t('water_glass'), ml: 250 }, { icon: '🍶', label: t('water_bottle'), ml: 500 }].forEach(b => {
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1, fontSize: '12px' }, onclick: () => addWater(b.ml) }, b.icon + ' ' + b.label + ' +' + b.ml));
+            });
+            card.appendChild(row);
+
+            const foot = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' } });
+            foot.appendChild(h('p', { style: { fontSize: '11px', color: total >= goal ? 'var(--accent)' : 'var(--text3)' } }, total >= goal ? t('water_done') : (pct + '% ' + t('water_of_goal'))));
+            if (total > 0) foot.appendChild(h('button', { style: { background: 'none', border: 'none', color: 'var(--text3)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }, onclick: undoLastWater }, t('water_undo')));
+            card.appendChild(foot);
+
+            container.appendChild(card);
+        }
+
         function renderFoodLog(container) {
             const fc = h('div', { className: 'card fade-in' });
             const hdr = h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' } });
@@ -10256,6 +10316,15 @@
         // ─────────────────────────────────────────
         let _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: null, meal: 1 };
         let _portionMeal = 1;   // which "Comida 1-4" the portion modal will assign the food to
+        let _portionMode = 'g'; // 'g' | 'count' (eggs) | 'ml' (liquids) — drives the portion input
+
+        // Convert the portion-modal input value (in its display unit) to grams for macros.
+        function _portionToGrams(val) {
+            const u = _portionFood && _portionFood.unit;
+            if (_portionMode === 'count') return val * ((u && u.g) || 50);
+            if (_portionMode === 'ml') return val * ((u && u.density) || 1);
+            return val;
+        }
 
         function openAddFoodModal(prefill) {
             const keepMeal = _foodModal.meal || 1;   // preserve the meal chosen via the "+" per-section button
@@ -10315,7 +10384,7 @@
             filtered.forEach(f => {
                 const card = h('div', { className: 'food-card', onclick: () => openPortionModal({
                     name: f.name, kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
-                    icon: f.icon, source: 'Predeterminado', id: f.id
+                    icon: f.icon, source: 'Predeterminado', id: f.id, unit: f.unit
                 }) });
                 card.appendChild(h('div', { className: 'food-card-icon' }, f.icon));
                 card.appendChild(h('div', { className: 'food-card-name' }, f.name));
@@ -10452,7 +10521,7 @@
             state.customFoods.forEach(f => {
                 const card = h('div', { className: 'food-card', onclick: () => openPortionModal({
                     name: f.name, kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
-                    icon: f.icon || '⭐', source: 'Personalizado', id: f.id
+                    icon: f.icon || '⭐', source: 'Personalizado', id: f.id, unit: f.unit
                 }) });
                 card.appendChild(h('div', { className: 'food-card-icon' }, f.icon || '⭐'));
                 card.appendChild(h('div', { className: 'food-card-name' }, f.name));
@@ -10532,20 +10601,30 @@
 
         function openPortionModal(food) {
             _portionFood = food;
+            _portionMode = (food.unit && food.unit.kind) || 'g';
             $('portion-icon').textContent = food.icon || '🍽️';
             $('portion-name').firstChild.nodeValue = food.name;
             $('portion-source').textContent = food.source || '';
-            $('portion-grams').value = 100;
-            // Build presets
+
+            // Portion input mode: grams / units (eggs) / ml (liquids)
+            let presets, defVal, unitLbl;
+            if (_portionMode === 'count') { presets = [1, 2, 3, 4, 6]; defVal = 1; unitLbl = 'u'; }
+            else if (_portionMode === 'ml') { presets = [100, 200, 250, 330, 500]; defVal = 200; unitLbl = 'ml'; }
+            else { presets = [50, 100, 150, 200, 300]; defVal = 100; unitLbl = 'g'; }
+
+            $('portion-grams').value = defVal;
+            const unitEl = document.querySelector('#portion-modal .portion-unit');
+            if (unitEl) unitEl.textContent = unitLbl;
+
             const presetsEl = $('portion-presets');
             presetsEl.innerHTML = '';
-            [50, 100, 150, 200, 300].forEach(g => {
-                const btn = h('button', { className: 'portion-preset' + (g === 100 ? ' active' : ''), onclick: () => {
-                    $('portion-grams').value = g;
+            presets.forEach(v => {
+                const btn = h('button', { className: 'portion-preset' + (v === defVal ? ' active' : ''), onclick: () => {
+                    $('portion-grams').value = v;
                     [...presetsEl.children].forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     recalcPortionMacros();
-                } }, g + 'g');
+                } }, v + (unitLbl === 'g' ? 'g' : (' ' + unitLbl)));
                 presetsEl.appendChild(btn);
             });
             // Meal selector (Comida 1-4) — defaults to whatever section the user added from
@@ -10572,19 +10651,21 @@
         function closePortionModal() { $('portion-modal').classList.remove('show'); _portionFood = null; }
 
         function adjustPortion(delta) {
+            const step = _portionMode === 'count' ? 1 : (_portionMode === 'ml' ? 50 : 10);
             const inp = $('portion-grams');
-            const newVal = Math.max(1, (parseFloat(inp.value) || 0) + delta);
+            const newVal = Math.max(1, (parseFloat(inp.value) || 0) + Math.sign(delta) * step);
             inp.value = newVal;
             // Update active preset
             $('portion-presets').querySelectorAll('.portion-preset').forEach(b => {
-                b.classList.toggle('active', parseInt(b.textContent) === newVal);
+                b.classList.toggle('active', parseFloat(b.textContent) === newVal);
             });
             recalcPortionMacros();
         }
 
         function recalcPortionMacros() {
             if (!_portionFood) return;
-            const g = parseFloat($('portion-grams').value) || 0;
+            const val = parseFloat($('portion-grams').value) || 0;
+            const g = _portionToGrams(val);
             const m = g / 100;
             $('portion-kcal').textContent = Math.round((_portionFood.kcal_100g || 0) * m);
             $('portion-protein').textContent = ((_portionFood.protein_100g || 0) * m).toFixed(1);
@@ -10594,13 +10675,15 @@
 
         function confirmPortionAdd() {
             if (!_portionFood) return;
-            const g = parseFloat($('portion-grams').value) || 0;
-            if (g <= 0) { flash('Porción inválida', 'var(--red)'); return; }
+            const val = parseFloat($('portion-grams').value) || 0;
+            if (val <= 0) { flash('Porción inválida', 'var(--red)'); return; }
+            const g = _portionToGrams(val);
             const m = g / 100;
             const foodName = _portionFood.name; // capture before closePortionModal nulls it
+            const portionLabel = formatPortion(g, _portionFood.unit);
             const entry = {
                 id: Date.now() + '', date: todayStr(),
-                name: foodName + ' · ' + g + 'g',
+                name: foodName + ' · ' + portionLabel,
                 meal: _portionMeal || 1,
                 kcal: Math.round((_portionFood.kcal_100g || 0) * m),
                 protein: +((_portionFood.protein_100g || 0) * m).toFixed(1),
@@ -10612,7 +10695,7 @@
             closePortionModal();
             closeFoodAddModal();
             if (state.tab === 'home') renderHome();
-            flash('✓ ' + foodName + ' (' + g + 'g)');
+            flash('✓ ' + foodName + ' (' + portionLabel + ')');
         }
 
         // ─────────────────────────────────────────
