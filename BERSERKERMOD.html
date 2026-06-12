@@ -9,6 +9,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="BERSERKERMOD" />
     <meta name="theme-color" content="#0A0A0B" />
+    <!-- CSP: defense-in-depth against XSS/exfiltration. script-src keeps
+         'unsafe-inline' while the app is a single inline script (hash-based
+         planned when JS moves to module files); unpkg is allowed only for the
+         two SRI-pinned lazy libs (jsPDF, ZXing). img-src stays broad (https:)
+         because exercise GIFs and QR codes are user/third-party URLs. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self'" />
     <meta name="description"
         content="BERSERKERMOD — Tu entrenador personal inteligente. Rutinas personalizadas, cardio, nutrición y métricas profesionales." />
     <meta property="og:title" content="BERSERKERMOD — Tu entrenador personal inteligente" />
@@ -24,10 +30,28 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" href="icon-192.png" />
     <title>BERSERKERMOD 2.0</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet" />
     <style>
+        /* Inter self-hosted (variable font, wght 400-900). No CDN: works fully
+           offline and no user IP ever reaches Google Fonts. Relative paths so
+           it resolves both at root (local) and under /berserkermod/ (Pages). */
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400 900;
+            font-display: swap;
+            src: url(fonts/inter-latin.woff2) format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400 900;
+            font-display: swap;
+            src: url(fonts/inter-latin-ext.woff2) format('woff2');
+            unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+        }
+
         *,
         *::before,
         *::after {
@@ -4043,6 +4067,10 @@
             window._jspdfLoading = new Promise((resolve, reject) => {
                 const s = document.createElement('script');
                 s.src = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
+                // SRI: the browser rejects the script if unpkg ever serves
+                // bytes different from the audited 2.5.1 build.
+                s.integrity = 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk';
+                s.crossOrigin = 'anonymous';
                 s.onload = () => resolve(window.jspdf);
                 s.onerror = () => reject(new Error('No se pudo cargar la librería PDF'));
                 document.head.appendChild(s);
@@ -4328,8 +4356,12 @@
             const videoSec = h('div', { className: 'lib-video-section' });
             videoSec.appendChild(h('p', { className: 'label' }, t('lib_detail_video')));
 
-            const effectiveVideoId = getEffectiveVideoId(ex);
-            const isCustom = isCustomVideoActive(ex);
+            // Re-validate at render time: IDs are sanitized on input, but the
+            // stored value can also arrive via a restored backup file, so it
+            // must never reach the iframe src unchecked.
+            const rawVideoId = getEffectiveVideoId(ex);
+            const effectiveVideoId = (rawVideoId && /^[a-zA-Z0-9_-]{11}$/.test(rawVideoId)) ? rawVideoId : null;
+            const isCustom = isCustomVideoActive(ex) && !!effectiveVideoId;
 
             if (effectiveVideoId) {
                 // Embed (either custom or default)
@@ -10897,6 +10929,9 @@
             window._zxingLoading = new Promise((resolve, reject) => {
                 const s = document.createElement('script');
                 s.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+                // SRI: pinned to the audited 0.21.3 build.
+                s.integrity = 'sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
+                s.crossOrigin = 'anonymous';
                 s.onload = () => resolve(window.ZXing);
                 s.onerror = () => reject(new Error('No se pudo cargar el escáner. Revisá tu conexión.'));
                 document.head.appendChild(s);
@@ -11626,16 +11661,22 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             }
         }
 
+        // Returns a DOM node built with h() text children — never innerHTML.
+        // The exercise name and payload values come from the student's device,
+        // so they must always render as plain text in the coach's session.
         function describeChange(c) {
-            const ex = c.exercise || '?';
-            if (c.type === 'add_set') return `<b>${t('edit_add_set')}</b> <code>${ex}</code>: ${c.payload.kg}${state.unit} × ${c.payload.reps}`;
-            if (c.type === 'remove_set') return `<b>${t('edit_remove_set')}</b> <code>${ex}</code> (set #${c.payload.setIdx + 1})`;
-            if (c.type === 'edit_kg') return `<b>${t('edit_edit_kg')}</b> <code>${ex}</code>: <span class="diff-old">${c.payload.from}</span><span class="diff-arrow">→</span><span class="diff-new">${c.payload.to}${state.unit}</span>`;
-            if (c.type === 'edit_reps') return `<b>${t('edit_edit_reps')}</b> <code>${ex}</code>: <span class="diff-old">${c.payload.from}</span><span class="diff-arrow">→</span><span class="diff-new">${c.payload.to}</span>`;
-            if (c.type === 'edit_duration') return `<b>cambió duración en</b> <code>${ex}</code>: <span class="diff-old">${c.payload.from}</span><span class="diff-arrow">→</span><span class="diff-new">${c.payload.to} min</span>`;
-            if (c.type === 'edit_distance') return `<b>cambió distancia en</b> <code>${ex}</code>: <span class="diff-old">${c.payload.from || '—'}</span><span class="diff-arrow">→</span><span class="diff-new">${c.payload.to} km</span>`;
-            if (c.type === 'edit_intensity') return `<b>cambió intensidad en</b> <code>${ex}</code>: <span class="diff-new">${c.payload.to}</span>`;
-            return JSON.stringify(c);
+            const ex = String((c && c.exercise) || '?');
+            const p = (c && c.payload) || {};
+            const head = (label) => [h('b', {}, label), ' ', h('code', {}, ex)];
+            const diff = (from, to) => [': ', h('span', { className: 'diff-old' }, String(from)), h('span', { className: 'diff-arrow' }, '→'), h('span', { className: 'diff-new' }, String(to))];
+            if (c.type === 'add_set') return h('span', {}, ...head(t('edit_add_set')), ': ' + p.kg + state.unit + ' × ' + p.reps);
+            if (c.type === 'remove_set') return h('span', {}, ...head(t('edit_remove_set')), ' (set #' + (p.setIdx + 1) + ')');
+            if (c.type === 'edit_kg') return h('span', {}, ...head(t('edit_edit_kg')), ...diff(p.from, p.to + state.unit));
+            if (c.type === 'edit_reps') return h('span', {}, ...head(t('edit_edit_reps')), ...diff(p.from, p.to));
+            if (c.type === 'edit_duration') return h('span', {}, ...head('cambió duración en'), ...diff(p.from, p.to + ' min'));
+            if (c.type === 'edit_distance') return h('span', {}, ...head('cambió distancia en'), ...diff(p.from || '—', p.to + ' km'));
+            if (c.type === 'edit_intensity') return h('span', {}, ...head('cambió intensidad en'), ': ', h('span', { className: 'diff-new' }, String(p.to)));
+            return h('span', {}, JSON.stringify(c));
         }
 
         function renderStudentDetail(routine, edits) {
@@ -11675,7 +11716,7 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
                 alumnoEdits.forEach(ed => {
                     const item = h('div', { className: 'edit-item' + (ed.reviewed_by_coach ? '' : ' unreviewed') });
                     item.appendChild(h('div', { className: 'edit-meta' }, (ed.editor_name || 'Alumno') + ' · ' + relativeTime(ed.edited_at)));
-                    const summary = h('div', { className: 'edit-summary', innerHTML: describeChange(ed.changes_json) });
+                    const summary = h('div', { className: 'edit-summary' }, describeChange(ed.changes_json));
                     item.appendChild(summary);
                     editsCard.appendChild(item);
                 });
