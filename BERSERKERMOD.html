@@ -1967,6 +1967,54 @@
             } catch { return false; }
         })();
 
+        // ── Global error capture ──
+        // Keeps the last 20 unique runtime errors in bm-errors (local only,
+        // excluded from backups) so production failures are diagnosable from a
+        // user's device. Capped at 5 new reports per session so an error loop
+        // can't spam storage.
+        let _errCount = 0;
+        function logAppError(source, err) {
+            try {
+                if (_errCount >= 5) return;
+                const msg = String((err && err.message) || (err && err.reason && err.reason.message) || err || 'unknown').slice(0, 300);
+                let list = [];
+                try { list = JSON.parse(localStorage.getItem('bm-errors') || '[]'); } catch { }
+                if (list.some((x) => x && x.msg === msg)) return;
+                _errCount++;
+                const stack = String((err && err.stack) || (err && err.reason && err.reason.stack) || '').slice(0, 600);
+                list.unshift({ at: new Date().toISOString(), source: source, msg: msg, stack: stack });
+                localStorage.setItem('bm-errors', JSON.stringify(list.slice(0, 20)));
+                if (DEBUG_APP) console.error('[AppError:' + source + ']', err);
+            } catch { }
+        }
+        window.addEventListener('error', (e) => logAppError('window', (e && e.error) || (e && e.message) || e));
+        window.addEventListener('unhandledrejection', (e) => logAppError('promise', (e && e.reason) || e));
+
+        // ── Schema versioning ──
+        // bm-schema-version stamps the shape of all bm-* localStorage data.
+        // When a stored structure changes in a future release: bump
+        // SCHEMA_VERSION and add a SCHEMA_MIGRATIONS[n] that transforms the
+        // keys from n-1 to n. Migrations run at most once each, in order,
+        // before load() reads the state. If one throws, we stop without
+        // stamping so the next boot retries instead of corrupting silently.
+        const SCHEMA_VERSION = 1;
+        const SCHEMA_MIGRATIONS = {
+            // 2: () => { /* transform bm-* keys from v1 to v2 */ },
+        };
+        function migrateSchema() {
+            let v = NaN;
+            try { v = parseInt(localStorage.getItem('bm-schema-version'), 10); } catch { }
+            if (!Number.isFinite(v)) v = 1; // pre-versioning installs are v1 by definition
+            for (let next = v + 1; next <= SCHEMA_VERSION; next++) {
+                try {
+                    if (SCHEMA_MIGRATIONS[next]) SCHEMA_MIGRATIONS[next]();
+                    v = next;
+                    localStorage.setItem('bm-schema-version', String(v));
+                } catch (e) { logAppError('migration-v' + next, e); return; }
+            }
+            try { localStorage.setItem('bm-schema-version', String(v)); } catch { }
+        }
+
         const COUNTRIES = [
             { r: "América del Norte", c: ["Canadá", "Estados Unidos", "México"] },
             { r: "América Central", c: ["Belice", "Costa Rica", "El Salvador", "Guatemala", "Honduras", "Nicaragua", "Panamá"] },
@@ -2034,6 +2082,8 @@
                 cardio_start: "INICIAR", cardio_pause: "PAUSA", cardio_stop: "DETENER", cardio_intensity_label: "INTENSIDAD",
                 cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_saved: "✅ Cardio guardado",
                 prof_personal: "DATOS PERSONALES", prof_weight: "Peso", prof_height: "Altura", prof_age: "Edad", prof_sex: "Sexo", prof_days: "Días/sem", prof_routine: "Rutina",
+                prof_import: "Importar Datos", imp_invalid: "El archivo no es un backup válido de BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sesiones de entrenamiento", imp_foods: "{n} comidas registradas", imp_exported: "exportado el {date}", imp_warning: "Al restaurar se reemplazan todos los datos actuales de este dispositivo.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
+                backup_remind_title: "💾 Protegé tus datos", backup_remind_msg: "Tu historial vive solo en este dispositivo. Descargá un backup cada tanto para no perderlo si cambiás o perdés el teléfono.",
                 prof_male: "Masculino", prof_female: "Femenino", prof_export: "Exportar Datos", prof_backup: "📦 Backup descargado", prof_no_nutri: "No tenés un plan nutricional activo.", prof_act_nutri: "🥗 Activar Plan Nutricional",
                 prof_watch: "⌚ Conectar Smartwatch", prof_watch_sub: "Bluetooth LE · Frecuencia cardíaca",
                 watch_connecting: "Conectando...", watch_connected: "Conectado", watch_disconnect: "Desconectar",
@@ -2270,6 +2320,8 @@
                 cardio_start: "START", cardio_pause: "PAUSE", cardio_stop: "STOP", cardio_intensity_label: "INTENSITY",
                 cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_saved: "✅ Cardio saved",
                 prof_personal: "PERSONAL DATA", prof_weight: "Weight", prof_height: "Height", prof_age: "Age", prof_sex: "Sex", prof_days: "Days/week", prof_routine: "Routine",
+                prof_import: "Import Data", imp_invalid: "The file is not a valid BERSERKERMOD backup", imp_title: "Restore backup", imp_sessions: "{n} workout sessions", imp_foods: "{n} logged meals", imp_exported: "exported {date}", imp_warning: "Restoring replaces all current data on this device.", imp_confirm: "Restore", imp_done: "Backup restored",
+                backup_remind_title: "💾 Protect your data", backup_remind_msg: "Your history lives only on this device. Download a backup every so often so you don't lose it if you switch or lose your phone.",
                 prof_male: "Male", prof_female: "Female", prof_export: "Export Data", prof_backup: "📦 Backup downloaded", prof_no_nutri: "You have no active nutrition plan.", prof_act_nutri: "🥗 Activate Nutrition Plan",
                 prof_watch: "⌚ Connect Smartwatch", prof_watch_sub: "Bluetooth LE · Heart rate",
                 watch_connecting: "Connecting...", watch_connected: "Connected", watch_disconnect: "Disconnect",
@@ -2507,6 +2559,8 @@
                 cardio_start: "INICIAR", cardio_pause: "PAUSAR", cardio_stop: "PARAR", cardio_intensity_label: "INTENSIDADE",
                 cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_saved: "✅ Cardio salvo",
                 prof_personal: "DADOS PESSOAIS", prof_weight: "Peso", prof_height: "Altura", prof_age: "Idade", prof_sex: "Sexo", prof_days: "Dias/sem", prof_routine: "Rotina",
+                prof_import: "Importar Dados", imp_invalid: "O arquivo não é um backup válido do BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sessões de treino", imp_foods: "{n} refeições registradas", imp_exported: "exportado em {date}", imp_warning: "Ao restaurar, todos os dados atuais deste dispositivo serão substituídos.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
+                backup_remind_title: "💾 Proteja seus dados", backup_remind_msg: "Seu histórico vive apenas neste dispositivo. Baixe um backup de vez em quando para não perdê-lo se trocar ou perder o celular.",
                 prof_male: "Masculino", prof_female: "Feminino", prof_export: "Exportar Dados", prof_backup: "📦 Backup baixado", prof_no_nutri: "Você não tem um plano nutricional ativo.", prof_act_nutri: "🥗 Ativar Plano Nutricional",
                 prof_watch: "⌚ Conectar Smartwatch", prof_watch_sub: "Bluetooth LE · Frequência cardíaca",
                 watch_connecting: "Conectando...", watch_connected: "Conectado", watch_disconnect: "Desconectar",
@@ -3190,6 +3244,7 @@
 
         // STORAGE
         function load() {
+            migrateSchema();
             try { state.user = JSON.parse(localStorage.getItem('bm-user')); } catch { state.user = null; }
             try { state.sessions = JSON.parse(localStorage.getItem('bm-sessions') || '[]'); } catch { state.sessions = []; }
             try { state.cardioSessions = JSON.parse(localStorage.getItem('bm-cardio') || '[]'); } catch { state.cardioSessions = []; }
@@ -3291,6 +3346,117 @@
         function saveProgHistory() { try { localStorage.setItem('bm-prog-history', JSON.stringify(state.progHistory)); } catch { } }
         function saveCustomFoods() { try { localStorage.setItem('bm-custom-foods', JSON.stringify(state.customFoods)); } catch { } }
         function saveFoodSearchCache() { try { localStorage.setItem('bm-food-search-cache', JSON.stringify(state.foodSearchCache)); } catch { } }
+
+        // ── Backup / restore ──
+        // Full-fidelity backup: every bm-* key except secrets (the Oracle API
+        // key never leaves the device), caches, and transient/device-local
+        // state. parseBackup also accepts the old {user, sessions, cardio}
+        // format so backups exported before this existed still restore.
+        const BACKUP_EXCLUDE = [
+            'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
+            'bm-errors', 'bm-share-base', 'bm-train-draft',
+            'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
+            'bm-last-backup', 'bm-flash-once', 'bm-schema-version'
+        ];
+        function buildBackup() {
+            const data = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k || !k.startsWith('bm-') || BACKUP_EXCLUDE.includes(k)) continue;
+                data[k] = localStorage.getItem(k);
+            }
+            return { app: 'BERSERKERMOD', schema: SCHEMA_VERSION, exportedAt: new Date().toISOString(), data };
+        }
+        function exportBackup() {
+            const d = JSON.stringify(buildBackup());
+            const b = new Blob([d], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = 'berserkermod-backup-' + todayStr() + '.json';
+            a.click();
+            try { localStorage.setItem('bm-last-backup', todayStr()); } catch { }
+            flash(t('prof_backup'));
+        }
+        function parseBackup(json) {
+            if (!json || typeof json !== 'object') return null;
+            if (json.app === 'BERSERKERMOD' && json.data && typeof json.data === 'object') {
+                const keys = {};
+                Object.keys(json.data).forEach((k) => {
+                    if (k.startsWith('bm-') && typeof json.data[k] === 'string' && !BACKUP_EXCLUDE.includes(k)) keys[k] = json.data[k];
+                });
+                if (!Object.keys(keys).length) return null;
+                return { keys, schema: Number(json.schema) || 1, exportedAt: json.exportedAt || null };
+            }
+            // Legacy backup: { user, sessions, cardio }
+            if (json.user || Array.isArray(json.sessions)) {
+                const keys = {};
+                if (json.user && typeof json.user === 'object') keys['bm-user'] = JSON.stringify(json.user);
+                if (Array.isArray(json.sessions)) keys['bm-sessions'] = JSON.stringify(json.sessions);
+                if (Array.isArray(json.cardio)) keys['bm-cardio'] = JSON.stringify(json.cardio);
+                if (!Object.keys(keys).length) return null;
+                return { keys, schema: 1, exportedAt: null };
+            }
+            return null;
+        }
+        function importBackupFile(file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = parseBackup(JSON.parse(reader.result));
+                    if (!parsed) { flash(t('imp_invalid'), 'var(--red)'); return; }
+                    showImportConfirm(parsed);
+                } catch { flash(t('imp_invalid'), 'var(--red)'); }
+            };
+            reader.onerror = () => flash(t('imp_invalid'), 'var(--red)');
+            reader.readAsText(file);
+        }
+        function showImportConfirm(parsed) {
+            const parts = [];
+            try { const u = parsed.keys['bm-user'] ? JSON.parse(parsed.keys['bm-user']) : null; if (u && u.name) parts.push('👤 ' + u.name); } catch { }
+            try { parts.push(t('imp_sessions').replace('{n}', JSON.parse(parsed.keys['bm-sessions'] || '[]').length)); } catch { }
+            try { parts.push(t('imp_foods').replace('{n}', JSON.parse(parsed.keys['bm-food'] || '[]').length)); } catch { }
+            if (parsed.exportedAt) parts.push(t('imp_exported').replace('{date}', String(parsed.exportedAt).slice(0, 10)));
+            const ov = h('div', { style: { position: 'fixed', inset: '0', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' } });
+            const card = h('div', { style: { background: 'var(--sf1)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%' } });
+            card.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '10px' } }, '📥 ' + t('imp_title')));
+            card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: '1.6', marginBottom: '10px' } }, parts.join(' · ')));
+            card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--red)', lineHeight: '1.5', marginBottom: '20px' } }, t('imp_warning')));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => applyBackup(parsed) }, t('imp_confirm')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: () => ov.remove() }, t('btn_cancel')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+        }
+        function applyBackup(parsed) {
+            try {
+                // Clean replace: wipe current bm-* data keys, write the backup,
+                // then reboot through load() so migrateSchema() upgrades older
+                // backups to the current schema.
+                const wipe = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('bm-') && !BACKUP_EXCLUDE.includes(k)) wipe.push(k);
+                }
+                wipe.forEach((k) => localStorage.removeItem(k));
+                Object.keys(parsed.keys).forEach((k) => localStorage.setItem(k, parsed.keys[k]));
+                localStorage.setItem('bm-schema-version', String(parsed.schema || 1));
+                localStorage.setItem('bm-flash-once', 'imp_done');
+                location.reload();
+            } catch (e) {
+                logAppError('import', e);
+                flash(t('imp_invalid'), 'var(--red)');
+            }
+        }
+        // Shown when the user has real data and hasn't exported a backup in
+        // 30+ days (or ever). localStorage is the only copy of their history,
+        // so this is their safety net against eviction / losing the phone.
+        function needsBackupReminder() {
+            try {
+                if (!state.sessions || state.sessions.length < 5) return false;
+                const last = localStorage.getItem('bm-last-backup');
+                if (!last) return true;
+                return (Date.now() - new Date(last + 'T00:00:00').getTime()) > 30 * 86400000;
+            } catch { return false; }
+        }
 
         // TIER
         function isPremium() { return state.tier === 'premium'; }
@@ -7085,33 +7251,49 @@
             }
             v.appendChild(wc);
 
-            // Dev mode toggle
-            const dv = h('div', { className: 'card fade-in', style: { border: '1.5px dashed var(--sf3)' } });
-            dv.appendChild(h('p', { className: 'label', style: { color: 'var(--text3)' } }, t('prof_devmode')));
-            dv.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '10px', marginTop: '2px' } }, t('prof_devmode_sub')));
-            const devRow = h('div', { style: { display: 'flex', gap: '8px' } });
-            devRow.appendChild(h('button', {
-                className: 'btn btn-sm' + (state.tier === 'free' ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, fontSize: '11px' },
-                onclick: () => { state.tier = 'free'; saveTier(); renderProfile(); }
-            }, 'FREE'));
-            devRow.appendChild(h('button', {
-                className: 'btn btn-sm' + (state.tier === 'premium' ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, fontSize: '11px' },
-                onclick: () => { state.tier = 'premium'; saveTier(); renderProfile(); }
-            }, '👑 PREMIUM'));
-            dv.appendChild(devRow);
-            v.appendChild(dv);
+            // Dev mode toggle — debug builds only; in production the tier is
+            // never user-switchable from the UI.
+            if (DEBUG_APP) {
+                const dv = h('div', { className: 'card fade-in', style: { border: '1.5px dashed var(--sf3)' } });
+                dv.appendChild(h('p', { className: 'label', style: { color: 'var(--text3)' } }, t('prof_devmode')));
+                dv.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '10px', marginTop: '2px' } }, t('prof_devmode_sub')));
+                const devRow = h('div', { style: { display: 'flex', gap: '8px' } });
+                devRow.appendChild(h('button', {
+                    className: 'btn btn-sm' + (state.tier === 'free' ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, fontSize: '11px' },
+                    onclick: () => { state.tier = 'free'; saveTier(); renderProfile(); }
+                }, 'FREE'));
+                devRow.appendChild(h('button', {
+                    className: 'btn btn-sm' + (state.tier === 'premium' ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, fontSize: '11px' },
+                    onclick: () => { state.tier = 'premium'; saveTier(); renderProfile(); }
+                }, '👑 PREMIUM'));
+                dv.appendChild(devRow);
+                v.appendChild(dv);
+            }
+
+            // Backup reminder
+            if (needsBackupReminder()) {
+                const bc = h('div', { className: 'card fade-in', style: { border: '1.5px solid var(--orange)' } });
+                bc.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, marginBottom: '6px' } }, t('backup_remind_title')));
+                bc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '12px' } }, t('backup_remind_msg')));
+                bc.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { exportBackup(); renderProfile(); } }, '📦 ' + t('prof_export')));
+                v.appendChild(bc);
+            }
 
             // Actions
             const ac = h('div', { className: 'card fade-in' });
             ac.appendChild(h('button', {
                 className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
-                onclick: () => {
-                    const d = JSON.stringify({ user: state.user, sessions: state.sessions, cardio: state.cardioSessions });
-                    const b = new Blob([d], { type: 'application/json' }); const a = document.createElement('a');
-                    a.href = URL.createObjectURL(b); a.download = 'berserkermod-backup.json'; a.click();
-                    flash(t('prof_backup'));
-                }
+                onclick: () => { exportBackup(); renderProfile(); }
             }, '📦 ' + t('prof_export')));
+            ac.appendChild(h('button', {
+                className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
+                onclick: () => {
+                    const inp = h('input', { type: 'file', accept: '.json,application/json', style: { display: 'none' } });
+                    inp.addEventListener('change', () => { if (inp.files && inp.files[0]) importBackupFile(inp.files[0]); inp.remove(); });
+                    document.body.appendChild(inp);
+                    inp.click();
+                }
+            }, '📥 ' + t('prof_import')));
             ac.appendChild(h('button', {
                 className: 'btn btn-danger btn-full', onclick: () => {
                     if (confirm(t('prof_reset_msg'))) {
@@ -11690,6 +11872,17 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
         load();
         getCoachId();
 
+        // Ask the browser not to evict our storage under disk pressure —
+        // localStorage is the only copy of the user's training history.
+        try {
+            if (navigator.storage && navigator.storage.persist) {
+                navigator.storage.persisted()
+                    .then((p) => p || navigator.storage.persist())
+                    .then((granted) => { if (DEBUG_APP) console.log('[Storage] persistent:', granted); })
+                    .catch(() => { });
+            }
+        } catch { }
+
         // ── Health subsystem bootstrap ──
         // Non-blocking: init the data store, then if lastSync is stale (>1h)
         // kick off a sync in the background. Any error is swallowed so the app
@@ -11720,8 +11913,9 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
         }
 
         // ?admin=1 → auto-activate Premium tier + skip onboarding with a test user.
-        // Useful for testing/QA on a fresh device. URL param is removed after first apply.
-        if (location.search.includes('admin=1')) {
+        // Useful for testing/QA on a fresh device. URL param is removed after first
+        // apply. Debug builds only — in production this backdoor does not exist.
+        if (DEBUG_APP && location.search.includes('admin=1')) {
             state.tier = 'premium';
             saveTier();
             if (!state.user) {
@@ -11759,15 +11953,68 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             document.body.style.paddingTop = '54px';
         }
 
+        // Last-resort recovery screen: shown only if boot throws. Built with
+        // raw DOM (no h(), no t()) so it still works when app internals are
+        // the thing that broke. Priority #1 here is letting the user save
+        // their data before anything else.
+        function showBootRecovery(err) {
+            try {
+                const d = document.createElement('div');
+                d.style.cssText = 'position:fixed;inset:0;background:#0A0A0B;color:#EDEDED;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif';
+                const box = document.createElement('div');
+                box.style.cssText = 'max-width:360px;width:100%;text-align:center';
+                box.innerHTML = '<div style="font-size:40px;margin-bottom:12px">⚠️</div>' +
+                    '<div style="font-size:18px;font-weight:900;margin-bottom:8px">Algo salió mal al iniciar</div>' +
+                    '<div style="font-size:13px;color:#999;line-height:1.5;margin-bottom:20px">Tus datos siguen guardados en el dispositivo. Probá recargar; si sigue fallando, descargá un backup de tus datos.</div>';
+                const mk = (label, css) => { const b = document.createElement('button'); b.textContent = label; b.style.cssText = 'display:block;width:100%;padding:13px;border-radius:12px;border:0;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer;' + css; return b; };
+                const reloadBtn = mk('🔄 Recargar', 'background:#00D4AA;color:#0A0A0B');
+                reloadBtn.onclick = () => location.reload();
+                const backupBtn = mk('📦 Descargar backup', 'background:#1d1d20;color:#EDEDED;border:1px solid #333');
+                backupBtn.onclick = () => {
+                    try {
+                        const data = {};
+                        const excl = (typeof BACKUP_EXCLUDE !== 'undefined') ? BACKUP_EXCLUDE : [];
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const k = localStorage.key(i);
+                            if (k && k.startsWith('bm-') && !excl.includes(k)) data[k] = localStorage.getItem(k);
+                        }
+                        const schema = (typeof SCHEMA_VERSION !== 'undefined') ? SCHEMA_VERSION : 1;
+                        const blob = new Blob([JSON.stringify({ app: 'BERSERKERMOD', schema: schema, exportedAt: new Date().toISOString(), data: data })], { type: 'application/json' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'berserkermod-backup-recovery.json';
+                        a.click();
+                    } catch { }
+                };
+                box.appendChild(reloadBtn); box.appendChild(backupBtn);
+                const det = document.createElement('div');
+                det.style.cssText = 'font-size:10px;color:#555;margin-top:12px;word-break:break-word';
+                det.textContent = String((err && err.message) || err || '');
+                box.appendChild(det);
+                d.appendChild(box);
+                document.body.appendChild(d);
+            } catch { }
+        }
+
         // Check for alumno mode FIRST (overrides onboarding + main app)
-        if (detectAlumnoMode()) {
-            bootAlumnoMode();
-        } else if (state.user) {
-            $('onboarding').style.display = 'none'; $('app').style.display = 'block'; initApp();
-            // If a free-training session was left unsaved, remind the user on return.
-            setTimeout(() => { try { showTrainDraftPrompt(); } catch { } }, 600);
-        } else {
-            renderOnboarding();
+        try {
+            if (detectAlumnoMode()) {
+                bootAlumnoMode();
+            } else if (state.user) {
+                $('onboarding').style.display = 'none'; $('app').style.display = 'block'; initApp();
+                // If a free-training session was left unsaved, remind the user on return.
+                setTimeout(() => { try { showTrainDraftPrompt(); } catch { } }, 600);
+                // One-shot flash queued before a reload (e.g. backup restored).
+                try {
+                    const fo = localStorage.getItem('bm-flash-once');
+                    if (fo) { localStorage.removeItem('bm-flash-once'); setTimeout(() => { try { flash('✅ ' + t(fo)); } catch { } }, 400); }
+                } catch { }
+            } else {
+                renderOnboarding();
+            }
+        } catch (err) {
+            logAppError('boot', err);
+            showBootRecovery(err);
         }
 
     </script>
