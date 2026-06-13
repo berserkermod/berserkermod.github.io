@@ -19,7 +19,15 @@ compatibility_date = "2024-09-23"
 [vars]
 APP_ORIGIN = "https://tornatiezequiel0-afk.github.io"
 APP_PATH = "/berserkermod/BERSERKERMOD.html"
+LANDING_URL = "https://tornatiezequiel0-afk.github.io/berserkermod/"
 ENABLE_HEALTH_SYNC = "false"
+
+# Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
+# Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).
+# Ej: USD 18 ≈ poné el equivalente en ARS, p.ej. COACH_PRICE_ARS = "21600".
+COACH_PRICE_ARS = "0"
+COACH_CURRENCY = "ARS"
+COACH_TITLE = "BERSERKERMOD — Modo Coach (acceso completo)"
 
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.

@@ -197,6 +197,40 @@ let code, licToken;
     ok('admin errors lista el error', adminErr.status === 200 && adminErr.body.count >= 1 && adminErr.body.errors[0].msg === 'boom', adminErr.body);
 }
 
+// ── Checkout / productos ──
+{
+    console.log('\nCheckout (Mercado Pago)');
+    const p0 = await call('GET', '/api/products');
+    ok('products devuelve coach (ARS)', p0.body && p0.body.coach && p0.body.coach.currency === 'ARS', p0.body);
+    ok('coach NO disponible sin config', p0.body.coach.available === false);
+
+    const c0 = await call('POST', '/api/checkout', {});
+    ok('checkout sin MP token → 503', c0.status === 503, c0.status);
+
+    // con token + precio + fetch a MP stubeado
+    env.MP_ACCESS_TOKEN = 'TEST-mp-token';
+    env.COACH_PRICE_ARS = '21600';
+    const realFetch = globalThis.fetch;
+    let sentPref = null;
+    globalThis.fetch = async (u, opts) => {
+        if (String(u).includes('/checkout/preferences')) {
+            sentPref = JSON.parse(opts.body);
+            return new Response(JSON.stringify({ init_point: 'https://mp/checkout/abc', sandbox_init_point: 'https://mp/sb/abc', id: 'pref-1' }), { status: 200 });
+        }
+        return new Response('{}', { status: 404 });
+    };
+    const p1 = await call('GET', '/api/products');
+    ok('coach disponible con config (precio 21600)', p1.body.coach.available === true && p1.body.coach.price === 21600, p1.body);
+    const c1 = await call('POST', '/api/checkout', { price: 1 }); // intento de mandar precio del cliente
+    ok('checkout → init_point', c1.status === 200 && c1.body.init_point === 'https://mp/checkout/abc', c1.body);
+    ok('usa precio del SERVER, no del cliente', sentPref && sentPref.items[0].unit_price === 21600, sentPref && sentPref.items[0]);
+    ok('external_reference = coach', sentPref.external_reference === 'coach');
+    ok('notification_url → webhook', sentPref.notification_url.endsWith('/api/webhook/mercadopago'), sentPref.notification_url);
+    ok('back_url success → landing ?purchase=coach', /\/\?purchase=coach$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
+    globalThis.fetch = realFetch;
+    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS;
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

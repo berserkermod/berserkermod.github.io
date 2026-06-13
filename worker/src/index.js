@@ -13,6 +13,8 @@
 //                     POST                /api/license/trial
 //                     GET                 /api/license/retrieve
 //                     POST                /api/admin/codes      (ADMIN_SECRET)
+//   Checkout:         GET                 /api/products
+//                     POST                /api/checkout
 //   Mercado Pago:     POST                /api/webhook/mercadopago
 //   Oracle (IA):      POST                /api/oracle
 //   Observabilidad:   POST                /api/errors
@@ -397,6 +399,54 @@ async function adminCreateCodes(req, env) {
     return json({ ok: true, product, codes });
 }
 
+// ── Checkout (Mercado Pago Checkout Pro) ─────────────────────────────
+// Config del producto Coach. El precio SIEMPRE sale del server (env), nunca
+// del cliente — así nadie puede pagar menos manipulando el request.
+function coachConfig(env) {
+    return {
+        price: Number(env.COACH_PRICE_ARS) || 0,
+        currency: env.COACH_CURRENCY || 'ARS',
+        title: env.COACH_TITLE || 'BERSERKERMOD — Modo Coach'
+    };
+}
+// GET /api/products — precio actual para que la landing lo muestre (single source of truth).
+function productsInfo(env) {
+    const c = coachConfig(env);
+    return json({ coach: { price: c.price, currency: c.currency, title: c.title, available: !!env.MP_ACCESS_TOKEN && c.price > 0 } });
+}
+// POST /api/checkout — crea la preferencia de pago del Coach y devuelve la URL
+// del checkout de MP. El webhook (más abajo) genera el código al aprobarse.
+async function createCheckout(req, env) {
+    if (!env.MP_ACCESS_TOKEN) return err('Checkout no disponible (MP sin configurar)', 503);
+    const c = coachConfig(env);
+    if (!c.price || c.price <= 0) return err('Precio del Coach sin configurar', 503);
+    const origin = new URL(req.url).origin;
+    const landing = (env.LANDING_URL || env.APP_ORIGIN || '').replace(/\/+$/, '');
+    const pref = {
+        items: [{ title: c.title, quantity: 1, unit_price: c.price, currency_id: c.currency }],
+        external_reference: 'coach',
+        notification_url: origin + '/api/webhook/mercadopago',
+        back_urls: {
+            success: landing + '/?purchase=coach',
+            pending: landing + '/?purchase=pending',
+            failure: landing + '/?purchase=failure'
+        },
+        auto_return: 'approved'
+    };
+    try {
+        const mp = await fetch('https://api.mercadopago.com/checkout/preferences', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + env.MP_ACCESS_TOKEN, 'Content-Type': 'application/json' },
+            body: JSON.stringify(pref)
+        });
+        const data = await mp.json();
+        if (!mp.ok || !data.init_point) return err('No se pudo crear el checkout', 502);
+        return json({ ok: true, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point || null, id: data.id });
+    } catch {
+        return err('Checkout upstream error', 502);
+    }
+}
+
 // ── Mercado Pago webhook ─────────────────────────────────────────────
 // MP manda notificaciones de pago. Cuando un pago queda 'approved',
 // generamos un código y lo guardamos contra el payment id para que la app
@@ -535,6 +585,10 @@ export default {
             if (p === '/api/license/trial' && m === 'POST') return await startTrial(req, env);
             if (p === '/api/license/retrieve' && m === 'GET') return await retrieveCode(env, url);
             if (p === '/api/admin/codes' && m === 'POST') return await adminCreateCodes(req, env);
+
+            // Checkout / productos
+            if (p === '/api/products' && m === 'GET') return productsInfo(env);
+            if (p === '/api/checkout' && m === 'POST') return await createCheckout(req, env);
 
             // Mercado Pago
             if (p === '/api/webhook/mercadopago' && (m === 'POST' || m === 'GET')) return await mercadoPagoWebhook(req, env, url);

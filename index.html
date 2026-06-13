@@ -1660,7 +1660,9 @@
                         <li>Alumnos ilimitados · sin costo por usuario</li>
                     </ul>
                     <div class="reveal reveal-delay-4">
-                        <a href="/app?intent=coach" class="btn btn-primary">Probar modo Coach →</a>
+                        <button id="buy-coach-btn" class="btn btn-primary" onclick="comprarCoach()" disabled>Comprar modo Coach <span id="coach-price-label"></span></button>
+                        <p id="coach-buy-msg" style="font-size:12px;color:var(--text3);margin-top:12px;min-height:16px"></p>
+                        <a href="/app?intent=coach" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline">o probalo gratis primero →</a>
                     </div>
                 </div>
                 <div class="coach-visual reveal reveal-delay-2">
@@ -1954,6 +1956,105 @@
                 }, { rootMargin: '-40% 0px -40% 0px', threshold: 0 });
 
                 panels.forEach(function (p) { panelIO.observe(p); });
+            }
+        })();
+    </script>
+
+    <!-- ============================================
+         COMPRA DEL COACH (Mercado Pago)
+         Vende en la web (fuera de la app de Play) y entrega el código.
+         ============================================ -->
+    <script>
+        (function () {
+            var API = 'https://berserkermod-api.berserkermod.workers.dev';
+            var btn = document.getElementById('buy-coach-btn');
+            var msg = document.getElementById('coach-buy-msg');
+            var priceLabel = document.getElementById('coach-price-label');
+
+            function fmtPrice(p) {
+                try { return (p.currency === 'ARS' ? '$' : (p.currency + ' ')) + Number(p.price).toLocaleString('es-AR'); }
+                catch (e) { return p.currency + ' ' + p.price; }
+            }
+
+            // Mostrar precio / habilitar el botón según la config del Worker.
+            fetch(API + '/api/products').then(function (r) { return r.json(); }).then(function (d) {
+                var c = d && d.coach;
+                if (c && c.available) {
+                    if (priceLabel) priceLabel.textContent = '· ' + fmtPrice(c);
+                    if (btn) btn.disabled = false;
+                } else {
+                    if (priceLabel) priceLabel.textContent = '';
+                    if (msg) msg.textContent = 'Disponible muy pronto.';
+                }
+            }).catch(function () { if (msg) msg.textContent = 'Disponible muy pronto.'; });
+
+            // Botón comprar → crea la preferencia y redirige al checkout de MP.
+            window.comprarCoach = function () {
+                if (!btn) return;
+                btn.disabled = true; if (msg) { msg.style.color = ''; msg.textContent = 'Abriendo el checkout…'; }
+                fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+                    .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+                    .then(function (res) {
+                        if (res.ok && res.j.init_point) { window.location.href = res.j.init_point; }
+                        else { btn.disabled = false; if (msg) { msg.style.color = 'var(--red,#FF6B6B)'; msg.textContent = (res.j && res.j.error) || 'No se pudo abrir el checkout.'; } }
+                    })
+                    .catch(function () { btn.disabled = false; if (msg) { msg.style.color = 'var(--red,#FF6B6B)'; msg.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
+            };
+
+            // Retorno de Mercado Pago: ?purchase=coach&payment_id=...&status=approved
+            // Recupera el código generado por el webhook y lo muestra en grande.
+            (function handleReturn() {
+                var q = new URLSearchParams(location.search);
+                if (q.get('purchase') !== 'coach') return;
+                var pid = q.get('payment_id') || q.get('collection_id');
+                var status = q.get('status') || q.get('collection_status');
+                showCodePanel('loading', null);
+                if (!pid || (status && status !== 'approved')) { showCodePanel('pending', null); return; }
+                var tries = 0;
+                (function poll() {
+                    fetch(API + '/api/license/retrieve?payment=' + encodeURIComponent(pid))
+                        .then(function (r) { return r.json(); })
+                        .then(function (j) {
+                            if (j && j.status === 'ready' && j.code) { showCodePanel('ready', j.code); }
+                            else if (tries++ < 8) { setTimeout(poll, 2000); }
+                            else { showCodePanel('slow', null); }
+                        })
+                        .catch(function () { if (tries++ < 8) setTimeout(poll, 2000); else showCodePanel('slow', null); });
+                })();
+            })();
+
+            function showCodePanel(state, code) {
+                var prev = document.getElementById('bm-code-panel');
+                if (prev) prev.remove();
+                var ov = document.createElement('div');
+                ov.id = 'bm-code-panel';
+                ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit';
+                var card = document.createElement('div');
+                card.style.cssText = 'background:#141416;border:1px solid #2C2C2E;border-radius:18px;padding:28px;max-width:420px;width:100%;text-align:center;color:#F5F5F7';
+                var html = '';
+                if (state === 'ready') {
+                    html = '<div style="font-size:42px;margin-bottom:8px">✅</div>' +
+                        '<div style="font-size:20px;font-weight:900;margin-bottom:6px">¡Compra confirmada!</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">Este es tu código del modo Coach. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.</div>' +
+                        '<div style="font-size:24px;font-weight:900;letter-spacing:.08em;background:#0A0A0B;border:1.5px dashed #00D4AA;color:#00D4AA;border-radius:12px;padding:16px;margin-bottom:18px;user-select:all">' + code + '</div>' +
+                        '<a href="BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">Abrir la app y activar →</a>';
+                } else if (state === 'loading') {
+                    html = '<div style="font-size:32px;margin-bottom:10px">⏳</div><div style="font-size:16px;font-weight:800">Confirmando tu pago…</div>';
+                } else if (state === 'pending') {
+                    html = '<div style="font-size:36px;margin-bottom:8px">🕓</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">Pago en proceso</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">Cuando se acredite (los pagos en efectivo pueden tardar) volvé a esta página o escribinos para recibir tu código.</div>';
+                } else {
+                    html = '<div style="font-size:36px;margin-bottom:8px">📩</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">Tu código está casi listo</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">El pago se está acreditando. Recargá esta página en un minuto y va a aparecer tu código.</div>';
+                }
+                card.innerHTML = html;
+                var close = document.createElement('button');
+                close.textContent = 'Cerrar';
+                close.style.cssText = 'margin-top:6px;background:transparent;border:1px solid #333;color:#A1A1A6;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer;width:100%';
+                close.onclick = function () { ov.remove(); try { history.replaceState({}, '', location.pathname); } catch (e) {} };
+                card.appendChild(close);
+                ov.appendChild(card);
+                document.body.appendChild(ov);
             }
         })();
     </script>
