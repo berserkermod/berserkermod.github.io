@@ -25,5 +25,5 @@ ENABLE_HEALTH_SYNC = "false"
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
 [[kv_namespaces]]
 binding = "BMOD_KV"
-id = "REEMPLAZAR_CON_EL_ID_DE_KV"
-preview_id = "REEMPLAZAR_CON_EL_ID_DE_KV"
+id = "032b05ee75684a44bd0cfaa036d2c7be"
+preview_id = "032b05ee75684a44bd0cfaa036d2c7be"
