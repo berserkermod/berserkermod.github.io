@@ -1,0 +1,29 @@
+# BERSERKERMOD API — Cloudflare Worker
+# Único backend de producción: licencias (códigos + Mercado Pago), backend del
+# modo Coach (rutinas/shares/edits), proxy del Oracle e ingest de errores.
+#
+# Deploy: ver README-DEPLOY.md. Resumen:
+#   1) npx wrangler login
+#   2) npx wrangler kv namespace create BMOD_KV   → pegar el id abajo
+#   3) npx wrangler secret put LICENSE_SECRET
+#   4) npx wrangler secret put MP_ACCESS_TOKEN     (cuando conectes Mercado Pago)
+#   5) npx wrangler secret put ADMIN_SECRET
+#   6) npx wrangler deploy
+
+name = "berserkermod-api"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Vars públicas (no secretas). APP_ORIGIN se usa para los redirects de Mercado
+# Pago y para CORS. Reemplazá por tu dominio final si usás uno propio.
+[vars]
+APP_ORIGIN = "https://tornatiezequiel0-afk.github.io"
+APP_PATH = "/berserkermod/BERSERKERMOD.html"
+ENABLE_HEALTH_SYNC = "false"
+
+# KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
+# El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
+[[kv_namespaces]]
+binding = "BMOD_KV"
+id = "REEMPLAZAR_CON_EL_ID_DE_KV"
+preview_id = "REEMPLAZAR_CON_EL_ID_DE_KV"

@@ -2106,6 +2106,7 @@
                 cardio_start: "INICIAR", cardio_pause: "PAUSA", cardio_stop: "DETENER", cardio_intensity_label: "INTENSIDAD",
                 cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_saved: "✅ Cardio guardado",
                 prof_personal: "DATOS PERSONALES", prof_weight: "Peso", prof_height: "Altura", prof_age: "Edad", prof_sex: "Sexo", prof_days: "Días/sem", prof_routine: "Rutina",
+                lic_no_server: "No se pudo conectar con el servidor. Probá de nuevo más tarde.", lic_active: "Premium activo", lic_active_sub: "Tenés acceso completo a todas las funciones.", lic_trial_left: "Prueba gratuita: te quedan {n} días.", lic_unlock_title: "Desbloqueá Premium", lic_unlock_sub: "Ingresá tu código de activación o probá gratis.", lic_activate_btn: "Activar código", lic_activated: "¡Premium activado!", lic_try_free: "Probar gratis", lic_trial_started: "Prueba iniciada: {n} días gratis",
                 prof_import: "Importar Datos", imp_invalid: "El archivo no es un backup válido de BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sesiones de entrenamiento", imp_foods: "{n} comidas registradas", imp_exported: "exportado el {date}", imp_warning: "Al restaurar se reemplazan todos los datos actuales de este dispositivo.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Protegé tus datos", backup_remind_msg: "Tu historial vive solo en este dispositivo. Descargá un backup cada tanto para no perderlo si cambiás o perdés el teléfono.",
                 prof_male: "Masculino", prof_female: "Femenino", prof_export: "Exportar Datos", prof_backup: "📦 Backup descargado", prof_no_nutri: "No tenés un plan nutricional activo.", prof_act_nutri: "🥗 Activar Plan Nutricional",
@@ -2344,6 +2345,7 @@
                 cardio_start: "START", cardio_pause: "PAUSE", cardio_stop: "STOP", cardio_intensity_label: "INTENSITY",
                 cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_saved: "✅ Cardio saved",
                 prof_personal: "PERSONAL DATA", prof_weight: "Weight", prof_height: "Height", prof_age: "Age", prof_sex: "Sex", prof_days: "Days/week", prof_routine: "Routine",
+                lic_no_server: "Couldn't reach the server. Try again later.", lic_active: "Premium active", lic_active_sub: "You have full access to every feature.", lic_trial_left: "Free trial: {n} days left.", lic_unlock_title: "Unlock Premium", lic_unlock_sub: "Enter your activation code or try it free.", lic_activate_btn: "Activate code", lic_activated: "Premium activated!", lic_try_free: "Try for free", lic_trial_started: "Trial started: {n} free days",
                 prof_import: "Import Data", imp_invalid: "The file is not a valid BERSERKERMOD backup", imp_title: "Restore backup", imp_sessions: "{n} workout sessions", imp_foods: "{n} logged meals", imp_exported: "exported {date}", imp_warning: "Restoring replaces all current data on this device.", imp_confirm: "Restore", imp_done: "Backup restored",
                 backup_remind_title: "💾 Protect your data", backup_remind_msg: "Your history lives only on this device. Download a backup every so often so you don't lose it if you switch or lose your phone.",
                 prof_male: "Male", prof_female: "Female", prof_export: "Export Data", prof_backup: "📦 Backup downloaded", prof_no_nutri: "You have no active nutrition plan.", prof_act_nutri: "🥗 Activate Nutrition Plan",
@@ -2583,6 +2585,7 @@
                 cardio_start: "INICIAR", cardio_pause: "PAUSAR", cardio_stop: "PARAR", cardio_intensity_label: "INTENSIDADE",
                 cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_saved: "✅ Cardio salvo",
                 prof_personal: "DADOS PESSOAIS", prof_weight: "Peso", prof_height: "Altura", prof_age: "Idade", prof_sex: "Sexo", prof_days: "Dias/sem", prof_routine: "Rotina",
+                lic_no_server: "Não foi possível conectar ao servidor. Tente mais tarde.", lic_active: "Premium ativo", lic_active_sub: "Você tem acesso completo a todos os recursos.", lic_trial_left: "Teste grátis: faltam {n} dias.", lic_unlock_title: "Desbloqueie o Premium", lic_unlock_sub: "Insira seu código de ativação ou teste grátis.", lic_activate_btn: "Ativar código", lic_activated: "Premium ativado!", lic_try_free: "Testar grátis", lic_trial_started: "Teste iniciado: {n} dias grátis",
                 prof_import: "Importar Dados", imp_invalid: "O arquivo não é um backup válido do BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sessões de treino", imp_foods: "{n} refeições registradas", imp_exported: "exportado em {date}", imp_warning: "Ao restaurar, todos os dados atuais deste dispositivo serão substituídos.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Proteja seus dados", backup_remind_msg: "Seu histórico vive apenas neste dispositivo. Baixe um backup de vez em quando para não perdê-lo se trocar ou perder o celular.",
                 prof_male: "Masculino", prof_female: "Feminino", prof_export: "Exportar Dados", prof_backup: "📦 Backup baixado", prof_no_nutri: "Você não tem um plano nutricional ativo.", prof_act_nutri: "🥗 Ativar Plano Nutricional",
@@ -3297,6 +3300,8 @@
                     if (draft.selDay) state.selDay = draft.selDay;
                 }
             } catch { }
+            // License is the source of truth for the tier in production.
+            try { applyLicense(); } catch { }
         }
 
         // In-progress free-training session draft (survives reload / app kill).
@@ -3366,6 +3371,125 @@
         function saveCustom() { try { localStorage.setItem('bm-custom', JSON.stringify(state.customEx)); } catch { } }
         function saveRoutines() { try { localStorage.setItem('bm-routines', JSON.stringify(state.customRoutines)); } catch { } }
         function saveTier() { try { localStorage.setItem('bm-tier', state.tier); } catch { } }
+
+        // ── Licencias (Premium / Coach) ──
+        // El token lo firma el Worker (HMAC). El cliente NO puede forjarlo; solo
+        // lee el payload para UX offline. Fuente de la verdad del tier en prod:
+        //   - licencia válida (lifetime o trial vigente) → premium
+        //   - sin licencia → free (en DEBUG el toggle manda)
+        // bm-license / bm-license-checked / bm-device-id quedan fuera del backup
+        // (atados al dispositivo: restaurar en otro device los invalidaría).
+        function parseLicense(token) {
+            try {
+                let s = String(token).split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+                while (s.length % 4) s += '=';
+                return JSON.parse(atob(s));
+            } catch { return null; }
+        }
+        function clearLicense() { try { localStorage.removeItem('bm-license'); localStorage.removeItem('bm-license-checked'); } catch { } }
+        function licenseInfo() {
+            const token = (() => { try { return localStorage.getItem('bm-license'); } catch { return null; } })();
+            const p = token ? parseLicense(token) : null;
+            if (!p || p.tier !== 'premium') return null;
+            if (p.exp && Date.now() >= p.exp) return null;
+            return { product: p.product, trial: !!p.trial, exp: p.exp || null };
+        }
+        // Authoritative tier resolution (called inside load()).
+        function applyLicense() {
+            const info = licenseInfo();
+            if (info) { state.tier = 'premium'; saveTier(); return; }
+            // licencia ausente o trial vencido
+            const token = (() => { try { return localStorage.getItem('bm-license'); } catch { return null; } })();
+            const p = token ? parseLicense(token) : null;
+            if (p && p.trial && p.exp && Date.now() >= p.exp) clearLicense();
+            if (!DEBUG_APP && state.tier !== 'free') { state.tier = 'free'; saveTier(); }
+        }
+        function noBackendInProd() {
+            return !getApiBase() && location.protocol !== 'file:';
+        }
+        async function activateCode(code) {
+            if (noBackendInProd()) return { ok: false, error: t('lic_no_server') };
+            try {
+                const resp = await fetch(getApiBase() + '/api/license/activate', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: String(code || '').trim().toUpperCase(), deviceId: getDeviceId() })
+                });
+                const j = await resp.json().catch(() => ({}));
+                if (!resp.ok) return { ok: false, error: j.error || ('Error ' + resp.status) };
+                localStorage.setItem('bm-license', j.token);
+                localStorage.setItem('bm-license-checked', String(Date.now()));
+                state.tier = 'premium'; saveTier();
+                return { ok: true, product: j.product };
+            } catch { return { ok: false, error: t('lic_no_server') }; }
+        }
+        async function startTrialClient(product) {
+            if (noBackendInProd()) return { ok: false, error: t('lic_no_server') };
+            try {
+                const resp = await fetch(getApiBase() + '/api/license/trial', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId: getDeviceId(), product: product || 'premium' })
+                });
+                const j = await resp.json().catch(() => ({}));
+                if (!resp.ok) return { ok: false, error: j.error || ('Error ' + resp.status) };
+                localStorage.setItem('bm-license', j.token);
+                localStorage.setItem('bm-license-checked', String(Date.now()));
+                state.tier = 'premium'; saveTier();
+                return { ok: true, days: j.days };
+            } catch { return { ok: false, error: t('lic_no_server') }; }
+        }
+        // Periodic online re-check (revocation / device-move). Generous offline
+        // grace: a paid user never gets locked out without network.
+        async function revalidateLicense() {
+            let token; try { token = localStorage.getItem('bm-license'); } catch { return; }
+            if (!token) return;
+            if (!parseLicense(token)) { clearLicense(); applyLicense(); return; }
+            const last = Number((() => { try { return localStorage.getItem('bm-license-checked'); } catch { return 0; } })() || 0);
+            if (Date.now() - last < 7 * 86400000) return; // dentro de la ventana de gracia
+            if (noBackendInProd()) return;                  // sin backend → mantener
+            try {
+                const resp = await fetch(getApiBase() + '/api/license/verify', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token })
+                });
+                if (!resp.ok) return; // problema de red/server → mantener (gracia)
+                const j = await resp.json();
+                if (j && j.valid) { localStorage.setItem('bm-license-checked', String(Date.now())); }
+                else { clearLicense(); applyLicense(); if (state.tab === 'profile') renderProfile(); }
+            } catch { /* offline → mantener */ }
+        }
+        // Best-effort: empuja los errores capturados (Fase 0) al Worker y limpia.
+        async function flushErrors() {
+            let list = [];
+            try { list = JSON.parse(localStorage.getItem('bm-errors') || '[]'); } catch { }
+            if (!list.length || noBackendInProd()) return;
+            try {
+                const resp = await fetch(getApiBase() + '/api/errors', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ errors: list, v: 'web' })
+                });
+                if (resp.ok) localStorage.removeItem('bm-errors');
+            } catch { /* mantener buffer */ }
+        }
+        // Mercado Pago redirige de vuelta con ?payment_id&status. Si está aprobado,
+        // recuperamos el código generado por el webhook y activamos solos.
+        async function handleMpReturn() {
+            try {
+                const q = new URLSearchParams(location.search);
+                const pid = q.get('payment_id') || q.get('collection_id');
+                const status = q.get('status') || q.get('collection_status');
+                if (!pid || (status && status !== 'approved')) return;
+                if (noBackendInProd()) return;
+                for (let i = 0; i < 5; i++) {
+                    const resp = await fetch(getApiBase() + '/api/license/retrieve?payment=' + encodeURIComponent(pid));
+                    const j = await resp.json().catch(() => ({}));
+                    if (j && j.status === 'ready' && j.code) {
+                        const r = await activateCode(j.code);
+                        if (r.ok) { flash('👑 ' + t('lic_activated')); if (state.tab === 'profile') renderProfile(); }
+                        break;
+                    }
+                    await new Promise((res) => setTimeout(res, 1500));
+                }
+                try { history.replaceState({}, '', location.pathname); } catch { }
+            } catch { }
+        }
         function saveFoodLog() { try { localStorage.setItem('bm-food', JSON.stringify(state.foodLog)); } catch { } }
         function saveProgHistory() { try { localStorage.setItem('bm-prog-history', JSON.stringify(state.progHistory)); } catch { } }
         function saveCustomFoods() { try { localStorage.setItem('bm-custom-foods', JSON.stringify(state.customFoods)); } catch { } }
@@ -3380,7 +3504,9 @@
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
             'bm-errors', 'bm-share-base', 'bm-train-draft',
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
-            'bm-last-backup', 'bm-flash-once', 'bm-schema-version'
+            'bm-last-backup', 'bm-flash-once', 'bm-schema-version',
+            // device-bound / not portable across installs
+            'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base'
         ];
         function buildBackup() {
             const data = {};
@@ -7282,6 +7408,50 @@
                 }
             }
             v.appendChild(wc);
+
+            // Premium / activación de código
+            {
+                const lic = licenseInfo();
+                const mkCodeInput = () => {
+                    const wrap = h('div', {});
+                    const inp = h('input', { className: 'input', placeholder: 'BMOD-XXXX-XXXX', style: { marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.05em' } });
+                    const btn = h('button', { className: 'btn btn-primary btn-full btn-sm' }, t('lic_activate_btn'));
+                    btn.onclick = async () => {
+                        const code = inp.value.trim();
+                        if (!code) { inp.focus(); return; }
+                        btn.disabled = true; btn.textContent = '…';
+                        const r = await activateCode(code);
+                        if (r.ok) { flash('👑 ' + t('lic_activated')); renderProfile(); }
+                        else { flash('⚠️ ' + r.error, 'var(--red)'); btn.disabled = false; btn.textContent = t('lic_activate_btn'); }
+                    };
+                    wrap.appendChild(inp); wrap.appendChild(btn);
+                    return wrap;
+                };
+                const lc = h('div', { className: 'card fade-in', style: { border: '1.5px solid ' + (lic ? 'var(--accent)' : 'var(--border)') } });
+                if (lic) {
+                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 900, marginBottom: '4px' } }, '👑 ' + t('lic_active')));
+                    if (lic.trial && lic.exp) {
+                        const days = Math.max(0, Math.ceil((lic.exp - Date.now()) / 86400000));
+                        lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px' } }, t('lic_trial_left').replace('{n}', days)));
+                        lc.appendChild(mkCodeInput());
+                    } else {
+                        lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)' } }, t('lic_active_sub')));
+                    }
+                } else {
+                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 900, marginBottom: '4px' } }, '🔓 ' + t('lic_unlock_title')));
+                    lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '12px' } }, t('lic_unlock_sub')));
+                    lc.appendChild(mkCodeInput());
+                    const trialBtn = h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginTop: '8px' } }, t('lic_try_free'));
+                    trialBtn.onclick = async () => {
+                        trialBtn.disabled = true;
+                        const r = await startTrialClient('premium');
+                        if (r.ok) { flash('👑 ' + t('lic_trial_started').replace('{n}', r.days)); renderProfile(); }
+                        else { flash('⚠️ ' + r.error, 'var(--red)'); trialBtn.disabled = false; }
+                    };
+                    lc.appendChild(trialBtn);
+                }
+                v.appendChild(lc);
+            }
 
             // Dev mode toggle — debug builds only; in production the tier is
             // never user-switchable from the UI.
@@ -11281,10 +11451,38 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             return id;
         }
 
-        // API base: if running via file:// (user double-clicked the HTML), force absolute URL to localhost.
-        // Otherwise use relative paths (so the LAN IP override works).
+        // Production API base = the Cloudflare Worker (worker/README-DEPLOY.md).
+        // Set bm-api-base in localStorage, or paste the Worker URL into
+        // WORKER_API_BASE_DEFAULT after deploying. Until set, prod calls fall
+        // back to relative paths (graceful: same as having no backend).
+        const WORKER_API_BASE_DEFAULT = 'https://berserkermod-api.PEGAR-SUBDOMINIO.workers.dev';
+        function isConfiguredApiBase(u) { return !!u && u.indexOf('PEGAR-SUBDOMINIO') < 0; }
+        function workerApiBase() {
+            try {
+                const override = localStorage.getItem('bm-api-base');
+                if (isConfiguredApiBase(override)) return override.replace(/\/+$/, '');
+            } catch { }
+            return isConfiguredApiBase(WORKER_API_BASE_DEFAULT) ? WORKER_API_BASE_DEFAULT.replace(/\/+$/, '') : '';
+        }
+        // file:// → local serve.ps1. localhost/LAN → relative (serve.ps1).
+        // Anything else (GitHub Pages, TWA, custom domain) → the Worker.
         function getApiBase() {
-            return location.protocol === 'file:' ? 'http://localhost:3000' : '';
+            if (location.protocol === 'file:') return 'http://localhost:3000';
+            const host = location.hostname;
+            if (host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host)) return '';
+            return workerApiBase();
+        }
+
+        // Stable per-install id used to bind licenses + scope trials. Separate
+        // from coach-id (which identifies a coach's data, not the device).
+        function getDeviceId() {
+            let id = null;
+            try { id = localStorage.getItem('bm-device-id'); } catch { }
+            if (!id) {
+                id = crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2));
+                try { localStorage.setItem('bm-device-id', id); } catch { }
+            }
+            return id;
         }
 
         async function api(method, path, body) {
@@ -11939,6 +12137,16 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
                     }
                     HealthSyncService.startAutoSync();
                 }).catch(() => { });
+            } catch { /* never block boot */ }
+        })();
+
+        // ── Backend bootstrap (no bloqueante) ──
+        // Captura el retorno de Mercado Pago (compra → código → activación),
+        // revalida la licencia si pasó la ventana de gracia, y empuja los
+        // errores capturados al Worker. Todo best-effort: nunca bloquea el boot.
+        (function bootstrapBackend() {
+            try {
+                setTimeout(() => { handleMpReturn(); revalidateLicense(); flushErrors(); }, 800);
             } catch { /* never block boot */ }
         })();
 
