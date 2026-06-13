@@ -1979,6 +1979,10 @@
         </div>
     </div>
 
+    <!-- Capa de cálculo pura (testeada en core/calc.test.mjs). Carga antes del
+         script principal y expone calcTDEE/calcMacros/formatPortion/calcDailyBalance/
+         calc1RM/cardioKcal como globales. -->
+    <script src="core/calc.js"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -3661,55 +3665,16 @@
             const f = $('flash'); f.textContent = msg; f.style.borderColor = color || 'var(--accent)'; f.style.color = color || 'var(--accent)';
             f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 1800);
         }
-        function calcTDEE(u) {
-            if (!u) return 2000;
-            let bmr = u.sex === 'M' ? (10 * u.weight + 6.25 * u.height - 5 * u.age + 5) : (10 * u.weight + 6.25 * u.height - 5 * u.age - 161);
-            const factors = { 3: 1.375, 4: 1.55, 5: 1.725, 6: 1.9 };
-            return Math.round(bmr * (factors[u.days] || 1.55));
-        }
-
-        // Centralized macro calculation: TDEE + per-goal kcal adjustment + protein/fat/carb split.
-        // Returns { tdee, adj, targetCals, protein, carbs, fat }.
-        function calcMacros(u) {
-            if (!u) return { tdee: 2000, adj: 0, targetCals: 2000, protein: 150, carbs: 200, fat: 70 };
-            const tdee = calcTDEE(u);
-            const adj = { muscle: 400, fat_loss: -400, strength: 300, recomp: 0, endurance: 200 }[u.goal] || 0;
-            const targetCals = Math.max(1200, tdee + adj);
-
-            // Protein g/kg by goal (higher when cutting or building muscle)
-            const proteinPerKg = { muscle: 2.0, fat_loss: 2.2, strength: 2.0, recomp: 2.2, endurance: 1.6 }[u.goal] || 2.0;
-            const protein = Math.round(u.weight * proteinPerKg);
-
-            // Fat % of total kcal (lower for cutting, higher for strength/endurance)
-            const fatPct = { muscle: 0.25, fat_loss: 0.20, strength: 0.30, recomp: 0.25, endurance: 0.25 }[u.goal] || 0.25;
-            const fat = Math.max(40, Math.round((targetCals * fatPct) / 9));
-
-            // Remainder goes to carbs
-            const carbCal = targetCals - (protein * 4) - (fat * 9);
-            const carbs = Math.max(50, Math.round(carbCal / 4));
-
-            return { tdee, adj, targetCals, protein, carbs, fat };
-        }
+        // calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM y cardioKcal
+        // viven en core/calc.js (capa pura, testeada). Se cargan como globales vía
+        // <script src="core/calc.js"> antes de este script.
 
         function getNutriAdvice(goal) {
             const map = { muscle: 'nutri_strategy_muscle', fat_loss: 'nutri_strategy_fat', strength: 'nutri_strategy_str', recomp: 'nutri_strategy_recomp', endurance: 'nutri_strategy_endurance' };
             return t(map[goal] || 'nutri_strategy_muscle');
         }
 
-        // Display a portion in its natural unit: countable foods (eggs) as units,
-        // liquids as ml, everything else as grams. Macros are always computed from
-        // grams — this only changes how the portion reads to the user.
-        function formatPortion(grams, unit) {
-            if (unit && unit.kind === 'count') {
-                const n = Math.max(1, Math.round(grams / (unit.g || 50)));
-                const lbl = n === 1 ? (unit.label || 'u') : (unit.labelP || unit.label || 'u');
-                return n + ' ' + lbl;
-            }
-            if (unit && unit.kind === 'ml') {
-                return Math.round(grams / (unit.density || 1)) + ' ml';
-            }
-            return Math.round(grams) + ' g';
-        }
+        // formatPortion → core/calc.js
 
         // Total kcal burned in cardio today (counts toward the daily energy balance).
         function todayCardioBurned() {
@@ -3717,22 +3682,7 @@
             return (state.cardioSessions || []).filter(s => s.date === today).reduce((a, s) => a + (s.calories || 0), 0);
         }
 
-        // Daily energy balance: net intake = consumed − cardio burned, classified
-        // against maintenance (TDEE). Then checked against what the user's goal needs
-        // (surplus for muscle/strength, deficit for fat loss, ~maintenance for recomp).
-        // This is what lets the app warn "you wanted a surplus but the cardio put you
-        // in a deficit". BAND avoids flapping near the maintenance line.
-        function calcDailyBalance(u, consumed, burned) {
-            const maintenance = calcTDEE(u);
-            const net = Math.round(consumed - burned);
-            const diff = net - maintenance;            // + = surplus, − = deficit (vs maintenance)
-            const BAND = 100;
-            const status = diff > BAND ? 'surplus' : (diff < -BAND ? 'deficit' : 'maintenance');
-            const adj = { muscle: 400, fat_loss: -400, strength: 300, recomp: 0, endurance: 200 }[u.goal] || 0;
-            const goalWants = adj > 100 ? 'surplus' : (adj < -100 ? 'deficit' : 'maintenance');
-            const aligned = status === goalWants;
-            return { maintenance, consumed: Math.round(consumed), burned: Math.round(burned), net, diff, status, goalWants, aligned };
-        }
+        // calcDailyBalance → core/calc.js
 
         // Context-aware flash after logging cardio: if the burn knocks the user out of
         // their goal's energy zone (and they've eaten today), warn instead of the plain
@@ -4769,7 +4719,7 @@
                 };
             });
         }
-        function calc1RM(w, r) { return r === 1 ? w : Math.round(w * (1 + r / 30)); }
+        // calc1RM → core/calc.js
         function todayStr() {
             let tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if (state.user && state.user.country && TIMEZONES[state.user.country]) tz = TIMEZONES[state.user.country];
@@ -6772,7 +6722,7 @@
                 const mins = Math.floor(state.cardioTimer / 60), secs = state.cardioTimer % 60;
                 tc.appendChild(h('p', { className: 'timer-display' },
                     String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0')));
-                const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (state.cardioTimer / 3600));
+                const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, state.cardioTimer);
                 tc.appendChild(h('p', { className: 'timer-cals' }, '🔥 ' + cals + ' kcal'));
 
                 const controls = h('div', { className: 'timer-controls' });
@@ -6860,7 +6810,7 @@
             state.cardioRunning = false; clearInterval(state.cardioInterval);
             if (state.cardioTimer > 0) {
                 const sport = SPORTS.find(s => s.id === state.cardioSport);
-                const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (state.cardioTimer / 3600));
+                const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, state.cardioTimer);
                 const sess = {
                     id: Date.now(), date: todayStr(), sport: state.cardioSport,
                     duration: state.cardioTimer, calories: cals
@@ -6880,7 +6830,7 @@
             const minutes = parseFloat(inp && inp.value) || 0;
             if (minutes <= 0) { flash(t('cardio_manual_invalid'), 'var(--orange)'); return; }
             const sport = SPORTS.find(s => s.id === state.cardioSport);
-            const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (minutes / 60));
+            const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, minutes * 60);
             const sess = {
                 id: Date.now(), date: todayStr(), sport: state.cardioSport,
                 duration: Math.round(minutes * 60), calories: cals, manual: true

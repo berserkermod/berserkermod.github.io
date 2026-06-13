@@ -434,7 +434,7 @@ async function mercadoPagoWebhook(req, env, url) {
 }
 
 // ── Oracle (proxy a Anthropic, nunca loguea la key) ──────────────────
-async function oracleProxy(req, env) {
+async function oracleProxy(req) {
     const body = await readBody(req);
     if (!body || !body.apiKey || !body.prompt) return err('Missing apiKey or prompt', 400);
     try {
@@ -453,7 +453,7 @@ async function oracleProxy(req, env) {
         });
         const data = await resp.json();
         return json(data, resp.ok ? 200 : resp.status);
-    } catch (e) {
+    } catch {
         return err('Oracle upstream error', 502);
     }
 }
@@ -540,7 +540,7 @@ export default {
             if (p === '/api/webhook/mercadopago' && (m === 'POST' || m === 'GET')) return await mercadoPagoWebhook(req, env, url);
 
             // Oracle
-            if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req, env);
+            if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req);
 
             // Observabilidad
             if (p === '/api/errors' && m === 'POST') return await ingestErrors(req, env);

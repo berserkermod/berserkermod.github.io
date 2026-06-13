@@ -1,0 +1,36 @@
+name: CI
+
+# Corre en cada push y PR a main. Si algo se pone rojo, te enterás antes de
+# que llegue a los usuarios (la app es single-file y se sirve directo desde
+# este repo vía GitHub Pages).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dev deps (ESLint)
+        run: npm install
+
+      - name: Lint (core + worker)
+        run: npm run lint
+
+      - name: Business-logic tests (core/calc)
+        run: npm run test:calc
+
+      - name: i18n key parity (ES/EN/PT)
+        run: npm run test:i18n
+
+      - name: Worker tests (licenses + coach + oracle + errors)
+        run: npm run test:worker
