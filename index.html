@@ -85,6 +85,8 @@
             scroll-behavior: smooth;
             scroll-padding-top: 80px;
             -webkit-text-size-adjust: 100%;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         body {
@@ -653,8 +655,23 @@
         @media (max-width: 1023px) {
             .deepdive-grid { grid-template-columns: 1fr; gap: 30px; }
             .deepdive-visual { position: static; }
-            .deepdive-mockups { min-height: 0; }
-            .deepdive-mockup { position: relative; left: auto; transform: none; opacity: 1; pointer-events: auto; }
+            /* Carrusel deslizable: los 4 mockups quedan en una fila CONTENIDA dentro
+               del ancho de la pantalla (scroll horizontal interno + snap), en vez de
+               desbordar la página entera. Se ve un teléfono y se asoma el siguiente. */
+            .deepdive-mockups {
+                min-height: 0;
+                width: 100%; max-width: 100%;
+                overflow-x: auto;
+                justify-content: flex-start;
+                gap: 16px;
+                padding: 4px 4px 14px;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+            }
+            .deepdive-mockup {
+                position: relative; left: auto; transform: none; opacity: 1; pointer-events: auto;
+                flex: 0 0 auto; scroll-snap-align: start;
+            }
             .deepdive-panel { min-height: 0; padding: 20px 0; text-align: center; }
             .deepdive-num { margin-left: auto; margin-right: auto; }
             .deepdive-bullets { text-align: left; max-width: 400px; margin: 0 auto; }
@@ -663,16 +680,6 @@
             .deepdive { padding: 70px 16px; }
             .deepdive-header { margin-bottom: 40px; }
             .deepdive-title { font-size: 24px; }
-        }
-
-        /* Mobile deepdive: stacked mode (show all mockups) */
-        @media (max-width: 1023px) {
-            .deepdive-stack {
-                display: flex; flex-direction: column; gap: 60px;
-            }
-            .deepdive-stack-item {
-                display: flex; flex-direction: column; align-items: center; gap: 24px;
-            }
         }
 
         /* ============================================
