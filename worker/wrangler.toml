@@ -25,7 +25,7 @@ ENABLE_HEALTH_SYNC = "false"
 # Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
 # Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).
 # Ej: USD 18 ≈ poné el equivalente en ARS, p.ej. COACH_PRICE_ARS = "21600".
-COACH_PRICE_ARS = "0"
+COACH_PRICE_ARS = "25000"
 COACH_CURRENCY = "ARS"
 COACH_TITLE = "BERSERKERMOD — Modo Coach (acceso completo)"
 
