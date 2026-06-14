@@ -17,9 +17,9 @@ compatibility_date = "2024-09-23"
 # Vars públicas (no secretas). APP_ORIGIN se usa para los redirects de Mercado
 # Pago y para CORS. Reemplazá por tu dominio final si usás uno propio.
 [vars]
-APP_ORIGIN = "https://tornatiezequiel0-afk.github.io"
-APP_PATH = "/berserkermod/BERSERKERMOD.html"
-LANDING_URL = "https://tornatiezequiel0-afk.github.io/berserkermod/"
+APP_ORIGIN = "https://berserkermod.github.io"
+APP_PATH = "/BERSERKERMOD.html"
+LANDING_URL = "https://berserkermod.github.io/"
 ENABLE_HEALTH_SYNC = "false"
 
 # Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.

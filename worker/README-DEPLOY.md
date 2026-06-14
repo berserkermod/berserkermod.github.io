@@ -139,7 +139,7 @@ el flujo completo end-to-end.
    - `external_reference`: `"coach"` o `"premium"` (define qué desbloquea el código).
    - `notification_url`: `https://berserkermod-api.TU-SUBDOMINIO.workers.dev/api/webhook/mercadopago`
    - `back_urls.success`: la URL de la app, p.ej.
-     `https://tornatiezequiel0-afk.github.io/berserkermod/BERSERKERMOD.html`
+     `https://berserkermod.github.io/BERSERKERMOD.html`
      (Mercado Pago le agrega `?payment_id=...&status=approved` al volver, y la
      app recupera el código y lo activa sola.)
 4. Flujo automático: pago aprobado → MP llama al webhook → el Worker genera un
