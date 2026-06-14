@@ -2139,7 +2139,7 @@
                 prog_recommend_free: "💡 ¡Subí el peso! Llevás {days} días con el mismo estímulo. Probá con {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueá todas las funciones del entrenador más inteligente.",
-                upgrade_cta: "⚡ ACTIVAR PREMIUM", upgrade_cancel: "Ahora no",
+                upgrade_cta: "⚡ OBTENER PREMIUM", upgrade_cancel: "Ahora no", upgrade_go_profile: "👇 Activá tu código o probá gratis en Perfil", upgrade_coach_sub: "El modo Coach es parte del plan Coach. Activá tu código de Coach (lo conseguís en la web).",
                 upgrade_feat_routines: "Rutinas ilimitadas", upgrade_feat_routines_d: "Creá tantas rutinas personalizadas como quieras",
                 upgrade_feat_stats: "Estadísticas completas", upgrade_feat_stats_d: "Mensual, trimestral y anual",
                 upgrade_feat_lang: "Todos los idiomas", upgrade_feat_lang_d: "Español, English y Português",
@@ -2378,7 +2378,7 @@
                 prog_recommend_free: "💡 Increase the weight! You've had the same stimulus for {days} days. Try {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Unlock all features of the smartest trainer.",
-                upgrade_cta: "⚡ ACTIVATE PREMIUM", upgrade_cancel: "Not now",
+                upgrade_cta: "⚡ GET PREMIUM", upgrade_cancel: "Not now", upgrade_go_profile: "👇 Activate your code or start a free trial in Profile", upgrade_coach_sub: "Coach mode is part of the Coach plan. Activate your Coach code (get it on the web).",
                 upgrade_feat_routines: "Unlimited routines", upgrade_feat_routines_d: "Create as many custom routines as you want",
                 upgrade_feat_stats: "Full statistics", upgrade_feat_stats_d: "Monthly, quarterly and yearly",
                 upgrade_feat_lang: "All languages", upgrade_feat_lang_d: "Español, English & Português",
@@ -2618,7 +2618,7 @@
                 prog_recommend_free: "💡 Aumente o peso! Você tem o mesmo estímulo há {days} dias. Tente {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueie todas as funções do treinador mais inteligente.",
-                upgrade_cta: "⚡ ATIVAR PREMIUM", upgrade_cancel: "Agora não",
+                upgrade_cta: "⚡ OBTER PREMIUM", upgrade_cancel: "Agora não", upgrade_go_profile: "👇 Ative seu código ou teste grátis no Perfil", upgrade_coach_sub: "O modo Coach faz parte do plano Coach. Ative seu código de Coach (consiga na web).",
                 upgrade_feat_routines: "Rotinas ilimitadas", upgrade_feat_routines_d: "Crie quantas rotinas personalizadas quiser",
                 upgrade_feat_stats: "Estatísticas completas", upgrade_feat_stats_d: "Mensal, trimestral e anual",
                 upgrade_feat_lang: "Todos os idiomas", upgrade_feat_lang_d: "Español, English e Português",
@@ -3618,6 +3618,15 @@
         function canUseScanner() { return isPremium(); }
         function canViewStatsPeriod(period) { return period === 'weekly' || isPremium(); }
         function canUseLang(lang) { return lang !== 'pt' || isPremium(); }
+        // Modo Coach (gestión de alumnos) = exclusivo del producto Coach.
+        // Premium desbloquea todo lo demás PERO no el panel de alumnos.
+        // Plan: Coach = Premium + alumnos; Premium = todo menos alumnos.
+        // (En dev sin licencia, el toggle premium habilita Coach para testear.)
+        function canUseCoach() {
+            const info = licenseInfo();
+            if (info) return info.product === 'coach';
+            return DEBUG_APP ? isPremium() : false;
+        }
 
         function showUpgradeModal(feature) {
             const modal = $('upgrade-modal');
@@ -3630,16 +3639,27 @@
                 custom_gif: t('lib_gif_locked_sub'),
                 routine: t('upgrade_locked_routine'),
                 scanner: t('upgrade_feat_scanner_d'),
-                pt: t('upgrade_locked_lang')
+                pt: t('upgrade_locked_lang'),
+                coach: t('upgrade_coach_sub')
             };
             if (sub && subs[feature]) sub.textContent = subs[feature];
             modal.classList.add('show');
         }
         function closeUpgradeModal() { $('upgrade-modal').classList.remove('show'); }
+        // El CTA del modal de upgrade ya NO regala premium: lleva al usuario al
+        // Perfil, donde está la card para activar un código o probar gratis.
+        function goToUpgrade() {
+            closeUpgradeModal();
+            switchTab('profile');
+            setTimeout(() => { try { flash(t('upgrade_go_profile')); } catch { } }, 300);
+        }
+        // Solo en dev: atajo para activar premium sin pagar (para testear).
+        // En producción redirige al flujo real (no hay premium gratis).
         function activatePremium() {
+            if (!DEBUG_APP) { goToUpgrade(); return; }
             state.tier = 'premium'; saveTier();
             closeUpgradeModal();
-            flash('👑 Premium activado', 'var(--orange)');
+            flash('👑 Premium (dev)', 'var(--orange)');
             renderProfile();
         }
 
@@ -5413,7 +5433,7 @@
             if (tab === 'home') renderHome();
             if (tab === 'routines') {
                 renderRoutines();
-                if (isPremium()) loadMyStudents().then(() => { if (state.tab === 'routines' && !state.coachActiveRoutineId && !routineCreator.open) renderRoutines(); }).catch(() => {});
+                if (canUseCoach()) loadMyStudents().then(() => { if (state.tab === 'routines' && !state.coachActiveRoutineId && !routineCreator.open) renderRoutines(); }).catch(() => {});
             }
             if (tab === 'train') renderTrain();
             if (tab === 'cardio') renderCardio();
@@ -5593,8 +5613,8 @@
             header.appendChild(createRow);
             v.appendChild(header);
 
-            // Coach section (premium only)
-            if (isPremium()) {
+            // Coach section — solo el producto Coach (Premium no incluye alumnos)
+            if (canUseCoach()) {
                 renderCoachSection(v);
             }
 
@@ -11571,7 +11591,7 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
         }
 
         function openCoachCreateFlow() {
-            if (!isPremium()) { showUpgradeModal('coach'); return; }
+            if (!canUseCoach()) { showUpgradeModal('coach'); return; }
             routineCreator = {
                 open: true, step: 0, name: '', days: 3, plan: [],
                 forAlumno: true, alumnoName: '', alumnoEmail: ''
