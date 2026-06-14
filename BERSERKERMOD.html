@@ -14,7 +14,7 @@
          planned when JS moves to module files); unpkg is allowed only for the
          two SRI-pinned lazy libs (jsPDF, ZXing). img-src stays broad (https:)
          because exercise GIFs and QR codes are user/third-party URLs. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com https://berserkermod-api.berserkermod.workers.dev; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self'" />
     <meta name="description"
         content="BERSERKERMOD — Tu entrenador personal inteligente. Rutinas personalizadas, cardio, nutrición y métricas profesionales." />
     <meta property="og:title" content="BERSERKERMOD — Tu entrenador personal inteligente" />
