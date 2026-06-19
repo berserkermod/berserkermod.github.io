@@ -11896,12 +11896,24 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
         // ALUMNO MODE
         // ─────────────────────────────────────────
         function detectAlumnoMode() {
-            // Accept /r/{token}, /r/{token}/, /r/{token}?foo=bar — case-insensitive on /r/
+            // 1) Query param ?r={token}. En GitHub Pages no hay ruteo de rutas, así
+            //    que el link /r/{token} lo redirige 404.html aquí (y también sirve
+            //    para un link directo). Es el camino de producción.
+            try {
+                const q = new URLSearchParams(location.search).get('r');
+                if (q && /^[a-z0-9]+$/i.test(q)) {
+                    state.viewMode = 'alumno';
+                    state.alumnoToken = q.toLowerCase();
+                    if (DEBUG_APP) console.log('[Alumno] Detected alumno mode (query), token:', state.alumnoToken);
+                    return true;
+                }
+            } catch { }
+            // 2) Path /r/{token} — sirve en serve.ps1 local (que sí rutea) y como respaldo.
             const m = location.pathname.match(/^\/r\/([a-z0-9]+)\/?$/i);
             if (m) {
                 state.viewMode = 'alumno';
                 state.alumnoToken = m[1].toLowerCase();
-                if (DEBUG_APP) console.log('[Alumno] Detected alumno mode, token:', state.alumnoToken);
+                if (DEBUG_APP) console.log('[Alumno] Detected alumno mode (path), token:', state.alumnoToken);
                 return true;
             }
             if (DEBUG_APP) console.log('[Alumno] Not alumno mode, pathname:', location.pathname);

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0A0A0B" />
+    <title>BERSERKERMOD</title>
+    <!-- GitHub Pages no rutea rutas dinámicas (no hay servidor). Este 404 captura
+         los links de rutina del alumno (/r/{token}) y los manda al app con el
+         token como query param, que SÍ es un archivo real. También rescata links
+         ya repartidos en el formato viejo. Cualquier otra ruta desconocida → home. -->
+    <script>
+        (function () {
+            try {
+                var m = location.pathname.match(/\/r\/([a-zA-Z0-9]+)\/?$/i);
+                if (m) {
+                    location.replace('/BERSERKERMOD.html?r=' + m[1].toLowerCase() + (location.hash || ''));
+                    return;
+                }
+            } catch (e) { }
+            // Ruta desconocida: al inicio en vez de un 404 feo.
+            location.replace('/');
+        })();
+    </script>
+    <style>
+        html, body { background: #0A0A0B; color: #A1A1A6; font-family: system-ui, sans-serif; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <p>Redirigiendo…</p>
+</body>
+</html>
