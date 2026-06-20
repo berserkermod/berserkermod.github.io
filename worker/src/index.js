@@ -17,6 +17,7 @@
 //                     POST                /api/checkout
 //   Mercado Pago:     POST                /api/webhook/mercadopago
 //   Oracle (IA):      POST                /api/oracle
+//   Importar rutina:  POST                /api/parse-routine    (premium, lee PDF con IA)
 //   Observabilidad:   POST                /api/errors
 //                     GET                 /api/admin/errors     (ADMIN_SECRET)
 //   Salud / varios:   POST                /api/health-data      (off por defecto)
@@ -508,6 +509,98 @@ async function oracleProxy(req) {
     }
 }
 
+// ── Importar rutina desde PDF (IA, key del Worker) ───────────────────
+// Claude lee el PDF de forma nativa (document block) y devuelve la rutina
+// estructurada. Gateado a premium/coach (licencia válida). Usa la key del
+// dueño (env.ANTHROPIC_KEY), no la del usuario.
+const PARSE_SYSTEM = [
+    'Sos un parser de rutinas de entrenamiento. Recibís el PDF de una rutina y devolvés SOLO un objeto JSON válido,',
+    'sin texto extra ni markdown ni explicaciones. El formato EXACTO es:',
+    '{"name": string, "days": [{"name": string, "exercises": [EX]}]}',
+    'donde cada EX de fuerza es: {"type":"strength","name":string,"sets":int|null,"reps":string|null,"kg":number|null,"rir":int|null,"notes":string|null}',
+    'y cada EX de cardio es: {"type":"cardio","name":string,"distance_km":number|null,"duration_min":int|null,"intensity":"low"|"medium"|"high"|null,"notes":string|null}',
+    'Reglas:',
+    '- Cardio = correr, trotar, caminar, cinta, bici/ciclismo/spinning, eliptica, nadar, remo ergometro, escalador. El resto es strength.',
+    '- reps va como string para permitir rangos ("8-10", "12", "AMRAP", "al fallo").',
+    '- Si un dato NO esta en el PDF, poné null. No inventes numeros.',
+    '- Normaliza los nombres de ejercicios a español claro, en mayuscula inicial.',
+    '- Si el PDF no separa por dias, poné todo en un solo dia ("Dia 1").',
+    '- intensity: suave/baja=low, moderada/media=medium, alta/fuerte/intensa=high.',
+    '- Si no hay nombre de rutina, inventa uno corto descriptivo.',
+    'Devolvé unicamente el JSON.'
+].join('\n');
+
+function sanitizeParsedRoutine(p) {
+    const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max || 80) : null);
+    const numOrNull = (v) => (typeof v === 'number' && isFinite(v) ? v : (v != null && !isNaN(parseFloat(v)) ? parseFloat(v) : null));
+    const intOrNull = (v) => { const n = numOrNull(v); return n == null ? null : Math.round(n); };
+    const out = { name: str(p && p.name, 60) || 'Rutina importada', days: [] };
+    const days = (p && Array.isArray(p.days)) ? p.days.slice(0, 14) : [];
+    days.forEach((d, i) => {
+        const exsIn = (d && Array.isArray(d.exercises)) ? d.exercises.slice(0, 40) : [];
+        const exercises = [];
+        for (const e of exsIn) {
+            if (!e || !str(e.name, 80)) continue;
+            if (e.type === 'cardio') {
+                exercises.push({ type: 'cardio', name: str(e.name, 80),
+                    distance_km: numOrNull(e.distance_km), duration_min: intOrNull(e.duration_min),
+                    intensity: ['low', 'medium', 'high'].includes(e.intensity) ? e.intensity : null,
+                    notes: str(e.notes, 200) });
+            } else {
+                exercises.push({ type: 'strength', name: str(e.name, 80),
+                    sets: intOrNull(e.sets), reps: str(e.reps, 24), kg: numOrNull(e.kg),
+                    rir: intOrNull(e.rir), notes: str(e.notes, 200) });
+            }
+        }
+        out.days.push({ name: str(d && d.name, 60) || ('Día ' + (i + 1)), exercises });
+    });
+    if (!out.days.length) out.days.push({ name: 'Día 1', exercises: [] });
+    return out;
+}
+
+async function parseRoutine(req, env) {
+    if (!env.ANTHROPIC_KEY) return err('Importador de PDF no configurado (falta ANTHROPIC_KEY)', 503);
+    const body = await readBody(req);
+    // Gate: solo licencias válidas (premium o coach).
+    const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
+    if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
+    let pdf = body && body.pdf_base64;
+    if (!pdf || typeof pdf !== 'string') return err('Falta el PDF', 400);
+    pdf = pdf.replace(/^data:application\/pdf;base64,/, '');
+    if (pdf.length > 9000000) return err('El PDF es demasiado grande (máx ~6 MB)', 413);
+
+    const model = env.PARSE_MODEL || 'claude-haiku-4-5-20251001';
+    try {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'x-api-key': env.ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model, max_tokens: 4096, system: PARSE_SYSTEM,
+                messages: [
+                    { role: 'user', content: [
+                        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf } },
+                        { type: 'text', text: 'Convertí esta rutina al JSON pedido.' }
+                    ] },
+                    { role: 'assistant', content: '{' }
+                ]
+            })
+        });
+        if (!resp.ok) {
+            const detail = await resp.text().catch(() => '');
+            return json({ error: 'La IA no pudo procesar el PDF', status: resp.status, detail: detail.slice(0, 200) }, 502);
+        }
+        const data = await resp.json();
+        let txt = (data.content && data.content[0] && data.content[0].text) || '';
+        txt = '{' + txt; // re-agregar el prefill
+        const m = txt.match(/\{[\s\S]*\}/);
+        let parsed;
+        try { parsed = JSON.parse(m ? m[0] : txt); } catch { return err('No se pudo interpretar la rutina del PDF', 422); }
+        return json({ ok: true, routine: sanitizeParsedRoutine(parsed) });
+    } catch {
+        return err('Error al contactar la IA', 502);
+    }
+}
+
 // ── Observabilidad ───────────────────────────────────────────────────
 async function ingestErrors(req, env) {
     const body = await readBody(req);
@@ -595,6 +688,7 @@ export default {
 
             // Oracle
             if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req);
+            if (p === '/api/parse-routine' && m === 'POST') return await parseRoutine(req, env);
 
             // Observabilidad
             if (p === '/api/errors' && m === 'POST') return await ingestErrors(req, env);

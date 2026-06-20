@@ -2085,6 +2085,7 @@
                 home_welcome: "¡A entrenar,", home_streak: "Días racha", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "TU PLAN ACTUAL", home_plan_day: "DÍA", home_view_routine: "Ver rutina completa →",
                 routines_create: "➕ Crear Nueva Rutina", routines_empty: "No tienes ninguna rutina.", routines_start: "INICIAR SESIÓN",
+                routine_import_pdf: "Importar rutina desde PDF", routine_import_reading: "Leyendo el PDF con IA…", routine_import_preview: "Revisá la rutina importada", routine_import_save: "Guardar rutina", routine_import_done: "Rutina importada", routine_import_fail: "No se pudo leer el PDF. Probá con otro archivo.", routine_import_too_big: "El PDF es muy grande (máx 6 MB)",
                 routines_creator_title: "Nueva Rutina", routines_creator_name: "Nombre de la rutina", routines_creator_days: "DÍAS POR SEMANA", routines_creator_day_name: "Nombre del día (ej. Push)",
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
@@ -2325,6 +2326,7 @@
                 home_welcome: "Let's train,", home_streak: "Day streak", home_vol: "Tons", home_cals: "Kcal",
                 home_plan_title: "YOUR CURRENT PLAN", home_plan_day: "DAY", home_view_routine: "View full routine →",
                 routines_create: "➕ Create New Routine", routines_empty: "You have no routines.", routines_start: "START SESSION",
+                routine_import_pdf: "Import routine from PDF", routine_import_reading: "Reading the PDF with AI…", routine_import_preview: "Review the imported routine", routine_import_save: "Save routine", routine_import_done: "Routine imported", routine_import_fail: "Couldn't read the PDF. Try another file.", routine_import_too_big: "The PDF is too big (max 6 MB)",
                 routines_creator_title: "New Routine", routines_creator_name: "Routine name", routines_creator_days: "DAYS PER WEEK", routines_creator_day_name: "Day name (e.g. Push)",
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
@@ -2564,6 +2566,7 @@
                 home_welcome: "Bora treinar,", home_streak: "Dias seguidos", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "SEU PLANO ATUAL", home_plan_day: "DIA", home_view_routine: "Ver rotina completa →",
                 routines_create: "➕ Criar Nova Rotina", routines_empty: "Você não tem nenhuma rotina.", routines_start: "INICIAR SESSÃO",
+                routine_import_pdf: "Importar rotina de PDF", routine_import_reading: "Lendo o PDF com IA…", routine_import_preview: "Revise a rotina importada", routine_import_save: "Salvar rotina", routine_import_done: "Rotina importada", routine_import_fail: "Não foi possível ler o PDF. Tente outro arquivo.", routine_import_too_big: "O PDF é muito grande (máx 6 MB)",
                 routines_creator_title: "Nova Rotina", routines_creator_name: "Nome da rotina", routines_creator_days: "DIAS POR SEMANA", routines_creator_day_name: "Nome do dia (ex. Push)",
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
@@ -5600,7 +5603,7 @@
             regenerateRoutineIfNeeded();
 
             // Header Actions
-            const header = h('div', { style: { display: 'flex', gap: '8px', marginBottom: '16px' } });
+            const header = h('div', { style: { display: 'flex', gap: '8px', marginBottom: '8px' } });
             const createRow = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flex: 1 } });
             const createBtn = h('button', {
                 className: 'btn btn-secondary', style: { flex: 1, padding: '12px', borderStyle: 'dashed' }, onclick: () => {
@@ -5612,6 +5615,18 @@
             if (!isPremium()) createRow.appendChild(h('span', { className: 'lock-badge' }, '🔒 Premium'));
             header.appendChild(createRow);
             v.appendChild(header);
+
+            // Importar rutina desde PDF (función adicional — no reemplaza nada).
+            const importRow = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' } });
+            const importBtn = h('button', {
+                className: 'btn btn-secondary', style: { flex: 1, padding: '12px', borderStyle: 'dashed' }, onclick: () => {
+                    if (!canAddRoutine()) { showUpgradeModal('routine'); return; }
+                    openPdfImport();
+                }
+            }, '📄 ' + t('routine_import_pdf'));
+            importRow.appendChild(importBtn);
+            if (!isPremium()) importRow.appendChild(h('span', { className: 'lock-badge' }, '🔒 Premium'));
+            v.appendChild(importRow);
 
             // Coach section — solo el producto Coach (Premium no incluye alumnos)
             if (canUseCoach()) {
@@ -5990,6 +6005,99 @@
                 ex.notes = ex.notes ?? '';
             }
             return ex;
+        }
+
+        // ── Importar rutina desde PDF (IA en el Worker) ──
+        // Función ADICIONAL al creador normal. El PDF lo lee Claude (en el Worker)
+        // y devuelve la rutina estructurada; acá se previsualiza y se guarda como
+        // una rutina custom más (editable y contabilizada igual que cualquier otra).
+        function openPdfImport() {
+            const inp = h('input', { type: 'file', accept: 'application/pdf,.pdf', style: { display: 'none' } });
+            inp.addEventListener('change', () => { if (inp.files && inp.files[0]) doPdfImport(inp.files[0]); inp.remove(); });
+            document.body.appendChild(inp);
+            inp.click();
+        }
+        function _pdfOverlay(contentNode) {
+            const old = document.getElementById('pdf-import-ov'); if (old) old.remove();
+            const ov = h('div', { id: 'pdf-import-ov', style: { position: 'fixed', inset: '0', background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' } });
+            const card = h('div', { style: { background: 'var(--sf1)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '420px', width: '100%', maxHeight: '85vh', overflowY: 'auto' } });
+            card.appendChild(contentNode);
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+            return ov;
+        }
+        function _closePdfOverlay() { const ov = document.getElementById('pdf-import-ov'); if (ov) ov.remove(); }
+        function _fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(String(r.result)); // data:application/pdf;base64,… (el Worker hace strip)
+                r.onerror = reject;
+                r.readAsDataURL(file);
+            });
+        }
+        async function doPdfImport(file) {
+            if (file.size > 6 * 1024 * 1024) { flash(t('routine_import_too_big'), 'var(--red)'); return; }
+            const loading = h('div', { style: { textAlign: 'center', padding: '12px 0' } });
+            loading.appendChild(h('div', { className: 'oracle-spinner', style: { margin: '0 auto 16px' } }));
+            loading.appendChild(h('p', { style: { fontWeight: 800, fontSize: '15px', marginBottom: '4px' } }, t('routine_import_reading')));
+            loading.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', wordBreak: 'break-all' } }, file.name));
+            _pdfOverlay(loading);
+            try {
+                if (noBackendInProd()) { _closePdfOverlay(); flash(t('lic_no_server'), 'var(--red)'); return; }
+                const b64 = await _fileToBase64(file);
+                const resp = await fetch(getApiBase() + '/api/parse-routine', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: (localStorage.getItem('bm-license') || ''), pdf_base64: b64 })
+                });
+                const j = await resp.json().catch(() => ({}));
+                if (!resp.ok || !j.ok || !j.routine) { _closePdfOverlay(); flash('⚠️ ' + (j.error || t('routine_import_fail')), 'var(--red)'); return; }
+                showPdfPreview(j.routine);
+            } catch { _closePdfOverlay(); flash(t('routine_import_fail'), 'var(--red)'); }
+        }
+        function showPdfPreview(routine) {
+            const wrap = h('div', {});
+            wrap.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '4px' } }, '📄 ' + t('routine_import_preview')));
+            wrap.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '14px' } }, routine.name));
+            (routine.days || []).forEach(d => {
+                const dc = h('div', { style: { marginBottom: '10px' } });
+                dc.appendChild(h('p', { style: { fontSize: '12px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, d.name + ' · ' + (d.exercises || []).length + ' ej.'));
+                (d.exercises || []).forEach(e => {
+                    let detail;
+                    if (e.type === 'cardio') detail = [e.distance_km ? e.distance_km + 'km' : null, e.duration_min ? e.duration_min + 'min' : null, e.intensity].filter(Boolean).join(' · ');
+                    else detail = [(e.sets ? e.sets + 'x' + (e.reps || '') : e.reps), e.kg ? e.kg + 'kg' : null, (e.rir != null ? 'RIR ' + e.rir : null)].filter(Boolean).join(' · ');
+                    dc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', paddingLeft: '8px', marginBottom: '2px' } }, (e.type === 'cardio' ? '🏃 ' : '• ') + e.name + (detail ? '  (' + detail + ')' : '')));
+                });
+                wrap.appendChild(dc);
+            });
+            wrap.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '12px', marginBottom: '8px' }, onclick: () => { _closePdfOverlay(); saveImportedRoutine(routine); } }, t('routine_import_save')));
+            wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: _closePdfOverlay }, t('btn_cancel')));
+            _pdfOverlay(wrap);
+        }
+        function saveImportedRoutine(routine) {
+            const plan = (routine.days || []).map((d, i) => ({
+                name: d.name || ('Día ' + (i + 1)),
+                method: 'Importado',
+                exercises: (d.exercises || []).map(e => {
+                    if (e.type === 'cardio') {
+                        return { name: e.name, kind: 'cardio', duration_min: e.duration_min || 20, distance_km: (e.distance_km != null ? e.distance_km : ''), intensity: e.intensity || 'medium', notes: e.notes || '' };
+                    }
+                    return { name: e.name, kind: 'strength', sets: e.sets || 4, reps: e.reps || '8-12', kg: (e.kg != null ? e.kg : ''), rir: (e.rir != null ? e.rir : ''), notes: e.notes || '' };
+                })
+            }));
+            // Auto-agregar a la biblioteca los ejercicios de fuerza desconocidos.
+            state.customEx = state.customEx || [];
+            let added = 0;
+            plan.forEach(d => d.exercises.forEach(e => {
+                if (e.kind === 'strength' && !findCatalogEntry(e.name) &&
+                    !state.customEx.some(c => String(c).toLowerCase() === e.name.toLowerCase())) {
+                    state.customEx.push(e.name); added++;
+                }
+            }));
+            if (added) saveCustom();
+            state.customRoutines.push({ name: routine.name, plan });
+            saveRoutines();
+            flash('✅ ' + t('routine_import_done') + (added ? ' (+' + added + ')' : ''));
+            renderRoutines();
         }
 
         function renderExerciseRow(day, ex, exIdx, dayIdx) {

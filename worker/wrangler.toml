@@ -21,6 +21,10 @@ APP_ORIGIN = "https://berserkermod.github.io"
 APP_PATH = "/BERSERKERMOD.html"
 LANDING_URL = "https://berserkermod.github.io/"
 ENABLE_HEALTH_SYNC = "false"
+# Modelo que lee los PDF de rutinas. Haiku es barato; si la lectura sale floja
+# se puede subir a un modelo mejor (ej. claude-sonnet-4-6). El secret de la key
+# va aparte: wrangler secret put ANTHROPIC_KEY
+PARSE_MODEL = "claude-haiku-4-5-20251001"
 
 # Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
 # Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).

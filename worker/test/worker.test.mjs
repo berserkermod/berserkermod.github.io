@@ -186,6 +186,45 @@ let code, licToken;
     globalThis.fetch = realFetch;
 }
 
+// ── Importar rutina desde PDF (IA) ──
+{
+    console.log('\nImportar rutina (PDF + IA)');
+    const noKey = await call('POST', '/api/parse-routine', { pdf_base64: 'JVBERi0=' });
+    ok('sin ANTHROPIC_KEY → 503', noKey.status === 503, noKey.status);
+
+    env.ANTHROPIC_KEY = 'test-anthropic-key';
+    const noLic = await call('POST', '/api/parse-routine', { pdf_base64: 'JVBERi0=' });
+    ok('sin licencia válida → 403', noLic.status === 403, noLic.status);
+
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'coach' }, { 'x-admin-secret': 'test-admin' });
+    const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'pdf-dev' });
+    const token = act.body.token;
+
+    const realFetch = globalThis.fetch;
+    let sentBody = null;
+    globalThis.fetch = async (u, opts) => {
+        if (String(u).includes('/v1/messages')) {
+            sentBody = JSON.parse(opts.body);
+            // Claude responde el JSON SIN la primera llave (por el prefill '{')
+            const ai = '"name":"Full Body","days":[{"name":"Día 1","exercises":['
+                + '{"type":"strength","name":"Sentadilla","sets":4,"reps":"8-10","kg":60,"rir":2,"notes":null},'
+                + '{"type":"cardio","name":"Correr","distance_km":5,"duration_min":30,"intensity":"medium","notes":null}]}]}';
+            return new Response(JSON.stringify({ content: [{ text: ai }] }), { status: 200 });
+        }
+        return new Response('{}', { status: 404 });
+    };
+    const r = await call('POST', '/api/parse-routine', { token, pdf_base64: 'data:application/pdf;base64,JVBERi0xLjQK' });
+    ok('parse 200 + rutina', r.status === 200 && r.body.ok && r.body.routine.name === 'Full Body', r.body);
+    ok('manda el PDF como document block', !!sentBody && sentBody.messages[0].content[0].type === 'document', sentBody && sentBody.messages[0].content[0].type);
+    ok('strip del prefijo data: → base64 limpio', sentBody.messages[0].content[0].source.data === 'JVBERi0xLjQK', sentBody.messages[0].content[0].source.data);
+    ok('prefill assistant con {', sentBody.messages[1].role === 'assistant' && sentBody.messages[1].content === '{');
+    const ex = r.body.routine.days[0].exercises;
+    ok('strength parseado (sets/kg/rir)', ex[0].type === 'strength' && ex[0].sets === 4 && ex[0].kg === 60 && ex[0].rir === 2, ex[0]);
+    ok('cardio parseado (km/min/intensidad)', ex[1].type === 'cardio' && ex[1].distance_km === 5 && ex[1].duration_min === 30 && ex[1].intensity === 'medium', ex[1]);
+    globalThis.fetch = realFetch;
+    delete env.ANTHROPIC_KEY;
+}
+
 // ── Errores: ingest + admin ──
 {
     console.log('\nObservabilidad');
