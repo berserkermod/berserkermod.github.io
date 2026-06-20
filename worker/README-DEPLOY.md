@@ -64,6 +64,11 @@ npx wrangler secret put ADMIN_SECRET
 
 # (Opcional, cuando conectes Mercado Pago) Access Token de tu cuenta MP.
 npx wrangler secret put MP_ACCESS_TOKEN
+
+# (Opcional, para "Importar rutina desde PDF") API key de Anthropic/Claude.
+# Crearla en https://console.anthropic.com -> API Keys. La paga el dueño
+# (centavos por importacion). Sin esto, el importador devuelve 503.
+npx wrangler secret put ANTHROPIC_KEY
 ```
 
 > ⚠️ Guardá `LICENSE_SECRET` en un lugar seguro. Si lo cambiás, **todas las
