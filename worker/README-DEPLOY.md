@@ -64,12 +64,15 @@ npx wrangler secret put ADMIN_SECRET
 
 # (Opcional, cuando conectes Mercado Pago) Access Token de tu cuenta MP.
 npx wrangler secret put MP_ACCESS_TOKEN
-
-# (Opcional, para "Importar rutina desde PDF") API key de Anthropic/Claude.
-# Crearla en https://console.anthropic.com -> API Keys. La paga el dueño
-# (centavos por importacion). Sin esto, el importador devuelve 503.
-npx wrangler secret put ANTHROPIC_KEY
 ```
+
+> 🆓 **"Importar rutina desde PDF" NO necesita ningún secret.** Corre sobre
+> **Cloudflare Workers AI** (el binding `[ai]` ya está en `wrangler.toml`):
+> `env.AI.toMarkdown()` lee el PDF y un modelo Llama lo estructura. Es **gratis**
+> dentro del tier de Workers AI (10.000 neuronas/día, se reinician a las 00:00
+> UTC) — sin API key ni cuenta de terceros. Lo único: la primera vez puede que
+> Cloudflare te pida **activar Workers AI** en el dashboard (Dashboard → AI →
+> Workers AI). Si el binding `AI` no está, el importador devuelve 503.
 
 > ⚠️ Guardá `LICENSE_SECRET` en un lugar seguro. Si lo cambiás, **todas las
 > licencias ya emitidas dejan de validar** (los usuarios tendrían que reactivar).

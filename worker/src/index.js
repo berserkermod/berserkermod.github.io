@@ -17,7 +17,7 @@
 //                     POST                /api/checkout
 //   Mercado Pago:     POST                /api/webhook/mercadopago
 //   Oracle (IA):      POST                /api/oracle
-//   Importar rutina:  POST                /api/parse-routine    (premium, lee PDF con IA)
+//   Importar rutina:  POST                /api/parse-routine    (premium, lee PDF con Workers AI)
 //   Observabilidad:   POST                /api/errors
 //                     GET                 /api/admin/errors     (ADMIN_SECRET)
 //   Salud / varios:   POST                /api/health-data      (off por defecto)
@@ -509,25 +509,26 @@ async function oracleProxy(req) {
     }
 }
 
-// ── Importar rutina desde PDF (IA, key del Worker) ───────────────────
-// Claude lee el PDF de forma nativa (document block) y devuelve la rutina
-// estructurada. Gateado a premium/coach (licencia válida). Usa la key del
-// dueño (env.ANTHROPIC_KEY), no la del usuario.
+// ── Importar rutina desde PDF (Cloudflare Workers AI, gratis) ─────────
+// 1) env.AI.toMarkdown() convierte el PDF a texto (gratis para PDFs de texto).
+// 2) un modelo Llama de Workers AI estructura ese texto en la rutina JSON.
+// Sin API key ni cuenta de terceros: corre en la misma cuenta de Cloudflare,
+// dentro del tier gratuito (10.000 neuronas/día). Gateado a premium/coach.
 const PARSE_SYSTEM = [
-    'Sos un parser de rutinas de entrenamiento. Recibís el PDF de una rutina y devolvés SOLO un objeto JSON válido,',
-    'sin texto extra ni markdown ni explicaciones. El formato EXACTO es:',
+    'Sos un parser de rutinas de entrenamiento. Recibís una rutina en texto/markdown y devolvés SOLO un objeto JSON válido,',
+    'sin texto extra ni markdown ni ```json ni explicaciones. El formato EXACTO es:',
     '{"name": string, "days": [{"name": string, "exercises": [EX]}]}',
     'donde cada EX de fuerza es: {"type":"strength","name":string,"sets":int|null,"reps":string|null,"kg":number|null,"rir":int|null,"notes":string|null}',
     'y cada EX de cardio es: {"type":"cardio","name":string,"distance_km":number|null,"duration_min":int|null,"intensity":"low"|"medium"|"high"|null,"notes":string|null}',
     'Reglas:',
     '- Cardio = correr, trotar, caminar, cinta, bici/ciclismo/spinning, eliptica, nadar, remo ergometro, escalador. El resto es strength.',
     '- reps va como string para permitir rangos ("8-10", "12", "AMRAP", "al fallo").',
-    '- Si un dato NO esta en el PDF, poné null. No inventes numeros.',
+    '- Si un dato NO esta en el texto, poné null. No inventes numeros.',
     '- Normaliza los nombres de ejercicios a español claro, en mayuscula inicial.',
-    '- Si el PDF no separa por dias, poné todo en un solo dia ("Dia 1").',
+    '- Si el texto no separa por dias, poné todo en un solo dia ("Dia 1").',
     '- intensity: suave/baja=low, moderada/media=medium, alta/fuerte/intensa=high.',
     '- Si no hay nombre de rutina, inventa uno corto descriptivo.',
-    'Devolvé unicamente el JSON.'
+    'Devolvé unicamente el JSON, empezando con "{" y terminando con "}".'
 ].join('\n');
 
 function sanitizeParsedRoutine(p) {
@@ -558,46 +559,115 @@ function sanitizeParsedRoutine(p) {
     return out;
 }
 
+// base64 → Uint8Array (atob es global en Workers y en Node). Necesario para
+// armar el Blob del PDF que toma env.AI.toMarkdown().
+function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+}
+
+// Modelo de visión para PDFs de imágenes/diseño (el cliente rasteriza las
+// páginas con PDF.js y manda los PNG/JPEG acá). OCR puro: transcribe el texto.
+const VISION_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+const OCR_PROMPT = [
+    'Sos un OCR. Transcribí EXACTAMENTE el texto que VES en esta imagen, palabra por palabra,',
+    'en orden de lectura (arriba→abajo, izquierda→derecha, columna por columna).',
+    'NO completes, NO interpretes, NO inventes: no agregues ejercicios, números ni filas que no estén escritos.',
+    'Si una celda está vacía o no se lee, omitila. Copiá días, ejercicios, series, reps, kg, RIR, descansos y notas tal como aparecen.',
+    'Si la imagen no tiene texto de rutina, respondé exactamente "(sin texto)".'
+].join(' ');
+
+// OCR de una imagen (base64) con un modelo de visión → texto plano.
+// Llama 4 Scout usa formato multimodal (messages con image_url), más capaz
+// que el 11B. temperature baja para minimizar alucinaciones.
+async function ocrImage(env, b64) {
+    const clean = b64.replace(/^data:image\/\w+;base64,/, '');
+    const r = await env.AI.run(VISION_MODEL, {
+        messages: [{ role: 'user', content: [
+            { type: 'text', text: OCR_PROMPT },
+            { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + clean } }
+        ] }],
+        max_tokens: 2048,
+        temperature: 0.1
+    });
+    return (r && (r.response || r.description || r.text)) || '';
+}
+
 async function parseRoutine(req, env) {
-    if (!env.ANTHROPIC_KEY) return err('Importador de PDF no configurado (falta ANTHROPIC_KEY)', 503);
+    if (!env.AI) return err('Importador de PDF no configurado (falta el binding AI de Workers AI)', 503);
     const body = await readBody(req);
     // Gate: solo licencias válidas (premium o coach).
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
-    let pdf = body && body.pdf_base64;
-    if (!pdf || typeof pdf !== 'string') return err('Falta el PDF', 400);
-    pdf = pdf.replace(/^data:application\/pdf;base64,/, '');
-    if (pdf.length > 9000000) return err('El PDF es demasiado grande (máx ~6 MB)', 413);
 
-    const model = env.PARSE_MODEL || 'claude-haiku-4-5-20251001';
-    try {
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: { 'x-api-key': env.ANTHROPIC_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model, max_tokens: 4096, system: PARSE_SYSTEM,
-                messages: [
-                    { role: 'user', content: [
-                        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf } },
-                        { type: 'text', text: 'Convertí esta rutina al JSON pedido.' }
-                    ] },
-                    { role: 'assistant', content: '{' }
-                ]
-            })
-        });
-        if (!resp.ok) {
-            const detail = await resp.text().catch(() => '');
-            return json({ error: 'La IA no pudo procesar el PDF', status: resp.status, detail: detail.slice(0, 200) }, 502);
+    // Aceptación única de la licencia del modelo de visión (Meta exige enviar
+    // 'agree' una vez por cuenta antes de usarlo). Gateado, se llama una sola vez.
+    if (body && body.agree_vision) {
+        try { const a = await env.AI.run(VISION_MODEL, { prompt: 'agree' }); return json({ ok: true, agreed: true, resp: a }); }
+        catch (e) { return json({ error: 'agree falló', detail: String((e && e.message) || e).slice(0, 300) }, 502); }
+    }
+
+    // Dos fuentes posibles: imágenes rasterizadas (PDF de diseño/imágenes) o el
+    // PDF crudo (texto). El cliente intenta texto primero y cae a imágenes si vuelve vacío.
+    let sourceText = '';
+    const images = (body && Array.isArray(body.images)) ? body.images.slice(0, 8) : null;
+    if (images && images.length) {
+        try {
+            const valid = images.filter((img) => typeof img === 'string' && img.length <= 4000000); // ~3 MB/imagen
+            // OCR de las páginas en paralelo (mucho más rápido que en serie).
+            const parts = await Promise.all(valid.map((img) => ocrImage(env, img).catch(() => '')));
+            sourceText = parts.join('\n\n');
+        } catch (e) {
+            return json({ error: 'No se pudieron leer las imágenes del PDF', detail: String((e && e.message) || e).slice(0, 200) }, 502);
         }
-        const data = await resp.json();
-        let txt = (data.content && data.content[0] && data.content[0].text) || '';
-        txt = '{' + txt; // re-agregar el prefill
-        const m = txt.match(/\{[\s\S]*\}/);
-        let parsed;
-        try { parsed = JSON.parse(m ? m[0] : txt); } catch { return err('No se pudo interpretar la rutina del PDF', 422); }
+    } else {
+        let pdf = body && body.pdf_base64;
+        if (!pdf || typeof pdf !== 'string') return err('Falta el PDF', 400);
+        pdf = pdf.replace(/^data:application\/pdf;base64,/, '');
+        if (pdf.length > 9000000) return err('El PDF es demasiado grande (máx ~6 MB)', 413);
+        try {
+            const blob = new Blob([base64ToBytes(pdf)], { type: 'application/pdf' });
+            const docs = await env.AI.toMarkdown([{ name: 'rutina.pdf', blob }]);
+            const doc = Array.isArray(docs) ? docs[0] : docs;
+            sourceText = (doc && doc.data) || '';
+        } catch (e) {
+            return json({ error: 'No se pudo leer el PDF', detail: String((e && e.message) || e).slice(0, 200) }, 502);
+        }
+    }
+
+    // Debug gateado (solo si el caller manda debug:true): ver el texto crudo.
+    if (body && body.debug) return json({ ok: true, debug: true, src: images ? 'vision' : 'text', md_chars: sourceText.length, md_preview: sourceText.slice(0, 4000) });
+    if (!sourceText.trim()) return err('El PDF no tiene texto legible (¿es una imagen escaneada?)', 422);
+    sourceText = sourceText.slice(0, 24000); // acotamos lo que va al modelo
+
+    // Estructurar con el 70B (texto → JSON), igual para ambas fuentes.
+    const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+    try {
+        const aiResp = await env.AI.run(model, {
+            messages: [
+                { role: 'system', content: PARSE_SYSTEM },
+                { role: 'user', content: 'Rutina (en texto/markdown):\n\n' + sourceText + '\n\nDevolvé SOLO el JSON.' }
+            ],
+            max_tokens: 4096
+        });
+        // Workers AI devuelve la respuesta como string (lo normal) o, según el
+        // modelo (ej. Llama 70B), como objeto JSON ya parseado. Normalizamos ambos.
+        const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
+        let parsed = null;
+        if (raw && typeof raw === 'object') {
+            parsed = raw;
+        } else {
+            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+            const m = txt.match(/\{[\s\S]*\}/);
+            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+        }
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return err('No se pudo interpretar la rutina del PDF', 422);
         return json({ ok: true, routine: sanitizeParsedRoutine(parsed) });
-    } catch {
-        return err('Error al contactar la IA', 502);
+    } catch (e) {
+        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
     }
 }
 

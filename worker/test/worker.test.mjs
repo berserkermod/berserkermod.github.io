@@ -186,13 +186,32 @@ let code, licToken;
     globalThis.fetch = realFetch;
 }
 
-// ── Importar rutina desde PDF (IA) ──
+// ── Importar rutina desde PDF (Cloudflare Workers AI) ──
 {
-    console.log('\nImportar rutina (PDF + IA)');
-    const noKey = await call('POST', '/api/parse-routine', { pdf_base64: 'JVBERi0=' });
-    ok('sin ANTHROPIC_KEY → 503', noKey.status === 503, noKey.status);
+    console.log('\nImportar rutina (PDF + Workers AI)');
+    const noAI = await call('POST', '/api/parse-routine', { pdf_base64: 'JVBERi0=' });
+    ok('sin binding AI → 503', noAI.status === 503, noAI.status);
 
-    env.ANTHROPIC_KEY = 'test-anthropic-key';
+    // Mock del binding Workers AI: toMarkdown (PDF→texto) + run (texto→JSON).
+    let mdInput = null, runModel = null, runPrompt = null;
+    env.AI = {
+        async toMarkdown(docs) {
+            mdInput = docs;
+            return [{ name: 'rutina.pdf', mimeType: 'application/pdf', tokens: 12,
+                data: '# Rutina\n## Día 1\n- Sentadilla 4x8-10 60kg RIR2\n- Correr 5km 30min' }];
+        },
+        async run(model, opts) {
+            runModel = model;
+            runPrompt = opts.messages[opts.messages.length - 1].content;
+            // Llama suele anteponer texto; el endpoint extrae el primer {...}.
+            const jsonTxt = 'Claro, acá tenés el JSON:\n'
+                + '{"name":"Full Body","days":[{"name":"Día 1","exercises":['
+                + '{"type":"strength","name":"Sentadilla","sets":4,"reps":"8-10","kg":60,"rir":2,"notes":null},'
+                + '{"type":"cardio","name":"Correr","distance_km":5,"duration_min":30,"intensity":"medium","notes":null}]}]}';
+            return { response: jsonTxt };
+        }
+    };
+
     const noLic = await call('POST', '/api/parse-routine', { pdf_base64: 'JVBERi0=' });
     ok('sin licencia válida → 403', noLic.status === 403, noLic.status);
 
@@ -200,29 +219,38 @@ let code, licToken;
     const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'pdf-dev' });
     const token = act.body.token;
 
-    const realFetch = globalThis.fetch;
-    let sentBody = null;
-    globalThis.fetch = async (u, opts) => {
-        if (String(u).includes('/v1/messages')) {
-            sentBody = JSON.parse(opts.body);
-            // Claude responde el JSON SIN la primera llave (por el prefill '{')
-            const ai = '"name":"Full Body","days":[{"name":"Día 1","exercises":['
-                + '{"type":"strength","name":"Sentadilla","sets":4,"reps":"8-10","kg":60,"rir":2,"notes":null},'
-                + '{"type":"cardio","name":"Correr","distance_km":5,"duration_min":30,"intensity":"medium","notes":null}]}]}';
-            return new Response(JSON.stringify({ content: [{ text: ai }] }), { status: 200 });
-        }
-        return new Response('{}', { status: 404 });
-    };
     const r = await call('POST', '/api/parse-routine', { token, pdf_base64: 'data:application/pdf;base64,JVBERi0xLjQK' });
     ok('parse 200 + rutina', r.status === 200 && r.body.ok && r.body.routine.name === 'Full Body', r.body);
-    ok('manda el PDF como document block', !!sentBody && sentBody.messages[0].content[0].type === 'document', sentBody && sentBody.messages[0].content[0].type);
-    ok('strip del prefijo data: → base64 limpio', sentBody.messages[0].content[0].source.data === 'JVBERi0xLjQK', sentBody.messages[0].content[0].source.data);
-    ok('prefill assistant con {', sentBody.messages[1].role === 'assistant' && sentBody.messages[1].content === '{');
+    ok('convierte el PDF con toMarkdown (Blob)', Array.isArray(mdInput) && mdInput[0] && mdInput[0].blob instanceof Blob, mdInput && (mdInput[0] ? typeof mdInput[0].blob : null));
+    ok('usa un modelo de Workers AI (@cf/...)', typeof runModel === 'string' && runModel.startsWith('@cf/'), { runModel });
+    ok('le pasa el texto del PDF al modelo', typeof runPrompt === 'string' && runPrompt.includes('Sentadilla'), runPrompt && runPrompt.slice(0, 50));
+    ok('extrae el JSON aunque venga con texto extra', r.body.routine.days[0].exercises.length === 2);
     const ex = r.body.routine.days[0].exercises;
     ok('strength parseado (sets/kg/rir)', ex[0].type === 'strength' && ex[0].sets === 4 && ex[0].kg === 60 && ex[0].rir === 2, ex[0]);
     ok('cardio parseado (km/min/intensidad)', ex[1].type === 'cardio' && ex[1].distance_km === 5 && ex[1].duration_min === 30 && ex[1].intensity === 'medium', ex[1]);
-    globalThis.fetch = realFetch;
-    delete env.ANTHROPIC_KEY;
+
+    // Respuesta del modelo como OBJETO ya parseado (caso Llama 70B), no string.
+    env.AI.run = async () => ({ response: { name: 'Obj Routine', days: [{ name: 'D1', exercises: [{ type: 'strength', name: 'Remo', sets: 3, reps: '10', kg: 30, rir: 2 }] }] } });
+    const objr = await call('POST', '/api/parse-routine', { token, pdf_base64: 'JVBERi0=' });
+    ok('respuesta del modelo como objeto → parsea', objr.status === 200 && objr.body.ok && objr.body.routine.name === 'Obj Routine' && objr.body.routine.days[0].exercises[0].name === 'Remo', objr.body);
+
+    // VISION PATH: images → OCR (modelo de visión) → estructura (70B).
+    let visionModelCalled = null;
+    env.AI.run = async (model) => {
+        if (/scout|vision/.test(model)) { visionModelCalled = model; return { response: 'Día 1\nSentadilla 4 series 8 reps 60kg RIR 2\nCorrer 5km 30min' }; }
+        return { response: '{"name":"Visión","days":[{"name":"Día 1","exercises":[{"type":"strength","name":"Sentadilla","sets":4,"reps":"8","kg":60,"rir":2,"notes":null},{"type":"cardio","name":"Correr","distance_km":5,"duration_min":30,"intensity":"medium","notes":null}]}]}' };
+    };
+    const vimg = await call('POST', '/api/parse-routine', { token, images: ['data:image/jpeg;base64,/9j/4AAQ'] });
+    ok('vision: images → OCR → estructura → rutina', vimg.status === 200 && vimg.body.ok && vimg.body.routine.name === 'Visión' && vimg.body.routine.days[0].exercises.length === 2, vimg.body);
+    ok('vision: usó el modelo de visión', typeof visionModelCalled === 'string' && /scout|vision/.test(visionModelCalled), { visionModelCalled });
+
+    // PDF sin texto (imagen escaneada, sin fallback de imágenes) → 422, no rompe.
+    env.AI.run = async () => ({ response: '{}' });
+    env.AI.toMarkdown = async () => [{ name: 'rutina.pdf', data: '' }];
+    const empty = await call('POST', '/api/parse-routine', { token, pdf_base64: 'JVBERi0=' });
+    ok('PDF sin texto legible → 422', empty.status === 422, empty.status);
+
+    delete env.AI;
 }
 
 // ── Errores: ingest + admin ──

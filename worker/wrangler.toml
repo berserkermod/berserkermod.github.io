@@ -21,10 +21,14 @@ APP_ORIGIN = "https://berserkermod.github.io"
 APP_PATH = "/BERSERKERMOD.html"
 LANDING_URL = "https://berserkermod.github.io/"
 ENABLE_HEALTH_SYNC = "false"
-# Modelo que lee los PDF de rutinas. Haiku es barato; si la lectura sale floja
-# se puede subir a un modelo mejor (ej. claude-sonnet-4-6). El secret de la key
-# va aparte: wrangler secret put ANTHROPIC_KEY
-PARSE_MODEL = "claude-haiku-4-5-20251001"
+# Modelo que estructura los PDF de rutinas. Corre en Cloudflare Workers AI
+# (GRATIS dentro de 10.000 neuronas/día, sin API key ni cuenta de terceros).
+# Usamos el 70B porque lee bastante mejor las tablas/rutinas. Si necesitás gastar
+# menos neuronas (más volumen) se puede bajar a "@cf/meta/llama-3.1-8b-instruct-fp8"
+# o "@cf/meta/llama-4-scout-17b-16e-instruct". La conversión PDF→texto la hace
+# env.AI.toMarkdown() (gratis para PDFs de texto) — ver el binding [ai] abajo.
+# OJO: el ID debe EXISTIR en tu cuenta — verificá con `npx wrangler ai models`.
+PARSE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 
 # Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
 # Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).
@@ -39,3 +43,9 @@ COACH_TITLE = "BERSERKERMOD — Modo Coach (acceso completo)"
 binding = "BMOD_KV"
 id = "032b05ee75684a44bd0cfaa036d2c7be"
 preview_id = "032b05ee75684a44bd0cfaa036d2c7be"
+
+# Workers AI: motor gratuito del "Importar rutina desde PDF". No necesita id ni
+# secret — con declarar el binding alcanza. La app lo usa para convertir el PDF a
+# texto (env.AI.toMarkdown) y estructurarlo con un modelo Llama (env.AI.run).
+[ai]
+binding = "AI"

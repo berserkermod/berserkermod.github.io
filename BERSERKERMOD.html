@@ -14,7 +14,7 @@
          planned when JS moves to module files); unpkg is allowed only for the
          two SRI-pinned lazy libs (jsPDF, ZXing). img-src stays broad (https:)
          because exercise GIFs and QR codes are user/third-party URLs. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com https://berserkermod-api.berserkermod.workers.dev; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com https://berserkermod-api.berserkermod.workers.dev; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self' blob:" />
     <meta name="description"
         content="BERSERKERMOD — Tu entrenador personal inteligente. Rutinas personalizadas, cardio, nutrición y métricas profesionales." />
     <meta property="og:title" content="BERSERKERMOD — Tu entrenador personal inteligente" />
@@ -2085,7 +2085,7 @@
                 home_welcome: "¡A entrenar,", home_streak: "Días racha", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "TU PLAN ACTUAL", home_plan_day: "DÍA", home_view_routine: "Ver rutina completa →",
                 routines_create: "➕ Crear Nueva Rutina", routines_empty: "No tienes ninguna rutina.", routines_start: "INICIAR SESIÓN",
-                routine_import_pdf: "Importar rutina desde PDF", routine_import_reading: "Leyendo el PDF con IA…", routine_import_preview: "Revisá la rutina importada", routine_import_save: "Guardar rutina", routine_import_done: "Rutina importada", routine_import_fail: "No se pudo leer el PDF. Probá con otro archivo.", routine_import_too_big: "El PDF es muy grande (máx 6 MB)",
+                routine_import_pdf: "Importar rutina desde PDF", routine_import_reading: "Leyendo el PDF con IA…", routine_import_reading_img: "Leyendo las imágenes del PDF… puede tardar unos segundos.", routine_import_preview: "Revisá la rutina importada", routine_import_save: "Guardar rutina", routine_import_done: "Rutina importada", routine_import_fail: "No se pudo leer el PDF. Probá con otro archivo.", routine_import_too_big: "El PDF es muy grande (máx 6 MB)", routine_import_empty: "No encontramos ejercicios en el PDF. Si es una foto o escaneo, probá con un PDF de texto (exportado desde una app, Word o Excel).",
                 routines_creator_title: "Nueva Rutina", routines_creator_name: "Nombre de la rutina", routines_creator_days: "DÍAS POR SEMANA", routines_creator_day_name: "Nombre del día (ej. Push)",
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
@@ -2326,7 +2326,7 @@
                 home_welcome: "Let's train,", home_streak: "Day streak", home_vol: "Tons", home_cals: "Kcal",
                 home_plan_title: "YOUR CURRENT PLAN", home_plan_day: "DAY", home_view_routine: "View full routine →",
                 routines_create: "➕ Create New Routine", routines_empty: "You have no routines.", routines_start: "START SESSION",
-                routine_import_pdf: "Import routine from PDF", routine_import_reading: "Reading the PDF with AI…", routine_import_preview: "Review the imported routine", routine_import_save: "Save routine", routine_import_done: "Routine imported", routine_import_fail: "Couldn't read the PDF. Try another file.", routine_import_too_big: "The PDF is too big (max 6 MB)",
+                routine_import_pdf: "Import routine from PDF", routine_import_reading: "Reading the PDF with AI…", routine_import_reading_img: "Reading the PDF images… this can take a few seconds.", routine_import_preview: "Review the imported routine", routine_import_save: "Save routine", routine_import_done: "Routine imported", routine_import_fail: "Couldn't read the PDF. Try another file.", routine_import_too_big: "The PDF is too big (max 6 MB)", routine_import_empty: "We couldn't find exercises in the PDF. If it's a photo or scan, try a text PDF (exported from an app, Word, or Excel).",
                 routines_creator_title: "New Routine", routines_creator_name: "Routine name", routines_creator_days: "DAYS PER WEEK", routines_creator_day_name: "Day name (e.g. Push)",
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
@@ -2566,7 +2566,7 @@
                 home_welcome: "Bora treinar,", home_streak: "Dias seguidos", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "SEU PLANO ATUAL", home_plan_day: "DIA", home_view_routine: "Ver rotina completa →",
                 routines_create: "➕ Criar Nova Rotina", routines_empty: "Você não tem nenhuma rotina.", routines_start: "INICIAR SESSÃO",
-                routine_import_pdf: "Importar rotina de PDF", routine_import_reading: "Lendo o PDF com IA…", routine_import_preview: "Revise a rotina importada", routine_import_save: "Salvar rotina", routine_import_done: "Rotina importada", routine_import_fail: "Não foi possível ler o PDF. Tente outro arquivo.", routine_import_too_big: "O PDF é muito grande (máx 6 MB)",
+                routine_import_pdf: "Importar rotina de PDF", routine_import_reading: "Lendo o PDF com IA…", routine_import_reading_img: "Lendo as imagens do PDF… pode levar alguns segundos.", routine_import_preview: "Revise a rotina importada", routine_import_save: "Salvar rotina", routine_import_done: "Rotina importada", routine_import_fail: "Não foi possível ler o PDF. Tente outro arquivo.", routine_import_too_big: "O PDF é muito grande (máx 6 MB)", routine_import_empty: "Não encontramos exercícios no PDF. Se for uma foto ou digitalização, tente um PDF de texto (exportado de um app, Word ou Excel).",
                 routines_creator_title: "Nova Rotina", routines_creator_name: "Nome da rotina", routines_creator_days: "DIAS POR SEMANA", routines_creator_day_name: "Nome do dia (ex. Push)",
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
@@ -6035,23 +6035,83 @@
                 r.readAsDataURL(file);
             });
         }
-        async function doPdfImport(file) {
-            if (file.size > 6 * 1024 * 1024) { flash(t('routine_import_too_big'), 'var(--red)'); return; }
+        // Lazy-load de PDF.js self-hosteado (rasteriza PDFs de imágenes/diseño para el OCR de visión).
+        function loadPdfJs() {
+            if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+            if (window._pdfjsLoading) return window._pdfjsLoading;
+            window._pdfjsLoading = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'pdfjs/pdf.min.js';
+                s.onload = () => {
+                    if (window.pdfjsLib) {
+                        try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs/pdf.worker.min.js'; } catch { /* noop */ }
+                        resolve(window.pdfjsLib);
+                    } else { reject(new Error('pdfjs')); }
+                };
+                s.onerror = () => reject(new Error('pdfjs load'));
+                document.head.appendChild(s);
+            });
+            return window._pdfjsLoading;
+        }
+        // Renderiza hasta maxPages páginas del PDF a JPEG (dataURL) para mandar al OCR de visión.
+        async function _pdfToImages(file, maxPages) {
+            const lib = await loadPdfJs();
+            const data = new Uint8Array(await file.arrayBuffer());
+            const pdf = await lib.getDocument({ data }).promise;
+            const n = Math.min(pdf.numPages, maxPages || 6);
+            const out = [];
+            for (let i = 1; i <= n; i++) {
+                const page = await pdf.getPage(i);
+                let scale = 2, vp = page.getViewport({ scale });
+                if (vp.width > 1600) { scale = scale * (1600 / vp.width); vp = page.getViewport({ scale }); }
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                out.push(canvas.toDataURL('image/jpeg', 0.82));
+                canvas.width = canvas.height = 0; // liberar memoria
+            }
+            try { pdf.destroy(); } catch { /* noop */ }
+            return out;
+        }
+        function _countEx(routine) { return ((routine && routine.days) || []).reduce((n, d) => n + ((d.exercises || []).length), 0); }
+        async function _postParse(body) {
+            const resp = await fetch(getApiBase() + '/api/parse-routine', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.assign({ token: (localStorage.getItem('bm-license') || '') }, body))
+            });
+            const j = await resp.json().catch(() => ({}));
+            if (!resp.ok || !j.ok || !j.routine) { window._pdfErr = j.error; return null; }
+            return j.routine;
+        }
+        function _pdfLoading(msgKey, file) {
             const loading = h('div', { style: { textAlign: 'center', padding: '12px 0' } });
             loading.appendChild(h('div', { className: 'oracle-spinner', style: { margin: '0 auto 16px' } }));
-            loading.appendChild(h('p', { style: { fontWeight: 800, fontSize: '15px', marginBottom: '4px' } }, t('routine_import_reading')));
-            loading.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', wordBreak: 'break-all' } }, file.name));
+            loading.appendChild(h('p', { style: { fontWeight: 800, fontSize: '15px', marginBottom: '4px' } }, t(msgKey)));
+            if (file) loading.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', wordBreak: 'break-all' } }, file.name));
             _pdfOverlay(loading);
+        }
+        async function doPdfImport(file) {
+            if (file.size > 6 * 1024 * 1024) { flash(t('routine_import_too_big'), 'var(--red)'); return; }
+            _pdfLoading('routine_import_reading', file);
             try {
                 if (noBackendInProd()) { _closePdfOverlay(); flash(t('lic_no_server'), 'var(--red)'); return; }
-                const b64 = await _fileToBase64(file);
-                const resp = await fetch(getApiBase() + '/api/parse-routine', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: (localStorage.getItem('bm-license') || ''), pdf_base64: b64 })
-                });
-                const j = await resp.json().catch(() => ({}));
-                if (!resp.ok || !j.ok || !j.routine) { _closePdfOverlay(); flash('⚠️ ' + (j.error || t('routine_import_fail')), 'var(--red)'); return; }
-                showPdfPreview(j.routine);
+                window._pdfErr = null;
+                // 1) Camino texto (gratis e instantáneo para PDFs de texto).
+                let routine = await _postParse({ pdf_base64: await _fileToBase64(file) });
+                // 2) Si la rutina vino vacía, fallback a visión: rasterizar páginas → OCR.
+                if (routine && _countEx(routine) === 0) {
+                    _pdfLoading('routine_import_reading_img', file);
+                    let images = [];
+                    try { images = await _pdfToImages(file, 6); } catch { images = []; }
+                    if (images.length) {
+                        const r2 = await _postParse({ images });
+                        if (r2 && _countEx(r2) > 0) routine = r2;
+                    }
+                }
+                _closePdfOverlay();
+                if (!routine) { flash('⚠️ ' + (window._pdfErr || t('routine_import_fail')), 'var(--red)'); return; }
+                if (_countEx(routine) === 0) { flash('⚠️ ' + t('routine_import_empty'), 'var(--orange)'); return; }
+                showPdfPreview(routine);
             } catch { _closePdfOverlay(); flash(t('routine_import_fail'), 'var(--red)'); }
         }
         function showPdfPreview(routine) {
@@ -6095,6 +6155,11 @@
             }));
             if (added) saveCustom();
             state.customRoutines.push({ name: routine.name, plan });
+            // Cambiar al plan recién importado (igual que el flujo de crear rutina),
+            // si no la rutina queda guardada pero invisible.
+            state.activeRoutinePlanIdx = (state.user?.routinePlan ? 1 : 0) + state.customRoutines.length - 1;
+            state.activeRoutineIdx = 0;
+            state.routineSession = {};
             saveRoutines();
             flash('✅ ' + t('routine_import_done') + (added ? ' (+' + added + ')' : ''));
             renderRoutines();

@@ -28,7 +28,7 @@ export default [
             globals: {
                 crypto: 'readonly', fetch: 'readonly', Response: 'readonly', Request: 'readonly',
                 URL: 'readonly', URLSearchParams: 'readonly', btoa: 'readonly', atob: 'readonly',
-                TextEncoder: 'readonly', TextDecoder: 'readonly', console: 'readonly',
+                Blob: 'readonly', TextEncoder: 'readonly', TextDecoder: 'readonly', console: 'readonly',
                 setTimeout: 'readonly', Date: 'readonly'
             }
         },
