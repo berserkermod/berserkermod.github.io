@@ -5730,7 +5730,7 @@
             // Nav (prev/next day)
             const navCard = h('div', { className: 'card fade-in', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px' } });
             navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx = Math.max(0, state.activeRoutineIdx - 1); renderRoutines(); } }, '◀ Anterior'));
-            navCard.appendChild(h('span', { className: 'label', style: { marginBottom: 0 } }, activePlanObj.name));
+            navCard.appendChild(h('span', { className: 'label', style: { marginBottom: 0, flex: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' } }, activePlanObj.name));
             navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx++; renderRoutines(); } }, 'Siguiente ▶'));
             v.appendChild(navCard);
 
@@ -5780,7 +5780,10 @@
                 }
                 headRow.appendChild(nameWrap);
                 const badges = h('div', { style: { display: 'flex', gap: '4px', alignItems: 'center' } });
-                badges.appendChild(h('span', { className: 'session-badge', style: { background: 'var(--sf2)', border: '1px solid var(--border)', color: 'var(--text3)' } }, ex.sets + 'x' + ex.reps));
+                const badgeTxt = ex.kind === 'cardio'
+                    ? ([ex.distance_km ? ex.distance_km + 'km' : null, ex.duration_min ? ex.duration_min + 'min' : null].filter(Boolean).join(' · ') || '🏃')
+                    : ((ex.sets || '') + 'x' + (ex.reps || ''));
+                badges.appendChild(h('span', { className: 'session-badge', style: { background: 'var(--sf2)', border: '1px solid var(--border)', color: 'var(--text3)' } }, badgeTxt));
                 if (ex.rest_s) {
                     const restStr = ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's';
                     badges.appendChild(h('span', { style: { fontSize: '10px', fontWeight: 700, color: 'var(--accent)', background: 'rgba(0,212,170,.08)', border: '1px solid rgba(0,212,170,.2)', padding: '3px 8px', borderRadius: '10px' } }, '⏱ ' + restStr));

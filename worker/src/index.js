@@ -525,7 +525,11 @@ const PARSE_SYSTEM = [
     '- reps va como string para permitir rangos ("8-10", "12", "AMRAP", "al fallo").',
     '- Si un dato NO esta en el texto, poné null. No inventes numeros.',
     '- Normaliza los nombres de ejercicios a español claro, en mayuscula inicial.',
-    '- Si el texto no separa por dias, poné todo en un solo dia ("Dia 1").',
+    '- Agrupá por DÍA o SESIÓN de entrenamiento, NO por bloque. Una "Sesión A" (o "Día 1") con varios bloques (calentamiento, potencia, fuerza, hipertrofia, acondicionamiento, etc.) es UN SOLO dia con TODOS sus ejercicios juntos.',
+    '- "Bloque", "Parte", "Calentamiento", "Principal", "Accesorios", "HIIT" NO son dias: son secciones del MISMO dia.',
+    '- Resultado tipico: POCOS dias (2 a 6). Si te salen mas de 7 dias casi seguro estas separando bloques de mas: reagrupalos por sesion/dia.',
+    '- Si el mismo dia/sesion aparece resumido en una pagina y detallado en otra, usá la version detallada y NO lo dupliques.',
+    '- Solo si NO hay ninguna separacion de dias/sesiones, poné todo en un solo dia ("Dia 1").',
     '- intensity: suave/baja=low, moderada/media=medium, alta/fuerte/intensa=high.',
     '- Si no hay nombre de rutina, inventa uno corto descriptivo.',
     'Devolvé unicamente el JSON, empezando con "{" y terminando con "}".'
@@ -619,7 +623,8 @@ async function parseRoutine(req, env) {
             const valid = images.filter((img) => typeof img === 'string' && img.length <= 4000000); // ~3 MB/imagen
             // OCR de las páginas en paralelo (mucho más rápido que en serie).
             const parts = await Promise.all(valid.map((img) => ocrImage(env, img).catch(() => '')));
-            sourceText = parts.join('\n\n');
+            // Marcamos cada página para que el estructurador separe días/sesiones.
+            sourceText = parts.map((tx, i) => '=== Página ' + (i + 1) + ' ===\n' + tx).join('\n\n');
         } catch (e) {
             return json({ error: 'No se pudieron leer las imágenes del PDF', detail: String((e && e.message) || e).slice(0, 200) }, 502);
         }
