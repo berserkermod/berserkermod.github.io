@@ -6861,11 +6861,13 @@
             return new Promise(r => c.toBlob(b => r({ blob: b, url: URL.createObjectURL(b) }), 'image/png', 0.95));
         }
 
-        // REST TIMER
+        // REST TIMER — cronómetro de descanso (cuenta desde 0 al terminar una serie).
+        // Se reinicia al iniciar una nueva serie o al cerrarlo (SKIP); no tiene pausa.
         function startRestTimer() {
             stopRestTimer(); state.restTimer = 0;
             state.restStartTime = Date.now();
             $('rest-timer').classList.add('show');
+            $('rest-timer-time').textContent = '0:00'; // reset inmediato (sin flash del valor viejo)
             state.restInterval = setInterval(() => {
                 state.restTimer = Math.floor((Date.now() - state.restStartTime) / 1000);
                 const m = Math.floor(state.restTimer / 60), s = state.restTimer % 60;
@@ -6874,7 +6876,10 @@
         }
         function stopRestTimer() {
             if (state.restInterval) clearInterval(state.restInterval);
-            state.restInterval = null; $('rest-timer').classList.remove('show');
+            state.restInterval = null;
+            state.restTimer = 0; state.restStartTime = null; // reset real al cerrar
+            $('rest-timer').classList.remove('show');
+            const el = $('rest-timer-time'); if (el) el.textContent = '0:00';
         }
 
         // CARDIO
