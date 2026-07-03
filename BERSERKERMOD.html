@@ -2800,6 +2800,7 @@
             "PIERNAS 1": ["Sentadilla", "Prensa Piernas", "Extensión Cuádriceps", "Zancadas", "Sentadilla Búlgara", "Hip Thrust", "Hack Squat"],
             "PIERNAS 2": ["Peso Muerto Rumano", "Curl Femoral", "Good Morning", "Pantorrilla Pie", "Pantorrilla Sentado", "Abductor", "Aductor", "Glute Ham Raise"],
             "BRAZOS": ["Curl Bíceps Barra", "Curl Mancuernas", "Curl Martillo", "Curl Predicador", "Press Francés", "Pushdown Cuerda", "Extensión Overhead", "Fondos Banco"],
+            "CORE": ["Plancha", "Plancha Lateral", "Crunch Clásico", "Crunch en Polea", "Elevación de Piernas Tumbado", "Elevación de Rodillas Colgado", "Elevación de Piernas Colgado", "Russian Twist", "Ab Wheel Rollout", "Dead Bug", "Dragon Flag"],
             "FULL BODY": ["Sentadilla", "Press Banca", "Peso Muerto", "Press Militar", "Dominadas", "Remo Barra", "Hip Thrust", "Curl Bíceps", "Pushdown"]
         };
         // MET = costo metabólico base del deporte. kcal = MET × factor_intensidad × peso(kg) × horas.
@@ -3104,6 +3105,69 @@
               progression: 'Knee raises → leg raises rectas → toes to bar',
               rpe: '8-15 reps',
               youtube_creator: 'Athlean-X', youtube_query: 'hanging leg raise form' },
+
+            { id: 'crunch', name: 'Crunch Clásico', target: 'core', equipment: ['bodyweight'], difficulty: 'beginner',
+              description: 'Flexión de tronco para el recto abdominal superior. La base del entrenamiento de abdominales.',
+              tips: ['Subí con el abdomen, no tires del cuello','Manos suaves detrás de la cabeza o cruzadas en el pecho','Rango corto: despegá solo las escápulas','Exhalá al subir, apretando el abdomen'],
+              mistakes: ['Tirar del cuello con las manos','Subir todo el torso (eso es sit-up, más flexor de cadera)','Velocidad alta sin control','No exhalar arriba'],
+              variations: ['Crunch con Peso','Crunch en Polea','Crunch Bicicleta','Crunch en Fitball'],
+              progression: 'Dominá 15+ reps limpias → agregá peso o pasá a polea',
+              rpe: '12-20 reps con contracción sentida',
+              youtube_creator: 'Athlean-X', youtube_query: 'perfect crunch form' },
+
+            { id: 'lying_leg_raise', name: 'Elevación de Piernas Tumbado', target: 'core', equipment: ['bodyweight'], difficulty: 'beginner',
+              description: 'Elevación de piernas acostado para el abdomen inferior. Progresión previa a la versión colgado.',
+              tips: ['Lumbar PEGADA al piso todo el tiempo','Manos bajo la cadera si hace falta soporte','Bajá lento sin que la espalda se arquee','Rodillas flexionadas = más fácil'],
+              mistakes: ['Arquear la zona lumbar al bajar','Usar impulso','Bajar las piernas más allá del control','Contener la respiración'],
+              variations: ['Rodillas al Pecho (más fácil)','Piernas Rectas','Flutter Kicks','Reverse Crunch'],
+              progression: 'Rodillas flexionadas → piernas rectas → colgado en barra',
+              rpe: '10-15 reps controladas',
+              youtube_creator: 'Jeff Nippard', youtube_query: 'lying leg raise form' },
+
+            { id: 'side_plank', name: 'Plancha Lateral', target: 'core', equipment: ['bodyweight'], difficulty: 'beginner',
+              description: 'Isométrico anti-flexión lateral. El mejor punto de partida para oblicuos y estabilidad.',
+              tips: ['Codo directamente bajo el hombro','Cuerpo en línea recta (cadera arriba)','Apretá el oblicuo del lado de abajo','Mirada al frente, cuello neutro'],
+              mistakes: ['Cadera caída','Rotar el torso hacia adelante','Hombro colapsado (sin empujar el piso)','Aguantar la respiración'],
+              variations: ['Con rodillas apoyadas (más fácil)','Con elevación de cadera','Con rotación (thread the needle)','Copenhagen Plank'],
+              progression: '20-30s por lado → 45-60s → variantes dinámicas',
+              rpe: 'Hold hasta perder la línea — calidad sobre tiempo',
+              youtube_creator: 'Squat University', youtube_query: 'side plank form' },
+
+            { id: 'russian_twist', name: 'Russian Twist', target: 'core', equipment: ['bodyweight','dumbbell_optional'], difficulty: 'beginner',
+              description: 'Rotación de torso sentado para oblicuos. Cargable con disco o mancuerna.',
+              tips: ['Girá desde el TORSO, no solo los brazos','Espalda recta, pecho abierto (no redondear)','Pies apenas apoyados o elevados (más difícil)','Tocá el piso a cada lado con control'],
+              mistakes: ['Mover solo los brazos sin rotar el tronco','Redondear la espalda baja','Velocidad alta sin control','Apoyar los pies con las piernas relajadas'],
+              variations: ['Sin peso (más fácil)','Con disco/mancuerna','Pies elevados','En decline bench'],
+              progression: 'Sin peso → con peso → pies elevados + peso',
+              rpe: '12-16 giros por lado',
+              youtube_creator: 'Athlean-X', youtube_query: 'russian twist form' },
+
+            { id: 'dead_bug', name: 'Dead Bug', target: 'core', equipment: ['bodyweight'], difficulty: 'beginner',
+              description: 'Anti-extensión con coordinación contralateral. Estabilidad profunda del core sin cargar la lumbar.',
+              tips: ['Lumbar pegada al piso TODO el tiempo','Extendé brazo y pierna contrarios, lento','Exhalá al extender, apretando el abdomen','Movimiento lento y deliberado'],
+              mistakes: ['Que la lumbar se despegue al extender','Ir rápido (pierde todo el sentido)','Extender brazo y pierna del mismo lado','Cuello tensionado'],
+              variations: ['Solo piernas (más fácil)','Con banda entre manos y rodillas','Con disco en las manos','Pallof Press'],
+              progression: 'Solo piernas → contralateral completo → con resistencia',
+              rpe: '8-12 por lado, tempo lento',
+              youtube_creator: 'Squat University', youtube_query: 'dead bug exercise form' },
+
+            { id: 'dragon_flag', name: 'Dragon Flag', target: 'core', equipment: ['bench','bodyweight'], difficulty: 'advanced',
+              description: 'Anti-extensión de cuerpo completo estilo Bruce Lee. El ejercicio más exigente del core — también activa serrato y dorsal.',
+              tips: ['Agarrá el banco detrás de la cabeza firme','Cuerpo rígido como tabla de hombros a pies','Bajá LENTO sin quebrar la cadera','Apoyá solo la parte alta de la espalda (no el cuello)'],
+              mistakes: ['Quebrar la cadera (pierde la línea)','Caer sin control en la bajada','Apoyar el cuello en vez de los hombros','Intentarlo sin base previa (plancha + ab wheel primero)'],
+              variations: ['Negativas solamente (empezá acá)','Con rodillas flexionadas','Una pierna','Completo'],
+              progression: 'Negativas con rodillas → negativas rectas → reps completas',
+              rpe: '5-8 reps o 3-5 negativas lentas',
+              youtube_creator: 'FitnessFAQs', youtube_query: 'dragon flag progression' },
+
+            { id: 'cable_crunch', name: 'Crunch en Polea', target: 'core', equipment: ['cable'], difficulty: 'intermediate',
+              description: 'Crunch arrodillado en polea alta. La mejor forma de cargar progresivamente el recto abdominal.',
+              tips: ['Cadera quieta — flexioná solo el tronco','Llevá los codos hacia las rodillas','La resistencia la mueve el abdomen, no los brazos','Estirá bien arriba para rango completo'],
+              mistakes: ['Flexionar desde la cadera (parece remo)','Tirar con los brazos','Peso excesivo que rompe la técnica','Rango corto'],
+              variations: ['De pie contra la polea','Con giro (oblicuos)','En banco declinado con disco'],
+              progression: 'Subí peso cuando hagas 15 reps limpias — es un músculo más: sobrecarga progresiva',
+              rpe: '10-15 reps con contracción fuerte',
+              youtube_creator: 'Jeff Nippard', youtube_query: 'cable crunch form' },
 
             // CARDIO
             { id: 'running', name: 'Running', target: 'cardio', equipment: ['none'], difficulty: 'beginner',
@@ -4113,7 +4177,7 @@
         }
 
         function getMuscleGroupCoverage(plan) {
-            const counts = { Pecho: 0, Espalda: 0, Piernas: 0, Brazos: 0 };
+            const counts = { Pecho: 0, Espalda: 0, Piernas: 0, Brazos: 0, Core: 0 };
             (plan || []).forEach(day => (day.exercises || []).forEach(ex => {
                 const group = getMuscleGroup(ex.name);
                 if (counts[group] !== undefined) counts[group] += (ex.sets || 1);
@@ -5198,6 +5262,36 @@
             const iso = (name, opts) => ({ name, sets: opts?.sets || isoSets, reps: opts?.reps || repsIso, rest_s: opts?.rest_s || restIso, notes: opts?.notes || '' });
             const tip = t('routine_progression_tip');
 
+            // CORE — bloque de abdominales al final de cada día. El pool cubre las 4
+            // zonas (superior, inferior, oblicuos, estabilidad/anti-extensión) y rota
+            // a lo largo de la semana para no repetir estímulo. Escala por nivel
+            // (ejercicios y series) y por objetivo (descansos más cortos en
+            // definición/resistencia). No reemplaza cardio ni dieta — es fuerza de core.
+            const coreRest = (goal === 'fat_loss' || goal === 'endurance') ? 25 : 45;
+            const coreSets = lvl === 'beg' ? 2 : 3;
+            const cx = (name, reps, notes) => ({ name, sets: coreSets, reps, rest_s: coreRest, notes: notes || '' });
+            const corePool = lvl === 'beg' ? [
+                cx('Crunch Clásico', '12-15', 'Subí con el abdomen — no tires del cuello'),           // superior
+                cx('Elevación de Piernas Tumbado', '10-15', 'Lumbar pegada al piso todo el tiempo'),  // inferior
+                cx('Plancha Lateral', '20-30s/lado', 'Cadera alineada, no la dejes caer'),            // oblicuos
+                cx('Plancha', '20-40s', 'Línea recta de cabeza a talones'),                            // estabilidad
+                cx('Dead Bug', '10/lado', 'Lento y controlado, lumbar pegada al piso')                 // estabilidad
+            ] : lvl === 'int' ? [
+                cx('Crunch en Polea', '12-15', 'Flexioná desde el abdomen, no desde la cadera'),      // superior
+                cx('Elevación de Rodillas Colgado', '10-15', 'Sin impulso — subí con el core'),       // inferior
+                cx('Russian Twist', '12-16/lado', 'Girá desde el torso, pies apenas apoyados'),       // oblicuos
+                cx('Plancha', '45-60s', 'Glúteos y core apretados, respiración constante'),            // estabilidad
+                cx('Ab Wheel Rollout', '8-12', 'De rodillas, pelvis en retroversión')                  // anti-extensión
+            ] : [
+                cx('Crunch en Polea', '10-12', 'Agregá peso progresivamente'),                         // superior
+                cx('Elevación de Piernas Colgado', '10-15', 'Piernas rectas, sin swing'),              // inferior
+                cx('Russian Twist', '12-16/lado', 'Con disco o mancuerna'),                            // oblicuos
+                cx('Ab Wheel Rollout', '10-12', 'Progresá hacia de pie'),                              // anti-extensión
+                cx('Dragon Flag', '5-8', 'Bajada controlada — el ejercicio más exigente del core')     // avanzado
+            ];
+            // 2 ejercicios de core por día, rotando zonas (clonados para no compartir referencias).
+            const core = (i) => [corePool[i % corePool.length], corePool[(i + 2) % corePool.length]].map(e => ({ ...e }));
+
             const plans = {
                 3: [
                     {
@@ -5206,7 +5300,8 @@
                             main('Press Banca Plano'),
                             main('Remo Barra'),
                             ...(lvl === 'beg' ? [iso('Curl Bíceps'), iso('Pushdown Tríceps')] :
-                                [iso('Prensa Piernas'), iso('Curl Bíceps'), iso('Pushdown Tríceps'), iso('Plancha', { reps: '30-45s' })])
+                                [iso('Prensa Piernas'), iso('Curl Bíceps'), iso('Pushdown Tríceps')]),
+                            ...core(0)
                         ]
                     },
                     {
@@ -5215,7 +5310,8 @@
                             main('Press Inclinado'),
                             main('Jalón Polea'),
                             ...(lvl === 'beg' ? [iso('Press Militar', { sets: 2 }), iso('Curl Martillo')] :
-                                [main('Press Militar', { sets: isoSets }), iso('Face Pull', { reps: '12-15' }), iso('Curl Martillo'), iso('Plancha', { reps: '30-45s' })])
+                                [main('Press Militar', { sets: isoSets }), iso('Face Pull', { reps: '12-15' }), iso('Curl Martillo')]),
+                            ...core(1)
                         ]
                     },
                     {
@@ -5224,7 +5320,8 @@
                             main('Fondos Paralelas'),
                             main('Remo Mancuerna'),
                             ...(lvl === 'beg' ? [iso('Curl Femoral'), iso('Press Francés')] :
-                                [iso('Zancadas', { reps: '10-12' }), iso('Curl Femoral'), iso('Pantorrilla Pie', { reps: '12-15' }), iso('Press Francés')])
+                                [iso('Zancadas', { reps: '10-12' }), iso('Curl Femoral'), iso('Pantorrilla Pie', { reps: '12-15' }), iso('Press Francés')]),
+                            ...core(2)
                         ]
                     }
                 ],
@@ -5236,7 +5333,8 @@
                             main('Press Inclinado Mancuernas'),
                             iso('Aperturas Pec Deck'),
                             iso('Press Francés'),
-                            iso('Elevaciones Laterales')
+                            iso('Elevaciones Laterales'),
+                            ...core(0)
                         ]
                     },
                     {
@@ -5246,7 +5344,7 @@
                             iso('Extensión Cuádriceps'),
                             iso('Zancadas Búlgaras', { reps: '10-12' }),
                             iso('Pantorrilla Pie', { sets: 4, reps: '12-15' }),
-                            iso('Plancha', { reps: '30-45s' })
+                            ...core(1)
                         ]
                     },
                     {
@@ -5256,7 +5354,8 @@
                             main('Jalón Polea'),
                             iso('Face Pull', { reps: '15-20' }),
                             iso('Curl Bíceps Barra'),
-                            iso('Curl Martillo')
+                            iso('Curl Martillo'),
+                            ...core(2)
                         ]
                     },
                     {
@@ -5266,7 +5365,8 @@
                             iso('Curl Femoral'),
                             iso('Sentadilla Búlgara', { reps: '10-12' }),
                             iso('Abductor en Máquina'),
-                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' })
+                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' }),
+                            ...core(3)
                         ]
                     }
                 ],
@@ -5279,7 +5379,8 @@
                             iso('Cruces Polea'),
                             iso('Press Francés'),
                             iso('Pushdown Cuerda'),
-                            iso('Elevaciones Laterales')
+                            iso('Elevaciones Laterales'),
+                            ...core(0)
                         ]
                     },
                     {
@@ -5290,7 +5391,8 @@
                             iso('Remo Polea Baja'),
                             iso('Face Pull'),
                             iso('Curl Bíceps Barra'),
-                            iso('Curl Martillo')
+                            iso('Curl Martillo'),
+                            ...core(1)
                         ]
                     },
                     {
@@ -5300,7 +5402,8 @@
                             main('Prensa Piernas'),
                             iso('Extensión Cuádriceps'),
                             iso('Curl Femoral'),
-                            iso('Pantorrilla Pie', { sets: 4, reps: '12-15' })
+                            iso('Pantorrilla Pie', { sets: 4, reps: '12-15' }),
+                            ...core(2)
                         ]
                     },
                     {
@@ -5311,7 +5414,8 @@
                             iso('Aperturas Pec Deck'),
                             iso('Curl Predicador'),
                             iso('Extensión Overhead'),
-                            iso('Face Pull', { reps: '15-20' })
+                            iso('Face Pull', { reps: '15-20' }),
+                            ...core(3)
                         ]
                     },
                     {
@@ -5322,7 +5426,8 @@
                             iso('Good Morning'),
                             iso('Abductor'),
                             iso('Aductor'),
-                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' })
+                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' }),
+                            ...core(4)
                         ]
                     }
                 ],
@@ -5334,7 +5439,8 @@
                             iso('Cruces Polea'),
                             iso('Press Francés'),
                             iso('Pushdown Polea'),
-                            iso('Elevaciones Laterales')
+                            iso('Elevaciones Laterales'),
+                            ...core(0)
                         ]
                     },
                     {
@@ -5344,7 +5450,8 @@
                             iso('Face Pull'),
                             iso('Curl Bíceps Barra'),
                             iso('Curl Martillo'),
-                            iso('Encogimientos')
+                            iso('Encogimientos'),
+                            ...core(1)
                         ]
                     },
                     {
@@ -5353,7 +5460,7 @@
                             main('Prensa Piernas'),
                             iso('Extensión Cuádriceps'),
                             iso('Pantorrilla Pie', { sets: 4, reps: '12-15' }),
-                            iso('Plancha', { reps: '30-45s' })
+                            ...core(2)
                         ]
                     },
                     {
@@ -5363,7 +5470,8 @@
                             iso('Aperturas Pec Deck'),
                             iso('Pushdown Cuerda'),
                             iso('Fondos Paralelas'),
-                            iso('Elevaciones Posteriores')
+                            iso('Elevaciones Posteriores'),
+                            ...core(3)
                         ]
                     },
                     {
@@ -5373,7 +5481,8 @@
                             iso('Remo Polea Baja'),
                             iso('Curl Predicador'),
                             iso('Curl Mancuernas'),
-                            iso('Face Pull', { reps: '15-20' })
+                            iso('Face Pull', { reps: '15-20' }),
+                            ...core(4)
                         ]
                     },
                     {
@@ -5383,7 +5492,8 @@
                             iso('Curl Femoral'),
                             iso('Sentadilla Búlgara'),
                             iso('Abductor'),
-                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' })
+                            iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' }),
+                            ...core(5)
                         ]
                     }
                 ]
@@ -5685,7 +5795,7 @@
                 muscleCard.appendChild(h('div', { className: 'rt-edu-title' }, '💪 ' + t('rt_muscles_title')));
                 const cov = getMuscleGroupCoverage(activePlanObj.plan);
                 const max = Math.max(...Object.values(cov), 1);
-                const colors = { Pecho: 'var(--orange)', Espalda: 'var(--blue)', Piernas: 'var(--purple)', Brazos: 'var(--accent)' };
+                const colors = { Pecho: 'var(--orange)', Espalda: 'var(--blue)', Piernas: 'var(--purple)', Brazos: 'var(--accent)', Core: 'var(--red)' };
                 Object.entries(cov).forEach(([name, sets]) => {
                     const row = h('div', { className: 'rt-muscle-row' });
                     row.appendChild(h('span', { className: 'rt-muscle-name' }, name));
@@ -7055,6 +7165,8 @@
 
         function getMuscleGroup(exName) {
             const n = exName.toLowerCase();
+            // Core PRIMERO: "Elevación de Piernas" contiene "pierna" y caería en Piernas.
+            if (n.includes('plancha') || n.includes('crunch') || n.includes('abdominal') || n.includes('ab wheel') || n.includes('russian') || n.includes('dead bug') || n.includes('dragon') || n.includes('pallof') || n.includes('oblicuo') || n.includes('rueda') || n.includes('elevación de piernas') || n.includes('elevación de rodillas') || n.includes('elevacion de piernas') || n.includes('elevacion de rodillas')) return 'Core';
             if (n.includes('sentadilla') || n.includes('prensa') || n.includes('pierna') || n.includes('cuádriceps') || n.includes('femoral') || n.includes('pantorrilla') || n.includes('zancada') || n.includes('hip thrust') || n.includes('abductor') || n.includes('aductor') || n.includes('peso muerto') || n.includes('glute') || n.includes('hack')) return 'Piernas';
             if (n.includes('remo') || n.includes('dominada') || n.includes('jalón') || n.includes('espalda') || n.includes('face pull') || n.includes('pull')) return 'Espalda';
             if (n.includes('pecho') || n.includes('banca') || n.includes('apertura') || n.includes('cruce') || n.includes('pec deck') || n.includes('fondos') || (n.includes('press') && !n.includes('militar') && !n.includes('arnold') && !n.includes('francés'))) return 'Pecho';
@@ -7127,7 +7239,7 @@
             v.appendChild(sg);
 
             // SERIES POR GRUPO
-            const setsByGroup = { Pecho: 0, Espalda: 0, Piernas: 0, Brazos: 0 };
+            const setsByGroup = { Pecho: 0, Espalda: 0, Piernas: 0, Brazos: 0, Core: 0 };
             periodSessions.forEach(s => {
                 s.exercises.forEach(e => {
                     const group = getMuscleGroup(e.exercise);
@@ -7138,7 +7250,7 @@
             const vc = h('div', { className: 'card fade-in', style: { marginBottom: '20px' } });
             vc.appendChild(h('p', { className: 'label' }, t('stats_series_group')));
             const vGrid = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' } });
-            const groupColors = { Pecho: 'var(--orange)', Espalda: 'var(--blue)', Piernas: 'var(--purple)', Brazos: 'var(--accent)' };
+            const groupColors = { Pecho: 'var(--orange)', Espalda: 'var(--blue)', Piernas: 'var(--purple)', Brazos: 'var(--accent)', Core: 'var(--red)' };
 
             Object.keys(setsByGroup).forEach(g => {
                 const item = h('div', { style: { background: 'var(--sf2)', padding: '12px', borderRadius: '12px', textAlign: 'center' } });
