@@ -33,15 +33,17 @@ PARSE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 # Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
 # Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).
 # Ej: USD 18 ≈ poné el equivalente en ARS, p.ej. COACH_PRICE_ARS = "21600".
+# OJO: titulos en ASCII puro (sin tildes ni em-dash) — wrangler sube las vars
+# del TOML con encoding roto y el mojibake se ve en el checkout de MP.
 COACH_PRICE_ARS = "25000"
 COACH_CURRENCY = "ARS"
-COACH_TITLE = "BERSERKERMOD — Modo Coach (acceso completo)"
+COACH_TITLE = "BERSERKERMOD - Modo Coach (acceso completo)"
 
-# Precio del Premium (pago único, todo menos el modo Coach). ⚠️ AJUSTAR: 12000
-# es un default sugerido (~mitad del Coach) — decidí el precio final y redeploy.
-# En "0" el botón de la landing queda deshabilitado ("Disponible muy pronto").
+# Precio del Premium (pago unico, todo menos el modo Coach). ⚠️ AJUSTAR: 12000
+# es un default sugerido (~mitad del Coach) — decidi el precio final y redeploy.
+# En "0" el boton de la landing queda deshabilitado ("Disponible muy pronto").
 PREMIUM_PRICE_ARS = "12000"
-PREMIUM_TITLE = "BERSERKERMOD — Premium (pago único)"
+PREMIUM_TITLE = "BERSERKERMOD - Premium (pago unico)"
 
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
