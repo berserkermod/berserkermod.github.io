@@ -154,7 +154,7 @@ let code, licToken;
     const t2 = await call('POST', '/api/license/trial', { deviceId: 'devTrial', product: 'coach' });
     ok('segundo trial mismo device → 409', t2.status === 409, t2.body);
     const t3 = await call('POST', '/api/license/trial', { deviceId: 'devTrial', product: 'premium' });
-    ok('trial de otro producto sí (3 días)', t3.status === 200 && t3.body.days === 3, t3.body);
+    ok('trial de otro producto sí (7 días)', t3.status === 200 && t3.body.days === 7, t3.body);
 }
 
 // ── Mercado Pago: retrieve pendiente ──
@@ -288,14 +288,27 @@ let code, licToken;
     };
     const p1 = await call('GET', '/api/products');
     ok('coach disponible con config (precio 21600)', p1.body.coach.available === true && p1.body.coach.price === 21600, p1.body);
+    ok('premium NO disponible sin precio', p1.body.premium && p1.body.premium.available === false, p1.body.premium);
     const c1 = await call('POST', '/api/checkout', { price: 1 }); // intento de mandar precio del cliente
     ok('checkout → init_point', c1.status === 200 && c1.body.init_point === 'https://mp/checkout/abc', c1.body);
     ok('usa precio del SERVER, no del cliente', sentPref && sentPref.items[0].unit_price === 21600, sentPref && sentPref.items[0]);
     ok('external_reference = coach', sentPref.external_reference === 'coach');
     ok('notification_url → webhook', sentPref.notification_url.endsWith('/api/webhook/mercadopago'), sentPref.notification_url);
     ok('back_url success → landing ?purchase=coach', /\/\?purchase=coach$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
+
+    // Premium: sin precio → 503; con precio → preferencia propia
+    const cp0 = await call('POST', '/api/checkout', { product: 'premium' });
+    ok('checkout premium sin precio → 503', cp0.status === 503, cp0.status);
+    env.PREMIUM_PRICE_ARS = '12000';
+    const p2 = await call('GET', '/api/products');
+    ok('premium disponible con precio (12000)', p2.body.premium.available === true && p2.body.premium.price === 12000, p2.body.premium);
+    const cp1 = await call('POST', '/api/checkout', { product: 'premium' });
+    ok('checkout premium → init_point', cp1.status === 200 && cp1.body.init_point === 'https://mp/checkout/abc', cp1.body);
+    ok('premium: precio del server (12000)', sentPref.items[0].unit_price === 12000, sentPref.items[0]);
+    ok('premium: external_reference = premium', sentPref.external_reference === 'premium');
+    ok('premium: back_url → ?purchase=premium', /\/\?purchase=premium$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
     globalThis.fetch = realFetch;
-    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS;
+    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS; delete env.PREMIUM_PRICE_ARS;
 }
 
 // ── Salud off + server-info + 404 ──

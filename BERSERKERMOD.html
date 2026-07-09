@@ -1972,6 +1972,7 @@
     <!-- SHARE MODAL -->
     <div id="share-modal">
         <h2 style="color:var(--text); font-weight:900; margin:0 0 16px; letter-spacing:1px; font-size:18px;" id="share-title">RESUMEN</h2>
+        <div id="share-summary" style="margin-bottom:12px;"></div>
         <div id="share-preview"></div>
         <div class="share-actions">
             <button class="btn btn-secondary" style="flex:1" onclick="closeShareModal()">Cerrar</button>
@@ -2261,6 +2262,12 @@
                 rt_customize_btn: "✏️ Personalizar rutina",
                 rt_download_pdf: "📄 Descargar PDF",
                 rt_last_weight: "Último:",
+                rt_suggest_up: "🎯 Hoy: {kg}{unit} ({inc}{unit}) — ¡completaste el rango, a subir!",
+                rt_suggest_same: "🎯 Hoy: {kg}{unit} — buscá llegar a {reps} reps",
+                rt_suggest_tap: "tocá para cargar",
+                rt_suggest_loaded: "cargado en las series",
+                share_sum_volume: "VOLUMEN", share_sum_sets: "SERIES", share_sum_duration: "DURACIÓN", share_sum_vs_prev: "VS ANTERIOR",
+                home_week_streak: "Racha semanal", home_week_record: "récord", home_week_progress: "esta semana {x}/{y} días", home_week_record_new: "¡Nuevo récord de racha semanal!",
                 rt_routine_updated: "🔄 Rutina actualizada",
                 lib_title: "BIBLIOTECA DE EJERCICIOS", lib_open_btn: "📚 Biblioteca de Ejercicios",
                 lib_search_ph: "Buscar ejercicio (bench, squat, etc)",
@@ -2501,6 +2508,12 @@
                 rt_customize_btn: "✏️ Customize routine",
                 rt_download_pdf: "📄 Download PDF",
                 rt_last_weight: "Last:",
+                rt_suggest_up: "🎯 Today: {kg}{unit} ({inc}{unit}) — you completed the range, go up!",
+                rt_suggest_same: "🎯 Today: {kg}{unit} — aim for {reps} reps",
+                rt_suggest_tap: "tap to load",
+                rt_suggest_loaded: "loaded into sets",
+                share_sum_volume: "VOLUME", share_sum_sets: "SETS", share_sum_duration: "DURATION", share_sum_vs_prev: "VS LAST",
+                home_week_streak: "Weekly streak", home_week_record: "record", home_week_progress: "this week {x}/{y} days", home_week_record_new: "New weekly streak record!",
                 rt_routine_updated: "🔄 Routine updated",
                 lib_title: "EXERCISE LIBRARY", lib_open_btn: "📚 Exercise Library",
                 lib_search_ph: "Search exercise (bench, squat, etc)",
@@ -2742,6 +2755,12 @@
                 rt_customize_btn: "✏️ Personalizar rotina",
                 rt_download_pdf: "📄 Baixar PDF",
                 rt_last_weight: "Último:",
+                rt_suggest_up: "🎯 Hoje: {kg}{unit} ({inc}{unit}) — você completou a faixa, suba!",
+                rt_suggest_same: "🎯 Hoje: {kg}{unit} — tente chegar a {reps} reps",
+                rt_suggest_tap: "toque para carregar",
+                rt_suggest_loaded: "carregado nas séries",
+                share_sum_volume: "VOLUME", share_sum_sets: "SÉRIES", share_sum_duration: "DURAÇÃO", share_sum_vs_prev: "VS ANTERIOR",
+                home_week_streak: "Sequência semanal", home_week_record: "recorde", home_week_progress: "esta semana {x}/{y} dias", home_week_record_new: "Novo recorde de sequência semanal!",
                 rt_routine_updated: "🔄 Rotina atualizada",
                 lib_title: "BIBLIOTECA DE EXERCÍCIOS", lib_open_btn: "📚 Biblioteca de Exercícios",
                 lib_search_ph: "Buscar exercício (bench, squat, etc)",
@@ -5591,6 +5610,18 @@
             sc.appendChild(sb);
             sc.appendChild(h('p', { style: { textAlign: 'center', fontSize: '13px', color: 'var(--text2)' } },
                 streak > 0 ? '🔥 ' + streak + ' ' + t('home_streak_msg') : t('home_streak_start')));
+            // Racha semanal (la métrica que importa en gym) + récord persistido.
+            const ws = calcWeeklyStreak();
+            let wrec = 0; try { wrec = parseInt(localStorage.getItem('bm-week-streak-record') || '0', 10) || 0; } catch { /* noop */ }
+            if (ws.streak > wrec) {
+                wrec = ws.streak;
+                try { localStorage.setItem('bm-week-streak-record', String(wrec)); } catch { /* noop */ }
+                if (wrec >= 2) flash('🏆 ' + t('home_week_record_new'), 'var(--orange)');
+            }
+            const wsRow = h('p', { style: { textAlign: 'center', fontSize: '12px', color: 'var(--text3)', marginTop: '6px' } });
+            wsRow.textContent = '🏆 ' + t('home_week_streak') + ': ' + ws.streak + ' · ' + t('home_week_record') + ': ' + wrec + ' · ' +
+                t('home_week_progress').replace('{x}', ws.thisCount).replace('{y}', ws.goal);
+            sc.appendChild(wsRow);
             v.appendChild(sc);
 
             // Quick Stats
@@ -5669,6 +5700,33 @@
             }
             return streak;
         }
+        // Racha SEMANAL: semanas consecutivas cumpliendo el objetivo de días del plan
+        // (mín 2, máx 6). La racha diaria se corta con cada descanso — en gym lo que
+        // importa es sostener las semanas. La semana en curso suma si ya cumplió;
+        // si todavía no, no corta la racha (queda pendiente hasta el domingo).
+        function calcWeeklyStreak() {
+            const goal = Math.max(2, Math.min((state.user && state.user.days) || 3, 6));
+            const daysByWeek = {};
+            [...(state.sessions || []), ...(state.cardioSessions || [])].forEach(s => {
+                if (!s.date) return;
+                const d = new Date(s.date + 'T12:00:00');
+                const monday = new Date(d); monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+                const wk = monday.toISOString().split('T')[0];
+                (daysByWeek[wk] = daysByWeek[wk] || new Set()).add(s.date);
+            });
+            const now = new Date();
+            const curMonday = new Date(now); curMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            const thisWk = curMonday.toISOString().split('T')[0];
+            const thisCount = (daysByWeek[thisWk] || new Set()).size;
+            let streak = thisCount >= goal ? 1 : 0;
+            for (let i = 1; i <= 104; i++) {
+                const m = new Date(curMonday); m.setDate(curMonday.getDate() - 7 * i);
+                if ((daysByWeek[m.toISOString().split('T')[0]] || new Set()).size >= goal) streak++;
+                else break;
+            }
+            return { streak, goal, thisCount };
+        }
+
         function isDayTrained(dayOfWeekIdx) {
             const now = new Date(); const monday = new Date(now);
             monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -5926,6 +5984,25 @@
                 }
 
                 const setsArr = rs.exercises[ex.name];
+
+                // Sugerencia de doble progresión (si el banner de estancamiento no saltó).
+                // Tap → pre-carga el kg sugerido en las series vacías.
+                const sug = rec ? null : suggestNextLoad(ex);
+                if (sug) {
+                    const sugMsg = (sug.up
+                        ? t('rt_suggest_up').replace('{kg}', sug.kg).replace('{inc}', '+' + sug.inc)
+                        : t('rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
+                    ).replaceAll('{unit}', state.unit);
+                    const sugBtn = h('button', {
+                        style: { display: 'block', width: '100%', textAlign: 'left', background: sug.up ? 'rgba(0,212,170,.08)' : 'rgba(116,185,255,.08)', color: sug.up ? 'var(--accent)' : 'var(--blue)', border: '1px dashed ' + (sug.up ? 'rgba(0,212,170,.35)' : 'rgba(116,185,255,.35)'), borderRadius: '8px', padding: '8px 12px', fontSize: '11px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4, cursor: 'pointer' },
+                        onclick: () => {
+                            setsArr.forEach(st => { if (!st.kg) st.kg = sug.kg; });
+                            renderRoutines();
+                            flash('✅ ' + sug.kg + state.unit + ' → ' + t('rt_suggest_loaded'));
+                        }
+                    }, sugMsg + ' · ' + t('rt_suggest_tap'));
+                    ec.appendChild(sugBtn);
+                }
 
                 setsArr.forEach((set, sIdx) => {
                     const row = h('div', { style: { display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' } });
@@ -6657,6 +6734,39 @@
             return prs;
         }
 
+        // Doble progresión por sesión: mira la ÚLTIMA vez que hiciste el ejercicio
+        // contra el rango objetivo del plan. Si completaste el tope de reps en todas
+        // las series → sugiere subir peso (+2.5kg compuesto / +1.25kg aislamiento).
+        // Si no → sugiere repetir el peso y completar el rango. Complementa a
+        // checkProgression (que detecta estancamiento largo de 14+ días).
+        function suggestNextLoad(ex) {
+            if (!ex || ex.kind === 'cardio') return null;
+            const repsStr = String(ex.reps || '');
+            // Solo rangos numéricos ("8-10", "12"); skip isométricos/tiempo/AMRAP ("30-45s", "10/lado", "al fallo")
+            if (!/^\d+(-\d+)?$/.test(repsStr.trim())) return null;
+            const parts = repsStr.trim().split('-');
+            const topReps = parseInt(parts[parts.length - 1], 10);
+            if (!topReps) return null;
+            // Última performance registrada de este ejercicio
+            let last = null;
+            for (const s of state.sessions || []) {
+                const found = (s.exercises || []).find(e => e.exercise === ex.name);
+                if (found && found.sets && found.sets.length) { last = found; break; }
+            }
+            if (!last) return null;
+            const kgs = last.sets.map(st => parseFloat(st.kg) || 0).filter(k => k > 0);
+            if (!kgs.length) return null;
+            const maxKg = Math.max(...kgs);
+            const allTop = last.sets.every(st => (parseInt(st.reps, 10) || 0) >= topReps);
+            const isLbs = state.unit === 'lbs';
+            const compound = /sentadilla|peso muerto|press banca|press inclinado|press militar|dominada|remo barra|hip thrust|prensa|hack|fondos/i.test(ex.name);
+            if (allTop) {
+                const inc = isLbs ? (compound ? 5 : 2.5) : (compound ? 2.5 : 1.25);
+                return { kg: Math.round((maxKg + inc) * 100) / 100, up: true, inc };
+            }
+            return { kg: maxKg, up: false, targetReps: topReps };
+        }
+
         function checkProgression(exName) {
             const exSessions = [];
             state.sessions.forEach(sess => {
@@ -6752,6 +6862,32 @@
             else if (streak >= 7) title = `⚡ ¡${streak} días consecutivos!`;
             else if (streak >= 3) title = `🔥 ¡${streak} días seguidos!`;
             $('share-title').textContent = title;
+
+            // Resumen con números concretos: volumen, series, duración, vs sesión anterior + PRs.
+            const sum = $('share-summary'); sum.innerHTML = '';
+            const volOf = (s) => (s.exercises || []).reduce((v, e) => v + (e.sets || []).reduce((a, st) => a + ((parseFloat(st.kg) || 0) * (parseInt(st.reps, 10) || 0)), 0), 0);
+            const vol = volOf(sess);
+            const nSets = (sess.exercises || []).reduce((n, e) => n + (e.sets || []).length, 0);
+            const prev = (state.sessions || []).find(s => s.id !== sess.id && (!sess.day || s.day === sess.day));
+            let delta = null;
+            if (prev) { const pv = volOf(prev); if (pv > 0 && vol > 0) delta = Math.round((vol - pv) / pv * 100); }
+            const chips = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } });
+            const chip = (label, val, color) => {
+                const c = h('div', { style: { background: 'var(--sf2)', borderRadius: '10px', padding: '10px', textAlign: 'center' } });
+                c.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', fontWeight: 800, marginBottom: '2px' } }, label));
+                c.appendChild(h('p', { style: { fontSize: '16px', fontWeight: 900, color: color || 'var(--text)' } }, val));
+                return c;
+            };
+            if (vol > 0) chips.appendChild(chip(t('share_sum_volume'), fmt(Math.round(vol)) + ' ' + state.unit, 'var(--accent)'));
+            chips.appendChild(chip(t('share_sum_sets'), nSets + '', 'var(--blue)'));
+            if (sess.duration > 0) chips.appendChild(chip(t('share_sum_duration'), sess.duration + ' min'));
+            if (delta != null) chips.appendChild(chip(t('share_sum_vs_prev'), (delta >= 0 ? '+' : '') + delta + '%', delta >= 0 ? 'var(--accent)' : 'var(--orange)'));
+            sum.appendChild(chips);
+            if (prs.length) {
+                const prRow = h('div', { style: { background: 'rgba(253,203,110,.1)', border: '1px solid rgba(253,203,110,.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--orange)' } });
+                prRow.textContent = '🏆 ' + prs.slice(0, 3).join(' · ');
+                sum.appendChild(prRow);
+            }
 
             $('share-modal').style.display = 'flex';
             $('share-preview').innerHTML = '<p style="color:var(--text3);text-align:center;padding:3rem 1rem">Generando tu card... ✨</p>';

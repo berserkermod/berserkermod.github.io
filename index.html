@@ -1626,24 +1626,26 @@
                     <div class="precio-tier">👑 Premium</div>
                     <div class="precio-name">Desbloqueá todo</div>
                     <div class="precio-tag">Todas las funciones de la app desbloqueadas.</div>
-                    <div class="precio-price">3 días gratis</div>
-                    <div class="precio-period">Probalo sin tarjeta</div>
+                    <div class="precio-price">7 días gratis</div>
+                    <div class="precio-period">Probalo sin tarjeta · después pago único</div>
                     <span class="precio-badge">Prueba gratis</span>
                     <ul class="precio-features">
                         <li><b>Todo lo del plan Free</b>, más:</li>
-                        <li><b>Sync entre dispositivos</b> + backup en la nube</li>
                         <li>Plan nutricional 7 días con macros</li>
                         <li>Editor de rutinas propias ilimitadas</li>
+                        <li><b>Importar rutinas desde PDF</b> con IA</li>
                         <li>Embed de video YouTube por ejercicio</li>
                         <li>GIF de demostración por ejercicio</li>
                         <li>Stats mensuales y anuales</li>
                         <li>Escáner de código de barras</li>
                         <li>Oracle IA · análisis personalizado con Claude</li>
-                        <li>Exportar rutina a PDF</li>
+                        <li>Exportar rutina a PDF · backup completo</li>
                         <li>Portugués (BR)</li>
                         <li>Soporte prioritario directo</li>
                     </ul>
                     <a href="BERSERKERMOD.html" class="precio-cta precio-cta-premium">Probar gratis →</a>
+                    <button id="buy-premium-btn" class="precio-cta precio-cta-premium" style="width:100%;margin-top:10px;cursor:pointer" onclick="comprarPremium()" disabled>Comprar Premium <span id="premium-price-label"></span></button>
+                    <p id="premium-buy-msg" style="font-size:12px;color:#A1A1A6;margin-top:8px;min-height:16px;text-align:center"></p>
                 </div>
             </div>
         </section>
@@ -1983,7 +1985,11 @@
                 catch (e) { return p.currency + ' ' + p.price; }
             }
 
-            // Mostrar precio / habilitar el botón según la config del Worker.
+            var btnP = document.getElementById('buy-premium-btn');
+            var msgP = document.getElementById('premium-buy-msg');
+            var priceLabelP = document.getElementById('premium-price-label');
+
+            // Mostrar precios / habilitar botones según la config del Worker.
             fetch(API + '/api/products').then(function (r) { return r.json(); }).then(function (d) {
                 var c = d && d.coach;
                 if (c && c.available) {
@@ -1993,26 +1999,41 @@
                     if (priceLabel) priceLabel.textContent = '';
                     if (msg) msg.textContent = 'Disponible muy pronto.';
                 }
-            }).catch(function () { if (msg) msg.textContent = 'Disponible muy pronto.'; });
+                var p = d && d.premium;
+                if (p && p.available) {
+                    if (priceLabelP) priceLabelP.textContent = '· ' + fmtPrice(p);
+                    if (btnP) btnP.disabled = false;
+                } else {
+                    if (priceLabelP) priceLabelP.textContent = '';
+                    if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
+                }
+            }).catch(function () {
+                if (msg) msg.textContent = 'Disponible muy pronto.';
+                if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
+            });
 
-            // Botón comprar → crea la preferencia y redirige al checkout de MP.
-            window.comprarCoach = function () {
-                if (!btn) return;
-                btn.disabled = true; if (msg) { msg.style.color = ''; msg.textContent = 'Abriendo el checkout…'; }
-                fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+            // Botones comprar → crean la preferencia del producto y redirigen al checkout de MP.
+            function comprar(product, b, m) {
+                if (!b) return;
+                b.disabled = true; if (m) { m.style.color = ''; m.textContent = 'Abriendo el checkout…'; }
+                fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product: product }) })
                     .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
                     .then(function (res) {
                         if (res.ok && res.j.init_point) { window.location.href = res.j.init_point; }
-                        else { btn.disabled = false; if (msg) { msg.style.color = 'var(--red,#FF6B6B)'; msg.textContent = (res.j && res.j.error) || 'No se pudo abrir el checkout.'; } }
+                        else { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = (res.j && res.j.error) || 'No se pudo abrir el checkout.'; } }
                     })
-                    .catch(function () { btn.disabled = false; if (msg) { msg.style.color = 'var(--red,#FF6B6B)'; msg.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
-            };
+                    .catch(function () { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
+            }
+            window.comprarCoach = function () { comprar('coach', btn, msg); };
+            window.comprarPremium = function () { comprar('premium', btnP, msgP); };
 
-            // Retorno de Mercado Pago: ?purchase=coach&payment_id=...&status=approved
+            // Retorno de Mercado Pago: ?purchase=coach|premium&payment_id=...&status=approved
             // Recupera el código generado por el webhook y lo muestra en grande.
             (function handleReturn() {
                 var q = new URLSearchParams(location.search);
-                if (q.get('purchase') !== 'coach') return;
+                var boughtProduct = q.get('purchase');
+                if (boughtProduct !== 'coach' && boughtProduct !== 'premium') return;
+                window._bmBoughtProduct = boughtProduct;
                 var pid = q.get('payment_id') || q.get('collection_id');
                 var status = q.get('status') || q.get('collection_status');
                 showCodePanel('loading', null);
@@ -2040,9 +2061,10 @@
                 card.style.cssText = 'background:#141416;border:1px solid #2C2C2E;border-radius:18px;padding:28px;max-width:420px;width:100%;text-align:center;color:#F5F5F7';
                 var html = '';
                 if (state === 'ready') {
+                    var prodName = window._bmBoughtProduct === 'premium' ? 'Premium' : 'del modo Coach';
                     html = '<div style="font-size:42px;margin-bottom:8px">✅</div>' +
                         '<div style="font-size:20px;font-weight:900;margin-bottom:6px">¡Compra confirmada!</div>' +
-                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">Este es tu código del modo Coach. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">Este es tu código ' + prodName + '. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.</div>' +
                         '<div style="font-size:24px;font-weight:900;letter-spacing:.08em;background:#0A0A0B;border:1.5px dashed #00D4AA;color:#00D4AA;border-radius:12px;padding:16px;margin-bottom:18px;user-select:all">' + code + '</div>' +
                         '<a href="BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">Abrir la app y activar →</a>';
                 } else if (state === 'loading') {

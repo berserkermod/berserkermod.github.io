@@ -37,7 +37,9 @@
 const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // sin chars ambiguos (igual que serve.ps1)
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // mayúsculas, sin O/0/I/1
 const ERROR_TTL = 30 * 24 * 60 * 60;   // 30 días
-const TRIAL_DAYS = { coach: 7, premium: 3 };
+// 7 días para ambos: 3 días de premium no alcanzan para formar hábito (el valor
+// real —stats, plan nutricional, rutinas custom— se siente recién en la semana).
+const TRIAL_DAYS = { coach: 7, premium: 7 };
 const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 
 // ── Utilidades ───────────────────────────────────────────────────────
@@ -401,34 +403,50 @@ async function adminCreateCodes(req, env) {
 }
 
 // ── Checkout (Mercado Pago Checkout Pro) ─────────────────────────────
-// Config del producto Coach. El precio SIEMPRE sale del server (env), nunca
-// del cliente — así nadie puede pagar menos manipulando el request.
-function coachConfig(env) {
+// Config por producto ('coach' | 'premium'). El precio SIEMPRE sale del server
+// (env), nunca del cliente — así nadie puede pagar menos manipulando el request.
+function productConfig(env, product) {
+    if (product === 'premium') {
+        return {
+            product: 'premium',
+            price: Number(env.PREMIUM_PRICE_ARS) || 0,
+            currency: env.COACH_CURRENCY || 'ARS',
+            title: env.PREMIUM_TITLE || 'BERSERKERMOD — Premium (pago único)'
+        };
+    }
     return {
+        product: 'coach',
         price: Number(env.COACH_PRICE_ARS) || 0,
         currency: env.COACH_CURRENCY || 'ARS',
         title: env.COACH_TITLE || 'BERSERKERMOD — Modo Coach'
     };
 }
-// GET /api/products — precio actual para que la landing lo muestre (single source of truth).
+// GET /api/products — precios actuales para que la landing los muestre (single source of truth).
 function productsInfo(env) {
-    const c = coachConfig(env);
-    return json({ coach: { price: c.price, currency: c.currency, title: c.title, available: !!env.MP_ACCESS_TOKEN && c.price > 0 } });
+    const out = {};
+    for (const p of ['coach', 'premium']) {
+        const c = productConfig(env, p);
+        out[p] = { price: c.price, currency: c.currency, title: c.title, available: !!env.MP_ACCESS_TOKEN && c.price > 0 };
+    }
+    return json(out);
 }
-// POST /api/checkout — crea la preferencia de pago del Coach y devuelve la URL
-// del checkout de MP. El webhook (más abajo) genera el código al aprobarse.
+// POST /api/checkout — crea la preferencia de pago del producto pedido
+// ({product:'coach'|'premium'}, default coach) y devuelve la URL del checkout
+// de MP. El webhook (más abajo) genera el código del producto al aprobarse.
 async function createCheckout(req, env) {
     if (!env.MP_ACCESS_TOKEN) return err('Checkout no disponible (MP sin configurar)', 503);
-    const c = coachConfig(env);
-    if (!c.price || c.price <= 0) return err('Precio del Coach sin configurar', 503);
+    const body = await readBody(req);
+    const product = (body && body.product === 'premium') ? 'premium' : 'coach';
+    const c = productConfig(env, product);
+    if (!c.price || c.price <= 0) return err('Precio de ' + product + ' sin configurar', 503);
     const origin = new URL(req.url).origin;
     const landing = (env.LANDING_URL || env.APP_ORIGIN || '').replace(/\/+$/, '');
     const pref = {
         items: [{ title: c.title, quantity: 1, unit_price: c.price, currency_id: c.currency }],
-        external_reference: 'coach',
+        external_reference: product,
         notification_url: origin + '/api/webhook/mercadopago',
         back_urls: {
-            success: landing + '/?purchase=coach',
+            success: landing + '/?purchase=' + product,
             pending: landing + '/?purchase=pending',
             failure: landing + '/?purchase=failure'
         },
