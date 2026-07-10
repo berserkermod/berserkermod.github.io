@@ -1689,7 +1689,9 @@
         .food-tab.active { background: var(--accent); color: #0A0A0B; box-shadow: 0 2px 6px rgba(0,212,170,.25); }
         .food-tab-content { flex: 1; overflow-y: auto; padding: 4px 16px 16px; min-height: 280px; }
 
-        .food-cat-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; }
+        /* wrap (no overflow-x): en iOS el scroll horizontal no muestra barra y las
+           categorías de más quedaban invisibles — el usuario solo veía 3. */
+        .food-cat-filter { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; margin-bottom: 8px; }
         .food-cat-pill { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 16px; font-size: 11px; font-weight: 700; border: 1.5px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
         .food-cat-pill.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
 
@@ -2271,6 +2273,7 @@
                 alumno_trained_btn: "Entrené hoy", alumno_trained_done: "Entrenamiento de hoy registrado", alumno_trained_ok: "💪 ¡Registrado! Tu coach lo va a ver.", alumno_week_count: "Esta semana: {n} entrenamientos",
                 coach_adherence: "{n} esta semana", coach_last_session: "entrenó",
                 coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
+                food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetales", food_cat_fruit: "Frutas", food_cat_fat: "Grasas", food_cat_dairy: "Lácteos",
                 rt_routine_updated: "🔄 Rutina actualizada",
                 lib_title: "BIBLIOTECA DE EJERCICIOS", lib_open_btn: "📚 Biblioteca de Ejercicios",
                 lib_search_ph: "Buscar ejercicio (bench, squat, etc)",
@@ -2520,6 +2523,7 @@
                 alumno_trained_btn: "I trained today", alumno_trained_done: "Today's workout logged", alumno_trained_ok: "💪 Logged! Your coach will see it.", alumno_week_count: "This week: {n} workouts",
                 coach_adherence: "{n} this week", coach_last_session: "trained",
                 coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
+                food_cat_all: "All", food_cat_protein: "Protein", food_cat_carb: "Carbs", food_cat_veg: "Veggies", food_cat_fruit: "Fruits", food_cat_fat: "Fats", food_cat_dairy: "Dairy",
                 rt_routine_updated: "🔄 Routine updated",
                 lib_title: "EXERCISE LIBRARY", lib_open_btn: "📚 Exercise Library",
                 lib_search_ph: "Search exercise (bench, squat, etc)",
@@ -2770,6 +2774,7 @@
                 alumno_trained_btn: "Treinei hoje", alumno_trained_done: "Treino de hoje registrado", alumno_trained_ok: "💪 Registrado! Seu coach vai ver.", alumno_week_count: "Esta semana: {n} treinos",
                 coach_adherence: "{n} esta semana", coach_last_session: "treinou",
                 coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
+                food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetais", food_cat_fruit: "Frutas", food_cat_fat: "Gorduras", food_cat_dairy: "Laticínios",
                 rt_routine_updated: "🔄 Rotina atualizada",
                 lib_title: "BIBLIOTECA DE EXERCÍCIOS", lib_open_btn: "📚 Biblioteca de Exercícios",
                 lib_search_ph: "Buscar exercício (bench, squat, etc)",
@@ -3247,63 +3252,96 @@
 
         // 50 alimentos comunes con macros por 100g (porción base).
         // kcal / protein / carbs / fat valores aproximados USDA.
+        // Nombres: name = español (canónico) · en = inglés · pt = portugués (BR).
+        // Macros por 100g. Renderizar SIEMPRE con foodName(f), nunca f.name directo.
         const HEALTHY_FOODS = [
             // PROTEÍNAS
-            { id: 'chicken_breast', name: 'Pollo Pechuga', kcal: 165, protein: 31, carbs: 0, fat: 3.6, icon: '🍗', cat: 'protein' },
-            { id: 'tuna_water', name: 'Atún en Agua', kcal: 116, protein: 26, carbs: 0, fat: 1, icon: '🐟', cat: 'protein' },
-            { id: 'salmon', name: 'Salmón', kcal: 208, protein: 20, carbs: 0, fat: 13, icon: '🐟', cat: 'protein' },
-            { id: 'egg_whole', name: 'Huevo Entero', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
-            { id: 'egg_white', name: 'Clara de Huevo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
-            { id: 'beef_lean', name: 'Carne Magra (Lomo)', kcal: 250, protein: 26, carbs: 0, fat: 15, icon: '🥩', cat: 'protein' },
-            { id: 'ground_beef_lean', name: 'Carne Picada Magra', kcal: 200, protein: 27, carbs: 0, fat: 10, icon: '🥩', cat: 'protein' },
-            { id: 'turkey', name: 'Pavo', kcal: 135, protein: 30, carbs: 0, fat: 1, icon: '🦃', cat: 'protein' },
-            { id: 'greek_yogurt', name: 'Yogur Griego Natural', kcal: 59, protein: 10, carbs: 3.6, fat: 0.4, icon: '🥄', cat: 'protein' },
-            { id: 'whey', name: 'Whey Protein', kcal: 400, protein: 80, carbs: 7, fat: 5, icon: '🥃', cat: 'protein' },
+            { id: 'chicken_breast', name: 'Pollo Pechuga', en: 'Chicken Breast', pt: 'Peito de Frango', kcal: 165, protein: 31, carbs: 0, fat: 3.6, icon: '🍗', cat: 'protein' },
+            { id: 'chicken_thigh', name: 'Muslo de Pollo (sin piel)', en: 'Chicken Thigh (skinless)', pt: 'Sobrecoxa de Frango (sem pele)', kcal: 209, protein: 26, carbs: 0, fat: 11, icon: '🍗', cat: 'protein' },
+            { id: 'tuna_water', name: 'Atún en Agua', en: 'Tuna in Water', pt: 'Atum em Água', kcal: 116, protein: 26, carbs: 0, fat: 1, icon: '🐟', cat: 'protein' },
+            { id: 'salmon', name: 'Salmón', en: 'Salmon', pt: 'Salmão', kcal: 208, protein: 20, carbs: 0, fat: 13, icon: '🐟', cat: 'protein' },
+            { id: 'shrimp', name: 'Langostinos', en: 'Shrimp', pt: 'Camarão', kcal: 99, protein: 24, carbs: 0.2, fat: 0.3, icon: '🦐', cat: 'protein' },
+            { id: 'egg_whole', name: 'Huevo Entero', en: 'Whole Egg', pt: 'Ovo Inteiro', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
+            { id: 'egg_white', name: 'Clara de Huevo', en: 'Egg White', pt: 'Clara de Ovo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
+            { id: 'beef_lean', name: 'Carne Magra (Lomo)', en: 'Lean Beef (Tenderloin)', pt: 'Carne Magra (Filé Mignon)', kcal: 250, protein: 26, carbs: 0, fat: 15, icon: '🥩', cat: 'protein' },
+            { id: 'flank_steak', name: 'Vacío', en: 'Flank Steak', pt: 'Fraldinha', kcal: 194, protein: 28, carbs: 0, fat: 8.5, icon: '🥩', cat: 'protein' },
+            { id: 'ground_beef_lean', name: 'Carne Picada Magra', en: 'Lean Ground Beef', pt: 'Carne Moída Magra', kcal: 200, protein: 27, carbs: 0, fat: 10, icon: '🥩', cat: 'protein' },
+            { id: 'pork_loin', name: 'Lomo de Cerdo', en: 'Pork Tenderloin', pt: 'Lombo de Porco', kcal: 143, protein: 26, carbs: 0, fat: 3.5, icon: '🥩', cat: 'protein' },
+            { id: 'pork_shoulder', name: 'Bondiola de Cerdo', en: 'Pork Shoulder (Coppa)', pt: 'Copa Lombo', kcal: 250, protein: 19, carbs: 0, fat: 19, icon: '🥩', cat: 'protein' },
+            { id: 'beef_liver', name: 'Hígado Vacuno', en: 'Beef Liver', pt: 'Fígado Bovino', kcal: 175, protein: 26, carbs: 5.1, fat: 4.7, icon: '🍖', cat: 'protein' },
+            { id: 'ham_lean', name: 'Jamón Cocido Natural', en: 'Lean Cooked Ham', pt: 'Presunto Magro', kcal: 108, protein: 17, carbs: 1.5, fat: 3.5, icon: '🍖', cat: 'protein' },
+            { id: 'turkey', name: 'Pavo', en: 'Turkey', pt: 'Peru', kcal: 135, protein: 30, carbs: 0, fat: 1, icon: '🦃', cat: 'protein' },
+            { id: 'greek_yogurt', name: 'Yogur Griego Natural', en: 'Plain Greek Yogurt', pt: 'Iogurte Grego Natural', kcal: 59, protein: 10, carbs: 3.6, fat: 0.4, icon: '🥄', cat: 'protein' },
+            { id: 'whey', name: 'Whey Protein', en: 'Whey Protein', pt: 'Whey Protein', kcal: 400, protein: 80, carbs: 7, fat: 5, icon: '🥃', cat: 'protein' },
             // CARBOHIDRATOS
-            { id: 'rice_brown', name: 'Arroz Integral cocido', kcal: 111, protein: 2.6, carbs: 23, fat: 0.9, icon: '🍚', cat: 'carb' },
-            { id: 'rice_white', name: 'Arroz Blanco cocido', kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, icon: '🍚', cat: 'carb' },
-            { id: 'oats', name: 'Avena', kcal: 389, protein: 17, carbs: 66, fat: 7, icon: '🌾', cat: 'carb' },
-            { id: 'sweet_potato', name: 'Batata', kcal: 86, protein: 1.6, carbs: 20, fat: 0.1, icon: '🍠', cat: 'carb' },
-            { id: 'potato', name: 'Papa', kcal: 77, protein: 2, carbs: 17, fat: 0.1, icon: '🥔', cat: 'carb' },
-            { id: 'bread_whole', name: 'Pan Integral', kcal: 247, protein: 13, carbs: 41, fat: 3.4, icon: '🍞', cat: 'carb' },
-            { id: 'pasta_whole', name: 'Pasta Integral cocida', kcal: 124, protein: 5, carbs: 25, fat: 1, icon: '🍝', cat: 'carb' },
-            { id: 'quinoa', name: 'Quinoa cocida', kcal: 120, protein: 4.4, carbs: 21, fat: 1.9, icon: '🌾', cat: 'carb' },
-            { id: 'tortilla', name: 'Tortilla de Maíz', kcal: 218, protein: 5.7, carbs: 45, fat: 2.9, icon: '🫓', cat: 'carb' },
-            { id: 'lentils', name: 'Lentejas cocidas', kcal: 116, protein: 9, carbs: 20, fat: 0.4, icon: '🫘', cat: 'carb' },
+            { id: 'rice_brown', name: 'Arroz Integral cocido', en: 'Brown Rice (cooked)', pt: 'Arroz Integral cozido', kcal: 111, protein: 2.6, carbs: 23, fat: 0.9, icon: '🍚', cat: 'carb' },
+            { id: 'rice_white', name: 'Arroz Blanco cocido', en: 'White Rice (cooked)', pt: 'Arroz Branco cozido', kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, icon: '🍚', cat: 'carb' },
+            { id: 'oats', name: 'Avena', en: 'Oats', pt: 'Aveia', kcal: 389, protein: 17, carbs: 66, fat: 7, icon: '🌾', cat: 'carb' },
+            { id: 'sweet_potato', name: 'Batata', en: 'Sweet Potato', pt: 'Batata-doce', kcal: 86, protein: 1.6, carbs: 20, fat: 0.1, icon: '🍠', cat: 'carb' },
+            { id: 'potato', name: 'Papa', en: 'Potato', pt: 'Batata', kcal: 77, protein: 2, carbs: 17, fat: 0.1, icon: '🥔', cat: 'carb' },
+            { id: 'bread_whole', name: 'Pan Integral', en: 'Whole Wheat Bread', pt: 'Pão Integral', kcal: 247, protein: 13, carbs: 41, fat: 3.4, icon: '🍞', cat: 'carb' },
+            { id: 'pasta_whole', name: 'Pasta Integral cocida', en: 'Whole Wheat Pasta (cooked)', pt: 'Macarrão Integral cozido', kcal: 124, protein: 5, carbs: 25, fat: 1, icon: '🍝', cat: 'carb' },
+            { id: 'pasta_white', name: 'Fideos cocidos', en: 'Pasta (cooked)', pt: 'Macarrão cozido', kcal: 158, protein: 5.8, carbs: 31, fat: 0.9, icon: '🍝', cat: 'carb' },
+            { id: 'polenta', name: 'Polenta cocida', en: 'Polenta (cooked)', pt: 'Polenta cozida', kcal: 70, protein: 1.7, carbs: 15, fat: 0.3, icon: '🌽', cat: 'carb' },
+            { id: 'quinoa', name: 'Quinoa cocida', en: 'Quinoa (cooked)', pt: 'Quinoa cozida', kcal: 120, protein: 4.4, carbs: 21, fat: 1.9, icon: '🌾', cat: 'carb' },
+            { id: 'tortilla', name: 'Tortilla de Maíz', en: 'Corn Tortilla', pt: 'Tortilha de Milho', kcal: 218, protein: 5.7, carbs: 45, fat: 2.9, icon: '🫓', cat: 'carb' },
+            { id: 'tapioca', name: 'Tapioca (goma)', en: 'Tapioca Starch', pt: 'Tapioca (goma hidratada)', kcal: 240, protein: 0, carbs: 60, fat: 0, icon: '🫓', cat: 'carb' },
+            { id: 'lentils', name: 'Lentejas cocidas', en: 'Lentils (cooked)', pt: 'Lentilhas cozidas', kcal: 116, protein: 9, carbs: 20, fat: 0.4, icon: '🫘', cat: 'carb' },
+            { id: 'chickpeas', name: 'Garbanzos cocidos', en: 'Chickpeas (cooked)', pt: 'Grão-de-bico cozido', kcal: 164, protein: 8.9, carbs: 27, fat: 2.6, icon: '🫘', cat: 'carb' },
+            { id: 'black_beans', name: 'Porotos Negros cocidos', en: 'Black Beans (cooked)', pt: 'Feijão Preto cozido', kcal: 132, protein: 8.9, carbs: 24, fat: 0.5, icon: '🫘', cat: 'carb' },
+            { id: 'peas', name: 'Arvejas', en: 'Green Peas', pt: 'Ervilhas', kcal: 81, protein: 5.4, carbs: 14, fat: 0.4, icon: '🫛', cat: 'carb' },
+            { id: 'corn', name: 'Choclo', en: 'Corn', pt: 'Milho', kcal: 96, protein: 3.4, carbs: 21, fat: 1.5, icon: '🌽', cat: 'carb' },
             // VERDURAS
-            { id: 'broccoli', name: 'Brócoli', kcal: 34, protein: 2.8, carbs: 7, fat: 0.4, icon: '🥦', cat: 'veg' },
-            { id: 'spinach', name: 'Espinaca', kcal: 23, protein: 2.9, carbs: 3.6, fat: 0.4, icon: '🥬', cat: 'veg' },
-            { id: 'tomato', name: 'Tomate', kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2, icon: '🍅', cat: 'veg' },
-            { id: 'carrot', name: 'Zanahoria', kcal: 41, protein: 0.9, carbs: 10, fat: 0.2, icon: '🥕', cat: 'veg' },
-            { id: 'lettuce', name: 'Lechuga', kcal: 15, protein: 1.4, carbs: 2.9, fat: 0.2, icon: '🥗', cat: 'veg' },
-            { id: 'cucumber', name: 'Pepino', kcal: 16, protein: 0.7, carbs: 3.6, fat: 0.1, icon: '🥒', cat: 'veg' },
-            { id: 'pepper', name: 'Pimiento', kcal: 31, protein: 1, carbs: 6, fat: 0.3, icon: '🫑', cat: 'veg' },
-            { id: 'onion', name: 'Cebolla', kcal: 40, protein: 1.1, carbs: 9, fat: 0.1, icon: '🧅', cat: 'veg' },
-            { id: 'pumpkin', name: 'Calabaza', kcal: 26, protein: 1, carbs: 6.5, fat: 0.1, icon: '🎃', cat: 'veg' },
-            { id: 'zucchini', name: 'Zapallito', kcal: 17, protein: 1.2, carbs: 3.1, fat: 0.3, icon: '🥒', cat: 'veg' },
+            { id: 'broccoli', name: 'Brócoli', en: 'Broccoli', pt: 'Brócolis', kcal: 34, protein: 2.8, carbs: 7, fat: 0.4, icon: '🥦', cat: 'veg' },
+            { id: 'cauliflower', name: 'Coliflor', en: 'Cauliflower', pt: 'Couve-flor', kcal: 25, protein: 1.9, carbs: 5, fat: 0.3, icon: '🥦', cat: 'veg' },
+            { id: 'spinach', name: 'Espinaca', en: 'Spinach', pt: 'Espinafre', kcal: 23, protein: 2.9, carbs: 3.6, fat: 0.4, icon: '🥬', cat: 'veg' },
+            { id: 'chard', name: 'Acelga', en: 'Swiss Chard', pt: 'Acelga', kcal: 19, protein: 1.8, carbs: 3.7, fat: 0.2, icon: '🥬', cat: 'veg' },
+            { id: 'cabbage', name: 'Repollo', en: 'Cabbage', pt: 'Repolho', kcal: 25, protein: 1.3, carbs: 6, fat: 0.1, icon: '🥬', cat: 'veg' },
+            { id: 'tomato', name: 'Tomate', en: 'Tomato', pt: 'Tomate', kcal: 18, protein: 0.9, carbs: 3.9, fat: 0.2, icon: '🍅', cat: 'veg' },
+            { id: 'carrot', name: 'Zanahoria', en: 'Carrot', pt: 'Cenoura', kcal: 41, protein: 0.9, carbs: 10, fat: 0.2, icon: '🥕', cat: 'veg' },
+            { id: 'beet', name: 'Remolacha', en: 'Beetroot', pt: 'Beterraba', kcal: 43, protein: 1.6, carbs: 10, fat: 0.2, icon: '🍠', cat: 'veg' },
+            { id: 'lettuce', name: 'Lechuga', en: 'Lettuce', pt: 'Alface', kcal: 15, protein: 1.4, carbs: 2.9, fat: 0.2, icon: '🥗', cat: 'veg' },
+            { id: 'cucumber', name: 'Pepino', en: 'Cucumber', pt: 'Pepino', kcal: 16, protein: 0.7, carbs: 3.6, fat: 0.1, icon: '🥒', cat: 'veg' },
+            { id: 'pepper', name: 'Pimiento', en: 'Bell Pepper', pt: 'Pimentão', kcal: 31, protein: 1, carbs: 6, fat: 0.3, icon: '🫑', cat: 'veg' },
+            { id: 'onion', name: 'Cebolla', en: 'Onion', pt: 'Cebola', kcal: 40, protein: 1.1, carbs: 9, fat: 0.1, icon: '🧅', cat: 'veg' },
+            { id: 'pumpkin', name: 'Calabaza', en: 'Pumpkin', pt: 'Abóbora', kcal: 26, protein: 1, carbs: 6.5, fat: 0.1, icon: '🎃', cat: 'veg' },
+            { id: 'zucchini', name: 'Zapallito', en: 'Zucchini', pt: 'Abobrinha', kcal: 17, protein: 1.2, carbs: 3.1, fat: 0.3, icon: '🥒', cat: 'veg' },
+            { id: 'eggplant', name: 'Berenjena', en: 'Eggplant', pt: 'Berinjela', kcal: 25, protein: 1, carbs: 6, fat: 0.2, icon: '🍆', cat: 'veg' },
+            { id: 'mushrooms', name: 'Champiñones', en: 'Mushrooms', pt: 'Champignon', kcal: 22, protein: 3.1, carbs: 3.3, fat: 0.3, icon: '🍄', cat: 'veg' },
+            { id: 'green_beans', name: 'Chauchas', en: 'Green Beans', pt: 'Vagem', kcal: 31, protein: 1.8, carbs: 7, fat: 0.2, icon: '🫛', cat: 'veg' },
             // FRUTAS
-            { id: 'apple', name: 'Manzana', kcal: 52, protein: 0.3, carbs: 14, fat: 0.2, icon: '🍎', cat: 'fruit' },
-            { id: 'banana', name: 'Banana', kcal: 89, protein: 1.1, carbs: 23, fat: 0.3, icon: '🍌', cat: 'fruit' },
-            { id: 'strawberry', name: 'Frutilla', kcal: 32, protein: 0.7, carbs: 7.7, fat: 0.3, icon: '🍓', cat: 'fruit' },
-            { id: 'orange', name: 'Naranja', kcal: 47, protein: 0.9, carbs: 12, fat: 0.1, icon: '🍊', cat: 'fruit' },
-            { id: 'pear', name: 'Pera', kcal: 57, protein: 0.4, carbs: 15, fat: 0.1, icon: '🍐', cat: 'fruit' },
-            { id: 'grape', name: 'Uva', kcal: 67, protein: 0.6, carbs: 17, fat: 0.4, icon: '🍇', cat: 'fruit' },
-            { id: 'kiwi', name: 'Kiwi', kcal: 61, protein: 1.1, carbs: 15, fat: 0.5, icon: '🥝', cat: 'fruit' },
-            { id: 'mango', name: 'Mango', kcal: 60, protein: 0.8, carbs: 15, fat: 0.4, icon: '🥭', cat: 'fruit' },
-            { id: 'pineapple', name: 'Ananá', kcal: 50, protein: 0.5, carbs: 13, fat: 0.1, icon: '🍍', cat: 'fruit' },
-            { id: 'blueberry', name: 'Arándanos', kcal: 57, protein: 0.7, carbs: 14, fat: 0.3, icon: '🫐', cat: 'fruit' },
+            { id: 'apple', name: 'Manzana', en: 'Apple', pt: 'Maçã', kcal: 52, protein: 0.3, carbs: 14, fat: 0.2, icon: '🍎', cat: 'fruit' },
+            { id: 'banana', name: 'Banana', en: 'Banana', pt: 'Banana', kcal: 89, protein: 1.1, carbs: 23, fat: 0.3, icon: '🍌', cat: 'fruit' },
+            { id: 'strawberry', name: 'Frutilla', en: 'Strawberry', pt: 'Morango', kcal: 32, protein: 0.7, carbs: 7.7, fat: 0.3, icon: '🍓', cat: 'fruit' },
+            { id: 'orange', name: 'Naranja', en: 'Orange', pt: 'Laranja', kcal: 47, protein: 0.9, carbs: 12, fat: 0.1, icon: '🍊', cat: 'fruit' },
+            { id: 'tangerine', name: 'Mandarina', en: 'Tangerine', pt: 'Tangerina', kcal: 53, protein: 0.8, carbs: 13, fat: 0.3, icon: '🍊', cat: 'fruit' },
+            { id: 'pear', name: 'Pera', en: 'Pear', pt: 'Pera', kcal: 57, protein: 0.4, carbs: 15, fat: 0.1, icon: '🍐', cat: 'fruit' },
+            { id: 'grape', name: 'Uva', en: 'Grapes', pt: 'Uva', kcal: 67, protein: 0.6, carbs: 17, fat: 0.4, icon: '🍇', cat: 'fruit' },
+            { id: 'kiwi', name: 'Kiwi', en: 'Kiwi', pt: 'Kiwi', kcal: 61, protein: 1.1, carbs: 15, fat: 0.5, icon: '🥝', cat: 'fruit' },
+            { id: 'mango', name: 'Mango', en: 'Mango', pt: 'Manga', kcal: 60, protein: 0.8, carbs: 15, fat: 0.4, icon: '🥭', cat: 'fruit' },
+            { id: 'pineapple', name: 'Ananá', en: 'Pineapple', pt: 'Abacaxi', kcal: 50, protein: 0.5, carbs: 13, fat: 0.1, icon: '🍍', cat: 'fruit' },
+            { id: 'blueberry', name: 'Arándanos', en: 'Blueberries', pt: 'Mirtilos', kcal: 57, protein: 0.7, carbs: 14, fat: 0.3, icon: '🫐', cat: 'fruit' },
+            { id: 'watermelon', name: 'Sandía', en: 'Watermelon', pt: 'Melancia', kcal: 30, protein: 0.6, carbs: 8, fat: 0.2, icon: '🍉', cat: 'fruit' },
+            { id: 'melon', name: 'Melón', en: 'Melon', pt: 'Melão', kcal: 34, protein: 0.8, carbs: 8, fat: 0.2, icon: '🍈', cat: 'fruit' },
+            { id: 'peach', name: 'Durazno', en: 'Peach', pt: 'Pêssego', kcal: 39, protein: 0.9, carbs: 10, fat: 0.3, icon: '🍑', cat: 'fruit' },
             // GRASAS
-            { id: 'avocado', name: 'Palta', kcal: 160, protein: 2, carbs: 9, fat: 15, icon: '🥑', cat: 'fat' },
-            { id: 'almonds', name: 'Almendras', kcal: 579, protein: 21, carbs: 22, fat: 50, icon: '🌰', cat: 'fat' },
-            { id: 'peanuts', name: 'Maní', kcal: 567, protein: 26, carbs: 16, fat: 49, icon: '🥜', cat: 'fat' },
-            { id: 'walnuts', name: 'Nueces', kcal: 654, protein: 15, carbs: 14, fat: 65, icon: '🌰', cat: 'fat' },
-            { id: 'olive_oil', name: 'Aceite de Oliva', kcal: 884, protein: 0, carbs: 0, fat: 100, icon: '🫒', cat: 'fat', unit: { kind: 'ml', density: 0.91 } },
+            { id: 'avocado', name: 'Palta', en: 'Avocado', pt: 'Abacate', kcal: 160, protein: 2, carbs: 9, fat: 15, icon: '🥑', cat: 'fat' },
+            { id: 'almonds', name: 'Almendras', en: 'Almonds', pt: 'Amêndoas', kcal: 579, protein: 21, carbs: 22, fat: 50, icon: '🌰', cat: 'fat' },
+            { id: 'peanuts', name: 'Maní', en: 'Peanuts', pt: 'Amendoim', kcal: 567, protein: 26, carbs: 16, fat: 49, icon: '🥜', cat: 'fat' },
+            { id: 'walnuts', name: 'Nueces', en: 'Walnuts', pt: 'Nozes', kcal: 654, protein: 15, carbs: 14, fat: 65, icon: '🌰', cat: 'fat' },
+            { id: 'cashews', name: 'Castañas de Cajú', en: 'Cashews', pt: 'Castanha de Caju', kcal: 553, protein: 18, carbs: 30, fat: 44, icon: '🌰', cat: 'fat' },
+            { id: 'chia', name: 'Semillas de Chía', en: 'Chia Seeds', pt: 'Sementes de Chia', kcal: 486, protein: 17, carbs: 42, fat: 31, icon: '🌱', cat: 'fat' },
+            { id: 'olives', name: 'Aceitunas', en: 'Olives', pt: 'Azeitonas', kcal: 115, protein: 0.8, carbs: 6, fat: 11, icon: '🫒', cat: 'fat' },
+            { id: 'olive_oil', name: 'Aceite de Oliva', en: 'Olive Oil', pt: 'Azeite de Oliva', kcal: 884, protein: 0, carbs: 0, fat: 100, icon: '🫒', cat: 'fat', unit: { kind: 'ml', density: 0.91 } },
+            { id: 'hummus', name: 'Hummus', en: 'Hummus', pt: 'Homus', kcal: 166, protein: 8, carbs: 14, fat: 10, icon: '🫘', cat: 'fat' },
             // LÁCTEOS
-            { id: 'milk_skim', name: 'Leche Descremada', kcal: 34, protein: 3.4, carbs: 5, fat: 0.1, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
-            { id: 'yogurt_natural', name: 'Yogur Natural', kcal: 61, protein: 3.5, carbs: 4.7, fat: 3.3, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
-            { id: 'cottage', name: 'Queso Cottage', kcal: 98, protein: 11, carbs: 3.4, fat: 4.3, icon: '🧀', cat: 'dairy' },
-            { id: 'cheese_fresh', name: 'Queso Fresco', kcal: 264, protein: 18, carbs: 3, fat: 21, icon: '🧀', cat: 'dairy' },
-            { id: 'hummus', name: 'Hummus', kcal: 166, protein: 8, carbs: 14, fat: 10, icon: '🫘', cat: 'dairy' }
+            { id: 'milk_skim', name: 'Leche Descremada', en: 'Skim Milk', pt: 'Leite Desnatado', kcal: 34, protein: 3.4, carbs: 5, fat: 0.1, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
+            { id: 'milk_whole', name: 'Leche Entera', en: 'Whole Milk', pt: 'Leite Integral', kcal: 61, protein: 3.2, carbs: 4.8, fat: 3.3, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
+            { id: 'yogurt_natural', name: 'Yogur Natural', en: 'Plain Yogurt', pt: 'Iogurte Natural', kcal: 61, protein: 3.5, carbs: 4.7, fat: 3.3, icon: '🥛', cat: 'dairy', unit: { kind: 'ml', density: 1 } },
+            { id: 'cottage', name: 'Queso Cottage', en: 'Cottage Cheese', pt: 'Queijo Cottage', kcal: 98, protein: 11, carbs: 3.4, fat: 4.3, icon: '🧀', cat: 'dairy' },
+            { id: 'cheese_fresh', name: 'Queso Fresco', en: 'Fresh Cheese', pt: 'Queijo Minas', kcal: 264, protein: 18, carbs: 3, fat: 21, icon: '🧀', cat: 'dairy' },
+            { id: 'ricotta_light', name: 'Ricota Magra', en: 'Ricotta (part-skim)', pt: 'Ricota Light', kcal: 138, protein: 11, carbs: 5, fat: 8, icon: '🧀', cat: 'dairy' },
+            { id: 'port_salut_light', name: 'Queso Port Salut Light', en: 'Port Salut Light Cheese', pt: 'Queijo Port Salut Light', kcal: 197, protein: 25, carbs: 1, fat: 10, icon: '🧀', cat: 'dairy' }
         ];
 
         const FOOD_CATEGORIES = [
@@ -3833,59 +3871,73 @@
         // NUTRITION PLAN GENERATOR
         // 45-item ingredient pool. Macros are per 100g (cooked unless noted).
         // ─────────────────────────────────────────
+        // name = español (canónico) · en/pt = traducciones · tip/tipEn/tipPt ídem.
+        // Renderizar SIEMPRE con foodName(f)/foodTip(f), nunca f.name/f.tip directo.
         const FOOD_POOL = {
             protein: [
-                { id: 'chicken_breast', name: 'Pollo pechuga', kcal: 165, p: 31, c: 0,    f: 3.6, tip: 'Plancha, horno o hervido sin piel' },
-                { id: 'turkey_breast',  name: 'Pavo pechuga',  kcal: 135, p: 30, c: 0,    f: 1,   tip: 'Más magro que el pollo' },
-                { id: 'eggs',           name: 'Huevos enteros',kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
-                { id: 'egg_whites',     name: 'Claras de huevo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
-                { id: 'lean_beef',      name: 'Bife magro',    kcal: 250, p: 26, c: 0,    f: 15,  tip: 'Cuadril, peceto, lomo · sin grasa visible' },
-                { id: 'salmon',         name: 'Salmón',        kcal: 208, p: 20, c: 0,    f: 13,  tip: 'Omega-3. Plancha o horno' },
-                { id: 'tuna_water',     name: 'Atún en agua',  kcal: 116, p: 26, c: 0,    f: 1,   tip: 'Listo para ensaladas o snack' },
-                { id: 'white_fish',     name: 'Merluza',       kcal: 90,  p: 18, c: 0,    f: 1,   tip: 'Económico y magro' },
-                { id: 'sardines',       name: 'Sardinas en agua', kcal: 208, p: 25, c: 0, f: 11,  tip: 'Omega-3 + calcio' },
-                { id: 'tofu',           name: 'Tofu firme',    kcal: 144, p: 17, c: 3,    f: 9,   tip: 'Plant-based · marinalo antes de cocinar' },
-                { id: 'tempeh',         name: 'Tempeh',        kcal: 192, p: 20, c: 8,    f: 11,  tip: 'Más denso que el tofu' },
-                { id: 'lentils',        name: 'Lentejas',      kcal: 116, p: 9,  c: 20,   f: 0.4, tip: 'Combina con cereal para proteína completa' },
-                { id: 'cottage',        name: 'Queso cottage', kcal: 98,  p: 11, c: 3.4,  f: 4.3, tip: 'Versátil: dulce o salado' },
-                { id: 'greek_yogurt',   name: 'Yogur griego natural', kcal: 59, p: 10, c: 3.6, f: 0.4, tip: 'Sin azúcar agregado' },
-                { id: 'whey',           name: 'Whey protein (polvo)', kcal: 380, p: 80, c: 6, f: 5, tip: '1 scoop ≈ 30g de polvo · 24g de proteína' }
+                { id: 'chicken_breast', name: 'Pollo pechuga', en: 'Chicken breast', pt: 'Peito de frango', kcal: 165, p: 31, c: 0,    f: 3.6, tip: 'Plancha, horno o hervido sin piel', tipEn: 'Grilled, baked or boiled, skinless', tipPt: 'Grelhado, assado ou cozido, sem pele' },
+                { id: 'chicken_thigh',  name: 'Muslo de pollo (sin piel)', en: 'Chicken thigh (skinless)', pt: 'Sobrecoxa de frango (sem pele)', kcal: 209, p: 26, c: 0, f: 11, tip: 'Más sabor y más económico que la pechuga', tipEn: 'More flavor and cheaper than breast', tipPt: 'Mais sabor e mais barato que o peito' },
+                { id: 'turkey_breast',  name: 'Pavo pechuga',  en: 'Turkey breast', pt: 'Peito de peru', kcal: 135, p: 30, c: 0,    f: 1,   tip: 'Más magro que el pollo', tipEn: 'Leaner than chicken', tipPt: 'Mais magro que o frango' },
+                { id: 'pork_loin',      name: 'Lomo de cerdo', en: 'Pork tenderloin', pt: 'Lombo de porco', kcal: 143, p: 26, c: 0, f: 3.5, tip: 'Tan magro como la pechuga de pollo', tipEn: 'As lean as chicken breast', tipPt: 'Tão magro quanto o peito de frango' },
+                { id: 'flank_steak',    name: 'Vacío magro',   en: 'Flank steak', pt: 'Fraldinha', kcal: 194, p: 28, c: 0, f: 8.5, tip: 'A la parrilla o plancha · cortalo contra la fibra', tipEn: 'Grill it · slice against the grain', tipPt: 'Na grelha · corte contra a fibra' },
+                { id: 'eggs',           name: 'Huevos enteros', en: 'Whole eggs', pt: 'Ovos inteiros', kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g', tipEn: '1 egg = ~50g · 2 eggs = ~100g', tipPt: '1 ovo = ~50g · 2 ovos = ~100g', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
+                { id: 'egg_whites',     name: 'Claras de huevo', en: 'Egg whites', pt: 'Claras de ovo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura', tipEn: '3 whites ≈ 100g · almost pure protein', tipPt: '3 claras ≈ 100g · proteína quase pura', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
+                { id: 'lean_beef',      name: 'Bife magro',    en: 'Lean beef steak', pt: 'Bife magro', kcal: 250, p: 26, c: 0,    f: 15,  tip: 'Cuadril, peceto, lomo · sin grasa visible', tipEn: 'Sirloin, eye round, tenderloin · no visible fat', tipPt: 'Alcatra, lagarto, filé · sem gordura aparente' },
+                { id: 'salmon',         name: 'Salmón',        en: 'Salmon', pt: 'Salmão', kcal: 208, p: 20, c: 0,    f: 13,  tip: 'Omega-3. Plancha o horno', tipEn: 'Omega-3. Grilled or baked', tipPt: 'Ômega-3. Grelhado ou assado' },
+                { id: 'tuna_water',     name: 'Atún en agua',  en: 'Tuna in water', pt: 'Atum em água', kcal: 116, p: 26, c: 0,    f: 1,   tip: 'Listo para ensaladas o snack', tipEn: 'Ready for salads or a snack', tipPt: 'Pronto para saladas ou lanche' },
+                { id: 'white_fish',     name: 'Merluza',       en: 'Hake (white fish)', pt: 'Merluza', kcal: 90,  p: 18, c: 0,    f: 1,   tip: 'Económico y magro', tipEn: 'Cheap and lean', tipPt: 'Econômico e magro' },
+                { id: 'sardines',       name: 'Sardinas en agua', en: 'Sardines in water', pt: 'Sardinha em água', kcal: 208, p: 25, c: 0, f: 11,  tip: 'Omega-3 + calcio', tipEn: 'Omega-3 + calcium', tipPt: 'Ômega-3 + cálcio' },
+                { id: 'tofu',           name: 'Tofu firme',    en: 'Firm tofu', pt: 'Tofu firme', kcal: 144, p: 17, c: 3,    f: 9,   tip: 'Plant-based · marinalo antes de cocinar', tipEn: 'Plant-based · marinate before cooking', tipPt: 'Vegetal · marine antes de cozinhar' },
+                { id: 'tempeh',         name: 'Tempeh',        en: 'Tempeh', pt: 'Tempeh', kcal: 192, p: 20, c: 8,    f: 11,  tip: 'Más denso que el tofu', tipEn: 'Denser than tofu', tipPt: 'Mais denso que o tofu' },
+                { id: 'lentils',        name: 'Lentejas',      en: 'Lentils', pt: 'Lentilhas', kcal: 116, p: 9,  c: 20,   f: 0.4, tip: 'Combina con cereal para proteína completa', tipEn: 'Pair with a grain for complete protein', tipPt: 'Combine com cereal para proteína completa' },
+                { id: 'cottage',        name: 'Queso cottage', en: 'Cottage cheese', pt: 'Queijo cottage', kcal: 98,  p: 11, c: 3.4,  f: 4.3, tip: 'Versátil: dulce o salado', tipEn: 'Versatile: sweet or savory', tipPt: 'Versátil: doce ou salgado' },
+                { id: 'greek_yogurt',   name: 'Yogur griego natural', en: 'Plain Greek yogurt', pt: 'Iogurte grego natural', kcal: 59, p: 10, c: 3.6, f: 0.4, tip: 'Sin azúcar agregado', tipEn: 'No added sugar', tipPt: 'Sem açúcar adicionado' },
+                { id: 'whey',           name: 'Whey protein (polvo)', en: 'Whey protein (powder)', pt: 'Whey protein (pó)', kcal: 380, p: 80, c: 6, f: 5, tip: '1 scoop ≈ 30g de polvo · 24g de proteína', tipEn: '1 scoop ≈ 30g powder · 24g protein', tipPt: '1 scoop ≈ 30g de pó · 24g de proteína' }
             ],
             carb: [
-                { id: 'rice_white',     name: 'Arroz blanco',  kcal: 130, p: 2.7, c: 28, f: 0.3, tip: 'Fácil digestión · ideal post-entreno' },
-                { id: 'rice_brown',     name: 'Arroz integral',kcal: 123, p: 2.6, c: 26, f: 1,   tip: 'Más fibra · digestión más lenta' },
-                { id: 'oats',           name: 'Avena (seca)',  kcal: 389, p: 17,  c: 66, f: 7,   tip: 'Tradicional o instantánea · 50g = porción' },
-                { id: 'quinoa',         name: 'Quinoa',        kcal: 120, p: 4.4, c: 21, f: 1.9, tip: 'Proteína completa de origen vegetal' },
-                { id: 'pasta_whole',    name: 'Pasta integral',kcal: 124, p: 5,   c: 25, f: 1.1, tip: '80g secos ≈ 200g cocidos' },
-                { id: 'sweet_potato',   name: 'Batata',        kcal: 86,  p: 1.6, c: 20, f: 0.1, tip: 'Asada o al horno · low GI' },
-                { id: 'potato',         name: 'Papa',          kcal: 87,  p: 1.9, c: 20, f: 0.1, tip: 'Hervida o al horno · evitá fritar' },
-                { id: 'whole_bread',    name: 'Pan integral',  kcal: 252, p: 10,  c: 43, f: 4,   tip: '1 rebanada ≈ 30g' },
-                { id: 'banana',         name: 'Banana',        kcal: 89,  p: 1.1, c: 23, f: 0.3, tip: '1 banana mediana ≈ 120g' },
-                { id: 'apple',          name: 'Manzana',       kcal: 52,  p: 0.3, c: 14, f: 0.2, tip: '1 manzana ≈ 180g · alta saciedad' },
-                { id: 'berries',        name: 'Frutos del bosque', kcal: 57, p: 0.7, c: 14, f: 0.3, tip: 'Antioxidantes · low cal' },
-                { id: 'tortilla_whole', name: 'Tortilla integral', kcal: 218, p: 8, c: 36, f: 5,  tip: '1 tortilla ≈ 40g' }
+                { id: 'rice_white',     name: 'Arroz blanco',  en: 'White rice', pt: 'Arroz branco', kcal: 130, p: 2.7, c: 28, f: 0.3, tip: 'Fácil digestión · ideal post-entreno', tipEn: 'Easy to digest · great post-workout', tipPt: 'Fácil digestão · ideal pós-treino' },
+                { id: 'rice_brown',     name: 'Arroz integral', en: 'Brown rice', pt: 'Arroz integral', kcal: 123, p: 2.6, c: 26, f: 1,   tip: 'Más fibra · digestión más lenta', tipEn: 'More fiber · slower digestion', tipPt: 'Mais fibra · digestão mais lenta' },
+                { id: 'oats',           name: 'Avena (seca)',  en: 'Oats (dry)', pt: 'Aveia (seca)', kcal: 389, p: 17,  c: 66, f: 7,   tip: 'Tradicional o instantánea · 50g = porción', tipEn: 'Rolled or instant · 50g = one serving', tipPt: 'Tradicional ou instantânea · 50g = porção' },
+                { id: 'quinoa',         name: 'Quinoa',        en: 'Quinoa', pt: 'Quinoa', kcal: 120, p: 4.4, c: 21, f: 1.9, tip: 'Proteína completa de origen vegetal', tipEn: 'Complete plant protein', tipPt: 'Proteína vegetal completa' },
+                { id: 'pasta_whole',    name: 'Pasta integral', en: 'Whole wheat pasta', pt: 'Macarrão integral', kcal: 124, p: 5,   c: 25, f: 1.1, tip: '80g secos ≈ 200g cocidos', tipEn: '80g dry ≈ 200g cooked', tipPt: '80g cru ≈ 200g cozido' },
+                { id: 'polenta',        name: 'Polenta',       en: 'Polenta', pt: 'Polenta', kcal: 70, p: 1.7, c: 15, f: 0.3, tip: 'Cocida · rinde mucho con pocas kcal', tipEn: 'Cooked · very filling for few kcal', tipPt: 'Cozida · rende muito com poucas kcal' },
+                { id: 'chickpeas',      name: 'Garbanzos',     en: 'Chickpeas', pt: 'Grão-de-bico', kcal: 164, p: 8.9, c: 27, f: 2.6, tip: 'Cocidos · ensaladas, guisos o al horno', tipEn: 'Cooked · salads, stews or roasted', tipPt: 'Cozido · saladas, ensopados ou assado' },
+                { id: 'sweet_potato',   name: 'Batata',        en: 'Sweet potato', pt: 'Batata-doce', kcal: 86,  p: 1.6, c: 20, f: 0.1, tip: 'Asada o al horno · low GI', tipEn: 'Roasted or baked · low GI', tipPt: 'Assada · baixo IG' },
+                { id: 'potato',         name: 'Papa',          en: 'Potato', pt: 'Batata', kcal: 87,  p: 1.9, c: 20, f: 0.1, tip: 'Hervida o al horno · evitá fritar', tipEn: 'Boiled or baked · avoid frying', tipPt: 'Cozida ou assada · evite fritar' },
+                { id: 'whole_bread',    name: 'Pan integral',  en: 'Whole wheat bread', pt: 'Pão integral', kcal: 252, p: 10,  c: 43, f: 4,   tip: '1 rebanada ≈ 30g', tipEn: '1 slice ≈ 30g', tipPt: '1 fatia ≈ 30g' },
+                { id: 'banana',         name: 'Banana',        en: 'Banana', pt: 'Banana', kcal: 89,  p: 1.1, c: 23, f: 0.3, tip: '1 banana mediana ≈ 120g', tipEn: '1 medium banana ≈ 120g', tipPt: '1 banana média ≈ 120g' },
+                { id: 'apple',          name: 'Manzana',       en: 'Apple', pt: 'Maçã', kcal: 52,  p: 0.3, c: 14, f: 0.2, tip: '1 manzana ≈ 180g · alta saciedad', tipEn: '1 apple ≈ 180g · very filling', tipPt: '1 maçã ≈ 180g · alta saciedade' },
+                { id: 'berries',        name: 'Frutos del bosque', en: 'Berries', pt: 'Frutas vermelhas', kcal: 57, p: 0.7, c: 14, f: 0.3, tip: 'Antioxidantes · low cal', tipEn: 'Antioxidants · low cal', tipPt: 'Antioxidantes · poucas kcal' },
+                { id: 'tortilla_whole', name: 'Tortilla integral', en: 'Whole wheat tortilla', pt: 'Tortilha integral', kcal: 218, p: 8, c: 36, f: 5,  tip: '1 tortilla ≈ 40g', tipEn: '1 tortilla ≈ 40g', tipPt: '1 tortilha ≈ 40g' }
             ],
             veggie: [
-                { id: 'broccoli',  name: 'Brócoli',     kcal: 35, p: 2.4, c: 7,   f: 0.4, tip: 'Al vapor o salteado' },
-                { id: 'spinach',   name: 'Espinaca',    kcal: 23, p: 2.9, c: 3.6, f: 0.4, tip: 'Cruda o salteada · ricos micros' },
-                { id: 'lettuce',   name: 'Lechuga',     kcal: 15, p: 1.4, c: 2.9, f: 0.2, tip: 'Base para ensaladas' },
-                { id: 'tomato',    name: 'Tomate',      kcal: 18, p: 0.9, c: 3.9, f: 0.2, tip: 'Cherry, perita o redondo' },
-                { id: 'cucumber',  name: 'Pepino',      kcal: 16, p: 0.7, c: 3.6, f: 0.1, tip: 'Hidratante · 95% agua' },
-                { id: 'pepper',    name: 'Morrón rojo', kcal: 31, p: 1,   c: 6,   f: 0.3, tip: 'Salteado o crudo' },
-                { id: 'zucchini',  name: 'Zapallito',   kcal: 17, p: 1.2, c: 3.1, f: 0.3, tip: 'Al horno o grillado' },
-                { id: 'carrot',    name: 'Zanahoria',   kcal: 41, p: 0.9, c: 10,  f: 0.2, tip: 'Cruda en bastones o cocida' },
-                { id: 'kale',      name: 'Kale',        kcal: 49, p: 4.3, c: 9,   f: 0.9, tip: 'Superfood · salteado o smoothie' },
-                { id: 'asparagus', name: 'Espárragos',  kcal: 20, p: 2.2, c: 3.9, f: 0.1, tip: 'Plancha o al vapor' }
+                { id: 'broccoli',  name: 'Brócoli',     en: 'Broccoli', pt: 'Brócolis', kcal: 35, p: 2.4, c: 7,   f: 0.4, tip: 'Al vapor o salteado', tipEn: 'Steamed or sautéed', tipPt: 'No vapor ou refogado' },
+                { id: 'cauliflower', name: 'Coliflor',  en: 'Cauliflower', pt: 'Couve-flor', kcal: 25, p: 1.9, c: 5, f: 0.3, tip: 'Al horno o como "arroz" de coliflor', tipEn: 'Roasted or as cauliflower rice', tipPt: 'Assada ou como "arroz" de couve-flor' },
+                { id: 'spinach',   name: 'Espinaca',    en: 'Spinach', pt: 'Espinafre', kcal: 23, p: 2.9, c: 3.6, f: 0.4, tip: 'Cruda o salteada · ricos micros', tipEn: 'Raw or sautéed · rich in micros', tipPt: 'Cru ou refogado · rico em micros' },
+                { id: 'lettuce',   name: 'Lechuga',     en: 'Lettuce', pt: 'Alface', kcal: 15, p: 1.4, c: 2.9, f: 0.2, tip: 'Base para ensaladas', tipEn: 'Salad base', tipPt: 'Base para saladas' },
+                { id: 'tomato',    name: 'Tomate',      en: 'Tomato', pt: 'Tomate', kcal: 18, p: 0.9, c: 3.9, f: 0.2, tip: 'Cherry, perita o redondo', tipEn: 'Cherry, plum or regular', tipPt: 'Cereja, italiano ou comum' },
+                { id: 'cucumber',  name: 'Pepino',      en: 'Cucumber', pt: 'Pepino', kcal: 16, p: 0.7, c: 3.6, f: 0.1, tip: 'Hidratante · 95% agua', tipEn: 'Hydrating · 95% water', tipPt: 'Hidratante · 95% água' },
+                { id: 'pepper',    name: 'Morrón rojo', en: 'Red bell pepper', pt: 'Pimentão vermelho', kcal: 31, p: 1,   c: 6,   f: 0.3, tip: 'Salteado o crudo', tipEn: 'Sautéed or raw', tipPt: 'Refogado ou cru' },
+                { id: 'zucchini',  name: 'Zapallito',   en: 'Zucchini', pt: 'Abobrinha', kcal: 17, p: 1.2, c: 3.1, f: 0.3, tip: 'Al horno o grillado', tipEn: 'Baked or grilled', tipPt: 'Assada ou grelhada' },
+                { id: 'carrot',    name: 'Zanahoria',   en: 'Carrot', pt: 'Cenoura', kcal: 41, p: 0.9, c: 10,  f: 0.2, tip: 'Cruda en bastones o cocida', tipEn: 'Raw sticks or cooked', tipPt: 'Crua em palitos ou cozida' },
+                { id: 'beet',      name: 'Remolacha',   en: 'Beetroot', pt: 'Beterraba', kcal: 43, p: 1.6, c: 10, f: 0.2, tip: 'Hervida o rallada cruda · rica en nitratos', tipEn: 'Boiled or grated raw · rich in nitrates', tipPt: 'Cozida ou ralada crua · rica em nitratos' },
+                { id: 'eggplant',  name: 'Berenjena',   en: 'Eggplant', pt: 'Berinjela', kcal: 25, p: 1, c: 6, f: 0.2, tip: 'Al horno o grillada', tipEn: 'Baked or grilled', tipPt: 'Assada ou grelhada' },
+                { id: 'mushrooms', name: 'Champiñones', en: 'Mushrooms', pt: 'Champignon', kcal: 22, p: 3.1, c: 3.3, f: 0.3, tip: 'Salteados · umami sin calorías', tipEn: 'Sautéed · umami with no calories', tipPt: 'Refogados · umami sem calorias' },
+                { id: 'kale',      name: 'Kale',        en: 'Kale', pt: 'Couve', kcal: 49, p: 4.3, c: 9,   f: 0.9, tip: 'Superfood · salteado o smoothie', tipEn: 'Superfood · sautéed or in smoothies', tipPt: 'Superalimento · refogada ou no smoothie' },
+                { id: 'asparagus', name: 'Espárragos',  en: 'Asparagus', pt: 'Aspargos', kcal: 20, p: 2.2, c: 3.9, f: 0.1, tip: 'Plancha o al vapor', tipEn: 'Grilled or steamed', tipPt: 'Grelhados ou no vapor' }
             ],
             fat: [
-                { id: 'olive_oil', name: 'Aceite de oliva', kcal: 884, p: 0,  c: 0,  f: 100, tip: '1 cucharada ≈ 10g · usar crudo', unit: { kind: 'ml', density: 0.91 } },
-                { id: 'avocado',   name: 'Palta',           kcal: 160, p: 2,  c: 9,  f: 15,  tip: '1/2 palta ≈ 75g' },
-                { id: 'almonds',   name: 'Almendras',       kcal: 579, p: 21, c: 22, f: 50,  tip: 'Un puñado ≈ 25g · 23 unidades' },
-                { id: 'walnuts',   name: 'Nueces',          kcal: 654, p: 15, c: 14, f: 65,  tip: 'Omega-3 vegetal · 25g = puñado' },
-                { id: 'peanut_butter', name: 'Manteca de maní', kcal: 588, p: 25, c: 20, f: 50, tip: '1 cucharada ≈ 16g · sin azúcar' },
-                { id: 'sunflower_seeds', name: 'Semillas de girasol', kcal: 584, p: 21, c: 20, f: 51, tip: 'Toppings de ensaladas' },
-                { id: 'parmesan',  name: 'Queso parmesano', kcal: 431, p: 38, c: 4,  f: 29,  tip: 'Sabor intenso · poco rinde mucho' },
-                { id: 'dark_choc', name: 'Chocolate 70%',   kcal: 598, p: 8,  c: 46, f: 43,  tip: '1 cuadradito ≈ 10g · postre saludable' }
+                { id: 'olive_oil', name: 'Aceite de oliva', en: 'Olive oil', pt: 'Azeite de oliva', kcal: 884, p: 0,  c: 0,  f: 100, tip: '1 cucharada ≈ 10g · usar crudo', tipEn: '1 tbsp ≈ 10g · use raw', tipPt: '1 colher ≈ 10g · use cru', unit: { kind: 'ml', density: 0.91 } },
+                { id: 'avocado',   name: 'Palta',           en: 'Avocado', pt: 'Abacate', kcal: 160, p: 2,  c: 9,  f: 15,  tip: '1/2 palta ≈ 75g', tipEn: '1/2 avocado ≈ 75g', tipPt: '1/2 abacate ≈ 75g' },
+                { id: 'almonds',   name: 'Almendras',       en: 'Almonds', pt: 'Amêndoas', kcal: 579, p: 21, c: 22, f: 50,  tip: 'Un puñado ≈ 25g · 23 unidades', tipEn: 'A handful ≈ 25g · 23 pieces', tipPt: 'Um punhado ≈ 25g · 23 unidades' },
+                { id: 'walnuts',   name: 'Nueces',          en: 'Walnuts', pt: 'Nozes', kcal: 654, p: 15, c: 14, f: 65,  tip: 'Omega-3 vegetal · 25g = puñado', tipEn: 'Plant omega-3 · 25g = handful', tipPt: 'Ômega-3 vegetal · 25g = punhado' },
+                { id: 'cashews',   name: 'Castañas de cajú', en: 'Cashews', pt: 'Castanha de caju', kcal: 553, p: 18, c: 30, f: 44, tip: 'Un puñado ≈ 25g', tipEn: 'A handful ≈ 25g', tipPt: 'Um punhado ≈ 25g' },
+                { id: 'chia',      name: 'Semillas de chía', en: 'Chia seeds', pt: 'Sementes de chia', kcal: 486, p: 17, c: 42, f: 31, tip: 'Omega-3 + fibra · en yogur o avena', tipEn: 'Omega-3 + fiber · in yogurt or oats', tipPt: 'Ômega-3 + fibra · no iogurte ou aveia' },
+                { id: 'olives',    name: 'Aceitunas',       en: 'Olives', pt: 'Azeitonas', kcal: 115, p: 0.8, c: 6, f: 11, tip: '10 aceitunas ≈ 30g', tipEn: '10 olives ≈ 30g', tipPt: '10 azeitonas ≈ 30g' },
+                { id: 'peanut_butter', name: 'Manteca de maní', en: 'Peanut butter', pt: 'Pasta de amendoim', kcal: 588, p: 25, c: 20, f: 50, tip: '1 cucharada ≈ 16g · sin azúcar', tipEn: '1 tbsp ≈ 16g · no added sugar', tipPt: '1 colher ≈ 16g · sem açúcar' },
+                { id: 'sunflower_seeds', name: 'Semillas de girasol', en: 'Sunflower seeds', pt: 'Sementes de girassol', kcal: 584, p: 21, c: 20, f: 51, tip: 'Toppings de ensaladas', tipEn: 'Salad topping', tipPt: 'Topping de saladas' },
+                { id: 'parmesan',  name: 'Queso parmesano', en: 'Parmesan cheese', pt: 'Queijo parmesão', kcal: 431, p: 38, c: 4,  f: 29,  tip: 'Sabor intenso · poco rinde mucho', tipEn: 'Intense flavor · a little goes far', tipPt: 'Sabor intenso · pouco rende muito' },
+                { id: 'dark_choc', name: 'Chocolate 70%',   en: 'Dark chocolate 70%', pt: 'Chocolate 70%', kcal: 598, p: 8,  c: 46, f: 43,  tip: '1 cuadradito ≈ 10g · postre saludable', tipEn: '1 square ≈ 10g · healthy dessert', tipPt: '1 quadradinho ≈ 10g · sobremesa saudável' }
             ]
         };
 
@@ -3893,6 +3945,26 @@
         // still render eggs as units / liquids as ml (no regeneration needed).
         const _FOOD_UNIT_BY_ID = {};
         Object.values(FOOD_POOL).forEach(arr => arr.forEach(f => { if (f.unit) _FOOD_UNIT_BY_ID[f.id] = f.unit; }));
+
+        // id → food lookup del pool, para resolver nombre/tip por idioma en planes
+        // ya generados (los items guardan el nombre en español de la generación).
+        const _FOOD_POOL_BY_ID = {};
+        Object.values(FOOD_POOL).forEach(arr => arr.forEach(f => { _FOOD_POOL_BY_ID[f.id] = f; }));
+
+        // Nombre/tip del alimento según el idioma activo. Los alimentos definen
+        // name (es, canónico) + en + pt. Fallback al español si falta traducción.
+        function foodName(f) {
+            if (!f) return '';
+            if (state.lang === 'en' && f.en) return f.en;
+            if (state.lang === 'pt' && f.pt) return f.pt;
+            return f.name;
+        }
+        function foodTip(f) {
+            if (!f) return '';
+            if (state.lang === 'en' && f.tipEn) return f.tipEn;
+            if (state.lang === 'pt' && f.tipPt) return f.tipPt;
+            return f.tip || '';
+        }
 
         // Per meal-slot: categories included + kcal share per category.
         // Variety comes from random food selection per day (not multiple templates).
@@ -3911,9 +3983,9 @@
         // Slot-specific preferences for protein. Keeps meals coherent (no steak at breakfast, no yogurt at dinner).
         const _SLOT_PROTEIN_PREF = {
             breakfast:   ['eggs','egg_whites','greek_yogurt','cottage','whey'],
-            lunch:       ['chicken_breast','turkey_breast','lean_beef','salmon','tuna_water','white_fish','sardines','tofu','tempeh','lentils'],
+            lunch:       ['chicken_breast','chicken_thigh','turkey_breast','lean_beef','flank_steak','pork_loin','salmon','tuna_water','white_fish','sardines','tofu','tempeh','lentils'],
             snack:       ['greek_yogurt','cottage','whey','tuna_water'],
-            dinner:      ['chicken_breast','turkey_breast','salmon','white_fish','sardines','tuna_water','tofu','lean_beef'],
+            dinner:      ['chicken_breast','chicken_thigh','turkey_breast','pork_loin','flank_steak','salmon','white_fish','sardines','tuna_water','tofu','lean_beef'],
             postworkout: ['whey','greek_yogurt','egg_whites','chicken_breast']
         };
 
@@ -4057,7 +4129,8 @@
                 // Items list (each row clickable → swap)
                 meal.items.forEach((item, iIdx) => {
                     const row = h('div', { className: 'meal-item-row', onclick: () => openSwapFoodModal(dayIdx, mIdx, iIdx) });
-                    row.appendChild(h('span', { className: 'meal-item-name' }, item.name));
+                    // Resolver por id → el idioma aplica también a planes ya generados.
+                    row.appendChild(h('span', { className: 'meal-item-name' }, foodName(_FOOD_POOL_BY_ID[item.id]) || item.name));
                     row.appendChild(h('span', { className: 'meal-item-grams' }, formatPortion(item.grams, item.unit || _FOOD_UNIT_BY_ID[item.id])));
                     row.appendChild(h('span', { className: 'meal-item-kcal' }, Math.round(item.kcal) + ' kcal'));
                     row.appendChild(h('span', { className: 'meal-item-swap' }, '↻'));
@@ -4095,13 +4168,13 @@
             if (!item) return;
             _swapCtx = { dayIdx, mealIdx, itemIdx, category: item.category };
             $('swap-food-title').textContent = t('nutri_swap_title');
-            $('swap-food-sub').textContent = item.name + ' · ' + (t('nutri_swap_cat_' + item.category) || item.category);
+            $('swap-food-sub').textContent = (foodName(_FOOD_POOL_BY_ID[item.id]) || item.name) + ' · ' + (t('nutri_swap_cat_' + item.category) || item.category);
             const list = $('swap-food-list'); list.innerHTML = '';
             const pool = FOOD_POOL[item.category] || [];
             pool.forEach(food => {
                 const row = h('div', { className: 'swap-item', onclick: () => confirmSwapFood(food) });
                 const txt = h('div', {});
-                txt.appendChild(h('div', { className: 'swap-item-name' }, food.name));
+                txt.appendChild(h('div', { className: 'swap-item-name' }, foodName(food)));
                 txt.appendChild(h('div', { className: 'swap-item-macros' }, food.kcal + ' kcal · P' + food.p + ' · C' + food.c + ' · G' + food.f + ' (por 100g)'));
                 row.appendChild(txt);
                 row.appendChild(h('span', { style: { fontSize: '16px', color: 'var(--accent)' } }, '→'));
@@ -4150,7 +4223,7 @@
             saveNutritionPlan();
             closeSwapFoodModal();
             renderProfile();
-            flash('✓ ' + newFood.name);
+            flash('✓ ' + foodName(newFood));
         }
 
         function saveNutritionPlan() { try { localStorage.setItem('bm-nutri-plan', JSON.stringify(state.nutritionPlan || null)); } catch {} }
@@ -11255,7 +11328,7 @@
                 filter.appendChild(h('button', {
                     className: 'food-cat-pill' + (_foodModal.cat === cat.id ? ' active' : ''),
                     onclick: () => { _foodModal.cat = cat.id; setFoodTab('healthy'); }
-                }, cat.icon + ' ' + cat.label));
+                }, cat.icon + ' ' + (t('food_cat_' + cat.id) || cat.label)));
             });
             c.appendChild(filter);
 
@@ -11263,11 +11336,11 @@
             const grid = h('div', { className: 'food-grid' });
             filtered.forEach(f => {
                 const card = h('div', { className: 'food-card', onclick: () => openPortionModal({
-                    name: f.name, kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
+                    name: foodName(f), kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
                     icon: f.icon, source: 'Predeterminado', id: f.id, unit: f.unit
                 }) });
                 card.appendChild(h('div', { className: 'food-card-icon' }, f.icon));
-                card.appendChild(h('div', { className: 'food-card-name' }, f.name));
+                card.appendChild(h('div', { className: 'food-card-name' }, foodName(f)));
                 card.appendChild(h('div', { className: 'food-card-kcal' }, f.kcal + ' ', h('small', {}, '/100g')));
                 grid.appendChild(card);
             });

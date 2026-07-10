@@ -67,5 +67,48 @@ try {
     console.log('  ✗ error extrayendo diccionarios → ' + e.message);
 }
 
+// ── Alimentos: cada item debe tener en + pt (los nombres no viven en I18N) ──
+// Extrae el array/objeto literal que sigue al marcador (balance de corchetes).
+function extractArrayLiteral(src, marker) {
+    const at = src.indexOf(marker);
+    if (at < 0) throw new Error('marcador no encontrado: ' + marker);
+    let i = src.indexOf('[', at);
+    if (i < 0) throw new Error('no hay [ tras: ' + marker);
+    const start = i;
+    let depth = 0, str = null, esc = false;
+    for (; i < src.length; i++) {
+        const ch = src[i], nx = src[i + 1];
+        if (str) {
+            if (esc) esc = false;
+            else if (ch === '\\') esc = true;
+            else if (ch === str) str = null;
+            continue;
+        }
+        if (ch === '/' && nx === '/') { i = src.indexOf('\n', i); if (i < 0) break; continue; }
+        if (ch === '/' && nx === '*') { i = src.indexOf('*/', i + 2) + 1; continue; }
+        if (ch === '"' || ch === "'" || ch === '`') { str = ch; continue; }
+        if (ch === '[') depth++;
+        else if (ch === ']') { depth--; if (depth === 0) return src.slice(start, i + 1); }
+    }
+    throw new Error('array sin cerrar tras: ' + marker);
+}
+
+console.log('\n=== alimentos trilingües (en/pt) ===');
+try {
+    const healthy = Function('"use strict"; return (' + extractArrayLiteral(html, 'const HEALTHY_FOODS = ') + ');')();
+    const missH = healthy.filter((f) => !f.en || !f.pt).map((f) => f.id);
+    ok('HEALTHY_FOODS con en+pt (' + healthy.length + ' items)', missH.length === 0, missH.length ? 'faltan: ' + missH.join(', ') : undefined);
+
+    const pool = Function('"use strict"; return (' + extractObjectLiteral(html, 'const FOOD_POOL = ') + ');')();
+    const poolItems = Object.values(pool).flat();
+    const missP = poolItems.filter((f) => !f.en || !f.pt).map((f) => f.id);
+    ok('FOOD_POOL con en+pt (' + poolItems.length + ' items)', missP.length === 0, missP.length ? 'faltan: ' + missP.join(', ') : undefined);
+    const missT = poolItems.filter((f) => !f.tipEn || !f.tipPt).map((f) => f.id);
+    ok('FOOD_POOL con tipEn+tipPt', missT.length === 0, missT.length ? 'faltan: ' + missT.join(', ') : undefined);
+} catch (e) {
+    fail++;
+    console.log('  ✗ error extrayendo alimentos → ' + e.message);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);
