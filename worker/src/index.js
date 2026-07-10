@@ -8,6 +8,7 @@
 //                     POST                /api/routines/{id}/review
 //                     GET                 /api/shares/{token}
 //                     POST                /api/shares/{token}/edits
+//                     POST                /api/shares/{token}/sessions  (adherencia alumno)
 //   Licencias:        POST                /api/license/activate
 //                     POST                /api/license/verify
 //                     POST                /api/license/trial
@@ -192,22 +193,32 @@ async function createRoutine(req, env, url) {
     return json(routine, 201);
 }
 
+// Sesiones del alumno (adherencia): una por fecha, key sess:{routineId}:{date}
+const sessPrefix = (routineId) => `sess:${routineId}:`;
+
 async function listRoutines(env, url) {
     const coachId = url.searchParams.get('coach_id');
     if (!coachId) return err('Missing coach_id', 400);
     const routines = await listByPrefix(env, `routine:${coachId}:`);
     const enriched = [];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
     for (const r of routines) {
         const edits = await listByPrefix(env, editPrefix(r.id));
         const alumnoEdits = edits.filter((e) => e.edited_by === 'alumno');
         const unreviewed = alumnoEdits.filter((e) => !e.reviewed_by_coach).length;
         const lastEdit = alumnoEdits.length
             ? alumnoEdits.map((e) => e.edited_at).sort().slice(-1)[0] : null;
+        // Adherencia del alumno (sesiones registradas desde su link)
+        const sessions = await listByPrefix(env, sessPrefix(r.id));
+        const dates = sessions.map((s) => s.date).sort();
         enriched.push({
             id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
             share_token: r.share_token, created_at: r.created_at,
             last_alumno_edit_at: lastEdit, edit_count: alumnoEdits.length,
-            unreviewed_count: unreviewed, last_seen_by_alumno_at: r.last_seen_by_alumno_at
+            unreviewed_count: unreviewed, last_seen_by_alumno_at: r.last_seen_by_alumno_at,
+            session_count: dates.length,
+            last_session_at: dates.length ? dates[dates.length - 1] : null,
+            week_sessions: dates.filter((d) => d >= weekAgo).length
         });
     }
     return json(enriched);
@@ -250,9 +261,11 @@ async function deleteRoutine(req, env, url, id) {
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     await env.BMOD_KV.delete(routineKey(coachId, id));
     if (r.share_token) await env.BMOD_KV.delete(`token:${r.share_token}`);
-    // borrar edits
+    // borrar edits y sesiones del alumno
     const res = await env.BMOD_KV.list({ prefix: editPrefix(id) });
     for (const k of res.keys) await env.BMOD_KV.delete(k.name);
+    const sres = await env.BMOD_KV.list({ prefix: sessPrefix(id) });
+    for (const k of sres.keys) await env.BMOD_KV.delete(k.name);
     return json({ ok: true });
 }
 
@@ -281,12 +294,31 @@ async function getShare(env, token) {
     await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     const edits = (await listByPrefix(env, editPrefix(r.id)))
         .sort((a, b) => (a.edited_at < b.edited_at ? 1 : -1)).slice(0, 20);
+    // Sesiones del alumno (para que vea su propia adherencia y el check de hoy)
+    const sessions = (await listByPrefix(env, sessPrefix(r.id)))
+        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
     const publicRoutine = {
         id: r.id, name: r.name, plan: r.plan, coach_name: r.coach_name,
         alumno_name: r.alumno_name, share_token: r.share_token,
         last_coach_update_at: r.last_coach_update_at, created_at: r.created_at
     };
-    return json({ routine: publicRoutine, edits });
+    return json({ routine: publicRoutine, edits, sessions });
+}
+
+// POST /api/shares/{token}/sessions — el alumno registra que entrenó (adherencia).
+// Una por fecha (idempotente): si registra dos veces el mismo día, se pisa.
+async function postShareSession(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const body = await readBody(req);
+    const date = (body && /^\d{4}-\d{2}-\d{2}$/.test(body.date || '')) ? body.date : new Date().toISOString().slice(0, 10);
+    const sess = {
+        date,
+        day_name: String((body && body.day_name) || '').slice(0, 60),
+        at: nowISO()
+    };
+    await kvPut(env, `${sessPrefix(idx.routineId)}${date}`, sess);
+    return json({ ok: true, session: sess }, 201);
 }
 
 async function postEdit(req, env, token) {
@@ -763,6 +795,7 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'DELETE') return await deleteRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
 
             // Licencias

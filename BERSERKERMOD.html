@@ -2268,6 +2268,9 @@
                 rt_suggest_loaded: "cargado en las series",
                 share_sum_volume: "VOLUMEN", share_sum_sets: "SERIES", share_sum_duration: "DURACIÓN", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Racha semanal", home_week_record: "récord", home_week_progress: "esta semana {x}/{y} días", home_week_record_new: "¡Nuevo récord de racha semanal!",
+                alumno_trained_btn: "Entrené hoy", alumno_trained_done: "Entrenamiento de hoy registrado", alumno_trained_ok: "💪 ¡Registrado! Tu coach lo va a ver.", alumno_week_count: "Esta semana: {n} entrenamientos",
+                coach_adherence: "{n} esta semana", coach_last_session: "entrenó",
+                coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
                 rt_routine_updated: "🔄 Rutina actualizada",
                 lib_title: "BIBLIOTECA DE EJERCICIOS", lib_open_btn: "📚 Biblioteca de Ejercicios",
                 lib_search_ph: "Buscar ejercicio (bench, squat, etc)",
@@ -2514,6 +2517,9 @@
                 rt_suggest_loaded: "loaded into sets",
                 share_sum_volume: "VOLUME", share_sum_sets: "SETS", share_sum_duration: "DURATION", share_sum_vs_prev: "VS LAST",
                 home_week_streak: "Weekly streak", home_week_record: "record", home_week_progress: "this week {x}/{y} days", home_week_record_new: "New weekly streak record!",
+                alumno_trained_btn: "I trained today", alumno_trained_done: "Today's workout logged", alumno_trained_ok: "💪 Logged! Your coach will see it.", alumno_week_count: "This week: {n} workouts",
+                coach_adherence: "{n} this week", coach_last_session: "trained",
+                coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
                 rt_routine_updated: "🔄 Routine updated",
                 lib_title: "EXERCISE LIBRARY", lib_open_btn: "📚 Exercise Library",
                 lib_search_ph: "Search exercise (bench, squat, etc)",
@@ -2761,6 +2767,9 @@
                 rt_suggest_loaded: "carregado nas séries",
                 share_sum_volume: "VOLUME", share_sum_sets: "SÉRIES", share_sum_duration: "DURAÇÃO", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Sequência semanal", home_week_record: "recorde", home_week_progress: "esta semana {x}/{y} dias", home_week_record_new: "Novo recorde de sequência semanal!",
+                alumno_trained_btn: "Treinei hoje", alumno_trained_done: "Treino de hoje registrado", alumno_trained_ok: "💪 Registrado! Seu coach vai ver.", alumno_week_count: "Esta semana: {n} treinos",
+                coach_adherence: "{n} esta semana", coach_last_session: "treinou",
+                coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
                 rt_routine_updated: "🔄 Rotina atualizada",
                 lib_title: "BIBLIOTECA DE EXERCÍCIOS", lib_open_btn: "📚 Biblioteca de Exercícios",
                 lib_search_ph: "Buscar exercício (bench, squat, etc)",
@@ -3340,6 +3349,7 @@
             customVideos: {}, customGifs: {}, libCustomInputOpen: false, libGifInputOpen: false,
             coachId: null, myStudents: [], viewMode: 'normal', alumnoData: null, alumnoEdits: [], alumnoLocalPlan: null, alumnoName: '',
             coachActiveRoutineId: null,
+            coachTemplates: [],
             tab: 'home', selDay: DAYS[0], selEx: null, unit: 'kg',
             sessionSets: [], sessionStart: null, sessionDate: null,
             exListOpen: false, exSearch: '',
@@ -3377,6 +3387,7 @@
             try { state.favExercises = JSON.parse(localStorage.getItem('bm-fav-exercises') || '[]'); } catch { state.favExercises = []; }
             try { state.customVideos = JSON.parse(localStorage.getItem('bm-custom-yt-videos') || '{}'); } catch { state.customVideos = {}; }
             try { state.customGifs = JSON.parse(localStorage.getItem('bm-custom-gifs') || '{}'); } catch { state.customGifs = {}; }
+            try { state.coachTemplates = JSON.parse(localStorage.getItem('bm-coach-templates') || '[]'); } catch { state.coachTemplates = []; }
             loadWatchPref();
             // Restore an in-progress free-training session so it survives reloads /
             // the PWA being killed by the OS. The resume prompt (showTrainDraftPrompt)
@@ -3582,6 +3593,7 @@
         }
         function saveFoodLog() { try { localStorage.setItem('bm-food', JSON.stringify(state.foodLog)); } catch { } }
         function saveProgHistory() { try { localStorage.setItem('bm-prog-history', JSON.stringify(state.progHistory)); } catch { } }
+        function saveCoachTemplates() { try { localStorage.setItem('bm-coach-templates', JSON.stringify(state.coachTemplates || [])); } catch { } }
         function saveCustomFoods() { try { localStorage.setItem('bm-custom-foods', JSON.stringify(state.customFoods)); } catch { } }
         function saveFoodSearchCache() { try { localStorage.setItem('bm-food-search-cache', JSON.stringify(state.foodSearchCache)); } catch { } }
 
@@ -6201,7 +6213,11 @@
         // Función ADICIONAL al creador normal. El PDF lo lee Claude (en el Worker)
         // y devuelve la rutina estructurada; acá se previsualiza y se guarda como
         // una rutina custom más (editable y contabilizada igual que cualquier otra).
-        function openPdfImport() {
+        // target: 'app' (default, guarda como rutina propia) | 'creator' (llena el
+        // creador de rutinas — flujo coach → asignar a alumno).
+        let _pdfImportTarget = 'app';
+        function openPdfImport(target) {
+            _pdfImportTarget = target === 'creator' ? 'creator' : 'app';
             const inp = h('input', { type: 'file', accept: 'application/pdf,.pdf', style: { display: 'none' } });
             inp.addEventListener('change', () => { if (inp.files && inp.files[0]) doPdfImport(inp.files[0]); inp.remove(); });
             document.body.appendChild(inp);
@@ -6319,11 +6335,19 @@
                 });
                 wrap.appendChild(dc);
             });
-            wrap.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '12px', marginBottom: '8px' }, onclick: () => { _closePdfOverlay(); saveImportedRoutine(routine); } }, t('routine_import_save')));
+            wrap.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '12px', marginBottom: '8px' }, onclick: () => {
+                _closePdfOverlay();
+                // Si el import se lanzó desde el creador de rutinas (flujo coach),
+                // la rutina llena el creador en vez de guardarse como rutina propia.
+                if (_pdfImportTarget === 'creator' && routineCreator.open) applyImportedToCreator(routine);
+                else saveImportedRoutine(routine);
+            } }, t('routine_import_save')));
             wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: _closePdfOverlay }, t('btn_cancel')));
             _pdfOverlay(wrap);
         }
-        function saveImportedRoutine(routine) {
+        // Mapea la rutina parseada del Worker al modelo de plan de la app.
+        // Compartido entre "guardar como rutina propia" y "llenar el creador (coach)".
+        function importedRoutineToPlan(routine) {
             const plan = (routine.days || []).map((d, i) => ({
                 name: d.name || ('Día ' + (i + 1)),
                 method: 'Importado',
@@ -6344,6 +6368,20 @@
                 }
             }));
             if (added) saveCustom();
+            return { plan, added };
+        }
+        // C3: el PDF importado llena el creador de rutina (coach → asignar a alumno).
+        function applyImportedToCreator(routine) {
+            const { plan, added } = importedRoutineToPlan(routine);
+            routineCreator.plan = plan;
+            routineCreator.days = plan.length;
+            if (!(routineCreator.name || '').trim()) routineCreator.name = routine.name || '';
+            routineCreator.step = 1;
+            flash('✅ ' + t('routine_import_done') + (added ? ' (+' + added + ')' : ''));
+            renderRoutines();
+        }
+        function saveImportedRoutine(routine) {
+            const { plan, added } = importedRoutineToPlan(routine);
             state.customRoutines.push({ name: routine.name, plan });
             // Cambiar al plan recién importado (igual que el flujo de crear rutina),
             // si no la rutina queda guardada pero invisible.
@@ -6439,6 +6477,46 @@
                     const ei = h('input', { className: 'input', placeholder: t('coach_alumno_email_field'), value: routineCreator.alumnoEmail || '', style: { marginBottom: '16px' } });
                     ei.oninput = e => routineCreator.alumnoEmail = e.target.value;
                     c.appendChild(ei);
+
+                    const needName = () => {
+                        if (!(routineCreator.alumnoName || '').trim()) { flash(t('coach_alumno_name_required'), 'var(--orange)'); return true; }
+                        return false;
+                    };
+                    // C2: plantillas guardadas → asignar a un alumno nuevo con un tap.
+                    if ((state.coachTemplates || []).length) {
+                        c.appendChild(h('p', { className: 'label' }, '📋 ' + t('coach_tpl_use').toUpperCase()));
+                        const tp = h('div', { className: 'pills', style: { marginBottom: '14px' } });
+                        state.coachTemplates.forEach((tpl, ti) => {
+                            const pill = h('button', { className: 'pill', style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } });
+                            pill.appendChild(h('span', {
+                                onclick: (e) => {
+                                    e.stopPropagation();
+                                    if (needName()) return;
+                                    routineCreator.plan = JSON.parse(JSON.stringify(tpl.plan));
+                                    routineCreator.days = tpl.plan.length;
+                                    if (!(routineCreator.name || '').trim()) routineCreator.name = tpl.name;
+                                    routineCreator.step = 1;
+                                    flash('📋 ' + t('coach_tpl_loaded'));
+                                    renderRoutines();
+                                }
+                            }, tpl.name + ' (' + tpl.plan.length + 'd)'));
+                            pill.appendChild(h('span', {
+                                style: { color: 'var(--text3)', fontWeight: 900, padding: '0 2px' },
+                                onclick: (e) => {
+                                    e.stopPropagation();
+                                    state.coachTemplates.splice(ti, 1); saveCoachTemplates();
+                                    flash(t('coach_tpl_deleted')); renderRoutines();
+                                }
+                            }, '✕'));
+                            tp.appendChild(pill);
+                        });
+                        c.appendChild(tp);
+                    }
+                    // C3: importar la rutina desde un PDF y asignarla al alumno.
+                    c.appendChild(h('button', {
+                        className: 'btn btn-secondary btn-full btn-sm', style: { borderStyle: 'dashed', marginBottom: '16px' },
+                        onclick: () => { if (needName()) return; openPdfImport('creator'); }
+                    }, '📄 ' + t('routine_import_pdf')));
                 }
 
                 c.appendChild(h('p', { className: 'label' }, t('routines_creator_name').toUpperCase()));
@@ -6489,6 +6567,25 @@
 
                 v.appendChild(c);
             });
+
+            // C2: guardar el plan armado como plantilla reutilizable (solo coach).
+            if (routineCreator.forAlumno) {
+                v.appendChild(h('button', {
+                    className: 'btn btn-secondary btn-full btn-sm', style: { marginTop: '12px', borderStyle: 'dashed' },
+                    onclick: () => {
+                        const totalEx = routineCreator.plan.reduce((a, d) => a + (d.exercises?.length || 0), 0);
+                        if (totalEx === 0) { flash(t('coach_routine_empty'), 'var(--orange)'); return; }
+                        const tplName = (routineCreator.name || '').trim() || ('Plantilla ' + ((state.coachTemplates || []).length + 1));
+                        state.coachTemplates = state.coachTemplates || [];
+                        // Si ya existe una plantilla con ese nombre, se actualiza.
+                        const idx = state.coachTemplates.findIndex(x => x.name.toLowerCase() === tplName.toLowerCase());
+                        const tpl = { name: tplName, plan: JSON.parse(JSON.stringify(routineCreator.plan)), created: todayStr() };
+                        if (idx >= 0) state.coachTemplates[idx] = tpl; else state.coachTemplates.push(tpl);
+                        saveCoachTemplates();
+                        flash('💾 ' + t('coach_tpl_saved').replace('{name}', tplName));
+                    }
+                }, '💾 ' + t('coach_tpl_save')));
+            }
 
             const ac = h('div', { style: { display: 'flex', gap: '10px', marginTop: '16px', marginBottom: '32px' } });
             ac.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: () => { routineCreator.step = 0; renderRoutines(); } }, t('routines_back')));
@@ -11952,6 +12049,19 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             if (!resp.ok) throw new Error('No se pudo guardar el cambio.');
             return resp.json();
         }
+        // Adherencia: el alumno registra que entrenó hoy (una por fecha, idempotente).
+        async function apiPostShareSession(token, dayName) {
+            let resp;
+            try {
+                resp = await fetch(getApiBase() + '/api/shares/' + token + '/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ day_name: dayName || '' })
+                });
+            } catch { throw new Error('Sin conexión. Intentá de nuevo.'); }
+            if (!resp.ok) throw new Error('No se pudo registrar.');
+            return resp.json();
+        }
 
         // ─────────────────────────────────────────
         // COACH MODE — UI
@@ -11994,6 +12104,13 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
                         meta.appendChild(h('span', {}, t('coach_never_seen')));
                     }
                     info.appendChild(meta);
+                    // Adherencia: sesiones que el alumno registró desde su link
+                    if (s.session_count > 0) {
+                        const adh = h('div', { className: 'student-meta', style: { color: s.week_sessions > 0 ? 'var(--accent)' : 'var(--orange)' } });
+                        adh.appendChild(h('span', {}, '🏋️ ' + t('coach_adherence').replace('{n}', s.week_sessions) +
+                            (s.last_session_at ? ' · ' + t('coach_last_session') + ' ' + relativeTime(s.last_session_at + 'T12:00:00') : '')));
+                        info.appendChild(adh);
+                    }
                     card.appendChild(info);
                     if (s.unreviewed_count > 0) {
                         card.appendChild(h('span', { className: 'student-badge' }, s.unreviewed_count + ''));
@@ -12365,9 +12482,10 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             v.innerHTML = '<div class="oracle-loading" style="padding:60px 20px"><div class="oracle-spinner"></div>Cargando rutina...</div>';
 
             try {
-                const { routine, edits } = await apiGetShareByToken(state.alumnoToken);
+                const { routine, edits, sessions } = await apiGetShareByToken(state.alumnoToken);
                 state.alumnoData = routine;
                 state.alumnoEdits = edits;
+                state.alumnoSessions = sessions || [];
                 state.alumnoLocalPlan = JSON.parse(JSON.stringify(routine.plan));
                 state.alumnoName = localStorage.getItem('bm-alumno-name-' + state.alumnoToken) || '';
                 renderAlumnoView();
@@ -12398,6 +12516,13 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             });
             nameInp.value = state.alumnoName || '';
             banner.appendChild(nameInp);
+            // Adherencia visible para el alumno (misma data que ve el coach)
+            const weekAgoISO = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+            const weekN = (state.alumnoSessions || []).filter(s => s.date >= weekAgoISO).length;
+            if ((state.alumnoSessions || []).length) {
+                banner.appendChild(h('div', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--accent)', marginTop: '8px' } },
+                    '🔥 ' + t('alumno_week_count').replace('{n}', weekN)));
+            }
             v.appendChild(banner);
 
             const card = h('div', { className: 'alumno-routine-card' });
@@ -12470,6 +12595,30 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
                         }
                         block.appendChild(row);
                     });
+
+                    // "Entrené hoy": adherencia con un tap. Una por fecha (el Worker pisa).
+                    const doneToday = (state.alumnoSessions || []).some(s => s.date === todayStr());
+                    block.appendChild(h('button', {
+                        className: 'btn btn-sm btn-full',
+                        disabled: doneToday,
+                        style: {
+                            marginTop: '10px', fontWeight: 800,
+                            background: doneToday ? 'rgba(0,212,170,.12)' : 'var(--sf2)',
+                            color: doneToday ? 'var(--accent)' : 'var(--text2)',
+                            border: '1px ' + (doneToday ? 'solid rgba(0,212,170,.35)' : 'dashed var(--border)'),
+                            opacity: doneToday ? '1' : '.9', cursor: doneToday ? 'default' : 'pointer'
+                        },
+                        onclick: async () => {
+                            if (doneToday) return;
+                            try {
+                                await apiPostShareSession(state.alumnoToken, day.name || '');
+                                state.alumnoSessions = state.alumnoSessions || [];
+                                state.alumnoSessions.unshift({ date: todayStr(), day_name: day.name || '' });
+                                flash(t('alumno_trained_ok'), 'var(--accent)');
+                                renderAlumnoView();
+                            } catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
+                        }
+                    }, doneToday ? '✓ ' + t('alumno_trained_done') : '✅ ' + t('alumno_trained_btn')));
 
                     card.appendChild(block);
                 });

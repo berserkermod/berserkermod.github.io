@@ -80,6 +80,22 @@ let token, routineId;
     const list2 = await call('GET', '/api/routines?coach_id=coachA');
     ok('coach ve 1 edit sin revisar', list2.body[0].edit_count === 1 && list2.body[0].unreviewed_count === 1, list2.body[0]);
 
+    // Adherencia: el alumno registra sesiones desde su link
+    const today = new Date().toISOString().slice(0, 10);
+    const s1 = await call('POST', '/api/shares/' + token + '/sessions', { day_name: 'Push' });
+    ok('alumno registra sesión 201 (fecha = hoy)', s1.status === 201 && s1.body.session.date === today, s1.body);
+    const s2 = await call('POST', '/api/shares/' + token + '/sessions', { date: today, day_name: 'Push otra vez' });
+    ok('misma fecha → idempotente (pisa)', s2.status === 201);
+    const s3 = await call('POST', '/api/shares/' + token + '/sessions', { date: '2020-01-01', day_name: 'Legs' });
+    ok('sesión antigua registrada', s3.status === 201 && s3.body.session.date === '2020-01-01');
+    const s4 = await call('POST', '/api/shares/badtoken00/sessions', { day_name: 'x' });
+    ok('token inválido → 404', s4.status === 404);
+
+    const listS = await call('GET', '/api/routines?coach_id=coachA');
+    ok('coach ve adherencia (2 sesiones, 1 esta semana)', listS.body[0].session_count === 2 && listS.body[0].week_sessions === 1 && listS.body[0].last_session_at === today, listS.body[0]);
+    const shareS = await call('GET', '/api/shares/' + token);
+    ok('share devuelve sesiones al alumno', Array.isArray(shareS.body.sessions) && shareS.body.sessions.length === 2 && shareS.body.sessions[0].date === today, shareS.body.sessions);
+
     const review = await call('POST', '/api/routines/' + routineId + '/review', { coach_id: 'coachA' });
     ok('review 200', review.status === 200 && review.body.ok === true);
 
