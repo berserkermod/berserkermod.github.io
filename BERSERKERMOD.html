@@ -7615,10 +7615,14 @@
                     const kg = parseFloat(st.kg) || 0, reps = parseInt(st.reps, 10) || 0;
                     if (kg <= 0 || reps <= 0) return;
                     const r = prMap[e.exercise] || (prMap[e.exercise] = { maxKg: 0, repsAtMax: 0, e1rm: 0, date: s.date });
-                    if (kg > r.maxKg) { r.maxKg = kg; r.repsAtMax = reps; }
+                    if (kg > r.maxKg) { r.maxKg = kg; r.repsAtMax = reps; if (!r.e1rm) r.date = s.date; }
                     else if (kg === r.maxKg && reps > r.repsAtMax) { r.repsAtMax = reps; }
-                    const est = calc1RM(kg, reps);
-                    if (est > r.e1rm) { r.e1rm = est; r.date = s.date; }
+                    // Epley solo vale hasta ~12 reps: series más largas (o tipeos tipo
+                    // 30kg×366) NO cuentan para el 1RM estimado — explotaría a absurdos.
+                    if (reps <= 12) {
+                        const est = calc1RM(kg, reps);
+                        if (est > r.e1rm) { r.e1rm = est; r.date = s.date; }
+                    }
                 })));
                 const prList = Object.entries(prMap).sort((a, b) => b[1].e1rm - a[1].e1rm).slice(0, 20);
                 if (prList.length) {
@@ -7638,7 +7642,7 @@
                         item.appendChild(nameBlk);
                         const vals = h('div', { style: { display: 'flex', gap: '16px', flexShrink: 0 } });
                         vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--orange)', fontSize: '14px', display: 'block' } }, r.maxKg + state.unit + ' × ' + r.repsAtMax), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_max'))));
-                        vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--purple)', fontSize: '14px', display: 'block' } }, r.e1rm + state.unit), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_1rm'))));
+                        vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--purple)', fontSize: '14px', display: 'block' } }, r.e1rm ? (r.e1rm + state.unit) : '—'), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_1rm'))));
                         item.appendChild(vals); rc.appendChild(item);
                     });
                     v.appendChild(rc);
@@ -7757,9 +7761,14 @@
         }
 
         function getMax1RM() {
+            // Epley solo es válida hasta ~12 reps: más allá sobreestima salvajemente
+            // (una serie de 30kg×366 —tipeo o segundos anotados como reps— daría
+            // "396kg de 1RM"). Series de más de 12 reps no cuentan para la estimación.
             let max = 0;
             state.sessions.forEach(s => s.exercises.forEach(e => e.sets.forEach(st => {
-                const rm = calc1RM(st.kg, st.reps); if (rm > max) max = rm;
+                const kg = parseFloat(st.kg) || 0, reps = parseInt(st.reps, 10) || 0;
+                if (kg <= 0 || reps <= 0 || reps > 12) return;
+                const rm = calc1RM(kg, reps); if (rm > max) max = rm;
             })));
             return max || 0;
         }
