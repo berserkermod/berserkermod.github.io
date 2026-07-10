@@ -2098,7 +2098,8 @@
                 cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD", cardio_cals_burned: "kcal quemadas",
                 cardio_manual_title: "AGREGAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Agregar", cardio_manual_hint: "¿Te olvidaste de iniciar el cronómetro? Cargá los minutos y calculamos las kcal.", cardio_manual_invalid: "Ingresá los minutos", cardio_other_name: "Nombre del deporte",
                 stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA",
-                stats_series_group: "SERIES POR GRUPO MUSCULAR", stats_prog: "PROGRESO POR EJERCICIO", stats_records: "RÉCORDS PERSONALES", stats_max: "MÁX", stats_vol: "VOL",
+                stats_series_group: "SERIES POR GRUPO MUSCULAR", stats_prog: "PROGRESO POR EJERCICIO", stats_records: "RÉCORDS PERSONALES", stats_max: "MÁX",
+                rel_now: "recién", rel_min: "hace {n}m", rel_hour: "hace {n}h", rel_day: "hace {n}d",
                 stats_hist: "HISTORIAL DE ENTRENAMIENTO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sesión", stats_del_sess: "¿Eliminar esta sesión permanentemente?", stats_sess_upd: "✅ Sesión actualizada", stats_sess_del: "🗑️ Sesión eliminada",
                 prof_nutri_plan: "TU PLAN NUTRICIONAL", prof_tdee: "Gasto calórico diario (Mantenimiento)", prof_target: "Objetivo Diario", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carbohidratos", prof_fats: "Grasas",
                 prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Estás seguro de borrar todos los datos? Esta acción no se puede deshacer.",
@@ -2348,7 +2349,8 @@
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
                 cardio_manual_title: "ADD MANUALLY", cardio_manual_min: "Minutes", cardio_manual_add: "Add", cardio_manual_hint: "Forgot to start the timer? Enter the minutes and we'll calc the kcal.", cardio_manual_invalid: "Enter the minutes", cardio_other_name: "Sport name",
                 stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK",
-                stats_series_group: "SETS BY MUSCLE GROUP", stats_prog: "PROGRESS BY EXERCISE", stats_records: "PERSONAL RECORDS", stats_max: "MAX", stats_vol: "VOL",
+                stats_series_group: "SETS BY MUSCLE GROUP", stats_prog: "PROGRESS BY EXERCISE", stats_records: "PERSONAL RECORDS", stats_max: "MAX",
+                rel_now: "just now", rel_min: "{n}m ago", rel_hour: "{n}h ago", rel_day: "{n}d ago",
                 stats_hist: "TRAINING HISTORY", stats_edit: "✏️ Edit", stats_edit_sess: "Edit Session", stats_del_sess: "Delete this session permanently?", stats_sess_upd: "✅ Session updated", stats_sess_del: "🗑️ Session deleted",
                 prof_nutri_plan: "YOUR NUTRITION PLAN", prof_tdee: "Daily Energy Expenditure", prof_target: "Daily Target", prof_macros: "MACRONUTRIENTS", prof_protein: "Protein", prof_carbs: "Carbs", prof_fats: "Fats",
                 prof_settings: "SETTINGS", prof_theme: "App Theme", prof_unit: "Weight Unit", prof_lang: "Language", prof_reset: "Reset App", prof_reset_msg: "Are you sure you want to delete all data? This action cannot be undone.",
@@ -2599,7 +2601,8 @@
                 cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE", cardio_cals_burned: "kcal queimadas",
                 cardio_manual_title: "ADICIONAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Adicionar", cardio_manual_hint: "Esqueceu de iniciar o cronômetro? Informe os minutos e calculamos as kcal.", cardio_manual_invalid: "Informe os minutos", cardio_other_name: "Nome do esporte",
                 stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA",
-                stats_series_group: "SÉRIES POR GRUPO MUSCULAR", stats_prog: "PROGRESSO POR EXERCÍCIO", stats_records: "RECORDES PESSOAIS", stats_max: "MÁX", stats_vol: "VOL",
+                stats_series_group: "SÉRIES POR GRUPO MUSCULAR", stats_prog: "PROGRESSO POR EXERCÍCIO", stats_records: "RECORDES PESSOAIS", stats_max: "MÁX",
+                rel_now: "agora", rel_min: "há {n}m", rel_hour: "há {n}h", rel_day: "há {n}d",
                 stats_hist: "HISTÓRICO DE TREINO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sessão", stats_del_sess: "Excluir esta sessão permanentemente?", stats_sess_upd: "✅ Sessão atualizada", stats_sess_del: "🗑️ Sessão excluída",
                 prof_nutri_plan: "SEU PLANO NUTRICIONAL", prof_tdee: "Gasto Calórico Diário", prof_target: "Meta Diária", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carboidratos", prof_fats: "Gorduras",
                 prof_settings: "CONFIGURAÇÕES", prof_theme: "Tema do App", prof_unit: "Unidade de Peso", prof_lang: "Idioma", prof_reset: "Zerar App", prof_reset_msg: "Tem certeza de que deseja excluir todos os dados?",
@@ -7603,30 +7606,43 @@
             } else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_no_sess') + state.statsDay));
             v.appendChild(dc);
 
-            // Records
-            if (allEx.length && daySess.length) {
-                const rc = h('div', { className: 'card fade-in' });
-                rc.appendChild(h('p', { className: 'label' }, t('stats_records')));
-                allEx.forEach(ex => {
-                    const sets = daySess.flatMap(s => s.exercises.filter(e => e.exercise === ex).flatMap(e => e.sets));
-                    if (!sets.length) return;
-                    const maxKg = Math.max(...sets.map(s => s.kg));
-                    const maxVol = Math.max(...daySess.filter(s => s.exercises.some(e => e.exercise === ex)).map(s => {
-                        const e = s.exercises.find(e => e.exercise === ex); return e.sets.reduce((a, st) => a + st.kg * st.reps, 0);
-                    }));
-                    const item = h('div', {
-                        style: {
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '10px 0', borderBottom: '1px solid var(--border)'
-                        }
+            // RÉCORDS PERSONALES — globales (todas las sesiones, no dependen del día
+            // seleccionado). Por ejercicio: mejor peso × reps a ese peso + 1RM
+            // estimado (Epley) + fecha. 🏆 si el récord es reciente (≤14 días).
+            {
+                const prMap = {};
+                state.sessions.forEach(s => (s.exercises || []).forEach(e => (e.sets || []).forEach(st => {
+                    const kg = parseFloat(st.kg) || 0, reps = parseInt(st.reps, 10) || 0;
+                    if (kg <= 0 || reps <= 0) return;
+                    const r = prMap[e.exercise] || (prMap[e.exercise] = { maxKg: 0, repsAtMax: 0, e1rm: 0, date: s.date });
+                    if (kg > r.maxKg) { r.maxKg = kg; r.repsAtMax = reps; }
+                    else if (kg === r.maxKg && reps > r.repsAtMax) { r.repsAtMax = reps; }
+                    const est = calc1RM(kg, reps);
+                    if (est > r.e1rm) { r.e1rm = est; r.date = s.date; }
+                })));
+                const prList = Object.entries(prMap).sort((a, b) => b[1].e1rm - a[1].e1rm).slice(0, 20);
+                if (prList.length) {
+                    const rc = h('div', { className: 'card fade-in' });
+                    rc.appendChild(h('p', { className: 'label' }, t('stats_records')));
+                    prList.forEach(([ex, r]) => {
+                        const recent = daysSince(r.date) <= 14;
+                        const item = h('div', {
+                            style: {
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '10px 0', borderBottom: '1px solid var(--border)', gap: '8px'
+                            }
+                        });
+                        const nameBlk = h('div', { style: { flex: 1, minWidth: 0 } });
+                        nameBlk.appendChild(h('span', { style: { fontSize: '12px', fontWeight: recent ? 800 : 600, display: 'block', color: recent ? 'var(--accent)' : 'var(--text)' } }, (recent ? '🏆 ' : '') + ex));
+                        nameBlk.appendChild(h('span', { style: { fontSize: '10px', color: 'var(--text3)' } }, relativeTime(r.date + 'T12:00:00')));
+                        item.appendChild(nameBlk);
+                        const vals = h('div', { style: { display: 'flex', gap: '16px', flexShrink: 0 } });
+                        vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--orange)', fontSize: '14px', display: 'block' } }, r.maxKg + state.unit + ' × ' + r.repsAtMax), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_max'))));
+                        vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--purple)', fontSize: '14px', display: 'block' } }, r.e1rm + state.unit), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_1rm'))));
+                        item.appendChild(vals); rc.appendChild(item);
                     });
-                    item.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 600, flex: 1 } }, ex));
-                    const vals = h('div', { style: { display: 'flex', gap: '16px' } });
-                    vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--orange)', fontSize: '14px', display: 'block' } }, maxKg + 'kg'), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_max'))));
-                    vals.appendChild(h('div', { style: { textAlign: 'center' } }, h('b', { style: { color: 'var(--accent)', fontSize: '14px', display: 'block' } }, fmt(maxVol)), h('small', { style: { fontSize: '9px', color: 'var(--text3)' } }, t('stats_vol'))));
-                    item.appendChild(vals); rc.appendChild(item);
-                });
-                v.appendChild(rc);
+                    v.appendChild(rc);
+                }
             }
 
             // HISTORY
@@ -12200,12 +12216,12 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             if (!iso) return '—';
             const ms = Date.now() - new Date(iso).getTime();
             const m = Math.floor(ms / 60000);
-            if (m < 1) return 'recién';
-            if (m < 60) return 'hace ' + m + 'm';
+            if (m < 1) return t('rel_now');
+            if (m < 60) return t('rel_min').replace('{n}', m);
             const h = Math.floor(m / 60);
-            if (h < 24) return 'hace ' + h + 'h';
+            if (h < 24) return t('rel_hour').replace('{n}', h);
             const d = Math.floor(h / 24);
-            if (d < 30) return 'hace ' + d + 'd';
+            if (d < 30) return t('rel_day').replace('{n}', d);
             return new Date(iso).toLocaleDateString();
         }
 
