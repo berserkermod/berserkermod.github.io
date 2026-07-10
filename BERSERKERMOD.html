@@ -1692,6 +1692,10 @@
         /* wrap (no overflow-x): en iOS el scroll horizontal no muestra barra y las
            categorías de más quedaban invisibles — el usuario solo veía 3. */
         .food-cat-filter { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; margin-bottom: 8px; }
+
+        /* Historial de entrenamientos: acordeón — el detalle se despliega hacia abajo */
+        .hist-detail-open { animation: histSlide .28s ease; overflow: hidden; }
+        @keyframes histSlide { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 900px; } }
         .food-cat-pill { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 16px; font-size: 11px; font-weight: 700; border: 1.5px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
         .food-cat-pill.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
 
@@ -2100,6 +2104,7 @@
                 stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA",
                 stats_series_group: "SERIES POR GRUPO MUSCULAR", stats_prog: "PROGRESO POR EJERCICIO", stats_records: "RÉCORDS PERSONALES", stats_max: "MÁX",
                 rel_now: "recién", rel_min: "hace {n}m", rel_hour: "hace {n}h", rel_day: "hace {n}d",
+                hist_summary: "{e} ej. · {s} series",
                 stats_hist: "HISTORIAL DE ENTRENAMIENTO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sesión", stats_del_sess: "¿Eliminar esta sesión permanentemente?", stats_sess_upd: "✅ Sesión actualizada", stats_sess_del: "🗑️ Sesión eliminada",
                 prof_nutri_plan: "TU PLAN NUTRICIONAL", prof_tdee: "Gasto calórico diario (Mantenimiento)", prof_target: "Objetivo Diario", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carbohidratos", prof_fats: "Grasas",
                 prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Estás seguro de borrar todos los datos? Esta acción no se puede deshacer.",
@@ -2351,6 +2356,7 @@
                 stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK",
                 stats_series_group: "SETS BY MUSCLE GROUP", stats_prog: "PROGRESS BY EXERCISE", stats_records: "PERSONAL RECORDS", stats_max: "MAX",
                 rel_now: "just now", rel_min: "{n}m ago", rel_hour: "{n}h ago", rel_day: "{n}d ago",
+                hist_summary: "{e} ex. · {s} sets",
                 stats_hist: "TRAINING HISTORY", stats_edit: "✏️ Edit", stats_edit_sess: "Edit Session", stats_del_sess: "Delete this session permanently?", stats_sess_upd: "✅ Session updated", stats_sess_del: "🗑️ Session deleted",
                 prof_nutri_plan: "YOUR NUTRITION PLAN", prof_tdee: "Daily Energy Expenditure", prof_target: "Daily Target", prof_macros: "MACRONUTRIENTS", prof_protein: "Protein", prof_carbs: "Carbs", prof_fats: "Fats",
                 prof_settings: "SETTINGS", prof_theme: "App Theme", prof_unit: "Weight Unit", prof_lang: "Language", prof_reset: "Reset App", prof_reset_msg: "Are you sure you want to delete all data? This action cannot be undone.",
@@ -2603,6 +2609,7 @@
                 stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA",
                 stats_series_group: "SÉRIES POR GRUPO MUSCULAR", stats_prog: "PROGRESSO POR EXERCÍCIO", stats_records: "RECORDES PESSOAIS", stats_max: "MÁX",
                 rel_now: "agora", rel_min: "há {n}m", rel_hour: "há {n}h", rel_day: "há {n}d",
+                hist_summary: "{e} ex. · {s} séries",
                 stats_hist: "HISTÓRICO DE TREINO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sessão", stats_del_sess: "Excluir esta sessão permanentemente?", stats_sess_upd: "✅ Sessão atualizada", stats_sess_del: "🗑️ Sessão excluída",
                 prof_nutri_plan: "SEU PLANO NUTRICIONAL", prof_tdee: "Gasto Calórico Diário", prof_target: "Meta Diária", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carboidratos", prof_fats: "Gorduras",
                 prof_settings: "CONFIGURAÇÕES", prof_theme: "Tema do App", prof_unit: "Unidade de Peso", prof_lang: "Idioma", prof_reset: "Zerar App", prof_reset_msg: "Tem certeza de que deseja excluir todos os dados?",
@@ -7649,36 +7656,61 @@
                 }
             }
 
-            // HISTORY
+            // HISTORY — acordeón: solo la sesión más reciente abierta por defecto; el
+            // resto se despliega al tocar (histSlide). Header: día de la semana +
+            // grupos musculares entrenados; el detalle y Editar aparecen al abrir.
             if (state.sessions.length) {
                 const hc = h('div', { className: 'card fade-in', style: { marginTop: '16px' } });
                 hc.appendChild(h('p', { className: 'label' }, t('stats_hist')));
 
-                state.sessions.slice(0, 10).forEach(sess => {
+                const histLocale = state.lang === 'en' ? 'en-US' : state.lang === 'pt' ? 'pt-BR' : 'es-AR';
+                state.sessions.slice(0, 10).forEach((sess, idx) => {
+                    // null = default (solo la más reciente abierta) · 'none' = todas cerradas
+                    const expanded = state.histExpanded === null ? idx === 0 : state.histExpanded === sess.id;
                     const sc = h('div', { style: { padding: '12px 0', borderBottom: '1px solid var(--border)' } });
 
-                    const hdr = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' } });
-                    hdr.appendChild(h('div', {},
-                        h('p', { style: { fontWeight: 800, fontSize: '14px' } }, sess.date),
-                        h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, sess.day + (sess.duration ? ' · ' + sess.duration + 'min' : ''))
-                    ));
-                    hdr.appendChild(h('button', {
-                        className: 'btn btn-secondary btn-sm', style: { padding: '6px 10px', fontSize: '12px' }, onclick: () => {
-                            state.editSessId = sess.id;
-                            state.editData = JSON.parse(JSON.stringify(sess));
-                            renderStats();
-                        }
-                    }, t('stats_edit_btn')));
+                    const d = new Date(sess.date + 'T12:00:00');
+                    let weekday = d.toLocaleDateString(histLocale, { weekday: 'long' });
+                    weekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+                    const groups = [...new Set((sess.exercises || []).map(e => getMuscleGroup(e.exercise)))].join(', ');
+                    const nSets = (sess.exercises || []).reduce((a, e) => a + (e.sets || []).length, 0);
+
+                    const hdr = h('div', {
+                        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '8px' },
+                        onclick: () => { state.histExpanded = expanded ? 'none' : sess.id; renderStats(); }
+                    });
+                    const left = h('div', { style: { flex: 1, minWidth: 0 } });
+                    left.appendChild(h('p', { style: { fontWeight: 800, fontSize: '14px', color: expanded ? 'var(--accent)' : 'var(--text)' } }, weekday + (groups ? ' · ' + groups : '')));
+                    left.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } },
+                        sess.date + (sess.day ? ' · ' + sess.day : '') + (sess.duration ? ' · ' + sess.duration + 'min' : '') + ' · ' +
+                        t('hist_summary').replace('{e}', (sess.exercises || []).length).replace('{s}', nSets)));
+                    hdr.appendChild(left);
+                    const right = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 } });
+                    if (expanded) {
+                        right.appendChild(h('button', {
+                            className: 'btn btn-secondary btn-sm', style: { padding: '6px 10px', fontSize: '12px' }, onclick: (e) => {
+                                e.stopPropagation();
+                                state.editSessId = sess.id;
+                                state.editData = JSON.parse(JSON.stringify(sess));
+                                renderStats();
+                            }
+                        }, t('stats_edit_btn')));
+                    }
+                    right.appendChild(h('span', { style: { color: 'var(--text3)', fontSize: '11px' } }, expanded ? '▲' : '▼'));
+                    hdr.appendChild(right);
                     sc.appendChild(hdr);
 
-                    sess.exercises.forEach(ex => {
-                        const erow = h('div', { style: { marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } });
-                        erow.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 600, color: 'var(--text2)' } }, ex.exercise));
-
-                        const setsStr = ex.sets.map(s => s.kg + 'kg x ' + s.reps).join(', ');
-                        erow.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)', textAlign: 'right', flex: 1, marginLeft: '10px' } }, setsStr));
-                        sc.appendChild(erow);
-                    });
+                    if (expanded) {
+                        const detail = h('div', { className: 'hist-detail-open', style: { marginTop: '10px' } });
+                        sess.exercises.forEach(ex => {
+                            const erow = h('div', { style: { marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } });
+                            erow.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 600, color: 'var(--text2)' } }, ex.exercise));
+                            const setsStr = (ex.sets || []).map(s => s.kg + 'kg x ' + s.reps).join(', ');
+                            erow.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)', textAlign: 'right', flex: 1, marginLeft: '10px' } }, setsStr));
+                            detail.appendChild(erow);
+                        });
+                        sc.appendChild(detail);
+                    }
 
                     hc.appendChild(sc);
                 });
