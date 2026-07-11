@@ -184,9 +184,46 @@ let code, licToken;
     ok('retrieve con pago → ready + code', ready.body.status === 'ready' && ready.body.code === 'BMOD-TEST-CODE', ready.body);
 }
 
-// ── Oracle proxy (fetch stubeado) ──
+// ── Oracle: camino Workers AI (default) + camino legacy con apiKey ──
 {
-    console.log('\nOracle proxy');
+    console.log('\nOracle');
+    const noPrompt = await call('POST', '/api/oracle', {});
+    ok('sin prompt → 400', noPrompt.status === 400);
+
+    // Sin apiKey y sin binding AI → 503
+    const noAI = await call('POST', '/api/oracle', { prompt: 'analizá' });
+    ok('sin apiKey y sin binding AI → 503', noAI.status === 503, noAI.status);
+
+    // Mock de Workers AI: el 70B devuelve el JSON con texto extra alrededor.
+    let oracleModel = null, oraclePrompt = null;
+    env.AI = {
+        async run(model, opts) {
+            oracleModel = model; oraclePrompt = opts.messages[0].content;
+            return { response: 'Acá va tu análisis:\n{"insights":[{"icon":"📈","title":"Buen volumen","text":"Subiste 12% el volumen."},{"icon":"🦵","title":"Piernas flojas","text":"Solo 6 series semanales."}]}' };
+        }
+    };
+    const noLic = await call('POST', '/api/oracle', { prompt: 'analizá' });
+    ok('sin licencia → 403', noLic.status === 403, noLic.status);
+
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+    const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'oracle-dev' });
+    const o1 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'analizá mis 4 semanas' });
+    ok('Workers AI → 200 + insights parseados', o1.status === 200 && o1.body.ok && o1.body.insights.length === 2 && o1.body.insights[0].title === 'Buen volumen', o1.body);
+    ok('usa un modelo @cf/', typeof oracleModel === 'string' && oracleModel.startsWith('@cf/'), { oracleModel });
+    ok('le pasa el prompt al modelo', typeof oraclePrompt === 'string' && oraclePrompt.includes('4 semanas'));
+
+    // Respuesta objeto (sin string) también parsea
+    env.AI.run = async () => ({ response: { insights: [{ icon: '💡', title: 'Obj', text: 'ok' }] } });
+    const o2 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
+    ok('respuesta-objeto → parsea', o2.status === 200 && o2.body.insights[0].title === 'Obj', o2.body);
+
+    // Basura del modelo → 422
+    env.AI.run = async () => ({ response: 'no hay json acá' });
+    const o3 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
+    ok('respuesta inválida → 422', o3.status === 422, o3.status);
+    delete env.AI;
+
+    // Camino legacy: con apiKey del usuario → proxy a Anthropic (Claude)
     const realFetch = globalThis.fetch;
     let sentKey = null, sentModel = null;
     globalThis.fetch = async (u, opts) => {
@@ -194,11 +231,9 @@ let code, licToken;
         sentModel = JSON.parse(opts.body).model;
         return new Response(JSON.stringify({ content: [{ text: '{"insights":[]}' }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     };
-    const noKey = await call('POST', '/api/oracle', { prompt: 'hola' });
-    ok('sin apiKey → 400', noKey.status === 400);
     const proxied = await call('POST', '/api/oracle', { apiKey: 'sk-ant-xxx', prompt: 'analizá' });
-    ok('proxy 200 + pasa la key a Anthropic', proxied.status === 200 && sentKey === 'sk-ant-xxx', { sentKey });
-    ok('usa el modelo haiku', sentModel === 'claude-haiku-4-5-20251001', { sentModel });
+    ok('legacy: proxy 200 + pasa la key a Anthropic', proxied.status === 200 && sentKey === 'sk-ant-xxx', { sentKey });
+    ok('legacy: usa el modelo haiku', sentModel === 'claude-haiku-4-5-20251001', { sentModel });
     globalThis.fetch = realFetch;
 }
 

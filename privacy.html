@@ -183,7 +183,7 @@
         <h2>3. Servicios de terceros</h2>
         <p>La app usa los siguientes servicios externos, todos opt-in u opcionales:</p>
         <ul>
-            <li><strong>Anthropic API (Oracle IA)</strong>: si querés usar el análisis personalizado con Claude, ingresás <em>tu propia</em> API key en la configuración. La key se guarda solo en tu teléfono. BERSERKERMOD nunca recibe ni almacena tu key. Las consultas se envían directamente a <code>api.anthropic.com</code> bajo tu cuenta.</li>
+            <li><strong>Oracle IA (análisis de entrenamiento, Premium)</strong>: al pedir un análisis, se envían estadísticas agregadas de tus últimas 4 semanas (cantidad de sesiones, volumen, series por grupo muscular, evolución de pesos, promedios de calorías/proteína y tu objetivo/nivel/peso) a nuestro servidor (Cloudflare Workers AI), que genera los insights y no almacena esos datos. No se envían nombres, emails ni identificadores personales. Opcionalmente, si preferís que el análisis lo haga Claude con <em>tu propia</em> API key de Anthropic, la key se guarda solo en tu teléfono y las consultas van a <code>api.anthropic.com</code> bajo tu cuenta — BERSERKERMOD nunca recibe ni almacena tu key.</li>
             <li><strong>OpenFoodFacts</strong>: usado para búsqueda de productos por nombre o código de barras (Premium). Las consultas se hacen anónimamente a su API pública (<code>world.openfoodfacts.org</code>).</li>
             <li><strong>Google Fonts</strong>: la app carga la tipografía Inter desde <code>fonts.googleapis.com</code>. Google puede registrar el IP y user-agent en su CDN. Si te importa, podés bloquear el dominio en tu DNS — la app sigue funcionando con la fuente fallback del sistema.</li>
         </ul>

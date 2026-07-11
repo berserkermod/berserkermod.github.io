@@ -535,27 +535,68 @@ async function mercadoPagoWebhook(req, env, url) {
 }
 
 // ── Oracle (proxy a Anthropic, nunca loguea la key) ──────────────────
-async function oracleProxy(req) {
+// Oracle: dos caminos.
+// 1) DEFAULT (sin fricción): {token, prompt} — licencia premium/coach válida →
+//    Workers AI (Llama 70B, gratis). Devuelve {ok, insights} ya parseado.
+// 2) LEGACY (opcional): {apiKey, prompt} — la key Anthropic del usuario →
+//    proxy a Claude (respuesta cruda de Anthropic, como siempre). Nunca se loguea.
+async function oracleProxy(req, env) {
     const body = await readBody(req);
-    if (!body || !body.apiKey || !body.prompt) return err('Missing apiKey or prompt', 400);
+    if (!body || !body.prompt) return err('Missing prompt', 400);
+
+    if (body.apiKey) {
+        try {
+            const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': body.apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: ANTHROPIC_MODEL,
+                    max_tokens: 1024,
+                    messages: [{ role: 'user', content: body.prompt }]
+                })
+            });
+            const data = await resp.json();
+            return json(data, resp.ok ? 200 : resp.status);
+        } catch {
+            return err('Oracle upstream error', 502);
+        }
+    }
+
+    // Camino Workers AI (gratis): gateado por licencia premium/coach.
+    if (!env.AI) return err('Oracle no configurado (falta el binding AI)', 503);
+    const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body.token) : null;
+    if (!payload) return err('Función premium: activá tu código para usar el Oracle', 403);
+    const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
     try {
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': body.apiKey,
-                'anthropic-version': '2023-06-01',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: ANTHROPIC_MODEL,
-                max_tokens: 1024,
-                messages: [{ role: 'user', content: body.prompt }]
-            })
+        const aiResp = await env.AI.run(model, {
+            messages: [{ role: 'user', content: String(body.prompt).slice(0, 8000) }],
+            max_tokens: 1024
         });
-        const data = await resp.json();
-        return json(data, resp.ok ? 200 : resp.status);
-    } catch {
-        return err('Oracle upstream error', 502);
+        // Igual que parse-routine: la respuesta puede venir como objeto ya parseado
+        // (70B) o como string con el JSON adentro.
+        const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
+        let parsed = null;
+        if (raw && typeof raw === 'object') parsed = raw;
+        else {
+            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+            const m = txt.match(/\{[\s\S]*\}/);
+            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+        }
+        const insights = parsed && Array.isArray(parsed.insights) ? parsed.insights : null;
+        if (!insights) return err('La IA no devolvió un análisis válido, probá de nuevo', 422);
+        // Sanitizado: caps y solo los campos esperados.
+        const clean = insights.slice(0, 6).map((i) => ({
+            icon: String((i && i.icon) || '💡').slice(0, 8),
+            title: String((i && i.title) || '').slice(0, 80),
+            text: String((i && i.text) || '').slice(0, 400)
+        })).filter((i) => i.title || i.text);
+        return json({ ok: true, insights: clean });
+    } catch (e) {
+        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
     }
 }
 
@@ -813,7 +854,7 @@ export default {
             if (p === '/api/webhook/mercadopago' && (m === 'POST' || m === 'GET')) return await mercadoPagoWebhook(req, env, url);
 
             // Oracle
-            if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req);
+            if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req, env);
             if (p === '/api/parse-routine' && m === 'POST') return await parseRoutine(req, env);
 
             // Observabilidad

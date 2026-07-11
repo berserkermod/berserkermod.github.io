@@ -2174,9 +2174,8 @@
                 oracle_loading: "Analizando tus últimas 4 semanas...",
                 oracle_cache: "Análisis del {date} · Válido 24h",
                 oracle_no_data: "Registrá al menos 2 semanas de entrenos para activar el Oracle.",
-                oracle_no_key: "Configurá tu API key de Anthropic en Perfil → Oracle para activar el análisis IA.",
-                oracle_api_key_label: "API KEY (ORACLE IA)", oracle_api_key_ph: "sk-ant-...",
-                oracle_api_key_save: "Guardar",
+                oracle_refresh: "Actualizar análisis", oracle_fail: "No se pudo generar el análisis. Probá de nuevo.",
+                oracle_sub: "Análisis IA de tus últimas 4 semanas",
                 prog_notif_title: "PROGRESIÓN PENDIENTE",
                 prog_notif_dismiss: "Ya lo subí",
                 coach_section: "MIS ALUMNOS", coach_create: "➕ Crear rutina para alumno",
@@ -2426,9 +2425,8 @@
                 oracle_loading: "Analyzing your last 4 weeks...",
                 oracle_cache: "Analysis from {date} · Valid 24h",
                 oracle_no_data: "Log at least 2 weeks of workouts to activate Oracle.",
-                oracle_no_key: "Set your Anthropic API key in Profile → Oracle to activate AI analysis.",
-                oracle_api_key_label: "API KEY (ORACLE AI)", oracle_api_key_ph: "sk-ant-...",
-                oracle_api_key_save: "Save",
+                oracle_refresh: "Refresh analysis", oracle_fail: "Couldn't generate the analysis. Try again.",
+                oracle_sub: "AI analysis of your last 4 weeks",
                 prog_notif_title: "PENDING PROGRESSION",
                 prog_notif_dismiss: "Already increased",
                 coach_section: "MY STUDENTS", coach_create: "➕ Create routine for student",
@@ -2679,9 +2677,8 @@
                 oracle_loading: "Analisando suas últimas 4 semanas...",
                 oracle_cache: "Análise de {date} · Válido 24h",
                 oracle_no_data: "Registre pelo menos 2 semanas de treinos para ativar o Oracle.",
-                oracle_no_key: "Configure sua API key da Anthropic em Perfil → Oracle para ativar a análise IA.",
-                oracle_api_key_label: "API KEY (ORACLE IA)", oracle_api_key_ph: "sk-ant-...",
-                oracle_api_key_save: "Salvar",
+                oracle_refresh: "Atualizar análise", oracle_fail: "Não foi possível gerar a análise. Tente de novo.",
+                oracle_sub: "Análise IA das suas últimas 4 semanas",
                 prog_notif_title: "PROGRESSÃO PENDENTE",
                 prog_notif_dismiss: "Já aumentei",
                 coach_section: "MEUS ALUNOS", coach_create: "➕ Criar rotina para aluno",
@@ -5780,7 +5777,7 @@
                     h('div', { style: { fontSize: '28px' } }, '🔮'),
                     h('div', {},
                         h('p', { style: { fontWeight: 800, fontSize: '14px', marginBottom: '2px' } }, t('oracle_btn')),
-                        h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, 'Análisis IA de tus últimas 4 semanas'))));
+                        h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, t('oracle_sub')))));
                 v.appendChild(oc);
             }
         }
@@ -11922,6 +11919,37 @@
                 ? Math.round(recentFood.reduce((a, e) => a + e.protein, 0) / 7)
                 : null;
 
+            // Progresión por ejercicio (lo primero que mira un coach real): evolución
+            // del peso máximo dentro de la ventana, para los ejercicios más frecuentes.
+            const byEx = {};
+            recentSess.slice().reverse().forEach(s => (s.exercises || []).forEach(e => {
+                const maxKg = Math.max(0, ...(e.sets || []).map(st => parseFloat(st.kg) || 0));
+                if (maxKg <= 0) return;
+                const r = byEx[e.exercise] || (byEx[e.exercise] = { first: maxKg, last: maxKg, count: 0 });
+                r.last = maxKg; r.count++;
+            }));
+            const evolution = Object.entries(byEx)
+                .filter(([, r]) => r.count >= 2)
+                .sort((a, b) => b[1].count - a[1].count)
+                .slice(0, 6)
+                .map(([ex, r]) => ({ ex, from: r.first, to: r.last }));
+            const stagnant = evolution.filter(e => e.to <= e.from && e.from > 0).map(e => e.ex);
+            let recentPRs = [];
+            try {
+                // PRs de los últimos 28 días: máx kg del período > máx kg previo al período.
+                const before = state.sessions.filter(s => new Date(s.date) < cutoff);
+                const prevMax = {};
+                before.forEach(s => (s.exercises || []).forEach(e => {
+                    const m = Math.max(0, ...(e.sets || []).map(st => parseFloat(st.kg) || 0));
+                    if (m > (prevMax[e.exercise] || 0)) prevMax[e.exercise] = m;
+                }));
+                recentPRs = Object.entries(byEx)
+                    .filter(([ex, r]) => prevMax[ex] > 0 && r.last > prevMax[ex])
+                    .slice(0, 5)
+                    .map(([ex, r]) => ex + ' ' + prevMax[ex] + '→' + r.last + 'kg');
+            } catch { /* noop */ }
+            const ws = calcWeeklyStreak();
+
             return {
                 sessions: recentSess.length,
                 weeks: 4,
@@ -11931,9 +11959,15 @@
                 goal: state.user?.goal,
                 weight: state.user?.weight,
                 level: state.user?.level,
+                daysPlanned: state.user?.days || null,
                 tdeeTarget: state.user ? calcTDEE(state.user) : null,
                 avgKcal,
-                avgProt
+                avgProt,
+                evolution,
+                stagnant,
+                recentPRs,
+                weekStreak: ws.streak,
+                thisWeekDays: ws.thisCount
             };
         }
 
@@ -11942,20 +11976,30 @@
             const nutri = data.avgKcal != null
                 ? `Nutrición última semana: ${data.avgKcal} kcal/día promedio (objetivo TDEE: ${data.tdeeTarget}), ${data.avgProt}g proteína/día.`
                 : 'Sin datos de nutrición registrados.';
-            return `Sos un coach de fitness experto. Analizá estos datos de entrenamiento de las últimas 4 semanas y dá 3-5 insights concretos y accionables en español.
+            const evo = (data.evolution || []).length
+                ? (data.evolution || []).map(e => `${e.ex}: ${e.from}→${e.to}kg`).join(' · ')
+                : 'sin datos suficientes';
+            const prs = (data.recentPRs || []).length ? data.recentPRs.join(' · ') : 'ninguno';
+            const stag = (data.stagnant || []).length ? data.stagnant.join(', ') : 'ninguno';
+            // Los insights salen en el idioma del usuario.
+            const lang = state.lang === 'en' ? 'inglés' : state.lang === 'pt' ? 'portugués de Brasil' : 'español rioplatense';
+            return `Sos un coach de fitness experto. Analizá estos datos de entrenamiento de las últimas 4 semanas y dá 3-5 insights concretos y accionables. Escribí los insights en ${lang}.
 
 DATOS:
-- Sesiones: ${data.sessions} en 4 semanas
+- Sesiones: ${data.sessions} en 4 semanas (plan: ${data.daysPlanned || '?'} días/semana · esta semana: ${data.thisWeekDays} · racha semanal: ${data.weekStreak})
 - Volumen total: ${data.totalVolKg}kg
 - Series por grupo muscular: ${groups}
+- Evolución de peso máximo por ejercicio (4 sem): ${evo}
+- Récords nuevos del mes: ${prs}
+- Ejercicios sin progresar: ${stag}
 - Sesiones cardio: ${data.cardioSessions}
 - Objetivo: ${data.goal || 'no especificado'}, Nivel: ${data.level || 'no especificado'}, Peso: ${data.weight || '—'}kg
 - ${nutri}
 
-Respondé en formato JSON con esta estructura exacta:
+Respondé SOLO en formato JSON con esta estructura exacta, sin texto extra:
 {"insights": [{"icon": "emoji", "title": "título corto", "text": "descripción de 1-2 oraciones"}]}
 
-Sé directo, específico y usa datos numéricos cuando sea relevante. No más de 5 insights.`;
+Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) adherencia al plan, 4) nutrición vs objetivo. Sé directo, específico y usá los números concretos de los datos. No más de 5 insights.`;
         }
 
         async function runOracle() {
@@ -11978,28 +12022,35 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
                 return;
             }
 
-            const apiKey = localStorage.getItem('bm-oracle-key');
-            if (!apiKey) {
-                renderOracleNoKey();
-                return;
-            }
-
             renderOracleLoading();
             try {
+                if (noBackendInProd()) throw new Error(t('lic_no_server'));
+                // Default: Workers AI (gratis, sin key) con el token de licencia.
+                // Si el usuario guardó su propia key de Anthropic, se usa Claude (legacy).
+                const apiKey = localStorage.getItem('bm-oracle-key');
+                const payload = { prompt: buildOraclePrompt(data) };
+                if (apiKey) payload.apiKey = apiKey;
+                else payload.token = localStorage.getItem('bm-license') || '';
                 const resp = await fetch(getApiBase() + '/api/oracle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: buildOraclePrompt(data), apiKey })
+                    body: JSON.stringify(payload)
                 });
-                if (!resp.ok) throw new Error('API error ' + resp.status);
-                const result = await resp.json();
-                const text = result.content?.[0]?.text || result.text || '';
-                const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || '{}');
-                const insights = parsed.insights || [];
+                const result = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(result.error || ('API error ' + resp.status));
+                let insights;
+                if (Array.isArray(result.insights)) {
+                    insights = result.insights;              // camino Workers AI ({ok, insights})
+                } else {
+                    const text = result.content?.[0]?.text || result.text || '';
+                    const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || '{}');
+                    insights = parsed.insights || [];        // camino legacy (respuesta Anthropic)
+                }
+                if (!insights.length) throw new Error(t('oracle_fail'));
                 localStorage.setItem('bm-oracle-cache', JSON.stringify({ ts: Date.now(), insights }));
                 renderOracleInsights(insights);
             } catch (e) {
-                renderOracleBody(h('p', { style: { color: 'var(--red)', textAlign: 'center', padding: '20px', fontSize: '13px' } }, '⚠️ ' + (e.message || 'Error al conectar con el servidor Oracle')));
+                renderOracleBody(h('p', { style: { color: 'var(--red)', textAlign: 'center', padding: '20px', fontSize: '13px' } }, '⚠️ ' + (e.message || t('oracle_fail'))));
             }
         }
 
@@ -12012,23 +12063,9 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             body.appendChild(node);
         }
 
-        function renderOracleNoKey() {
-            const wrap = h('div', { style: { padding: '8px 0' } });
-            wrap.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.6, marginBottom: '16px' } }, t('oracle_no_key')));
-            wrap.appendChild(h('p', { className: 'label', style: { marginBottom: '6px' } }, t('oracle_api_key_label')));
-            const inp = h('input', { className: 'input', placeholder: t('oracle_api_key_ph'), type: 'password', style: { marginBottom: '10px' } });
-            wrap.appendChild(inp);
-            wrap.appendChild(h('button', {
-                className: 'btn btn-primary btn-full',
-                onclick: () => {
-                    const k = inp.value.trim();
-                    if (!k.startsWith('sk-ant-')) { flash('Key inválida', 'var(--red)'); return; }
-                    localStorage.setItem('bm-oracle-key', k);
-                    runOracle();
-                }
-            }, t('oracle_api_key_save')));
-            renderOracleBody(wrap);
-        }
+        // (El gate de API key propia se eliminó: el Oracle corre gratis en Workers AI
+        // con la licencia premium. Una key guardada en bm-oracle-key sigue usándose
+        // como modo avanzado → Claude vía proxy.)
 
         function renderOracleInsights(insights, cacheDate) {
             const body = $('oracle-body'); body.innerHTML = '';
@@ -12053,7 +12090,7 @@ Sé directo, específico y usa datos numéricos cuando sea relevante. No más de
             body.appendChild(h('button', {
                 className: 'btn btn-secondary btn-full btn-sm', style: { marginTop: '14px' },
                 onclick: () => { localStorage.removeItem('bm-oracle-cache'); runOracle(); }
-            }, '🔄 Actualizar análisis'));
+            }, '🔄 ' + t('oracle_refresh')));
         }
 
         function openOracle() {
