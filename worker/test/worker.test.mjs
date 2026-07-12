@@ -414,6 +414,56 @@ let code, licToken;
     delete env.PREMIUM_PRICE_ARS_1M; delete env.PREMIUM_PRICE_ARS_3M; delete env.PREMIUM_PRICE_ARS_6M; delete env.PREMIUM_PRICE_ARS_12M;
 }
 
+// ── Push: subscribe/unsubscribe + cron con VAPID ──
+{
+    console.log('\nPush (recordatorio diario)');
+    const bad = await call('POST', '/api/push/subscribe', {});
+    ok('subscribe sin subscription → 400', bad.status === 400);
+
+    const sub1 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://push.example/ep1', keys: { p256dh: 'x', auth: 'y' } }, lang: 'es' });
+    const sub2 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://push.example/ep2' } });
+    ok('subscribe ok ×2', sub1.body.ok === true && sub2.body.ok === true);
+
+    // VAPID de test (par efímero generado acá)
+    const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', kp.privateKey));
+    env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', kp.publicKey)).toString('base64url');
+    env.VAPID_SUBJECT = 'mailto:test@test.com';
+
+    const realFetch = globalThis.fetch;
+    let pushed = [];
+    globalThis.fetch = async (u, opts) => {
+        pushed.push({ url: String(u), auth: opts.headers.Authorization, ttl: opts.headers.TTL });
+        // ep2 devuelve 410 (suscripción muerta) → debe borrarse
+        return new Response('', { status: String(u).includes('ep2') ? 410 : 201 });
+    };
+    const waits = [];
+    await worker.scheduled({}, env, { waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+    ok('cron manda push a las 2 suscripciones', pushed.length === 2, pushed.length);
+    ok('auth VAPID presente (vapid t=..., k=...)', pushed.every(p => /^vapid t=.+\.[^.]+\.[^.]+, k=.+/.test(p.auth || '')), pushed[0] && pushed[0].auth && pushed[0].auth.slice(0, 30));
+    ok('TTL presente', pushed.every(p => p.ttl === '86400'));
+
+    // segunda corrida: ep2 (410) fue borrada → solo 1 push
+    pushed = [];
+    const waits2 = [];
+    await worker.scheduled({}, env, { waitUntil: (p) => waits2.push(p) });
+    await Promise.all(waits2);
+    ok('la suscripción muerta (410) se limpió', pushed.length === 1 && pushed[0].url.includes('ep1'), pushed.map(p => p.url));
+
+    // unsubscribe explícito → 0 pushes
+    const un = await call('POST', '/api/push/unsubscribe', { endpoint: 'https://push.example/ep1' });
+    ok('unsubscribe ok', un.body.ok === true);
+    pushed = [];
+    const waits3 = [];
+    await worker.scheduled({}, env, { waitUntil: (p) => waits3.push(p) });
+    await Promise.all(waits3);
+    ok('sin suscripciones → 0 pushes', pushed.length === 0, pushed.length);
+
+    globalThis.fetch = realFetch;
+    delete env.VAPID_PRIVATE_JWK; delete env.VAPID_PUBLIC_KEY; delete env.VAPID_SUBJECT;
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

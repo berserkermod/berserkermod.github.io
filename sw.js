@@ -36,6 +36,35 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+// Push del recordatorio diario. El Worker manda un push VACÍO (sin payload
+// cifrado) — la notificación se compone acá, localmente. Mostrar una
+// notificación es OBLIGATORIO en un push userVisibleOnly (si no, el browser
+// muestra una genérica o penaliza la suscripción).
+self.addEventListener('push', (event) => {
+    event.waitUntil(
+        self.registration.showNotification('BERSERKERMOD 💪', {
+            body: '¡Hoy toca entrenar! Mantené tu racha viva.',
+            icon: './icon-192.png',
+            badge: './icon-192.png',
+            tag: 'bm-daily-reminder',
+            data: { url: './BERSERKERMOD.html' }
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = (event.notification.data && event.notification.data.url) || './BERSERKERMOD.html';
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+            for (const w of wins) {
+                if (w.url.includes('BERSERKERMOD') && 'focus' in w) return w.focus();
+            }
+            return self.clients.openWindow(url);
+        })
+    );
+});
+
 self.addEventListener('fetch', (event) => {
     const req = event.request;
 

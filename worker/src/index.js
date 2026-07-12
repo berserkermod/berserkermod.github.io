@@ -851,7 +851,75 @@ function serverInfo(env) {
 // =====================================================================
 //  Router
 // =====================================================================
+// ── Push notifications (recordatorio diario de entrenamiento) ────────
+// V1 sin payload: el cron manda un push VACÍO autenticado con VAPID (RFC 8292)
+// y el Service Worker compone la notificación localmente. Así evitamos el
+// cifrado de payload (RFC 8291) — menos código, cero secretos en tránsito.
+async function sha256hex(s) {
+    const d = await crypto.subtle.digest('SHA-256', enc.encode(s));
+    return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function pushSubscribe(req, env) {
+    const body = await readBody(req);
+    const sub = body && body.subscription;
+    if (!sub || typeof sub.endpoint !== 'string' || !/^https:\/\//.test(sub.endpoint)) return err('Missing subscription', 400);
+    const id = await sha256hex(sub.endpoint);
+    await kvPut(env, `push:${id}`, {
+        endpoint: sub.endpoint,
+        keys: sub.keys || null, // p256dh/auth: hoy no se usan (push sin payload), guardados para el futuro
+        lang: (body.lang === 'en' || body.lang === 'pt') ? body.lang : 'es',
+        created_at: nowISO()
+    });
+    return json({ ok: true });
+}
+
+async function pushUnsubscribe(req, env) {
+    const body = await readBody(req);
+    const endpoint = body && body.endpoint;
+    if (!endpoint || typeof endpoint !== 'string') return err('Missing endpoint', 400);
+    await env.BMOD_KV.delete(`push:${await sha256hex(endpoint)}`);
+    return json({ ok: true });
+}
+
+// JWT ES256 para VAPID: aud = origin del push service, exp 12h.
+async function vapidJwt(env, audience) {
+    const jwk = JSON.parse(env.VAPID_PRIVATE_JWK);
+    const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    const data = b64urlEncodeJSON({ typ: 'JWT', alg: 'ES256' }) + '.' +
+        b64urlEncodeJSON({ aud: audience, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: env.VAPID_SUBJECT || 'mailto:admin@berserkermod.app' });
+    const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(data));
+    return data + '.' + b64urlFromBytes(new Uint8Array(sig));
+}
+
+// Cron diario: un push vacío a cada suscripción. 404/410 = suscripción muerta → se borra.
+async function sendDailyReminders(env) {
+    if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
+    const subs = await listByPrefix(env, 'push:');
+    let sent = 0, removed = 0;
+    for (const s of subs) {
+        if (!s || !s.endpoint) continue;
+        try {
+            const jwt = await vapidJwt(env, new URL(s.endpoint).origin);
+            const resp = await fetch(s.endpoint, {
+                method: 'POST',
+                headers: { TTL: '86400', Authorization: 'vapid t=' + jwt + ', k=' + env.VAPID_PUBLIC_KEY }
+            });
+            if (resp.status === 404 || resp.status === 410) {
+                await env.BMOD_KV.delete(`push:${await sha256hex(s.endpoint)}`);
+                removed++;
+            } else if (resp.status < 400) {
+                sent++;
+            }
+        } catch { /* push service caído → probamos mañana */ }
+    }
+    return { sent, removed, total: subs.length };
+}
+
 export default {
+    async scheduled(controller, env, ctx) {
+        ctx.waitUntil(sendDailyReminders(env));
+    },
     async fetch(req, env) {
         if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
         const url = new URL(req.url);
@@ -890,6 +958,10 @@ export default {
             // Oracle
             if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req, env);
             if (p === '/api/parse-routine' && m === 'POST') return await parseRoutine(req, env);
+
+            // Push (recordatorio diario)
+            if (p === '/api/push/subscribe' && m === 'POST') return await pushSubscribe(req, env);
+            if (p === '/api/push/unsubscribe' && m === 'POST') return await pushUnsubscribe(req, env);
 
             // Observabilidad
             if (p === '/api/errors' && m === 'POST') return await ingestErrors(req, env);

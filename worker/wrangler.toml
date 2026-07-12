@@ -60,6 +60,14 @@ PREMIUM_PRICE_ARS_6M = "36000"
 PREMIUM_PRICE_ARS_12M = "60000"
 PREMIUM_TITLE = "BERSERKERMOD - Premium"
 
+# Push notifications (recordatorio diario de entrenamiento). La clave publica
+# VAPID es publica (tambien esta en el cliente); la privada va como secret:
+#   Get-Content worker/.dev.vapid-keys.txt  → copiar el JWK →
+#   npx wrangler secret put VAPID_PRIVATE_JWK
+# Sin el secret, el cron no manda nada (no rompe).
+VAPID_PUBLIC_KEY = "BL9uLP_IGUJSeG40lB-aLQlvv2vFYuXb8qRAkwd7pO5_4yhp_3IwLQNGyWX1KW-RJL_k2bfuHuyMQfRqwUxr2zo"
+VAPID_SUBJECT = "mailto:tornatiezequiel0@gmail.com"
+
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
 [[kv_namespaces]]
@@ -72,3 +80,7 @@ preview_id = "032b05ee75684a44bd0cfaa036d2c7be"
 # texto (env.AI.toMarkdown) y estructurarlo con un modelo Llama (env.AI.run).
 [ai]
 binding = "AI"
+
+# Cron del recordatorio push diario: 21:00 UTC = 18:00 Argentina (ART, UTC-3).
+[triggers]
+crons = ["0 21 * * *"]
