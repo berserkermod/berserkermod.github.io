@@ -339,7 +339,7 @@ let code, licToken;
     };
     const p1 = await call('GET', '/api/products');
     ok('coach disponible con config (precio 21600)', p1.body.coach.available === true && p1.body.coach.price === 21600, p1.body);
-    ok('premium NO disponible sin precio', p1.body.premium && p1.body.premium.available === false, p1.body.premium);
+    ok('premium_plans: 4 planes, no disponibles sin precio', Array.isArray(p1.body.premium_plans) && p1.body.premium_plans.length === 4 && p1.body.premium_plans.every(pl => pl.available === false), p1.body.premium_plans);
     const c1 = await call('POST', '/api/checkout', { price: 1 }); // intento de mandar precio del cliente
     ok('checkout → init_point', c1.status === 200 && c1.body.init_point === 'https://mp/checkout/abc', c1.body);
     ok('usa precio del SERVER, no del cliente', sentPref && sentPref.items[0].unit_price === 21600, sentPref && sentPref.items[0]);
@@ -347,19 +347,53 @@ let code, licToken;
     ok('notification_url → webhook', sentPref.notification_url.endsWith('/api/webhook/mercadopago'), sentPref.notification_url);
     ok('back_url success → landing ?purchase=coach', /\/\?purchase=coach$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
 
-    // Premium: sin precio → 503; con precio → preferencia propia
-    const cp0 = await call('POST', '/api/checkout', { product: 'premium' });
+    // Premium por duración: sin precio → 503; con precios → planes con % off
+    const cp0 = await call('POST', '/api/checkout', { product: 'premium', months: 12 });
     ok('checkout premium sin precio → 503', cp0.status === 503, cp0.status);
-    env.PREMIUM_PRICE_ARS = '12000';
+    env.PREMIUM_PRICE_ARS_1M = '7500'; env.PREMIUM_PRICE_ARS_3M = '19500';
+    env.PREMIUM_PRICE_ARS_6M = '36000'; env.PREMIUM_PRICE_ARS_12M = '60000';
     const p2 = await call('GET', '/api/products');
-    ok('premium disponible con precio (12000)', p2.body.premium.available === true && p2.body.premium.price === 12000, p2.body.premium);
-    const cp1 = await call('POST', '/api/checkout', { product: 'premium' });
-    ok('checkout premium → init_point', cp1.status === 200 && cp1.body.init_point === 'https://mp/checkout/abc', cp1.body);
-    ok('premium: precio del server (12000)', sentPref.items[0].unit_price === 12000, sentPref.items[0]);
-    ok('premium: external_reference = premium', sentPref.external_reference === 'premium');
+    const pl12 = p2.body.premium_plans.find(pl => pl.months === 12);
+    ok('plan 12m disponible (60000, 5000/mes)', pl12.available === true && pl12.price === 60000 && pl12.per_month === 5000, pl12);
+    ok('plan 12m descuento 33%', pl12.discount_pct === 33, pl12.discount_pct);
+    ok('plan 1m sin descuento', p2.body.premium_plans.find(pl => pl.months === 1).discount_pct === 0);
+    const cp1 = await call('POST', '/api/checkout', { product: 'premium', months: 12 });
+    ok('checkout premium 12m → init_point', cp1.status === 200 && cp1.body.init_point === 'https://mp/checkout/abc', cp1.body);
+    ok('premium 12m: precio del server (60000)', sentPref.items[0].unit_price === 60000, sentPref.items[0]);
+    ok('premium 12m: external_reference = premium_12m', sentPref.external_reference === 'premium_12m');
     ok('premium: back_url → ?purchase=premium', /\/\?purchase=premium$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
+    const cpLegacy = await call('POST', '/api/checkout', { product: 'premium' }); // landing vieja sin months
+    ok('premium sin months → 1 mes (7500)', cpLegacy.status === 200 && sentPref.external_reference === 'premium_1m' && sentPref.items[0].unit_price === 7500, sentPref.external_reference);
+
+    // Webhook → código con duración → activación arranca el reloj
+    globalThis.fetch = async (u) => {
+        if (String(u).includes('/v1/payments/777')) {
+            return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m' }), { status: 200 });
+        }
+        return new Response('{}', { status: 404 });
+    };
+    const wh = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '777' } });
+    ok('webhook premium_3m → genera código', wh.status === 200 && /^BMOD-/.test(wh.body.code || ''), wh.body);
+    const actDur = await call('POST', '/api/license/activate', { code: wh.body.code, deviceId: 'dur-dev' });
+    const expMs = actDur.body.expiresAt ? new Date(actDur.body.expiresAt).getTime() - Date.now() : 0;
+    ok('activar 3m → vence en ~92 días', actDur.status === 200 && expMs > 91 * 86400000 && expMs < 93 * 86400000, actDur.body.expiresAt);
+    const reAct = await call('POST', '/api/license/activate', { code: wh.body.code, deviceId: 'dur-dev' });
+    ok('re-activar NO extiende el vencimiento', reAct.body.expiresAt === actDur.body.expiresAt, reAct.body.expiresAt);
+    const rebind = await call('POST', '/api/license/activate', { code: wh.body.code, deviceId: 'dur-dev-2' });
+    ok('cambiar de device tampoco extiende', rebind.body.expiresAt === actDur.body.expiresAt, rebind.body.expiresAt);
     globalThis.fetch = realFetch;
-    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS; delete env.PREMIUM_PRICE_ARS;
+
+    // Código admin con months + código vencido rechazado
+    const gm = await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 6 }, { 'x-admin-secret': 'test-admin' });
+    const actM = await call('POST', '/api/license/activate', { code: gm.body.codes[0], deviceId: 'gift-dev' });
+    const expM = actM.body.expiresAt ? new Date(actM.body.expiresAt).getTime() - Date.now() : 0;
+    ok('código regalo 6m → vence en ~183 días', expM > 182 * 86400000 && expM < 184 * 86400000, actM.body.expiresAt);
+    const gOld = await call('POST', '/api/admin/codes', { count: 1, product: 'premium', expires_at: '2020-01-01T00:00:00Z' }, { 'x-admin-secret': 'test-admin' });
+    const actOld = await call('POST', '/api/license/activate', { code: gOld.body.codes[0], deviceId: 'old-dev' });
+    ok('código vencido → 403', actOld.status === 403, actOld.status);
+
+    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS;
+    delete env.PREMIUM_PRICE_ARS_1M; delete env.PREMIUM_PRICE_ARS_3M; delete env.PREMIUM_PRICE_ARS_6M; delete env.PREMIUM_PRICE_ARS_12M;
 }
 
 // ── Salud off + server-info + 404 ──

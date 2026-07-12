@@ -39,11 +39,19 @@ COACH_PRICE_ARS = "25000"
 COACH_CURRENCY = "ARS"
 COACH_TITLE = "BERSERKERMOD - Modo Coach (acceso completo)"
 
-# Precio del Premium (pago unico, todo menos el modo Coach). ⚠️ AJUSTAR: 12000
-# es un default sugerido (~mitad del Coach) — decidi el precio final y redeploy.
-# En "0" el boton de la landing queda deshabilitado ("Disponible muy pronto").
-PREMIUM_PRICE_ARS = "12000"
-PREMIUM_TITLE = "BERSERKERMOD - Premium (pago unico)"
+# Premium por DURACION (todo menos el modo Coach): planes de 1/3/6/12 meses.
+# Escalera basada en USD 4.99/mes con promo creciente (13/20/33% off), al cambio
+# oficial ~1500 ARS/USD (jul 2026). Ajustar aca y redeploy cuando se mueva el
+# dolar. En "0" ese plan desaparece de la landing.
+#   1m  ≈ USD 5.0  (4.99)          → base
+#   3m  ≈ USD 13   (4.33/mes -13%)
+#   6m  ≈ USD 24   (4.00/mes -20%)
+#   12m ≈ USD 40   (3.33/mes -33%) ⭐
+PREMIUM_PRICE_ARS_1M = "7500"
+PREMIUM_PRICE_ARS_3M = "19500"
+PREMIUM_PRICE_ARS_6M = "36000"
+PREMIUM_PRICE_ARS_12M = "60000"
+PREMIUM_TITLE = "BERSERKERMOD - Premium"
 
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.

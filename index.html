@@ -1627,7 +1627,7 @@
                     <div class="precio-name">Desbloqueá todo</div>
                     <div class="precio-tag">Todas las funciones de la app desbloqueadas.</div>
                     <div class="precio-price">7 días gratis</div>
-                    <div class="precio-period">Probalo sin tarjeta · después pago único</div>
+                    <div class="precio-period">Probalo sin tarjeta · después planes de 1 a 12 meses</div>
                     <span class="precio-badge">Prueba gratis</span>
                     <ul class="precio-features">
                         <li><b>Todo lo del plan Free</b>, más:</li>
@@ -1644,7 +1644,8 @@
                         <li>Soporte prioritario directo</li>
                     </ul>
                     <a href="BERSERKERMOD.html" class="precio-cta precio-cta-premium">Probar gratis →</a>
-                    <button id="buy-premium-btn" class="precio-cta precio-cta-premium" style="width:100%;margin-top:10px;cursor:pointer" onclick="comprarPremium()" disabled>Comprar Premium <span id="premium-price-label"></span></button>
+                    <div id="premium-plans" style="margin-top:12px"></div>
+                    <button id="buy-premium-btn" class="precio-cta precio-cta-premium" style="width:100%;margin-top:4px;cursor:pointer" onclick="comprarPremium()" disabled>Comprar Premium <span id="premium-price-label"></span></button>
                     <p id="premium-buy-msg" style="font-size:12px;color:#A1A1A6;margin-top:8px;min-height:16px;text-align:center"></p>
                 </div>
             </div>
@@ -1999,9 +2000,13 @@
                     if (priceLabel) priceLabel.textContent = '';
                     if (msg) msg.textContent = 'Disponible muy pronto.';
                 }
-                var p = d && d.premium;
-                if (p && p.available) {
-                    if (priceLabelP) priceLabelP.textContent = '· ' + fmtPrice(p);
+                // Premium por duración: 1/3/6/12 meses con % off creciente.
+                var plans = ((d && d.premium_plans) || []).filter(function (p) { return p.available; });
+                if (plans.length) {
+                    window._bmPlans = plans;
+                    // Default: el plan más largo con descuento (la mejor oferta).
+                    window._bmSelMonths = plans[plans.length - 1].months;
+                    renderPremiumPlans();
                     if (btnP) btnP.disabled = false;
                 } else {
                     if (priceLabelP) priceLabelP.textContent = '';
@@ -2012,11 +2017,34 @@
                 if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
             });
 
+            function renderPremiumPlans() {
+                var box = document.getElementById('premium-plans');
+                if (!box || !window._bmPlans) return;
+                box.innerHTML = '';
+                window._bmPlans.forEach(function (p) {
+                    var sel = p.months === window._bmSelMonths;
+                    var row = document.createElement('button');
+                    row.type = 'button';
+                    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;padding:10px 14px;border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;' +
+                        (sel ? 'background:rgba(253,203,110,.12);border:1.5px solid var(--orange,#FDCB6E);color:var(--text,#F5F5F7);'
+                             : 'background:transparent;border:1.5px solid var(--border,#2C2C2E);color:var(--text2,#A1A1A6);');
+                    var left = '<span style="font-weight:800;font-size:14px">' + p.months + (p.months === 1 ? ' mes' : ' meses') +
+                        (p.discount_pct > 0 ? ' <span style="font-size:10px;font-weight:900;color:var(--orange,#FDCB6E);background:rgba(253,203,110,.15);padding:2px 6px;border-radius:8px;margin-left:4px">-' + p.discount_pct + '%</span>' : '') + '</span>';
+                    var right = '<span style="text-align:right"><b style="font-size:14px">' + fmtPrice(p) + '</b>' +
+                        (p.months > 1 ? '<br><span style="font-size:10px;color:var(--text3,#6E6E73)">$' + Number(p.per_month).toLocaleString('es-AR') + '/mes</span>' : '') + '</span>';
+                    row.innerHTML = left + right;
+                    row.onclick = function () { window._bmSelMonths = p.months; renderPremiumPlans(); };
+                    box.appendChild(row);
+                });
+                var cur = window._bmPlans.find(function (p) { return p.months === window._bmSelMonths; });
+                if (priceLabelP && cur) priceLabelP.textContent = '· ' + cur.months + (cur.months === 1 ? ' mes ' : ' meses ') + fmtPrice(cur);
+            }
+
             // Botones comprar → crean la preferencia del producto y redirigen al checkout de MP.
-            function comprar(product, b, m) {
+            function comprar(payload, b, m) {
                 if (!b) return;
                 b.disabled = true; if (m) { m.style.color = ''; m.textContent = 'Abriendo el checkout…'; }
-                fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product: product }) })
+                fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
                     .then(function (res) {
                         if (res.ok && res.j.init_point) { window.location.href = res.j.init_point; }
@@ -2024,8 +2052,8 @@
                     })
                     .catch(function () { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
             }
-            window.comprarCoach = function () { comprar('coach', btn, msg); };
-            window.comprarPremium = function () { comprar('premium', btnP, msgP); };
+            window.comprarCoach = function () { comprar({ product: 'coach' }, btn, msg); };
+            window.comprarPremium = function () { comprar({ product: 'premium', months: window._bmSelMonths || 1 }, btnP, msgP); };
 
             // Retorno de Mercado Pago: ?purchase=coach|premium&payment_id=...&status=approved
             // Recupera el código generado por el webhook y lo muestra en grande.
