@@ -2,13 +2,22 @@
 
 Dos productos, dos canales (cada uno donde mejor rinde).
 
-## Coach — pago único, por Mercado Pago (web)
+## Coach — planes por duración (1/3/6/12 meses), por Mercado Pago (web)
 
-- **Producto**: modo entrenador (crear rutinas, compartirlas por link con alumnos, ver sus ediciones).
-- **Precio sugerido**: ~USD 18 (pago único). Se cobra en **ARS** al cambio del día → se setea en `worker/wrangler.toml` (`COACH_PRICE_ARS`), sin tocar código.
-- **Canal**: Mercado Pago Checkout Pro desde la landing. Comisión MP en AR ~6% + IVA (mucho menor que Google Play).
-- **Entrega**: pantalla de éxito muestra el código `BMOD-XXXX-XXXX` + auto-activación por redirect. El usuario lo canjea en la app (Perfil → Activar código).
-- **Estado**: implementado y testeado. Falta que el dueño cargue `MP_ACCESS_TOKEN` y `COACH_PRICE_ARS`.
+- **Producto**: TODO el Premium + modo entrenador (rutinas para alumnos por link/QR, adherencia en tiempo real, plantillas, importar PDF→alumno). Tier profesional.
+- **Precio**: **2× el Premium** (multiplicador clásico de tier pro), misma estructura de promos. Configurado en `worker/wrangler.toml` (`COACH_PRICE_ARS_{1,3,6,12}M`).
+
+| Plan | ARS | ≈ USD | Equivale a | Ahorro |
+|---|---|---|---|---|
+| 1 mes | $15.000 | 10 | $15.000/mes | — |
+| 3 meses | $39.000 | 26 | $13.000/mes | –13% |
+| 6 meses | $72.000 | 48 | $12.000/mes | –20% |
+| **12 meses** | **$120.000** | **80** | **$10.000/mes** | **–33%** ⭐ |
+
+- **Canal**: Mercado Pago Checkout Pro desde la landing (selector de planes). Comisión MP en AR ~6% + IVA.
+- **Mecánica**: idéntica al Premium — código con `duration_days`, el reloj arranca al ACTIVAR, sin renovación automática. Legacy: los códigos coach viejos (pago único) siguen siendo vitalicios.
+- **Entrega**: pantalla de éxito muestra el código `BMOD-XXXX-XXXX`. El usuario lo canjea en la app (Perfil → Activar código).
+- **Estado**: implementado, testeado y VIVO (jul 2026).
 
 ## Premium — planes por duración (1/3/6/12 meses), por Mercado Pago
 
@@ -27,12 +36,9 @@ Base USD 4,99/mes al oficial ~1500 ARS/USD (jul 2026). Ajustar los `PREMIUM_PRIC
 | 6 meses | $36.000 | 24 | $6.000/mes | –20% |
 | **12 meses** | **$60.000** | **40** | **$5.000/mes** | **–33%** ⭐ |
 
-> ⚠️ **INCOHERENCIA DE PRECIOS A RESOLVER (decisión del dueño)**: el Coach está
-> en $25.000 pago único VITALICIO e incluye todo el Premium + modo entrenador.
-> Hoy queda más barato que 6 meses de Premium — nadie racional compraría 6/12
-> meses pudiendo llevarse el Coach vitalicio por menos. Opciones: **subir
-> `COACH_PRICE_ARS` a ~$90.000–120.000** (≈ USD 60–80, ~2× el anual de Premium)
-> o pasar el Coach también a planes por duración.
+> ✅ **Coherencia resuelta (jul 2026)**: el Coach pasó también a planes por
+> duración a exactamente **2× cada plan Premium** — la relación de precios es
+> consistente en toda la escalera y el vitalicio barato desapareció.
 
 ### Google Play (futuro)
 
@@ -40,6 +46,6 @@ Cuando se retome Play, la misma escalera se arma como **una suscripción** con p
 
 ## Por qué este split
 
-- La **recurrencia** (lo difícil de operar) la absorbe Google Play, que está hecho para eso.
-- El **Coach** (ticket alto, pago único) va por Mercado Pago: simple, barato de comisión, y un pago único convierte mejor en un producto nuevo sin reputación.
-- La app de Android **no** debe tener un botón de compra que abra Mercado Pago (política anti-steering de Google): la venta del Coach ocurre en la **web/landing**, y dentro de la app solo se **canjea el código**.
+- Ambos productos van por **Mercado Pago con códigos por duración**: sin recurrencia que operar (no hay débitos automáticos que gestionar, reintentos ni cancelaciones), comisión baja (~6% vs 15-30% de Play), y "sin suscripción automática" es un argumento de venta en Argentina.
+- La renovación es manual: la app avisa el vencimiento (Perfil muestra los días restantes y el input de renovación en los últimos 7 días). Cuando haya volumen, un recordatorio push de vencimiento cierra el loop.
+- La app de Android **no** debe tener un botón de compra que abra Mercado Pago (política anti-steering de Google): la venta ocurre en la **web/landing**, y dentro de la app solo se **canjea el código**.

@@ -319,15 +319,15 @@ let code, licToken;
 {
     console.log('\nCheckout (Mercado Pago)');
     const p0 = await call('GET', '/api/products');
-    ok('products devuelve coach (ARS)', p0.body && p0.body.coach && p0.body.coach.currency === 'ARS', p0.body);
-    ok('coach NO disponible sin config', p0.body.coach.available === false);
+    ok('products devuelve coach_plans (4, ARS)', p0.body && Array.isArray(p0.body.coach_plans) && p0.body.coach_plans.length === 4 && p0.body.coach_plans[0].currency === 'ARS', p0.body);
+    ok('coach NO disponible sin config', p0.body.coach_plans.every(pl => pl.available === false));
 
     const c0 = await call('POST', '/api/checkout', {});
     ok('checkout sin MP token → 503', c0.status === 503, c0.status);
 
-    // con token + precio + fetch a MP stubeado
+    // con token + precios + fetch a MP stubeado
     env.MP_ACCESS_TOKEN = 'TEST-mp-token';
-    env.COACH_PRICE_ARS = '21600';
+    env.COACH_PRICE_ARS_1M = '15000'; env.COACH_PRICE_ARS_12M = '120000';
     const realFetch = globalThis.fetch;
     let sentPref = null;
     globalThis.fetch = async (u, opts) => {
@@ -338,14 +338,19 @@ let code, licToken;
         return new Response('{}', { status: 404 });
     };
     const p1 = await call('GET', '/api/products');
-    ok('coach disponible con config (precio 21600)', p1.body.coach.available === true && p1.body.coach.price === 21600, p1.body);
+    const cp1m = p1.body.coach_plans.find(pl => pl.months === 1);
+    const cp12m = p1.body.coach_plans.find(pl => pl.months === 12);
+    ok('coach 1m disponible (15000)', cp1m.available === true && cp1m.price === 15000, cp1m);
+    ok('coach 12m: 10000/mes y -33%', cp12m.per_month === 10000 && cp12m.discount_pct === 33, cp12m);
     ok('premium_plans: 4 planes, no disponibles sin precio', Array.isArray(p1.body.premium_plans) && p1.body.premium_plans.length === 4 && p1.body.premium_plans.every(pl => pl.available === false), p1.body.premium_plans);
-    const c1 = await call('POST', '/api/checkout', { price: 1 }); // intento de mandar precio del cliente
+    const c1 = await call('POST', '/api/checkout', { price: 1 }); // intento de mandar precio del cliente (y sin months → 1 mes)
     ok('checkout → init_point', c1.status === 200 && c1.body.init_point === 'https://mp/checkout/abc', c1.body);
-    ok('usa precio del SERVER, no del cliente', sentPref && sentPref.items[0].unit_price === 21600, sentPref && sentPref.items[0]);
-    ok('external_reference = coach', sentPref.external_reference === 'coach');
+    ok('usa precio del SERVER, no del cliente', sentPref && sentPref.items[0].unit_price === 15000, sentPref && sentPref.items[0]);
+    ok('external_reference = coach_1m', sentPref.external_reference === 'coach_1m');
     ok('notification_url → webhook', sentPref.notification_url.endsWith('/api/webhook/mercadopago'), sentPref.notification_url);
     ok('back_url success → landing ?purchase=coach', /\/\?purchase=coach$/.test(sentPref.back_urls.success), sentPref.back_urls.success);
+    const c12 = await call('POST', '/api/checkout', { product: 'coach', months: 12 });
+    ok('checkout coach 12m → external_reference coach_12m (120000)', c12.status === 200 && sentPref.external_reference === 'coach_12m' && sentPref.items[0].unit_price === 120000, sentPref.external_reference);
 
     // Premium por duración: sin precio → 503; con precios → planes con % off
     const cp0 = await call('POST', '/api/checkout', { product: 'premium', months: 12 });
@@ -392,7 +397,20 @@ let code, licToken;
     const actOld = await call('POST', '/api/license/activate', { code: gOld.body.codes[0], deviceId: 'old-dev' });
     ok('código vencido → 403', actOld.status === 403, actOld.status);
 
-    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS;
+    // Coach por duración: webhook coach_12m → código que vence en ~366 días
+    globalThis.fetch = async (u) => {
+        if (String(u).includes('/v1/payments/888')) {
+            return new Response(JSON.stringify({ status: 'approved', external_reference: 'coach_12m' }), { status: 200 });
+        }
+        return new Response('{}', { status: 404 });
+    };
+    const whC = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
+    const actC = await call('POST', '/api/license/activate', { code: whC.body.code, deviceId: 'coach-dur-dev' });
+    const expC = actC.body.expiresAt ? new Date(actC.body.expiresAt).getTime() - Date.now() : 0;
+    ok('coach 12m → producto coach, vence en ~366 días', actC.body.product === 'coach' && expC > 365 * 86400000 && expC < 367 * 86400000, actC.body);
+    globalThis.fetch = realFetch;
+
+    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS_1M; delete env.COACH_PRICE_ARS_12M;
     delete env.PREMIUM_PRICE_ARS_1M; delete env.PREMIUM_PRICE_ARS_3M; delete env.PREMIUM_PRICE_ARS_6M; delete env.PREMIUM_PRICE_ARS_12M;
 }
 

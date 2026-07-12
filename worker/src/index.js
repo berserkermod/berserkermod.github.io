@@ -424,15 +424,16 @@ async function retrieveCode(env, url) {
 }
 
 // admin: generar códigos a mano (regalos, promos). `months` (1|3|6|12) genera
-// premium por duración — el reloj arranca cuando el usuario lo activa.
+// un código por duración (coach o premium) — el reloj arranca al activarse.
+// Sin months → código vitalicio (regalos permanentes).
 async function adminCreateCodes(req, env) {
     if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
     const body = await readBody(req);
     const count = Math.min(Math.max(parseInt(body && body.count, 10) || 1, 1), 100);
     const product = body && ['coach', 'premium'].includes(body.product) ? body.product : 'coach';
     const expires_at = body && body.expires_at ? body.expires_at : null;
-    const months = body && PREMIUM_MONTHS.includes(Number(body.months)) ? Number(body.months) : null;
-    const duration_days = (product === 'premium' && months) ? PREMIUM_DURATION_DAYS[months] : null;
+    const months = body && PLAN_MONTHS.includes(Number(body.months)) ? Number(body.months) : null;
+    const duration_days = months ? PLAN_DURATION_DAYS[months] : null;
     const codes = [];
     for (let i = 0; i < count; i++) {
         let code = newCode();
@@ -444,66 +445,58 @@ async function adminCreateCodes(req, env) {
 }
 
 // ── Checkout (Mercado Pago Checkout Pro) ─────────────────────────────
-// Productos: Coach (pago único, vitalicio) y Premium por DURACIÓN (1/3/6/12
-// meses). El precio SIEMPRE sale del server (env), nunca del cliente — así
-// nadie puede pagar menos manipulando el request.
-const PREMIUM_MONTHS = [1, 3, 6, 12];
+// Ambos productos van por DURACIÓN (1/3/6/12 meses): Premium (la app completa
+// menos alumnos) y Coach (Premium + modo entrenador, tier profesional a 2×).
+// El precio SIEMPRE sale del server (env), nunca del cliente — así nadie
+// puede pagar menos manipulando el request.
+const PLAN_MONTHS = [1, 3, 6, 12];
 // Días con changüí (31/92/183/366): el vencimiento corre desde la ACTIVACIÓN.
-const PREMIUM_DURATION_DAYS = { 1: 31, 3: 92, 6: 183, 12: 366 };
+const PLAN_DURATION_DAYS = { 1: 31, 3: 92, 6: 183, 12: 366 };
 
-function premiumPlanConfig(env, months) {
-    const price = Number(env['PREMIUM_PRICE_ARS_' + months + 'M']) || 0;
+function planConfig(env, product, months) {
+    const prefix = product === 'coach' ? 'COACH' : 'PREMIUM';
+    const baseTitle = product === 'coach'
+        ? (env.COACH_TITLE || 'BERSERKERMOD - Modo Coach')
+        : (env.PREMIUM_TITLE || 'BERSERKERMOD - Premium');
     return {
-        product: 'premium', months, price,
+        product, months,
+        price: Number(env[prefix + '_PRICE_ARS_' + months + 'M']) || 0,
         currency: env.COACH_CURRENCY || 'ARS',
-        title: (env.PREMIUM_TITLE || 'BERSERKERMOD - Premium') + ' · ' + months + (months === 1 ? ' mes' : ' meses'),
-        duration_days: PREMIUM_DURATION_DAYS[months]
+        title: baseTitle + ' · ' + months + (months === 1 ? ' mes' : ' meses'),
+        duration_days: PLAN_DURATION_DAYS[months]
     };
 }
-function coachConfig(env) {
-    return {
-        product: 'coach',
-        price: Number(env.COACH_PRICE_ARS) || 0,
-        currency: env.COACH_CURRENCY || 'ARS',
-        title: env.COACH_TITLE || 'BERSERKERMOD — Modo Coach'
-    };
-}
-// GET /api/products — precios actuales para que la landing los muestre (single source of truth).
-function productsInfo(env) {
+function productPlans(env, product) {
     const mp = !!env.MP_ACCESS_TOKEN;
-    const c = coachConfig(env);
-    const base = premiumPlanConfig(env, 1);
-    const plans = PREMIUM_MONTHS.map((m) => {
-        const p = premiumPlanConfig(env, m);
+    const base = planConfig(env, product, 1);
+    return PLAN_MONTHS.map((m) => {
+        const p = planConfig(env, product, m);
         const perMonth = p.price > 0 ? Math.round(p.price / m) : 0;
         // % de ahorro vs pagar mes a mes al precio base
         const discount = (base.price > 0 && m > 1 && p.price > 0)
             ? Math.max(0, Math.round((1 - p.price / (base.price * m)) * 100)) : 0;
-        return { id: 'premium_' + m + 'm', months: m, price: p.price, per_month: perMonth, discount_pct: discount, currency: p.currency, title: p.title, available: mp && p.price > 0 };
-    });
-    return json({
-        coach: { price: c.price, currency: c.currency, title: c.title, available: mp && c.price > 0 },
-        premium_plans: plans
+        return { id: product + '_' + m + 'm', months: m, price: p.price, per_month: perMonth, discount_pct: discount, currency: p.currency, title: p.title, available: mp && p.price > 0 };
     });
 }
-// POST /api/checkout — crea la preferencia de pago del producto pedido y
-// devuelve la URL del checkout de MP. Premium requiere months (1|3|6|12);
-// {product:'premium'} sin months (landing vieja cacheada) → 1 mes.
-// El webhook (más abajo) genera el código del producto al aprobarse.
+// GET /api/products — precios actuales para que la landing los muestre (single source of truth).
+function productsInfo(env) {
+    return json({
+        coach_plans: productPlans(env, 'coach'),
+        premium_plans: productPlans(env, 'premium')
+    });
+}
+// POST /api/checkout — crea la preferencia de pago del plan pedido y devuelve
+// la URL del checkout de MP: {product: 'coach'|'premium', months: 1|3|6|12}.
+// Sin months (landing vieja cacheada) → 1 mes. El webhook (más abajo) genera
+// el código con la duración al aprobarse el pago.
 async function createCheckout(req, env) {
     if (!env.MP_ACCESS_TOKEN) return err('Checkout no disponible (MP sin configurar)', 503);
     const body = await readBody(req);
-    let c, extRef, purchaseTag;
-    if (body && body.product === 'premium') {
-        const months = PREMIUM_MONTHS.includes(Number(body.months)) ? Number(body.months) : 1;
-        c = premiumPlanConfig(env, months);
-        extRef = 'premium_' + months + 'm';
-        purchaseTag = 'premium';
-    } else {
-        c = coachConfig(env);
-        extRef = 'coach';
-        purchaseTag = 'coach';
-    }
+    const product = (body && body.product === 'premium') ? 'premium' : 'coach';
+    const months = (body && PLAN_MONTHS.includes(Number(body.months))) ? Number(body.months) : 1;
+    const c = planConfig(env, product, months);
+    const extRef = product + '_' + months + 'm';
+    const purchaseTag = product;
     if (!c.price || c.price <= 0) return err('Precio de ' + extRef + ' sin configurar', 503);
     const origin = new URL(req.url).origin;
     const landing = (env.LANDING_URL || env.APP_ORIGIN || '').replace(/\/+$/, '');
@@ -556,13 +549,14 @@ async function mercadoPagoWebhook(req, env, url) {
         const existing = await env.BMOD_KV.get(`payment:${paymentId}`);
         if (existing) return json({ ok: true, code: existing, dup: true }, 200);
 
-        // producto desde external_reference: "coach" (vitalicio), "premium_{N}m"
-        // (por duración; N = 1|3|6|12) o "premium" legacy (preferencias viejas
-        // pendientes → se honra como vitalicio, que es lo que se compró).
+        // producto desde external_reference: "{coach|premium}_{N}m" (por
+        // duración; N = 1|3|6|12). Legacy "coach"/"premium" a secas (preferencias
+        // viejas pendientes de pago) → se honra como vitalicio, que es lo que
+        // se compró en su momento.
         const extRef = String(payment.external_reference || '');
         let product = 'coach', duration_days = null;
-        const pm = extRef.match(/^premium_(1|3|6|12)m$/);
-        if (pm) { product = 'premium'; duration_days = PREMIUM_DURATION_DAYS[Number(pm[1])] || null; }
+        const pm = extRef.match(/^(coach|premium)_(1|3|6|12)m$/);
+        if (pm) { product = pm[1]; duration_days = PLAN_DURATION_DAYS[Number(pm[2])] || null; }
         else if (extRef === 'premium') product = 'premium';
         let code = newCode();
         while (await kvGet(env, `code:${code}`)) code = newCode();

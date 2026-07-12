@@ -30,14 +30,21 @@ ENABLE_HEALTH_SYNC = "false"
 # OJO: el ID debe EXISTIR en tu cuenta — verificá con `npx wrangler ai models`.
 PARSE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 
-# Precio del Coach (pago único). Ponelo en PESOS (ARS) al cambio del día.
-# Mientras esté en 0, el checkout devuelve 503 (no se puede comprar todavía).
-# Ej: USD 18 ≈ poné el equivalente en ARS, p.ej. COACH_PRICE_ARS = "21600".
+# Coach por DURACION (Premium completo + modo entrenador): planes de 1/3/6/12
+# meses a 2x el precio del Premium (tier profesional), mismas promos.
+# Base USD ~10/mes al oficial ~1500 ARS/USD (jul 2026).
+#   1m  ≈ USD 10  → base
+#   3m  ≈ USD 26  (13.000/mes -13%)
+#   6m  ≈ USD 48  (12.000/mes -20%)
+#   12m ≈ USD 80  (10.000/mes -33%) ⭐
 # OJO: titulos en ASCII puro (sin tildes ni em-dash) — wrangler sube las vars
 # del TOML con encoding roto y el mojibake se ve en el checkout de MP.
-COACH_PRICE_ARS = "25000"
+COACH_PRICE_ARS_1M = "15000"
+COACH_PRICE_ARS_3M = "39000"
+COACH_PRICE_ARS_6M = "72000"
+COACH_PRICE_ARS_12M = "120000"
 COACH_CURRENCY = "ARS"
-COACH_TITLE = "BERSERKERMOD - Modo Coach (acceso completo)"
+COACH_TITLE = "BERSERKERMOD - Modo Coach"
 
 # Premium por DURACION (todo menos el modo Coach): planes de 1/3/6/12 meses.
 # Escalera basada en USD 4.99/mes con promo creciente (13/20/33% off), al cambio

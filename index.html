@@ -1227,7 +1227,7 @@
         <section class="hero" id="hero">
             <div class="hero-inner">
                 <div class="hero-copy">
-                    <div class="hero-kicker reveal">Lanzamiento 2026 · Gratis + Premium one-time</div>
+                    <div class="hero-kicker reveal">Lanzamiento 2026 · Gratis para siempre + Premium sin suscripción automática</div>
                     <h1 class="hero-title reveal reveal-delay-1">
                         Tu entrenador personal.<br>
                         En tu bolsillo. <span class="accent">Inteligente.</span>
@@ -1670,6 +1670,7 @@
                         <li>Alumnos ilimitados · sin costo por usuario</li>
                     </ul>
                     <div class="reveal reveal-delay-4">
+                        <div id="coach-plans" style="margin:0 0 10px;max-width:420px"></div>
                         <button id="buy-coach-btn" class="btn btn-primary" onclick="comprarCoach()" disabled>Comprar modo Coach <span id="coach-price-label"></span></button>
                         <p id="coach-buy-msg" style="font-size:12px;color:var(--text3);margin-top:12px;min-height:16px"></p>
                         <a href="BERSERKERMOD.html" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline">o probalo gratis primero →</a>
@@ -1786,7 +1787,7 @@
                 <details class="faq-item reveal">
                     <summary class="faq-summary">¿Es realmente gratis?</summary>
                     <div class="faq-body">
-                        Sí. La versión Free incluye rutinas inteligentes, biblioteca de ejercicios, modo entrenamiento con tracking de PRs, cardio, stats semanales y tracking de comidas. Para siempre, sin trial. Premium suma plan nutricional, modo Coach, Oracle IA y más — un único pago cuando lance, sin suscripciones.
+                        Sí. La versión Free incluye rutinas inteligentes, biblioteca de ejercicios, modo entrenamiento con tracking de PRs, cardio, stats semanales y tracking de comidas. Para siempre, sin trial. Premium suma plan nutricional, Oracle IA, importar rutinas desde PDF y más — comprás el período que quieras (1 a 12 meses) y listo: sin suscripción automática, nada se te renueva ni se te debita solo.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-1">
@@ -1822,7 +1823,7 @@
                 <details class="faq-item reveal reveal-delay-5">
                     <summary class="faq-summary">¿Va a tener publicidad?</summary>
                     <div class="faq-body">
-                        <b>No.</b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional cuando lance: pago único, sin suscripciones, sin trial truchos.
+                        <b>No.</b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional: comprás el período que quieras y no se renueva solo — sin suscripción automática, sin trial truchos.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-6">
@@ -1990,23 +1991,51 @@
             var msgP = document.getElementById('premium-buy-msg');
             var priceLabelP = document.getElementById('premium-price-label');
 
+            // Planes por duración (1/3/6/12 meses) para ambos productos.
+            // color: acento del selector (verde coach / naranja premium).
+            var _sel = { coach: 12, premium: 12 };
+            var _plans = { coach: [], premium: [] };
+
+            function renderPlans(prod, boxId, labelEl, color) {
+                var box = document.getElementById(boxId);
+                if (!box || !_plans[prod].length) return;
+                box.innerHTML = '';
+                _plans[prod].forEach(function (p) {
+                    var sel = p.months === _sel[prod];
+                    var row = document.createElement('button');
+                    row.type = 'button';
+                    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;padding:10px 14px;border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;' +
+                        (sel ? 'background:' + color.bg + ';border:1.5px solid ' + color.main + ';color:var(--text,#F5F5F7);'
+                             : 'background:transparent;border:1.5px solid var(--border,#2C2C2E);color:var(--text2,#A1A1A6);');
+                    var left = '<span style="font-weight:800;font-size:14px">' + p.months + (p.months === 1 ? ' mes' : ' meses') +
+                        (p.discount_pct > 0 ? ' <span style="font-size:10px;font-weight:900;color:' + color.main + ';background:' + color.bg + ';padding:2px 6px;border-radius:8px;margin-left:4px">-' + p.discount_pct + '%</span>' : '') + '</span>';
+                    var right = '<span style="text-align:right"><b style="font-size:14px">' + fmtPrice(p) + '</b>' +
+                        (p.months > 1 ? '<br><span style="font-size:10px;color:var(--text3,#6E6E73)">$' + Number(p.per_month).toLocaleString('es-AR') + '/mes</span>' : '') + '</span>';
+                    row.innerHTML = left + right;
+                    row.onclick = function () { _sel[prod] = p.months; renderPlans(prod, boxId, labelEl, color); };
+                    box.appendChild(row);
+                });
+                var cur = _plans[prod].find(function (p) { return p.months === _sel[prod]; });
+                if (labelEl && cur) labelEl.textContent = '· ' + cur.months + (cur.months === 1 ? ' mes ' : ' meses ') + fmtPrice(cur);
+            }
+
             // Mostrar precios / habilitar botones según la config del Worker.
             fetch(API + '/api/products').then(function (r) { return r.json(); }).then(function (d) {
-                var c = d && d.coach;
-                if (c && c.available) {
-                    if (priceLabel) priceLabel.textContent = '· ' + fmtPrice(c);
+                var cPlans = ((d && d.coach_plans) || []).filter(function (p) { return p.available; });
+                if (cPlans.length) {
+                    _plans.coach = cPlans;
+                    _sel.coach = cPlans[cPlans.length - 1].months; // default: mejor oferta
+                    renderPlans('coach', 'coach-plans', priceLabel, { main: 'var(--accent,#00D4AA)', bg: 'rgba(0,212,170,.12)' });
                     if (btn) btn.disabled = false;
                 } else {
                     if (priceLabel) priceLabel.textContent = '';
                     if (msg) msg.textContent = 'Disponible muy pronto.';
                 }
-                // Premium por duración: 1/3/6/12 meses con % off creciente.
-                var plans = ((d && d.premium_plans) || []).filter(function (p) { return p.available; });
-                if (plans.length) {
-                    window._bmPlans = plans;
-                    // Default: el plan más largo con descuento (la mejor oferta).
-                    window._bmSelMonths = plans[plans.length - 1].months;
-                    renderPremiumPlans();
+                var pPlans = ((d && d.premium_plans) || []).filter(function (p) { return p.available; });
+                if (pPlans.length) {
+                    _plans.premium = pPlans;
+                    _sel.premium = pPlans[pPlans.length - 1].months;
+                    renderPlans('premium', 'premium-plans', priceLabelP, { main: 'var(--orange,#FDCB6E)', bg: 'rgba(253,203,110,.12)' });
                     if (btnP) btnP.disabled = false;
                 } else {
                     if (priceLabelP) priceLabelP.textContent = '';
@@ -2016,29 +2045,6 @@
                 if (msg) msg.textContent = 'Disponible muy pronto.';
                 if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
             });
-
-            function renderPremiumPlans() {
-                var box = document.getElementById('premium-plans');
-                if (!box || !window._bmPlans) return;
-                box.innerHTML = '';
-                window._bmPlans.forEach(function (p) {
-                    var sel = p.months === window._bmSelMonths;
-                    var row = document.createElement('button');
-                    row.type = 'button';
-                    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;padding:10px 14px;border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;' +
-                        (sel ? 'background:rgba(253,203,110,.12);border:1.5px solid var(--orange,#FDCB6E);color:var(--text,#F5F5F7);'
-                             : 'background:transparent;border:1.5px solid var(--border,#2C2C2E);color:var(--text2,#A1A1A6);');
-                    var left = '<span style="font-weight:800;font-size:14px">' + p.months + (p.months === 1 ? ' mes' : ' meses') +
-                        (p.discount_pct > 0 ? ' <span style="font-size:10px;font-weight:900;color:var(--orange,#FDCB6E);background:rgba(253,203,110,.15);padding:2px 6px;border-radius:8px;margin-left:4px">-' + p.discount_pct + '%</span>' : '') + '</span>';
-                    var right = '<span style="text-align:right"><b style="font-size:14px">' + fmtPrice(p) + '</b>' +
-                        (p.months > 1 ? '<br><span style="font-size:10px;color:var(--text3,#6E6E73)">$' + Number(p.per_month).toLocaleString('es-AR') + '/mes</span>' : '') + '</span>';
-                    row.innerHTML = left + right;
-                    row.onclick = function () { window._bmSelMonths = p.months; renderPremiumPlans(); };
-                    box.appendChild(row);
-                });
-                var cur = window._bmPlans.find(function (p) { return p.months === window._bmSelMonths; });
-                if (priceLabelP && cur) priceLabelP.textContent = '· ' + cur.months + (cur.months === 1 ? ' mes ' : ' meses ') + fmtPrice(cur);
-            }
 
             // Botones comprar → crean la preferencia del producto y redirigen al checkout de MP.
             function comprar(payload, b, m) {
@@ -2052,8 +2058,8 @@
                     })
                     .catch(function () { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
             }
-            window.comprarCoach = function () { comprar({ product: 'coach' }, btn, msg); };
-            window.comprarPremium = function () { comprar({ product: 'premium', months: window._bmSelMonths || 1 }, btnP, msgP); };
+            window.comprarCoach = function () { comprar({ product: 'coach', months: _sel.coach || 1 }, btn, msg); };
+            window.comprarPremium = function () { comprar({ product: 'premium', months: _sel.premium || 1 }, btnP, msgP); };
 
             // Retorno de Mercado Pago: ?purchase=coach|premium&payment_id=...&status=approved
             // Recupera el código generado por el webhook y lo muestra en grande.
