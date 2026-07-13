@@ -2283,6 +2283,7 @@
                 coach_sessions_summary: "🔥 {w} esta semana · {t} en los últimos 30 días",
                 coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetales", food_cat_fruit: "Frutas", food_cat_fat: "Grasas", food_cat_dairy: "Lácteos",
+                food_search_ph: "Buscar alimento (manzana, pollo, yogur...)", food_manual_name_ph: "Nombre del alimento", creator_name_ph: "Ej. Volumen Extremo",
                 rt_routine_updated: "🔄 Rutina actualizada",
                 lib_title: "BIBLIOTECA DE EJERCICIOS", lib_open_btn: "📚 Biblioteca de Ejercicios",
                 lib_search_ph: "Buscar ejercicio (bench, squat, etc)",
@@ -2538,6 +2539,7 @@
                 coach_sessions_summary: "🔥 {w} this week · {t} in the last 30 days",
                 coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
                 food_cat_all: "All", food_cat_protein: "Protein", food_cat_carb: "Carbs", food_cat_veg: "Veggies", food_cat_fruit: "Fruits", food_cat_fat: "Fats", food_cat_dairy: "Dairy",
+                food_search_ph: "Search food (apple, chicken, yogurt...)", food_manual_name_ph: "Food name", creator_name_ph: "E.g. Extreme Volume",
                 rt_routine_updated: "🔄 Routine updated",
                 lib_title: "EXERCISE LIBRARY", lib_open_btn: "📚 Exercise Library",
                 lib_search_ph: "Search exercise (bench, squat, etc)",
@@ -2794,6 +2796,7 @@
                 coach_sessions_summary: "🔥 {w} esta semana · {t} nos últimos 30 dias",
                 coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetais", food_cat_fruit: "Frutas", food_cat_fat: "Gorduras", food_cat_dairy: "Laticínios",
+                food_search_ph: "Buscar alimento (maçã, frango, iogurte...)", food_manual_name_ph: "Nome do alimento", creator_name_ph: "Ex. Volume Extremo",
                 rt_routine_updated: "🔄 Rotina atualizada",
                 lib_title: "BIBLIOTECA DE EXERCÍCIOS", lib_open_btn: "📚 Biblioteca de Exercícios",
                 lib_search_ph: "Buscar exercício (bench, squat, etc)",
@@ -3280,8 +3283,8 @@
             { id: 'tuna_water', name: 'Atún en Agua', en: 'Tuna in Water', pt: 'Atum em Água', kcal: 116, protein: 26, carbs: 0, fat: 1, icon: '🐟', cat: 'protein' },
             { id: 'salmon', name: 'Salmón', en: 'Salmon', pt: 'Salmão', kcal: 208, protein: 20, carbs: 0, fat: 13, icon: '🐟', cat: 'protein' },
             { id: 'shrimp', name: 'Langostinos', en: 'Shrimp', pt: 'Camarão', kcal: 99, protein: 24, carbs: 0.2, fat: 0.3, icon: '🦐', cat: 'protein' },
-            { id: 'egg_whole', name: 'Huevo Entero', en: 'Whole Egg', pt: 'Ovo Inteiro', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
-            { id: 'egg_white', name: 'Clara de Huevo', en: 'Egg White', pt: 'Clara de Ovo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
+            { id: 'egg_whole', name: 'Huevo Entero', en: 'Whole Egg', pt: 'Ovo Inteiro', kcal: 155, protein: 13, carbs: 1.1, fat: 11, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos', labelEn: 'egg', labelPEn: 'eggs', labelPt: 'ovo', labelPPt: 'ovos' } },
+            { id: 'egg_white', name: 'Clara de Huevo', en: 'Egg White', pt: 'Clara de Ovo', kcal: 52, protein: 11, carbs: 0.7, fat: 0.2, icon: '🥚', cat: 'protein', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras', labelEn: 'egg white', labelPEn: 'egg whites', labelPt: 'clara', labelPPt: 'claras' } },
             { id: 'beef_lean', name: 'Carne Magra (Lomo)', en: 'Lean Beef (Tenderloin)', pt: 'Carne Magra (Filé Mignon)', kcal: 250, protein: 26, carbs: 0, fat: 15, icon: '🥩', cat: 'protein' },
             { id: 'flank_steak', name: 'Vacío', en: 'Flank Steak', pt: 'Fraldinha', kcal: 194, protein: 28, carbs: 0, fat: 8.5, icon: '🥩', cat: 'protein' },
             { id: 'ground_beef_lean', name: 'Carne Picada Magra', en: 'Lean Ground Beef', pt: 'Carne Moída Magra', kcal: 200, protein: 27, carbs: 0, fat: 10, icon: '🥩', cat: 'protein' },
@@ -3523,7 +3526,17 @@
         function saveCustomVideos() { try { localStorage.setItem('bm-custom-yt-videos', JSON.stringify(state.customVideos || {})); } catch {} }
         function saveCustomGifs() { try { localStorage.setItem('bm-custom-gifs', JSON.stringify(state.customGifs || {})); } catch {} }
         function saveUser() { try { localStorage.setItem('bm-user', JSON.stringify(state.user)); } catch { } }
-        function saveLang() { try { localStorage.setItem('bm-lang', state.lang); } catch { } }
+        function saveLang() { try { localStorage.setItem('bm-lang', state.lang); } catch { } syncSWPrefs(); }
+        // El SW no puede leer state/localStorage, así que el idioma para la
+        // notificación push se guarda en el Cache API ('bm-prefs'), que el SW
+        // sí puede leer cuando llega el push. Se escribe al cambiar idioma y
+        // en cada boot (cubre a los suscriptos antes de esta versión).
+        async function syncSWPrefs() {
+            try {
+                const c = await caches.open('bm-prefs');
+                await c.put('./bm-prefs.json', new Response(JSON.stringify({ lang: state.lang }), { headers: { 'Content-Type': 'application/json' } }));
+            } catch { }
+        }
         function saveSessions() { try { localStorage.setItem('bm-sessions', JSON.stringify(state.sessions)); } catch { } }
         function saveCardio() { try { localStorage.setItem('bm-cardio', JSON.stringify(state.cardioSessions)); } catch { } }
         function saveCustom() { try { localStorage.setItem('bm-custom', JSON.stringify(state.customEx)); } catch { } }
@@ -3899,8 +3912,8 @@
                 { id: 'turkey_breast',  name: 'Pavo pechuga',  en: 'Turkey breast', pt: 'Peito de peru', kcal: 135, p: 30, c: 0,    f: 1,   tip: 'Más magro que el pollo', tipEn: 'Leaner than chicken', tipPt: 'Mais magro que o frango' },
                 { id: 'pork_loin',      name: 'Lomo de cerdo', en: 'Pork tenderloin', pt: 'Lombo de porco', kcal: 143, p: 26, c: 0, f: 3.5, tip: 'Tan magro como la pechuga de pollo', tipEn: 'As lean as chicken breast', tipPt: 'Tão magro quanto o peito de frango' },
                 { id: 'flank_steak',    name: 'Vacío magro',   en: 'Flank steak', pt: 'Fraldinha', kcal: 194, p: 28, c: 0, f: 8.5, tip: 'A la parrilla o plancha · cortalo contra la fibra', tipEn: 'Grill it · slice against the grain', tipPt: 'Na grelha · corte contra a fibra' },
-                { id: 'eggs',           name: 'Huevos enteros', en: 'Whole eggs', pt: 'Ovos inteiros', kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g', tipEn: '1 egg = ~50g · 2 eggs = ~100g', tipPt: '1 ovo = ~50g · 2 ovos = ~100g', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' } },
-                { id: 'egg_whites',     name: 'Claras de huevo', en: 'Egg whites', pt: 'Claras de ovo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura', tipEn: '3 whites ≈ 100g · almost pure protein', tipPt: '3 claras ≈ 100g · proteína quase pura', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras' } },
+                { id: 'eggs',           name: 'Huevos enteros', en: 'Whole eggs', pt: 'Ovos inteiros', kcal: 155, p: 13, c: 1.1,  f: 11,  tip: '1 huevo = ~50g · 2 huevos = ~100g', tipEn: '1 egg = ~50g · 2 eggs = ~100g', tipPt: '1 ovo = ~50g · 2 ovos = ~100g', unit: { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos', labelEn: 'egg', labelPEn: 'eggs', labelPt: 'ovo', labelPPt: 'ovos' } },
+                { id: 'egg_whites',     name: 'Claras de huevo', en: 'Egg whites', pt: 'Claras de ovo', kcal: 52, p: 11, c: 0.7, f: 0.2, tip: '3 claras ≈ 100g · proteína casi pura', tipEn: '3 whites ≈ 100g · almost pure protein', tipPt: '3 claras ≈ 100g · proteína quase pura', unit: { kind: 'count', g: 33, label: 'clara', labelP: 'claras', labelEn: 'egg white', labelPEn: 'egg whites', labelPt: 'clara', labelPPt: 'claras' } },
                 { id: 'lean_beef',      name: 'Bife magro',    en: 'Lean beef steak', pt: 'Bife magro', kcal: 250, p: 26, c: 0,    f: 15,  tip: 'Cuadril, peceto, lomo · sin grasa visible', tipEn: 'Sirloin, eye round, tenderloin · no visible fat', tipPt: 'Alcatra, lagarto, filé · sem gordura aparente' },
                 { id: 'salmon',         name: 'Salmón',        en: 'Salmon', pt: 'Salmão', kcal: 208, p: 20, c: 0,    f: 13,  tip: 'Omega-3. Plancha o horno', tipEn: 'Omega-3. Grilled or baked', tipPt: 'Ômega-3. Grelhado ou assado' },
                 { id: 'tuna_water',     name: 'Atún en agua',  en: 'Tuna in water', pt: 'Atum em água', kcal: 116, p: 26, c: 0,    f: 1,   tip: 'Listo para ensaladas o snack', tipEn: 'Ready for salads or a snack', tipPt: 'Pronto para saladas ou lanche' },
@@ -4150,7 +4163,7 @@
                     const row = h('div', { className: 'meal-item-row', onclick: () => openSwapFoodModal(dayIdx, mIdx, iIdx) });
                     // Resolver por id → el idioma aplica también a planes ya generados.
                     row.appendChild(h('span', { className: 'meal-item-name' }, foodName(_FOOD_POOL_BY_ID[item.id]) || item.name));
-                    row.appendChild(h('span', { className: 'meal-item-grams' }, formatPortion(item.grams, item.unit || _FOOD_UNIT_BY_ID[item.id])));
+                    row.appendChild(h('span', { className: 'meal-item-grams' }, formatPortion(item.grams, item.unit || _FOOD_UNIT_BY_ID[item.id], state.lang)));
                     row.appendChild(h('span', { className: 'meal-item-kcal' }, Math.round(item.kcal) + ' kcal'));
                     row.appendChild(h('span', { className: 'meal-item-swap' }, '↻'));
                     card.appendChild(row);
@@ -6216,6 +6229,7 @@
         function openExercisePicker(dayIdx) {
             _exPicker = { dayIdx, filter: 'all', query: '' };
             $('ex-picker-search').value = '';
+            $('ex-picker-search').placeholder = t('lib_search_ph');
             $('ex-picker-custom-name').value = '';
             ['ex-tab-all','ex-tab-strength','ex-tab-cardio'].forEach(id => $(id).classList.remove('active'));
             $('ex-tab-all').classList.add('active');
@@ -6612,7 +6626,7 @@
                 }
 
                 c.appendChild(h('p', { className: 'label' }, t('routines_creator_name').toUpperCase()));
-                const ni = h('input', { className: 'input', placeholder: 'Ej. Volumen Extremo', value: routineCreator.name, style: { marginBottom: '16px' } });
+                const ni = h('input', { className: 'input', placeholder: t('creator_name_ph'), value: routineCreator.name, style: { marginBottom: '16px' } });
                 ni.oninput = e => routineCreator.name = e.target.value;
                 c.appendChild(ni);
 
@@ -11489,7 +11503,7 @@
 
         // ── SEARCH TAB ──
         function renderFoodSearchTab(c) {
-            const inp = h('input', { className: 'food-search-input', placeholder: 'Buscar alimento (manzana, pollo, yogur...)', value: _foodModal.searchQuery });
+            const inp = h('input', { className: 'food-search-input', placeholder: t('food_search_ph'), value: _foodModal.searchQuery });
             inp.oninput = (e) => {
                 _foodModal.searchQuery = e.target.value;
                 clearTimeout(_foodModal.searchTimer);
@@ -11640,7 +11654,7 @@
         function renderManualFoodTab(c) {
             c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '10px' } }, 'Ingresá los valores por <b>100g</b>. Se guarda en "Míos" para reutilizarlo.'));
 
-            const nameInp = h('input', { id: 'manual-food-name', className: 'food-search-input', placeholder: 'Nombre del alimento' });
+            const nameInp = h('input', { id: 'manual-food-name', className: 'food-search-input', placeholder: t('food_manual_name_ph') });
             c.appendChild(nameInp);
 
             const grid = h('div', { className: 'food-manual-grid' });
@@ -11773,7 +11787,7 @@
             const g = _portionToGrams(val);
             const m = g / 100;
             const foodName = _portionFood.name; // capture before closePortionModal nulls it
-            const portionLabel = formatPortion(g, _portionFood.unit);
+            const portionLabel = formatPortion(g, _portionFood.unit, state.lang);
             const entry = {
                 id: Date.now() + '', date: todayStr(),
                 name: foodName + ' · ' + portionLabel,
@@ -12999,6 +13013,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 navigator.serviceWorker.register('sw.js').catch((err) => {
                     if (DEBUG_APP) console.warn('[SW] registration failed:', err && err.message);
                 });
+                syncSWPrefs();
             });
         }
 

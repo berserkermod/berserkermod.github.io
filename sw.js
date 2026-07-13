@@ -2,7 +2,7 @@
 // Caches the app shell so the PWA opens offline. API calls are never cached
 // so live sync / coach data stay fresh.
 
-const CACHE = 'berserkermod-v2-3';
+const CACHE = 'berserkermod-v2-4';
 // Paths are relative to the SW's scope so the same shell list works both on
 // local serve.ps1 (root scope) and on GitHub Pages subpath (/berserkermod/).
 const SHELL = [
@@ -30,7 +30,8 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
             .then((keys) => Promise.all(
-                keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+                // 'bm-prefs' guarda el idioma para el push — nunca limpiarlo.
+                keys.filter((k) => k !== CACHE && k !== 'bm-prefs').map((k) => caches.delete(k))
             ))
             .then(() => self.clients.claim())
     );
@@ -39,17 +40,32 @@ self.addEventListener('activate', (event) => {
 // Push del recordatorio diario. El Worker manda un push VACÍO (sin payload
 // cifrado) — la notificación se compone acá, localmente. Mostrar una
 // notificación es OBLIGATORIO en un push userVisibleOnly (si no, el browser
-// muestra una genérica o penaliza la suscripción).
+// muestra una genérica o penaliza la suscripción). El idioma lo escribe la
+// app en el cache 'bm-prefs' (el SW no puede leer state/localStorage).
+const PUSH_TEXTS = {
+    es: '¡Hoy toca entrenar! Mantené tu racha viva.',
+    en: 'Time to train! Keep your streak alive.',
+    pt: 'Hoje é dia de treino! Mantenha sua sequência viva.'
+};
 self.addEventListener('push', (event) => {
-    event.waitUntil(
-        self.registration.showNotification('BERSERKERMOD 💪', {
-            body: '¡Hoy toca entrenar! Mantené tu racha viva.',
+    event.waitUntil((async () => {
+        let lang = 'es';
+        try {
+            const c = await caches.open('bm-prefs');
+            const r = await c.match('./bm-prefs.json');
+            if (r) {
+                const p = await r.json();
+                if (p && PUSH_TEXTS[p.lang]) lang = p.lang;
+            }
+        } catch { /* sin prefs → español */ }
+        return self.registration.showNotification('BERSERKERMOD 💪', {
+            body: PUSH_TEXTS[lang],
             icon: './icon-192.png',
             badge: './icon-192.png',
             tag: 'bm-daily-reminder',
             data: { url: './BERSERKERMOD.html' }
-        })
-    );
+        });
+    })());
 });
 
 self.addEventListener('notificationclick', (event) => {

@@ -105,6 +105,11 @@ try {
     ok('FOOD_POOL con en+pt (' + poolItems.length + ' items)', missP.length === 0, missP.length ? 'faltan: ' + missP.join(', ') : undefined);
     const missT = poolItems.filter((f) => !f.tipEn || !f.tipPt).map((f) => f.id);
     ok('FOOD_POOL con tipEn+tipPt', missT.length === 0, missT.length ? 'faltan: ' + missT.join(', ') : undefined);
+
+    // Unidades contables (huevo/clara): el label también va en 3 idiomas.
+    const countUnits = [...healthy, ...poolItems].filter((f) => f.unit && f.unit.kind === 'count');
+    const missU = countUnits.filter((f) => !f.unit.labelEn || !f.unit.labelPEn || !f.unit.labelPt || !f.unit.labelPPt).map((f) => f.id);
+    ok('unidades count con labelEn/labelPt (' + countUnits.length + ' items)', countUnits.length > 0 && missU.length === 0, missU.length ? 'faltan: ' + missU.join(', ') : undefined);
 } catch (e) {
     fail++;
     console.log('  ✗ error extrayendo alimentos → ' + e.message);

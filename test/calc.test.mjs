@@ -80,6 +80,14 @@ console.log('\nformatPortion (unidad natural)');
     ok('aceite: 91g d=0.91 → "100 ml"', formatPortion(91, { kind: 'ml', density: 0.91 }) === '100 ml');
     ok('sin unidad → gramos', formatPortion(150.6, null) === '151 g');
     ok('mínimo 1 unidad', formatPortion(10, { kind: 'count', g: 50, label: 'u' }) === '1 u');
+
+    const eggUnit = { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos', labelEn: 'egg', labelPEn: 'eggs', labelPt: 'ovo', labelPPt: 'ovos' };
+    ok('en: 100g → "2 eggs"', formatPortion(100, eggUnit, 'en') === '2 eggs');
+    ok('en: 50g → "1 egg" (singular)', formatPortion(50, eggUnit, 'en') === '1 egg');
+    ok('pt: 100g → "2 ovos"', formatPortion(100, eggUnit, 'pt') === '2 ovos');
+    ok('es explícito → "2 huevos"', formatPortion(100, eggUnit, 'es') === '2 huevos');
+    ok('sin lang → español (retrocompat)', formatPortion(100, eggUnit) === '2 huevos');
+    ok('en sin traducción → cae al label base', formatPortion(100, { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' }, 'en') === '2 huevos');
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');

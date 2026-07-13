@@ -49,10 +49,15 @@
     // Muestra una porción en su unidad natural: contables (huevos) por unidad,
     // líquidos en ml, el resto en gramos. Los macros se calculan siempre desde
     // gramos — esto solo cambia cómo se lee la porción.
-    function formatPortion(grams, unit) {
+    // lang ('es'|'en'|'pt', opcional) elige labelEn/labelPt de la unidad si
+    // existen; sin lang o sin traducción cae al label base (español).
+    function formatPortion(grams, unit, lang) {
         if (unit && unit.kind === 'count') {
             var n = Math.max(1, Math.round(grams / (unit.g || 50)));
-            var lbl = n === 1 ? (unit.label || 'u') : (unit.labelP || unit.label || 'u');
+            var one = unit.label, many = unit.labelP;
+            if (lang === 'en') { one = unit.labelEn || one; many = unit.labelPEn || many; }
+            else if (lang === 'pt') { one = unit.labelPt || one; many = unit.labelPPt || many; }
+            var lbl = n === 1 ? (one || 'u') : (many || one || 'u');
             return n + ' ' + lbl;
         }
         if (unit && unit.kind === 'ml') {
