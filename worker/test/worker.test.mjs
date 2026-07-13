@@ -95,6 +95,8 @@ let token, routineId;
     ok('coach ve adherencia (2 sesiones, 1 esta semana)', listS.body[0].session_count === 2 && listS.body[0].week_sessions === 1 && listS.body[0].last_session_at === today, listS.body[0]);
     const shareS = await call('GET', '/api/shares/' + token);
     ok('share devuelve sesiones al alumno', Array.isArray(shareS.body.sessions) && shareS.body.sessions.length === 2 && shareS.body.sessions[0].date === today, shareS.body.sessions);
+    const detS = await call('GET', '/api/routines/' + routineId + '?coach_id=coachA');
+    ok('detalle coach devuelve sesiones (desc)', Array.isArray(detS.body.sessions) && detS.body.sessions.length === 2 && detS.body.sessions[0].date === today && detS.body.sessions[1].date === '2020-01-01', detS.body.sessions);
 
     const review = await call('POST', '/api/routines/' + routineId + '/review', { coach_id: 'coachA' });
     ok('review 200', review.status === 200 && review.body.ok === true);

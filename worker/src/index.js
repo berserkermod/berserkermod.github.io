@@ -234,7 +234,10 @@ async function getRoutine(env, url, id) {
     }
     if (coachId && r.coach_id !== coachId) return err('Forbidden', 403);
     const edits = (await listByPrefix(env, editPrefix(id))).sort((a, b) => (a.edited_at < b.edited_at ? 1 : -1));
-    return json({ routine: r, edits });
+    // Sesiones del alumno (últimas 30) para que el coach vea la adherencia real.
+    const sessions = (await listByPrefix(env, sessPrefix(id)))
+        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+    return json({ routine: r, edits, sessions });
 }
 
 async function updateRoutine(req, env, url, id) {

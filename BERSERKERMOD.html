@@ -2278,6 +2278,9 @@
                 home_week_streak: "Racha semanal", home_week_record: "récord", home_week_progress: "esta semana {x}/{y} días", home_week_record_new: "¡Nuevo récord de racha semanal!",
                 alumno_trained_btn: "Entrené hoy", alumno_trained_done: "Entrenamiento de hoy registrado", alumno_trained_ok: "💪 ¡Registrado! Tu coach lo va a ver.", alumno_week_count: "Esta semana: {n} entrenamientos",
                 coach_adherence: "{n} esta semana", coach_last_session: "entrenó",
+                coach_sessions_title: "ACTIVIDAD DEL ALUMNO",
+                coach_no_sessions: "El alumno aún no registró entrenamientos",
+                coach_sessions_summary: "🔥 {w} esta semana · {t} en los últimos 30 días",
                 coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetales", food_cat_fruit: "Frutas", food_cat_fat: "Grasas", food_cat_dairy: "Lácteos",
                 rt_routine_updated: "🔄 Rutina actualizada",
@@ -2530,6 +2533,9 @@
                 home_week_streak: "Weekly streak", home_week_record: "record", home_week_progress: "this week {x}/{y} days", home_week_record_new: "New weekly streak record!",
                 alumno_trained_btn: "I trained today", alumno_trained_done: "Today's workout logged", alumno_trained_ok: "💪 Logged! Your coach will see it.", alumno_week_count: "This week: {n} workouts",
                 coach_adherence: "{n} this week", coach_last_session: "trained",
+                coach_sessions_title: "STUDENT ACTIVITY",
+                coach_no_sessions: "The student hasn't logged workouts yet",
+                coach_sessions_summary: "🔥 {w} this week · {t} in the last 30 days",
                 coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
                 food_cat_all: "All", food_cat_protein: "Protein", food_cat_carb: "Carbs", food_cat_veg: "Veggies", food_cat_fruit: "Fruits", food_cat_fat: "Fats", food_cat_dairy: "Dairy",
                 rt_routine_updated: "🔄 Routine updated",
@@ -2783,6 +2789,9 @@
                 home_week_streak: "Sequência semanal", home_week_record: "recorde", home_week_progress: "esta semana {x}/{y} dias", home_week_record_new: "Novo recorde de sequência semanal!",
                 alumno_trained_btn: "Treinei hoje", alumno_trained_done: "Treino de hoje registrado", alumno_trained_ok: "💪 Registrado! Seu coach vai ver.", alumno_week_count: "Esta semana: {n} treinos",
                 coach_adherence: "{n} esta semana", coach_last_session: "treinou",
+                coach_sessions_title: "ATIVIDADE DO ALUNO",
+                coach_no_sessions: "O aluno ainda não registrou treinos",
+                coach_sessions_summary: "🔥 {w} esta semana · {t} nos últimos 30 dias",
                 coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetais", food_cat_fruit: "Frutas", food_cat_fat: "Gorduras", food_cat_dairy: "Laticínios",
                 rt_routine_updated: "🔄 Rotina atualizada",
@@ -12612,8 +12621,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         async function openStudentDetail(routineId) {
             try {
                 state.coachActiveRoutineId = routineId;
-                const { routine, edits } = await apiGetRoutine(routineId);
-                renderStudentDetail(routine, edits);
+                const { routine, edits, sessions } = await apiGetRoutine(routineId);
+                renderStudentDetail(routine, edits, sessions);
             } catch (e) {
                 flash('⚠️ ' + e.message, 'var(--red)');
             }
@@ -12637,7 +12646,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             return h('span', {}, JSON.stringify(c));
         }
 
-        function renderStudentDetail(routine, edits) {
+        function renderStudentDetail(routine, edits, sessions) {
             const v = $('view-routines'); v.innerHTML = '';
             const back = h('button', { className: 'btn btn-secondary btn-sm', style: { marginBottom: '12px' }, onclick: () => { state.coachActiveRoutineId = null; renderRoutines(); } }, '← Volver');
             v.appendChild(back);
@@ -12656,6 +12665,34 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             }}, t('coach_delete')));
             head.appendChild(linkRow);
             v.appendChild(head);
+
+            // Actividad del alumno: sesiones registradas con "✅ Entrené hoy"
+            const sessCard = h('div', { className: 'card fade-in' });
+            sessCard.appendChild(h('p', { className: 'label' }, t('coach_sessions_title')));
+            const sessList = sessions || [];
+            if (sessList.length === 0) {
+                sessCard.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', textAlign: 'center', padding: '12px 0' } }, t('coach_no_sessions')));
+            } else {
+                // Misma ventana de 7 días que usa el worker en listRoutines (week_sessions)
+                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+                const weekN = sessList.filter(s => s.date >= weekAgo).length;
+                sessCard.appendChild(h('p', {
+                    style: { fontSize: '12px', fontWeight: 700, color: weekN > 0 ? 'var(--accent)' : 'var(--orange)', marginBottom: '8px' }
+                }, t('coach_sessions_summary').replace('{w}', weekN).replace('{t}', sessList.length)));
+                const locale = state.lang === 'en' ? 'en-US' : state.lang === 'pt' ? 'pt-BR' : 'es-AR';
+                sessList.forEach(s => {
+                    const d = new Date(s.date + 'T12:00:00');
+                    let when = d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'short' });
+                    when = when.charAt(0).toUpperCase() + when.slice(1);
+                    const row = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', padding: '7px 0', borderBottom: '1px solid var(--border)' } });
+                    const left = h('div', {}, h('span', { style: { fontSize: '13px', fontWeight: 700 } }, '✅ ' + when));
+                    if (s.day_name) left.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)' } }, ' · ' + s.day_name));
+                    row.appendChild(left);
+                    row.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' } }, relativeTime(s.date + 'T12:00:00')));
+                    sessCard.appendChild(row);
+                });
+            }
+            v.appendChild(sessCard);
 
             // Edits history
             const editsCard = h('div', { className: 'card fade-in' });
