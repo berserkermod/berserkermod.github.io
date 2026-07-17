@@ -87,7 +87,10 @@
             color: var(--text);
             font-family: 'Inter', system-ui, sans-serif;
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden
+            overflow-x: hidden;
+            /* Android/TWA: sin pull-to-refresh (recargaba la app en medio del
+               entrenamiento) ni rebote de scroll encadenado. */
+            overscroll-behavior-y: none
         }
 
         input,

@@ -1,7 +1,8 @@
 {
   "name": "BERSERKERMOD",
   "short_name": "BERSERKERMOD",
-  "description": "Tu entrenador personal inteligente. Rutinas, nutrición, biblioteca de ejercicios, modo coach. Sin app store. Funciona offline.",
+  "description": "Tu entrenador personal inteligente. Rutinas, nutrición, biblioteca de ejercicios, modo coach. Funciona offline.",
+  "id": "./BERSERKERMOD.html",
   "start_url": "./BERSERKERMOD.html",
   "scope": "./",
   "display": "standalone",
