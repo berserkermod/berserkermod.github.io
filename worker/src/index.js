@@ -885,6 +885,85 @@ async function pushUnsubscribe(req, env) {
     return json({ ok: true });
 }
 
+// ─────────────────────────────────────────────
+// GOOGLE PLAY BILLING — suscripción Premium comprada DENTRO de la TWA.
+// El cliente manda {sku, purchaseToken, deviceId}; acá se verifica contra la
+// API de Google Play (service account, JWT RS256), se hace acknowledge (sin
+// eso Google devuelve la plata a los 3 días) y se emite una licencia normal
+// con exp = fin del período. La renovación es transparente: Google renueva,
+// el cliente re-verifica al abrir y recibe el exp nuevo.
+// Secrets/vars: PLAY_SA_JSON (service account, secret) + PLAY_PACKAGE (var).
+// ─────────────────────────────────────────────
+const PLAY_SKUS = ['premium_1m', 'premium_3m', 'premium_6m', 'premium_12m'];
+
+let _playToken = { v: null, exp: 0 }; // cache del access token (por isolate)
+async function playAccessToken(env) {
+    if (_playToken.v && Date.now() < _playToken.exp - 60000) return _playToken.v;
+    const sa = JSON.parse(env.PLAY_SA_JSON);
+    const now = Math.floor(Date.now() / 1000);
+    const signingInput = b64urlEncodeJSON({ alg: 'RS256', typ: 'JWT' }) + '.' +
+        b64urlEncodeJSON({
+            iss: sa.client_email,
+            scope: 'https://www.googleapis.com/auth/androidpublisher',
+            aud: 'https://oauth2.googleapis.com/token',
+            iat: now, exp: now + 3600
+        });
+    const pem = sa.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+    const keyBytes = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('pkcs8', keyBytes.buffer, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signingInput)));
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') +
+            '&assertion=' + (signingInput + '.' + b64urlFromBytes(sig))
+    });
+    if (!resp.ok) throw new Error('play oauth ' + resp.status);
+    const j = await resp.json();
+    _playToken = { v: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+    return _playToken.v;
+}
+
+async function playVerify(req, env) {
+    if (!env.LICENSE_SECRET) return err('Server not configured (LICENSE_SECRET)', 500);
+    if (!env.PLAY_SA_JSON || !env.PLAY_PACKAGE) return err('Play Billing no configurado', 503);
+    const body = await readBody(req);
+    const sku = body && String(body.sku || '').trim();
+    const purchaseToken = body && String(body.purchaseToken || '').trim();
+    const deviceId = body && String(body.deviceId || '').trim();
+    if (!PLAY_SKUS.includes(sku)) return err('SKU inválido', 400);
+    if (!purchaseToken || !deviceId) return err('Missing purchaseToken or deviceId', 400);
+
+    let access;
+    try { access = await playAccessToken(env); } catch { return err('No se pudo autenticar con Google Play', 502); }
+
+    const base = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/' +
+        encodeURIComponent(env.PLAY_PACKAGE) + '/purchases/subscriptions/' +
+        encodeURIComponent(sku) + '/tokens/' + encodeURIComponent(purchaseToken);
+    const vr = await fetch(base, { headers: { Authorization: 'Bearer ' + access } });
+    if (vr.status === 404 || vr.status === 400) return err('Compra no encontrada', 404);
+    if (!vr.ok) return err('Error consultando Google Play', 502);
+    const sub = await vr.json();
+
+    const expMs = Number(sub.expiryTimeMillis || 0);
+    if (!expMs || expMs < Date.now()) return err('Suscripción vencida', 403);
+    if (sub.paymentState === 0) return err('Pago pendiente', 403);
+
+    if (sub.acknowledgementState === 0) {
+        // best-effort: si falla, el próximo verify lo reintenta (hay 3 días)
+        await fetch(base + ':acknowledge', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
+            body: '{}'
+        }).catch(() => { });
+    }
+
+    const token = await signLicense(env.LICENSE_SECRET, {
+        product: 'premium_play', tier: 'premium', deviceId, play_sku: sku, iat: Date.now(), exp: expMs
+    });
+    return json({ ok: true, token, product: 'premium_play', tier: 'premium', expiresAt: new Date(expMs).toISOString() });
+}
+
 // JWT ES256 para VAPID: aud = origin del push service, exp 12h.
 async function vapidJwt(env, audience) {
     const jwk = JSON.parse(env.VAPID_PRIVATE_JWK);
@@ -965,6 +1044,7 @@ export default {
             // Push (recordatorio diario)
             if (p === '/api/push/subscribe' && m === 'POST') return await pushSubscribe(req, env);
             if (p === '/api/push/unsubscribe' && m === 'POST') return await pushUnsubscribe(req, env);
+            if (p === '/api/play/verify' && m === 'POST') return await playVerify(req, env);
 
             // Observabilidad
             if (p === '/api/errors' && m === 'POST') return await ingestErrors(req, env);

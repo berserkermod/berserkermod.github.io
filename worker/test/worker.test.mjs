@@ -466,6 +466,68 @@ let code, licToken;
     delete env.VAPID_PRIVATE_JWK; delete env.VAPID_PUBLIC_KEY; delete env.VAPID_SUBJECT;
 }
 
+// ── Google Play Billing (suscripción Premium en la TWA) ──
+{
+    console.log('\nGoogle Play Billing');
+    const g0 = await call('POST', '/api/play/verify', { sku: 'premium_1m', purchaseToken: 'tok', deviceId: 'dev1' });
+    ok('sin PLAY_SA_JSON → 503', g0.status === 503, g0.status);
+
+    // service account de prueba: clave RSA real generada al vuelo
+    const kp = await crypto.subtle.generateKey(
+        { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+        true, ['sign', 'verify']);
+    const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', kp.privateKey));
+    const pem = '-----BEGIN PRIVATE KEY-----\n' +
+        Buffer.from(pkcs8).toString('base64').match(/.{1,64}/g).join('\n') +
+        '\n-----END PRIVATE KEY-----\n';
+    env.PLAY_SA_JSON = JSON.stringify({ client_email: 'sa@test.iam.gserviceaccount.com', private_key: pem });
+    env.PLAY_PACKAGE = 'io.github.berserkermod.twa';
+
+    const g1 = await call('POST', '/api/play/verify', { sku: 'hackeado', purchaseToken: 'tok', deviceId: 'dev1' });
+    ok('sku inválido → 400', g1.status === 400, g1.status);
+
+    const realFetch = globalThis.fetch;
+    let ackCalled = 0; let oauthBody = null;
+    const future = Date.now() + 31 * 86400000;
+    globalThis.fetch = async (u, opts) => {
+        const url = String(u);
+        if (url.includes('oauth2.googleapis.com/token')) {
+            oauthBody = opts.body;
+            return new Response(JSON.stringify({ access_token: 'ya29.test', expires_in: 3600 }), { status: 200 });
+        }
+        if (url.includes(':acknowledge')) { ackCalled++; return new Response('{}', { status: 200 }); }
+        if (url.includes('/purchases/subscriptions/premium_12m/tokens/tokOK')) {
+            return new Response(JSON.stringify({ expiryTimeMillis: String(future), paymentState: 1, acknowledgementState: 0 }), { status: 200 });
+        }
+        if (url.includes('/tokens/tokVencido')) {
+            return new Response(JSON.stringify({ expiryTimeMillis: String(Date.now() - 1000), paymentState: 1, acknowledgementState: 1 }), { status: 200 });
+        }
+        if (url.includes('/tokens/tokPendiente')) {
+            return new Response(JSON.stringify({ expiryTimeMillis: String(future), paymentState: 0, acknowledgementState: 1 }), { status: 200 });
+        }
+        if (url.includes('/tokens/tokNoExiste')) return new Response('{}', { status: 404 });
+        return new Response('{}', { status: 500 });
+    };
+
+    const g2 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokOK', deviceId: 'devPlay' });
+    ok('suscripción válida → licencia premium_play', g2.status === 200 && g2.body.ok && g2.body.tier === 'premium' && g2.body.product === 'premium_play', g2.body);
+    ok('exp = fin del período que informa Google', new Date(g2.body.expiresAt).getTime() === future, g2.body.expiresAt);
+    ok('acknowledge llamado (sin ack Google reembolsa a los 3 días)', ackCalled === 1, ackCalled);
+    ok('OAuth con grant jwt-bearer (RS256)', oauthBody && String(oauthBody).includes('jwt-bearer'), oauthBody && String(oauthBody).slice(0, 50));
+    const v = await call('POST', '/api/license/verify', { token: g2.body.token });
+    ok('el token Play verifica válido en /api/license/verify', v.status === 200 && v.body.valid === true, v.body);
+
+    const g3 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokVencido', deviceId: 'devPlay' });
+    ok('suscripción vencida → 403', g3.status === 403, g3.status);
+    const g4 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokPendiente', deviceId: 'devPlay' });
+    ok('pago pendiente → 403', g4.status === 403, g4.status);
+    const g5 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokNoExiste', deviceId: 'devPlay' });
+    ok('compra inexistente → 404', g5.status === 404, g5.status);
+
+    globalThis.fetch = realFetch;
+    delete env.PLAY_SA_JSON; delete env.PLAY_PACKAGE;
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

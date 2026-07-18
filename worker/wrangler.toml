@@ -68,6 +68,13 @@ PREMIUM_TITLE = "BERSERKERMOD - Premium"
 VAPID_PUBLIC_KEY = "BL9uLP_IGUJSeG40lB-aLQlvv2vFYuXb8qRAkwd7pO5_4yhp_3IwLQNGyWX1KW-RJL_k2bfuHuyMQfRqwUxr2zo"
 VAPID_SUBJECT = "mailto:tornatiezequiel0@gmail.com"
 
+# Google Play Billing (suscripcion Premium dentro de la TWA de Android).
+# PLAY_PACKAGE = applicationId de la app en Play. El secret PLAY_SA_JSON es el
+# JSON completo del service account con acceso a la Play Developer API:
+#   Get-Content service-account.json -Raw | npx wrangler secret put PLAY_SA_JSON
+# Sin el secret, /api/play/verify responde 503 (la app oculta la compra interna).
+PLAY_PACKAGE = "io.github.berserkermod.twa"
+
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
 [[kv_namespaces]]
