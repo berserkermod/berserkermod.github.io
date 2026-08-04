@@ -8338,8 +8338,11 @@
                 v.appendChild(dv);
             }
 
-            // Backup reminder
-            if (needsBackupReminder()) {
+            // Backup reminder. Cuando está visible ya trae su propio botón de
+            // exportar (destacado), así que el de la card de acciones se omite
+            // para no repetir el mismo botón dos veces seguidas.
+            const backupReminderShown = needsBackupReminder();
+            if (backupReminderShown) {
                 const bc = h('div', { className: 'card fade-in', style: { border: '1.5px solid var(--orange)' } });
                 bc.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, marginBottom: '6px' } }, t('backup_remind_title')));
                 bc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '12px' } }, t('backup_remind_msg')));
@@ -8349,10 +8352,12 @@
 
             // Actions
             const ac = h('div', { className: 'card fade-in' });
-            ac.appendChild(h('button', {
-                className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
-                onclick: () => { exportBackup(); renderProfile(); }
-            }, '📦 ' + t('prof_export')));
+            if (!backupReminderShown) {
+                ac.appendChild(h('button', {
+                    className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
+                    onclick: () => { exportBackup(); renderProfile(); }
+                }, '📦 ' + t('prof_export')));
+            }
             ac.appendChild(h('button', {
                 className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
                 onclick: () => {
