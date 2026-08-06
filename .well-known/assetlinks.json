@@ -3,6 +3,9 @@
       "target": {
         "namespace": "android_app",
         "package_name": "io.github.berserkermod.twa",
-        "sha256_cert_fingerprints": ["E8:2D:9B:27:8F:90:B3:63:06:24:0D:A2:77:84:58:08:9D:9A:F5:13:55:A2:10:15:7C:B6:AF:4F:3D:52:1A:2F"]
+        "sha256_cert_fingerprints": [
+          "94:94:F5:0A:62:52:D9:69:0F:A4:FB:A8:A9:82:11:31:75:68:40:DE:A3:97:DE:01:89:AF:43:A4:97:66:0E:D4",
+          "E8:2D:9B:27:8F:90:B3:63:06:24:0D:A2:77:84:58:08:9D:9A:F5:13:55:A2:10:15:7C:B6:AF:4F:3D:52:1A:2F"
+        ]
       }
     }]
