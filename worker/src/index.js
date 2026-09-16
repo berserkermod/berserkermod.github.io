@@ -886,6 +886,79 @@ async function pushUnsubscribe(req, env) {
 }
 
 // ─────────────────────────────────────────────
+// TESTERS (prueba cerrada de Google Play) — Premium vitalicio automático.
+// La app llama a esto SOLO cuando corre dentro de la TWA de Android (durante
+// la prueba cerrada, eso solo se consigue instalando desde Play como tester)
+// y después del primer entrenamiento guardado. Acá se acuña un código real en
+// KV (source 'tester-auto'), ya activado y atado al deviceId, y se devuelve el
+// token firmado igual que /api/license/activate. Defensas: 1 por dispositivo
+// (idempotente: repetir devuelve el mismo código), tope global, tope blando
+// por IP y kill-switch por var (TESTERS_CLAIM_OPEN). Cerrar la canilla cuando
+// termine la prueba: TESTERS_CLAIM_OPEN = "false" + redeploy.
+// ─────────────────────────────────────────────
+const TESTERS_CLAIM_MAX_DEFAULT = 25;
+const TESTERS_IP_MAX = 5;               // tope blando por IP (una casa, varios testers)
+const TESTERS_IP_TTL = 30 * 24 * 3600;  // 30 días
+
+async function testersClaim(req, env) {
+    const secret = env.LICENSE_SECRET;
+    if (!secret) return err('Server not configured (LICENSE_SECRET)', 500);
+    if (String(env.TESTERS_CLAIM_OPEN || '') !== 'true') return err('closed', 403);
+    const body = await readBody(req);
+    const deviceId = body && String(body.deviceId || '').trim();
+    if (!deviceId || deviceId.length > 80) return err('Missing deviceId', 400);
+
+    const issue = async (code, rec) => {
+        const iat = Date.now();
+        const token = await signLicense(secret, { product: 'premium', tier: 'premium', deviceId, code, iat, exp: null });
+        return json({ ok: true, token, code, product: 'premium', tier: 'premium', expiresAt: null, created_at: rec.created_at });
+    };
+
+    // 1 por dispositivo — repetir es idempotente (mismo código, token nuevo)
+    const prev = await kvGet(env, `tester:${deviceId}`);
+    if (prev && prev.code) {
+        const rec = await kvGet(env, `code:${prev.code}`);
+        if (rec && !rec.revoked) return issue(prev.code, rec);
+        return err('Código revocado', 403);
+    }
+
+    // tope global
+    const max = parseInt(env.TESTERS_CLAIM_MAX, 10) || TESTERS_CLAIM_MAX_DEFAULT;
+    const counter = (await kvGet(env, 'testers:count')) || { n: 0 };
+    if (counter.n >= max) return err('Cupo de testers completo', 409);
+
+    // tope blando por IP (hash, no se guarda la IP)
+    const ip = req.headers.get('CF-Connecting-IP') || '';
+    let ipKey = null;
+    if (ip) {
+        const digest = await crypto.subtle.digest('SHA-256', enc.encode('tester-ip:' + ip));
+        ipKey = 'tester-ip:' + b64urlFromBytes(new Uint8Array(digest)).slice(0, 22);
+        const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
+        if (ipRec.n >= TESTERS_IP_MAX) return err('Demasiados reclamos desde esta red', 429);
+        await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TESTERS_IP_TTL });
+    }
+
+    let code = newCode();
+    while (await kvGet(env, `code:${code}`)) code = newCode();
+    const rec = {
+        product: 'premium', duration_days: null, used: true, deviceId, expires_at: null,
+        created_at: nowISO(), activated_at: nowISO(), source: 'tester-auto'
+    };
+    await kvPut(env, `code:${code}`, rec);
+    await kvPut(env, `tester:${deviceId}`, { code, claimed_at: rec.created_at });
+    await kvPut(env, 'testers:count', { n: counter.n + 1 });
+    return issue(code, rec);
+}
+
+// admin: cuántos testers reclamaron (para cruzar con el panel de Play)
+async function adminTesters(req, env) {
+    if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
+    const counter = (await kvGet(env, 'testers:count')) || { n: 0 };
+    const claims = await listByPrefix(env, 'tester:');
+    return json({ ok: true, count: counter.n, open: String(env.TESTERS_CLAIM_OPEN || '') === 'true', claims });
+}
+
+// ─────────────────────────────────────────────
 // GOOGLE PLAY BILLING — suscripción Premium comprada DENTRO de la TWA.
 // El cliente manda {sku, purchaseToken, deviceId}; acá se verifica contra la
 // API de Google Play (service account, JWT RS256), se hace acknowledge (sin
@@ -1029,6 +1102,8 @@ export default {
             if (p === '/api/license/trial' && m === 'POST') return await startTrial(req, env);
             if (p === '/api/license/retrieve' && m === 'GET') return await retrieveCode(env, url);
             if (p === '/api/admin/codes' && m === 'POST') return await adminCreateCodes(req, env);
+            if (p === '/api/testers/claim' && m === 'POST') return await testersClaim(req, env);
+            if (p === '/api/admin/testers' && m === 'GET') return await adminTesters(req, env);
 
             // Checkout / productos
             if (p === '/api/products' && m === 'GET') return productsInfo(env);

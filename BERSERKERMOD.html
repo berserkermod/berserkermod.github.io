@@ -2130,6 +2130,7 @@
                 play_ok: "¡Premium activado!", play_err: "No se pudo completar la compra. Probá de nuevo.",
                 play_active: "Se renueva automáticamente con Google Play",
                 play_manage: "Administrar suscripción",
+                tester_title: "🎁 Sos tester de BERSERKERMOD", tester_msg: "Gracias por probar la app desde Google Play. Tu recompensa: Premium vitalicio, gratis, atado a este teléfono.", tester_btn: "Reclamar Premium vitalicio", tester_ok: "¡Premium vitalicio activado! Gracias por testear.", tester_err: "No se pudo reclamar. Probá de nuevo más tarde.", tester_closed: "La prueba cerrada ya terminó — el reclamo está cerrado.", tester_full: "Se completó el cupo de testers. Escribinos y lo vemos.", tester_code_label: "Tu código de tester", tester_code_hint: "Guardalo: si cambiás de teléfono, lo activás en Perfil → Activar código.",
                 push_title: "Recordatorio diario", push_sub: "Una notificación por día (18hs) para que no se te escape el entrenamiento. Sin spam.", push_on_btn: "Activar recordatorio", push_off_btn: "Desactivar recordatorio", push_enabled: "¡Listo! Te avisamos todos los días a las 18hs.", push_disabled: "Recordatorio desactivado.", push_denied: "Bloqueaste las notificaciones — habilitalas en los ajustes del navegador.", push_fail: "No se pudo activar. Probá de nuevo.", push_ios_hint: "En iPhone: instalá la app (Compartir → Agregar a inicio) para poder recibir recordatorios.",
                 prof_import: "Importar Datos", imp_invalid: "El archivo no es un backup válido de BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sesiones de entrenamiento", imp_foods: "{n} comidas registradas", imp_exported: "exportado el {date}", imp_warning: "Al restaurar se reemplazan todos los datos actuales de este dispositivo.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Protegé tus datos", backup_remind_msg: "Tu historial vive solo en este dispositivo. Descargá un backup cada tanto para no perderlo si cambiás o perdés el teléfono.",
@@ -2392,6 +2393,7 @@
                 play_ok: "Premium activated!", play_err: "Purchase couldn't be completed. Please try again.",
                 play_active: "Renews automatically via Google Play",
                 play_manage: "Manage subscription",
+                tester_title: "🎁 You're a BERSERKERMOD tester", tester_msg: "Thanks for testing the app from Google Play. Your reward: lifetime Premium, free, tied to this phone.", tester_btn: "Claim lifetime Premium", tester_ok: "Lifetime Premium activated! Thanks for testing.", tester_err: "Couldn't claim. Try again later.", tester_closed: "The closed test is over — claims are closed.", tester_full: "The tester quota is full. Message us and we'll sort it out.", tester_code_label: "Your tester code", tester_code_hint: "Keep it: if you switch phones, activate it in Profile → Activate code.",
                 push_title: "Daily reminder", push_sub: "One notification a day (6pm) so you never miss a workout. No spam.", push_on_btn: "Enable reminder", push_off_btn: "Disable reminder", push_enabled: "Done! We'll ping you every day at 6pm.", push_disabled: "Reminder disabled.", push_denied: "Notifications are blocked — enable them in your browser settings.", push_fail: "Couldn't enable. Try again.", push_ios_hint: "On iPhone: install the app (Share → Add to Home Screen) to receive reminders.",
                 prof_import: "Import Data", imp_invalid: "The file is not a valid BERSERKERMOD backup", imp_title: "Restore backup", imp_sessions: "{n} workout sessions", imp_foods: "{n} logged meals", imp_exported: "exported {date}", imp_warning: "Restoring replaces all current data on this device.", imp_confirm: "Restore", imp_done: "Backup restored",
                 backup_remind_title: "💾 Protect your data", backup_remind_msg: "Your history lives only on this device. Download a backup every so often so you don't lose it if you switch or lose your phone.",
@@ -2655,6 +2657,7 @@
                 play_ok: "Premium ativado!", play_err: "Não foi possível concluir a compra. Tente de novo.",
                 play_active: "Renova automaticamente pelo Google Play",
                 play_manage: "Gerenciar assinatura",
+                tester_title: "🎁 Você é tester do BERSERKERMOD", tester_msg: "Obrigado por testar o app pelo Google Play. Sua recompensa: Premium vitalício, grátis, vinculado a este celular.", tester_btn: "Resgatar Premium vitalício", tester_ok: "Premium vitalício ativado! Obrigado por testar.", tester_err: "Não foi possível resgatar. Tente mais tarde.", tester_closed: "O teste fechado terminou — o resgate está encerrado.", tester_full: "A cota de testers está completa. Fale conosco e resolvemos.", tester_code_label: "Seu código de tester", tester_code_hint: "Guarde: se trocar de celular, ative em Perfil → Ativar código.",
                 push_title: "Lembrete diário", push_sub: "Uma notificação por dia (18h) para você não perder o treino. Sem spam.", push_on_btn: "Ativar lembrete", push_off_btn: "Desativar lembrete", push_enabled: "Pronto! Avisamos todo dia às 18h.", push_disabled: "Lembrete desativado.", push_denied: "As notificações estão bloqueadas — habilite nas configurações do navegador.", push_fail: "Não foi possível ativar. Tente de novo.", push_ios_hint: "No iPhone: instale o app (Compartilhar → Adicionar à Tela de Início) para receber lembretes.",
                 prof_import: "Importar Dados", imp_invalid: "O arquivo não é um backup válido do BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sessões de treino", imp_foods: "{n} refeições registradas", imp_exported: "exportado em {date}", imp_warning: "Ao restaurar, todos os dados atuais deste dispositivo serão substituídos.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Proteja seus dados", backup_remind_msg: "Seu histórico vive apenas neste dispositivo. Baixe um backup de vez em quando para não perdê-lo se trocar ou perder o celular.",
@@ -3629,6 +3632,78 @@
                 return { ok: true, days: j.days };
             } catch { return { ok: false, error: t('lic_no_server') }; }
         }
+        // ── TESTERS (prueba cerrada de Play) ──
+        // Solo dentro de la TWA de Android: Chrome pone document.referrer =
+        // android-app://<package> en el primer arranque desde la app instalada.
+        // Durante la prueba cerrada la única forma de tener la TWA es instalar
+        // desde Play como tester, así que ese referrer es la prueba de que la
+        // persona pasó por el proceso. Persistimos el flag porque el referrer
+        // solo viene en la navegación inicial. Digital Goods (Play Billing)
+        // también implica TWA, se usa como segunda señal.
+        const TWA_PACKAGE = 'io.github.berserkermod.twa';
+        (function detectTWA() {
+            try {
+                if (String(document.referrer || '').startsWith('android-app://' + TWA_PACKAGE)) localStorage.setItem('bm-twa', '1');
+            } catch { /* noop */ }
+        })();
+        function isTWA() {
+            try { if (localStorage.getItem('bm-twa') === '1') return true; } catch { /* noop */ }
+            return typeof playAvailable === 'function' && playAvailable();
+        }
+        function testerCode() { try { return localStorage.getItem('bm-tester-code') || ''; } catch { return ''; } }
+        // Eligible = corre en la TWA, ya guardó al menos un entrenamiento, no
+        // reclamó todavía y no tiene ya una licencia paga (un trial no cuenta).
+        function testerEligible() {
+            if (!isTWA() || testerCode() || !(state.sessions || []).length) return false;
+            const info = licenseInfo();
+            return !(info && !info.trial);
+        }
+        async function claimTesterPremium() {
+            if (noBackendInProd()) return { ok: false, error: t('lic_no_server') };
+            try {
+                const resp = await fetch(getApiBase() + '/api/testers/claim', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId: getDeviceId() })
+                });
+                const j = await resp.json().catch(() => ({}));
+                if (!resp.ok) {
+                    if (resp.status === 403) return { ok: false, error: t('tester_closed') };
+                    if (resp.status === 409) return { ok: false, error: t('tester_full') };
+                    return { ok: false, error: j.error || t('tester_err') };
+                }
+                localStorage.setItem('bm-license', j.token);
+                localStorage.setItem('bm-license-checked', String(Date.now()));
+                localStorage.setItem('bm-tester-code', j.code || '');
+                state.tier = 'premium'; saveTier();
+                return { ok: true, code: j.code };
+            } catch { return { ok: false, error: t('lic_no_server') }; }
+        }
+        // Tarjeta de reclamo (Inicio). Después de reclamar muestra el código
+        // para que lo guarden (re-activable en Perfil si cambian de teléfono).
+        function renderTesterCard(v) {
+            const code = testerCode();
+            if (!code && !testerEligible()) return;
+            const c = h('div', { className: 'card card-accent fade-in', id: 'tester-card' });
+            c.appendChild(h('p', { style: { fontSize: '16px', fontWeight: 800, marginBottom: '6px' } }, t('tester_title')));
+            if (code) {
+                c.appendChild(h('p', { className: 'label' }, t('tester_code_label')));
+                c.appendChild(h('p', { style: { fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '20px', fontWeight: 800, letterSpacing: '.08em', color: 'var(--accent)', marginBottom: '6px' } }, code));
+                c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)' } }, t('tester_code_hint')));
+                v.appendChild(c);
+                return;
+            }
+            c.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '10px' } }, t('tester_msg')));
+            const btn = h('button', { className: 'btn btn-primary btn-full' }, t('tester_btn'));
+            btn.onclick = async () => {
+                btn.disabled = true; btn.textContent = '…';
+                const r = await claimTesterPremium();
+                if (r.ok) { flash(t('tester_ok'), 'var(--accent)'); renderHome(); }
+                else { flash(r.error, 'var(--red)'); btn.disabled = false; btn.textContent = t('tester_btn'); }
+            };
+            c.appendChild(btn);
+            v.appendChild(c);
+        }
+
         // ── GOOGLE PLAY BILLING (compra interna, solo dentro de la TWA Android) ──
         // window.getDigitalGoodsService solo existe en Chrome corriendo dentro de
         // una TWA con Play Billing habilitado en el wrapper — en web/iOS todo esto
@@ -3793,7 +3868,7 @@
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
             'bm-last-backup', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
-            'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base'
+            'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code'
         ];
         function buildBackup() {
             const data = {};
@@ -5827,6 +5902,9 @@
             qc.appendChild(h('p', { className: 'quote-text' }, '"' + quote + '"'));
             v.appendChild(qc);
 
+            // Tester de la prueba cerrada de Play → Premium vitalicio (solo TWA)
+            renderTesterCard(v);
+
             // Streak
             const streak = calcStreak();
             const sc = h('div', { className: 'card fade-in' });
@@ -6288,14 +6366,20 @@
         // Persist a finished workout. If another session exists today, prompt to merge.
         // afterSave(savedSession, wasMerged) runs once the choice is made (sync if no conflict).
         function saveWorkoutSession(sess, afterSave) {
+            const wasFirst = !state.sessions.length;
+            const done = (saved, merged) => {
+                afterSave && afterSave(saved, merged);
+                // Primer entrenamiento como tester de Play → avisar que el regalo está en Inicio
+                if (wasFirst && testerEligible()) setTimeout(() => flash(t('tester_title'), 'var(--accent)'), 1500);
+            };
             const existing = state.sessions.find(s => s.date === sess.date);
             if (existing) {
                 showSessionMergePrompt(
-                    () => { mergeIntoSession(existing, sess); saveSessions(); afterSave && afterSave(existing, true); },
-                    () => { state.sessions.unshift(sess); saveSessions(); afterSave && afterSave(sess, false); }
+                    () => { mergeIntoSession(existing, sess); saveSessions(); done(existing, true); },
+                    () => { state.sessions.unshift(sess); saveSessions(); done(sess, false); }
                 );
             } else {
-                state.sessions.unshift(sess); saveSessions(); afterSave && afterSave(sess, false);
+                state.sessions.unshift(sess); saveSessions(); done(sess, false);
             }
         }
 

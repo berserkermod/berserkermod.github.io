@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0A0A0B">
+    <title>Sé tester de BERSERKERMOD — Premium vitalicio gratis</title>
+    <meta name="description" content="Probá BERSERKERMOD desde Google Play durante la prueba cerrada y llevate Premium vitalicio gratis. Dos pasos, sin formularios.">
+    <meta name="robots" content="noindex, follow">
+    <meta property="og:title" content="Sé tester de BERSERKERMOD">
+    <meta property="og:description" content="Probá la app desde Google Play y llevate Premium vitalicio gratis. Dos pasos, sin formularios.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://berserkermod.github.io/testers.html">
+    <meta property="og:image" content="https://berserkermod.github.io/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://berserkermod.github.io/og-image.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0A0A0B; --sf1: #141416; --sf2: #1C1C1E; --sf3: #2C2C2E;
+            --accent: #00D4AA; --accent2: #00B894; --orange: #FDCB6E; --red: #FF6B6B; --purple: #A29BFE;
+            --text: #F5F5F7; --text2: #A1A1A6; --text3: #636366; --border: #2C2C2E;
+            --radius: 14px;
+        }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .bg-glow {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(800px circle at 15% 5%, rgba(0,212,170,.07), transparent 50%),
+                radial-gradient(600px circle at 85% 90%, rgba(162,155,254,.05), transparent 50%);
+        }
+
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            padding: 18px 24px;
+            background: rgba(10, 10, 11, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 720px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        }
+        .brand {
+            font-size: 16px; font-weight: 900; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 8px; color: var(--text);
+        }
+        .brand-emoji { font-size: 20px; filter: drop-shadow(0 0 12px #00D4AA66); }
+        .brand .accent { color: var(--accent); }
+        .back-link { font-size: 13px; font-weight: 700; color: var(--text2); }
+        .back-link:hover { color: var(--accent); text-decoration: none; }
+
+        main { max-width: 720px; margin: 0 auto; padding: 56px 20px 80px; }
+
+        .kicker {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+        }
+        h1 {
+            font-size: clamp(32px, 7vw, 46px); font-weight: 900; line-height: 1.08;
+            letter-spacing: -0.02em; margin-bottom: 16px;
+        }
+        h1 .accent { color: var(--accent); }
+        .lead { font-size: 17px; color: var(--text2); margin-bottom: 36px; max-width: 560px; }
+        .lead strong { color: var(--text); }
+
+        .reward {
+            display: flex; gap: 14px; align-items: center;
+            background: linear-gradient(135deg, rgba(0,212,170,.12), rgba(0,212,170,.03));
+            border: 1px solid rgba(0,212,170,.35); border-radius: var(--radius);
+            padding: 16px 18px; margin-bottom: 40px;
+        }
+        .reward .icon { font-size: 30px; line-height: 1; }
+        .reward p { font-size: 14px; color: var(--text2); }
+        .reward strong { color: var(--text); font-size: 15px; display: block; margin-bottom: 2px; }
+
+        h2 {
+            font-size: 22px; font-weight: 900; letter-spacing: -0.01em; margin: 44px 0 18px;
+        }
+
+        .steps { display: grid; gap: 14px; }
+        .step {
+            background: var(--sf1); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px 18px; position: relative;
+        }
+        .step-n {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--accent); color: #0A0A0B; font-weight: 900; font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .step h3 { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+        .step p { font-size: 14px; color: var(--text2); margin-bottom: 12px; }
+        .step p:last-child { margin-bottom: 0; }
+        .hint { font-size: 12px; color: var(--text3); }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 14px 18px; border-radius: 12px;
+            font-weight: 800; font-size: 15px; letter-spacing: 0.01em;
+            border: 1px solid transparent; cursor: pointer; transition: transform .12s, box-shadow .12s, background .12s;
+            text-decoration: none !important;
+        }
+        .btn-primary { background: var(--accent); color: #0A0A0B; box-shadow: 0 8px 28px -8px #00D4AA88; }
+        .btn-primary:hover { background: #17E6BE; transform: translateY(-1px); }
+        .btn-ghost { background: var(--sf2); color: var(--text); border-color: var(--border); }
+        .btn-ghost:hover { border-color: var(--accent); }
+        .btn-sm { width: auto; padding: 10px 14px; font-size: 13px; }
+
+        .rules { list-style: none; display: grid; gap: 8px; }
+        .rules li {
+            font-size: 14px; color: var(--text2); padding-left: 26px; position: relative;
+        }
+        .rules li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); font-weight: 900; }
+        .rules li.no::before { content: "✕"; color: var(--red); }
+        strong { color: var(--text); font-weight: 700; }
+
+        details {
+            border-top: 1px solid var(--border); padding: 14px 0;
+        }
+        details:last-of-type { border-bottom: 1px solid var(--border); }
+        summary {
+            cursor: pointer; font-size: 15px; font-weight: 700; list-style: none;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: "+"; color: var(--accent); font-weight: 900; font-size: 18px; }
+        details[open] summary::after { content: "–"; }
+        details p { font-size: 14px; color: var(--text2); margin-top: 10px; }
+
+        .footer {
+            border-top: 1px solid var(--border); padding: 28px 20px; text-align: center;
+            font-size: 13px; color: var(--text3);
+        }
+        .footer a { color: var(--text2); margin: 0 8px; }
+    </style>
+</head>
+<body>
+    <div class="bg-glow" aria-hidden="true"></div>
+
+    <header class="header">
+        <div class="header-inner">
+            <a class="brand" href="./"><span class="brand-emoji">⚡</span>BERSERKER<span class="accent">MOD</span></a>
+            <a class="back-link" href="./">← Inicio</a>
+        </div>
+    </header>
+
+    <main>
+        <p class="kicker">Prueba cerrada · Google Play · Android</p>
+        <h1>Sé tester de <span class="accent">BERSERKERMOD</span></h1>
+        <p class="lead">
+            Estamos por lanzar en Google Play y necesitamos gente real usando la app desde la tienda durante
+            <strong>14 días</strong>. A cambio, te llevás la app completa <strong>para siempre</strong>.
+        </p>
+
+        <div class="reward">
+            <div class="icon">🎁</div>
+            <p>
+                <strong>Premium vitalicio, gratis</strong>
+                Rutinas personalizadas, plan nutricional, estadísticas, IA — todo, sin vencimiento.
+                Se activa solo adentro de la app después de tu primer entrenamiento.
+            </p>
+        </div>
+
+        <h2>Cómo sumarte (2 minutos)</h2>
+        <div class="steps">
+            <div class="step">
+                <span class="step-n">1</span>
+                <h3>Unite al grupo de testers</h3>
+                <p>Google Play usa un grupo de Google para saber quién puede instalar la prueba. Entrá y tocá <strong>“Unirme al grupo”</strong>. No manda mails, no hay que hacer nada más ahí.</p>
+                <a class="btn btn-primary" href="https://groups.google.com/g/berserkermod-testers" target="_blank" rel="noopener">Unirme al grupo de testers →</a>
+                <p class="hint" style="margin-top:10px">Usá la <strong>misma cuenta de Google</strong> que tenés en tu teléfono Android.</p>
+            </div>
+
+            <div class="step">
+                <span class="step-n">2</span>
+                <h3>Aceptá la prueba e instalá desde Google Play</h3>
+                <p>Este link te lleva a la página de verificadores. Tocá <strong>“Convertirse en verificador”</strong> y después <strong>“Descargar en Google Play”</strong>.</p>
+                <a class="btn btn-primary" href="https://play.google.com/apps/testing/io.github.berserkermod.twa" target="_blank" rel="noopener">Aceptar la prueba en Google Play →</a>
+                <p class="hint" style="margin-top:10px">Si Play te dice que no sos verificador, esperá unos minutos después del paso 1 y volvé a abrir el link: la membresía del grupo tarda un toque en propagarse.</p>
+            </div>
+
+            <div class="step">
+                <span class="step-n">3</span>
+                <h3>Entrená y reclamá tu Premium</h3>
+                <p>Abrí la app <strong>desde Google Play</strong>, registrá tu primer entrenamiento y en Inicio te va a aparecer la tarjeta <strong>“🎁 Sos tester de BERSERKERMOD”</strong>. Un toque y listo: Premium vitalicio en ese teléfono, más un código para reactivarlo si algún día cambiás de celular.</p>
+            </div>
+        </div>
+
+        <h2>Lo único que pedimos</h2>
+        <ul class="rules">
+            <li>Tener la app instalada desde Google Play <strong>al menos 14 días seguidos</strong>.</li>
+            <li>No salir del grupo ni desinstalar hasta que avisemos que terminó la prueba.</li>
+            <li>Usarla de verdad: cargá entrenamientos, probá funciones, rompela si podés.</li>
+            <li>Si algo falla o te parece raro, contanos: <a href="mailto:tornatiezequiel0@gmail.com">tornatiezequiel0@gmail.com</a>.</li>
+            <li class="no">No hace falta dejar reseña, ni pagar nada, ni dar datos personales.</li>
+        </ul>
+
+        <h2>Preguntas frecuentes</h2>
+        <details>
+            <summary>¿Sirve con iPhone?</summary>
+            <p>No, la prueba es solo de la versión Android en Google Play. En iPhone la app funciona igual desde <a href="./BERSERKERMOD.html">berserkermod.github.io</a>, pero no cuenta como tester.</p>
+        </details>
+        <details>
+            <summary>¿Por qué el Premium aparece después del primer entrenamiento y no antes?</summary>
+            <p>Porque la única forma de tener la app instalada desde Play durante la prueba cerrada es haber pasado por los pasos 1 y 2. El primer entrenamiento confirma que la app está funcionando en tu teléfono. No hay formulario, no hay código para copiar: se acredita solo.</p>
+        </details>
+        <details>
+            <summary>¿Qué datos míos ven?</summary>
+            <p>Los mismos que cualquier usuario: ninguno. Tu historial vive en tu teléfono. Google Play nos muestra solamente un número total de testers, sin nombres ni emails. Más detalle en la <a href="privacy.html">política de privacidad</a>.</p>
+        </details>
+        <details>
+            <summary>¿Qué pasa cuando termine la prueba?</summary>
+            <p>Nada malo: tu Premium vitalicio queda activo para siempre, tus datos quedan donde están, y la app se actualiza sola a la versión pública desde Play.</p>
+        </details>
+        <details>
+            <summary>Cambié de teléfono, ¿pierdo el Premium?</summary>
+            <p>No. Después de reclamarlo, la app te muestra un código de tester en Inicio. En el teléfono nuevo lo activás desde Perfil → Activar código. Guardalo en algún lado.</p>
+        </details>
+        <details>
+            <summary>Ya hice todo y no me aparece la tarjeta</summary>
+            <p>Revisá que hayas abierto la app desde el ícono que instaló Google Play (no desde el navegador), y que tengas al menos un entrenamiento guardado. Si sigue sin aparecer, escribinos y lo resolvemos a mano.</p>
+        </details>
+    </main>
+
+    <footer class="footer">
+        <a href="./">Inicio</a> · <a href="privacy.html">Privacidad</a> · <a href="./BERSERKERMOD.html">Abrir la app web</a>
+        <p style="margin-top:10px">© 2026 BERSERKERMOD</p>
+    </footer>
+</body>
+</html>

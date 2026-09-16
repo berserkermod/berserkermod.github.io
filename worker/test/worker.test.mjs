@@ -528,6 +528,62 @@ let code, licToken;
     delete env.PLAY_SA_JSON; delete env.PLAY_PACKAGE;
 }
 
+// ── Testers: Premium vitalicio automático (prueba cerrada de Play) ──
+{
+    console.log('\nTesters: /api/testers/claim');
+    const closed = await call('POST', '/api/testers/claim', { deviceId: 'devT1' });
+    ok('sin TESTERS_CLAIM_OPEN → 403 closed', closed.status === 403 && closed.body.error === 'closed', closed.body);
+
+    env.TESTERS_CLAIM_OPEN = 'true'; env.TESTERS_CLAIM_MAX = '2';
+    const noDev = await call('POST', '/api/testers/claim', {});
+    ok('sin deviceId → 400', noDev.status === 400);
+
+    const c1 = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    ok('reclamo 1 → token + código', c1.status === 200 && c1.body.ok && /^BMOD-/.test(c1.body.code) && !!c1.body.token && c1.body.expiresAt === null, c1.body);
+    const rec1 = JSON.parse(await env.BMOD_KV.get('code:' + c1.body.code));
+    ok('código en KV: used, atado al device, source tester-auto, vitalicio',
+        rec1.used === true && rec1.deviceId === 'devT1' && rec1.source === 'tester-auto' && rec1.expires_at === null && rec1.product === 'premium', rec1);
+
+    const v1 = await call('POST', '/api/license/verify', { token: c1.body.token });
+    ok('el token verifica como premium vitalicio', v1.body.valid === true && v1.body.tier === 'premium' && v1.body.expiresAt === null, v1.body);
+
+    const again = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    ok('repetir con el mismo device → mismo código (idempotente)', again.status === 200 && again.body.code === c1.body.code, again.body);
+    const cnt = JSON.parse(await env.BMOD_KV.get('testers:count'));
+    ok('el contador no sube al repetir', cnt.n === 1, cnt);
+
+    const act = await call('POST', '/api/license/activate', { code: c1.body.code, deviceId: 'devT1' });
+    ok('el código también sirve por /api/license/activate', act.status === 200 && act.body.expiresAt === null, act.body);
+
+    const c2 = await call('POST', '/api/testers/claim', { deviceId: 'devT2' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    ok('reclamo 2 (otro device) ok', c2.status === 200 && c2.body.code !== c1.body.code);
+    const c3 = await call('POST', '/api/testers/claim', { deviceId: 'devT3' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    ok('tope global (MAX=2) → 409', c3.status === 409, c3.body);
+
+    // tope blando por IP: MAX alto, 5 devices desde la misma IP ok, el 6to → 429
+    env.TESTERS_CLAIM_MAX = '100';
+    let last;
+    for (let i = 0; i < 6; i++) last = await call('POST', '/api/testers/claim', { deviceId: 'devIP' + i }, { 'CF-Connecting-IP': '9.9.9.9' });
+    ok('6to reclamo desde la misma IP → 429', last.status === 429, last.body);
+    ok('la IP no se guarda en claro', ![...env.BMOD_KV._m.keys()].some(k => k.includes('9.9.9.9')));
+
+    // revocado → 403 aunque el device ya haya reclamado
+    const r2 = JSON.parse(await env.BMOD_KV.get('code:' + c2.body.code)); r2.revoked = true;
+    await env.BMOD_KV.put('code:' + c2.body.code, JSON.stringify(r2));
+    const rev = await call('POST', '/api/testers/claim', { deviceId: 'devT2' });
+    ok('código revocado → 403', rev.status === 403);
+
+    const admNo = await call('GET', '/api/admin/testers');
+    ok('admin sin secret → 401', admNo.status === 401);
+    const adm = await call('GET', '/api/admin/testers', undefined, { 'x-admin-secret': 'test-admin' });
+    ok('admin lista reclamos', adm.status === 200 && adm.body.open === true && adm.body.count === 7 && adm.body.claims.length === 7, adm.body);
+
+    env.TESTERS_CLAIM_OPEN = 'false';
+    const off = await call('POST', '/api/testers/claim', { deviceId: 'devT9' });
+    ok('kill-switch "false" → 403', off.status === 403);
+    delete env.TESTERS_CLAIM_OPEN; delete env.TESTERS_CLAIM_MAX;
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

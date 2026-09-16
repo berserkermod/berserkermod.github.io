@@ -75,6 +75,14 @@ VAPID_SUBJECT = "mailto:tornatiezequiel0@gmail.com"
 # Sin el secret, /api/play/verify responde 503 (la app oculta la compra interna).
 PLAY_PACKAGE = "io.github.berserkermod.twa"
 
+# Testers de la prueba cerrada de Play: la app (solo dentro de la TWA, tras el
+# primer entrenamiento) reclama un Premium vitalicio en POST /api/testers/claim.
+# TESTERS_CLAIM_OPEN es el kill-switch: al terminar la prueba poner "false" y
+# redeploy (los codigos ya acuñados siguen valiendo). TESTERS_CLAIM_MAX = tope
+# global de reclamos (ademas hay 1 por dispositivo y 5 por IP cada 30 dias).
+TESTERS_CLAIM_OPEN = "true"
+TESTERS_CLAIM_MAX = "25"
+
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
 [[kv_namespaces]]
