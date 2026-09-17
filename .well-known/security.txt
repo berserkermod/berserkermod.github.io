@@ -1,0 +1,7 @@
+# BERSERKERMOD — reporte responsable de vulnerabilidades
+# Si encontraste un problema de seguridad, escribinos antes de publicarlo.
+Contact: mailto:tornatiezequiel0@gmail.com
+Expires: 2027-09-17T00:00:00.000Z
+Preferred-Languages: es, en, pt
+Canonical: https://berserkermod.github.io/.well-known/security.txt
+Policy: https://berserkermod.github.io/privacy.html

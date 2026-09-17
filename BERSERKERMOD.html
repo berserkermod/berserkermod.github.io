@@ -3667,9 +3667,11 @@
                 });
                 const j = await resp.json().catch(() => ({}));
                 if (!resp.ok) {
-                    if (resp.status === 403) return { ok: false, error: t('tester_closed') };
+                    // 403 'closed' = programa cerrado; 403 'android_only' = el server no
+                    // vio señales de Chrome Android (no es la TWA) → mensaje genérico.
+                    if (resp.status === 403 && j.error === 'closed') return { ok: false, error: t('tester_closed') };
                     if (resp.status === 409) return { ok: false, error: t('tester_full') };
-                    return { ok: false, error: j.error || t('tester_err') };
+                    return { ok: false, error: resp.status === 429 ? (j.error || t('tester_err')) : t('tester_err') };
                 }
                 localStorage.setItem('bm-license', j.token);
                 localStorage.setItem('bm-license-checked', String(Date.now()));
@@ -8073,6 +8075,24 @@
             const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
             return Uint8Array.from(raw, (c) => c.charCodeAt(0));
         }
+        // Re-sincroniza la suscripción con el server una vez por semana: si el
+        // registro del server se perdió o se migró, se recompone solo en el
+        // próximo arranque (el subscribe del server es idempotente).
+        async function resyncPush() {
+            try {
+                if (localStorage.getItem('bm-push-on') !== '1' || noBackendInProd()) return;
+                const last = Number(localStorage.getItem('bm-push-synced') || 0);
+                if (Date.now() - last < 7 * 86400000) return;
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (!sub) return;
+                const resp = await fetch(getApiBase() + '/api/push/subscribe', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscription: sub.toJSON(), lang: state.lang })
+                });
+                if (resp.ok) localStorage.setItem('bm-push-synced', String(Date.now()));
+            } catch { /* best-effort */ }
+        }
         async function togglePushReminder(enable) {
             try {
                 if (noBackendInProd()) { flash(t('lic_no_server'), 'var(--red)'); return; }
@@ -8087,6 +8107,7 @@
                     });
                     if (!resp.ok) throw new Error('server');
                     localStorage.setItem('bm-push-on', '1');
+                    localStorage.setItem('bm-push-synced', String(Date.now()));
                     flash('🔔 ' + t('push_enabled'));
                 } else {
                     const sub = await reg.pushManager.getSubscription();
@@ -13234,6 +13255,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         (function bootstrapBackend() {
             try {
                 setTimeout(() => { handleMpReturn(); revalidateLicense(); flushErrors(); }, 800);
+                if ('serviceWorker' in navigator && location.protocol !== 'file:') setTimeout(resyncPush, 4000);
             } catch { /* never block boot */ }
         })();
 

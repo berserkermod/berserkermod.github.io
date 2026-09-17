@@ -11,8 +11,8 @@ function makeKV() {
         async get(k) { return m.has(k) ? m.get(k) : null; },
         async put(k, v) { m.set(k, v); },
         async delete(k) { m.delete(k); },
-        async list({ prefix = '', cursor } = {}) {
-            const keys = [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name }));
+        async list({ prefix = '', cursor, limit = 1000 } = {}) {
+            const keys = [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name })).slice(0, limit);
             return { keys, list_complete: true, cursor: null };
         }
     };
@@ -86,8 +86,9 @@ let token, routineId;
     ok('alumno registra sesión 201 (fecha = hoy)', s1.status === 201 && s1.body.session.date === today, s1.body);
     const s2 = await call('POST', '/api/shares/' + token + '/sessions', { date: today, day_name: 'Push otra vez' });
     ok('misma fecha → idempotente (pisa)', s2.status === 201);
-    const s3 = await call('POST', '/api/shares/' + token + '/sessions', { date: '2020-01-01', day_name: 'Legs' });
-    ok('sesión antigua registrada', s3.status === 201 && s3.body.session.date === '2020-01-01');
+    const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+    const s3 = await call('POST', '/api/shares/' + token + '/sessions', { date: monthAgo, day_name: 'Legs' });
+    ok('sesión de hace un mes registrada', s3.status === 201 && s3.body.session.date === monthAgo);
     const s4 = await call('POST', '/api/shares/badtoken00/sessions', { day_name: 'x' });
     ok('token inválido → 404', s4.status === 404);
 
@@ -96,7 +97,7 @@ let token, routineId;
     const shareS = await call('GET', '/api/shares/' + token);
     ok('share devuelve sesiones al alumno', Array.isArray(shareS.body.sessions) && shareS.body.sessions.length === 2 && shareS.body.sessions[0].date === today, shareS.body.sessions);
     const detS = await call('GET', '/api/routines/' + routineId + '?coach_id=coachA');
-    ok('detalle coach devuelve sesiones (desc)', Array.isArray(detS.body.sessions) && detS.body.sessions.length === 2 && detS.body.sessions[0].date === today && detS.body.sessions[1].date === '2020-01-01', detS.body.sessions);
+    ok('detalle coach devuelve sesiones (desc)', Array.isArray(detS.body.sessions) && detS.body.sessions.length === 2 && detS.body.sessions[0].date === today && detS.body.sessions[1].date === monthAgo, detS.body.sessions);
 
     const review = await call('POST', '/api/routines/' + routineId + '/review', { coach_id: 'coachA' });
     ok('review 200', review.status === 200 && review.body.ok === true);
@@ -422,9 +423,17 @@ let code, licToken;
     const bad = await call('POST', '/api/push/subscribe', {});
     ok('subscribe sin subscription → 400', bad.status === 400);
 
-    const sub1 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://push.example/ep1', keys: { p256dh: 'x', auth: 'y' } }, lang: 'es' });
-    const sub2 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://push.example/ep2' } });
-    ok('subscribe ok ×2', sub1.body.ok === true && sub2.body.ok === true);
+    const evil = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://atacante.example/ep' } });
+    ok('endpoint fuera de la allowlist de servicios push → 400', evil.status === 400, evil.body);
+    const http = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'http://fcm.googleapis.com/x' } });
+    ok('endpoint http:// → 400', http.status === 400);
+    const sub1 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', keys: { p256dh: 'x', auth: 'y' } }, lang: 'es' });
+    const sub2 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://updates.push.services.mozilla.com/wpush/v2/ep2' } });
+    const sub3 = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://web.push.apple.com/ep3' } });
+    ok('subscribe ok en FCM / Mozilla / Apple', sub1.body.ok === true && sub2.body.ok === true && sub3.body.ok === true);
+    const un3 = await call('POST', '/api/push/unsubscribe', { endpoint: 'https://web.push.apple.com/ep3' });
+    ok('unsubscribe ok', un3.body.ok === true);
+    ok('las suscripciones viven en UNA key (push:all)', ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('push:') && k !== 'push:all'), [...env.BMOD_KV._m.keys()].filter(k => k.startsWith('push:')));
 
     // VAPID de test (par efímero generado acá)
     const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
@@ -446,7 +455,15 @@ let code, licToken;
     ok('auth VAPID presente (vapid t=..., k=...)', pushed.every(p => /^vapid t=.+\.[^.]+\.[^.]+, k=.+/.test(p.auth || '')), pushed[0] && pushed[0].auth && pushed[0].auth.slice(0, 30));
     ok('TTL presente', pushed.every(p => p.ttl === '86400'));
 
-    // segunda corrida: ep2 (410) fue borrada → solo 1 push
+    // misma fecha, otra corrida del cron (los triggers van seguidos) → no repite
+    pushed = [];
+    const waitsSame = [];
+    await worker.scheduled({}, env, { waitUntil: (p) => waitsSame.push(p) });
+    await Promise.all(waitsSame);
+    ok('segunda corrida del mismo día → 0 pushes (cursor)', pushed.length === 0, pushed.length);
+
+    // "mañana": ep2 (410) fue borrada → solo 1 push
+    await env.BMOD_KV.delete('push:cursor');
     pushed = [];
     const waits2 = [];
     await worker.scheduled({}, env, { waitUntil: (p) => waits2.push(p) });
@@ -454,13 +471,29 @@ let code, licToken;
     ok('la suscripción muerta (410) se limpió', pushed.length === 1 && pushed[0].url.includes('ep1'), pushed.map(p => p.url));
 
     // unsubscribe explícito → 0 pushes
-    const un = await call('POST', '/api/push/unsubscribe', { endpoint: 'https://push.example/ep1' });
+    const un = await call('POST', '/api/push/unsubscribe', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1' });
     ok('unsubscribe ok', un.body.ok === true);
+    await env.BMOD_KV.delete('push:cursor');
     pushed = [];
     const waits3 = [];
     await worker.scheduled({}, env, { waitUntil: (p) => waits3.push(p) });
     await Promise.all(waits3);
     ok('sin suscripciones → 0 pushes', pushed.length === 0, pushed.length);
+
+    // Lotes: 45 suscripciones → corrida 1 manda 40, corrida 2 manda 5, corrida 3 nada
+    for (let i = 0; i < 45; i++) await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/lote' + i } });
+    await env.BMOD_KV.delete('push:cursor');
+    const runs = [];
+    for (let r = 0; r < 3; r++) {
+        pushed = [];
+        const w = [];
+        await worker.scheduled({}, env, { waitUntil: (p) => w.push(p) });
+        await Promise.all(w);
+        runs.push(pushed.length);
+    }
+    ok('cron en lotes de 40: 40 + 5 + 0', runs[0] === 40 && runs[1] === 5 && runs[2] === 0, runs);
+    const cursor = JSON.parse(await env.BMOD_KV.get('push:cursor'));
+    ok('cursor marca el día como terminado (next = -1)', cursor.next === -1, cursor);
 
     globalThis.fetch = realFetch;
     delete env.VAPID_PRIVATE_JWK; delete env.VAPID_PUBLIC_KEY; delete env.VAPID_SUBJECT;
@@ -531,14 +564,17 @@ let code, licToken;
 // ── Testers: Premium vitalicio automático (prueba cerrada de Play) ──
 {
     console.log('\nTesters: /api/testers/claim');
-    const closed = await call('POST', '/api/testers/claim', { deviceId: 'devT1' });
+    const ANDROID = { 'user-agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/128.0 Mobile', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"' };
+    const closed = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, ANDROID);
     ok('sin TESTERS_CLAIM_OPEN → 403 closed', closed.status === 403 && closed.body.error === 'closed', closed.body);
 
     env.TESTERS_CLAIM_OPEN = 'true'; env.TESTERS_CLAIM_MAX = '2';
     const noDev = await call('POST', '/api/testers/claim', {});
     ok('sin deviceId → 400', noDev.status === 400);
 
-    const c1 = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    const desktop = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0) Chrome/128', 'sec-ch-ua-mobile': '?0', 'sec-ch-ua-platform': '"Windows"' });
+    ok('desde escritorio (sin señales de Chrome Android) → 403 android_only', desktop.status === 403 && desktop.body.error === 'android_only', desktop.body);
+    const c1 = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4', ...ANDROID });
     ok('reclamo 1 → token + código', c1.status === 200 && c1.body.ok && /^BMOD-/.test(c1.body.code) && !!c1.body.token && c1.body.expiresAt === null, c1.body);
     const rec1 = JSON.parse(await env.BMOD_KV.get('code:' + c1.body.code));
     ok('código en KV: used, atado al device, source tester-auto, vitalicio',
@@ -547,7 +583,7 @@ let code, licToken;
     const v1 = await call('POST', '/api/license/verify', { token: c1.body.token });
     ok('el token verifica como premium vitalicio', v1.body.valid === true && v1.body.tier === 'premium' && v1.body.expiresAt === null, v1.body);
 
-    const again = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    const again = await call('POST', '/api/testers/claim', { deviceId: 'devT1' }, { 'CF-Connecting-IP': '1.2.3.4', ...ANDROID });
     ok('repetir con el mismo device → mismo código (idempotente)', again.status === 200 && again.body.code === c1.body.code, again.body);
     const cnt = JSON.parse(await env.BMOD_KV.get('testers:count'));
     ok('el contador no sube al repetir', cnt.n === 1, cnt);
@@ -555,23 +591,28 @@ let code, licToken;
     const act = await call('POST', '/api/license/activate', { code: c1.body.code, deviceId: 'devT1' });
     ok('el código también sirve por /api/license/activate', act.status === 200 && act.body.expiresAt === null, act.body);
 
-    const c2 = await call('POST', '/api/testers/claim', { deviceId: 'devT2' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    const c2 = await call('POST', '/api/testers/claim', { deviceId: 'devT2' }, { 'CF-Connecting-IP': '1.2.3.4', ...ANDROID });
     ok('reclamo 2 (otro device) ok', c2.status === 200 && c2.body.code !== c1.body.code);
-    const c3 = await call('POST', '/api/testers/claim', { deviceId: 'devT3' }, { 'CF-Connecting-IP': '1.2.3.4' });
+    const c3 = await call('POST', '/api/testers/claim', { deviceId: 'devT3' }, { 'CF-Connecting-IP': '1.2.3.4', ...ANDROID });
     ok('tope global (MAX=2) → 409', c3.status === 409, c3.body);
 
     // tope blando por IP: MAX alto, 5 devices desde la misma IP ok, el 6to → 429
     env.TESTERS_CLAIM_MAX = '100';
     let last;
-    for (let i = 0; i < 6; i++) last = await call('POST', '/api/testers/claim', { deviceId: 'devIP' + i }, { 'CF-Connecting-IP': '9.9.9.9' });
+    for (let i = 0; i < 6; i++) last = await call('POST', '/api/testers/claim', { deviceId: 'devIP' + i }, { 'CF-Connecting-IP': '9.9.9.9', ...ANDROID });
     ok('6to reclamo desde la misma IP → 429', last.status === 429, last.body);
     ok('la IP no se guarda en claro', ![...env.BMOD_KV._m.keys()].some(k => k.includes('9.9.9.9')));
 
     // revocado → 403 aunque el device ya haya reclamado
     const r2 = JSON.parse(await env.BMOD_KV.get('code:' + c2.body.code)); r2.revoked = true;
     await env.BMOD_KV.put('code:' + c2.body.code, JSON.stringify(r2));
-    const rev = await call('POST', '/api/testers/claim', { deviceId: 'devT2' });
+    const rev = await call('POST', '/api/testers/claim', { deviceId: 'devT2' }, ANDROID);
     ok('código revocado → 403', rev.status === 403);
+
+    // rebinds: un código de tester tolera 3 cambios de teléfono, no 10
+    let rb;
+    for (let i = 1; i <= 4; i++) rb = await call('POST', '/api/license/activate', { code: c1.body.code, deviceId: 'otroTel' + i });
+    ok('4to cambio de teléfono de un código tester → 409', rb.status === 409, rb.body);
 
     const admNo = await call('GET', '/api/admin/testers');
     ok('admin sin secret → 401', admNo.status === 401);
@@ -579,9 +620,62 @@ let code, licToken;
     ok('admin lista reclamos', adm.status === 200 && adm.body.open === true && adm.body.count === 7 && adm.body.claims.length === 7, adm.body);
 
     env.TESTERS_CLAIM_OPEN = 'false';
-    const off = await call('POST', '/api/testers/claim', { deviceId: 'devT9' });
+    const off = await call('POST', '/api/testers/claim', { deviceId: 'devT9' }, ANDROID);
     ok('kill-switch "false" → 403', off.status === 403);
     delete env.TESTERS_CLAIM_OPEN; delete env.TESTERS_CLAIM_MAX;
+}
+
+// ── Endurecimiento: rate limit, tamaño de body, topes por rutina, ring de errores ──
+{
+    console.log('\nAbuso: rate limit / body / topes');
+    // Rate limit: binding mockeado que deja pasar N llamadas por key
+    const hits = {};
+    const mkLimiter = (n) => ({ limit: async ({ key }) => { hits[key] = (hits[key] || 0) + 1; return { success: hits[key] <= n }; } });
+    env.RL_OPEN = mkLimiter(3); env.RL_STRICT = mkLimiter(1);
+    let last;
+    for (let i = 0; i < 4; i++) last = await call('GET', '/api/health', undefined, { 'CF-Connecting-IP': '5.5.5.5' });
+    ok('4ta request abierta desde la misma IP → 429', last.status === 429, last.status);
+    const other = await call('GET', '/api/health', undefined, { 'CF-Connecting-IP': '6.6.6.6' });
+    ok('otra IP no se ve afectada', other.status === 200);
+    const e1 = await call('POST', '/api/errors', { errors: [{ msg: 'a' }] }, { 'CF-Connecting-IP': '7.7.7.7' });
+    const e2 = await call('POST', '/api/errors', { errors: [{ msg: 'b' }] }, { 'CF-Connecting-IP': '7.7.7.7' });
+    ok('/api/errors usa el limitador estricto (2da → 429)', e1.status === 200 && e2.status === 429, [e1.status, e2.status]);
+    const a1 = await call('GET', '/api/admin/errors', undefined, { 'CF-Connecting-IP': '8.8.8.8', 'x-admin-secret': 'nope' });
+    const a2 = await call('GET', '/api/admin/errors', undefined, { 'CF-Connecting-IP': '8.8.8.8', 'x-admin-secret': 'nope' });
+    ok('fuerza bruta del admin secret → 401 y luego 429', a1.status === 401 && a2.status === 429, [a1.status, a2.status]);
+    delete env.RL_OPEN; delete env.RL_STRICT;
+
+    // Body demasiado grande: por Content-Length declarado y por tamaño real
+    const bigDeclared = await worker.fetch(new Request('https://api.test/api/routines', { method: 'POST', headers: { 'Content-Type': 'application/json', 'content-length': String(300 * 1024) }, body: '{}' }), env);
+    ok('Content-Length > 256 KB → 413', bigDeclared.status === 413, bigDeclared.status);
+    const bigReal = await call('POST', '/api/routines', { coach_id: 'c', name: 'x', plan: { pad: 'x'.repeat(300 * 1024) } });
+    ok('body real > 256 KB → 413', bigReal.status === 413, bigReal.status);
+    const bigPlan = await call('POST', '/api/routines', { coach_id: 'c', name: 'x', plan: { pad: 'x'.repeat(120 * 1024) } });
+    ok('plan > 100 KB → 413', bigPlan.status === 413, bigPlan.status);
+
+    // Topes por rutina: edits (EDITS_MAX = 50) y sesiones (fecha válida, una key)
+    const cr = await call('POST', '/api/routines', { coach_id: 'coachZ', name: 'Tope', plan: [{ day: 'A' }] });
+    const tk = cr.body.share_token, rid = cr.body.id;
+    const bigEdit = await call('POST', '/api/shares/' + tk + '/edits', { changes_json: { pad: 'x'.repeat(5000) } });
+    ok('edit > 4 KB → 413', bigEdit.status === 413, bigEdit.status);
+    for (let i = 0; i < 60; i++) await call('POST', '/api/shares/' + tk + '/edits', { changes_json: { i }, editor_name: 'Alumno ' + i });
+    const det = await call('GET', '/api/routines/' + rid + '?coach_id=coachZ');
+    ok('60 edits → se guardan 50 (los más nuevos), contador dice 60', det.body.edits.length === 50 && det.body.edits[0].changes_json.i === 59, det.body.edits.length);
+    const lst = await call('GET', '/api/routines?coach_id=coachZ');
+    ok('lista del coach: edit_count 60, unreviewed 60', lst.body[0].edit_count === 60 && lst.body[0].unreviewed_count === 60, lst.body[0]);
+    ok('sin keys sueltas por edit (una key agregada)', ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('edit:')));
+    const badDate = await call('POST', '/api/shares/' + tk + '/sessions', { date: '9999-99-99' });
+    const fakeDate = await call('POST', '/api/shares/' + tk + '/sessions', { date: '2026-02-30' });
+    const oldDate = await call('POST', '/api/shares/' + tk + '/sessions', { date: '2019-01-01' });
+    ok('fechas inválidas / inexistentes / muy viejas → 400', badDate.status === 400 && fakeDate.status === 400 && oldDate.status === 400, [badDate.status, fakeDate.status, oldDate.status]);
+    const longName = await call('POST', '/api/shares/' + tk + '/edits', { changes_json: { x: 1 }, editor_name: 'N'.repeat(200) });
+    ok('editor_name recortado a 40', longName.body.editor_name.length === 40);
+
+    // Ring de errores: una sola key, tope 150, más nuevo primero
+    for (let i = 0; i < 10; i++) await call('POST', '/api/errors', { errors: Array.from({ length: 20 }, (_, j) => ({ msg: 'e' + i + '-' + j, at: '2026-09-17T00:00:00Z' })) });
+    const ring = await call('GET', '/api/admin/errors', undefined, { 'x-admin-secret': 'test-admin' });
+    ok('ring de errores acotado a 150 y sin keys sueltas', ring.body.count === 150 && ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('error:')), ring.body.count);
+    ok('el error más reciente va primero', ring.body.errors[0].msg === 'e9-0', ring.body.errors[0]);
 }
 
 // ── Salud off + server-info + 404 ──

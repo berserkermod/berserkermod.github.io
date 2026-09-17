@@ -43,6 +43,28 @@ const ERROR_TTL = 30 * 24 * 60 * 60;   // 30 días
 const TRIAL_DAYS = { coach: 7, premium: 7 };
 const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 
+// ── Límites contra abuso ──
+// Contexto: en Workers cada operación de KV cuenta como subrequest y el plan
+// Free permite 50 por invocación y 1.000 escrituras de KV por día. Por eso
+// (a) nada lista "todas las keys" de un prefijo en rutas públicas, (b) los
+// datos por rutina viven en UNA key agregada, y (c) toda ruta pública tiene
+// tope de tamaño y rate limit. Detalle en SEGURIDAD-THREAT-MODEL.md (privado).
+const MAX_BODY = 256 * 1024;            // body JSON por defecto
+const MAX_BODY_PDF = 16 * 1024 * 1024;  // /api/parse-routine (PDF en base64)
+const MAX_PLAN_JSON = 100 * 1024;       // plan de una rutina serializado
+const MAX_EDIT_JSON = 4 * 1024;         // changes_json de un edit del alumno
+const EDITS_MAX = 50;                   // edits guardados por rutina (los viejos se pisan)
+const SESSIONS_MAX = 120;               // sesiones de adherencia guardadas por rutina
+const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
+const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
+const PUSH_MAX = 1000;                  // suscripciones push
+const PUSH_BATCH = 40;                  // pushes por corrida del cron (5 corridas seguidas = 200/día)
+// Solo servicios de push reales: sin esto cualquiera registra una URL propia y
+// el cron le pega todos los días con nuestra firma VAPID.
+const PUSH_HOSTS = ['googleapis.com', 'push.services.mozilla.com', 'push.apple.com', 'notify.windows.com', 'samsungosp.com'];
+// Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
+const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/push/subscribe'];
+
 // ── Utilidades ───────────────────────────────────────────────────────
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -129,8 +151,15 @@ function json(obj, status = 200, extra = {}) {
 }
 function err(msg, status = 400) { return json({ error: msg }, status); }
 
-async function readBody(req) {
-    try { return await req.json(); } catch { return null; }
+class PayloadTooLarge extends Error {}
+// Lee JSON con tope de tamaño. Excederlo tira PayloadTooLarge → el router
+// responde 413 (el header Content-Length se chequea antes, pero un cliente
+// a medida puede omitirlo, así que se mide el texto real).
+async function readBody(req, max = MAX_BODY) {
+    let txt;
+    try { txt = await req.text(); } catch { return null; }
+    if (txt.length > max) throw new PayloadTooLarge();
+    try { return JSON.parse(txt); } catch { return null; }
 }
 function coachIdFrom(req, url, body) {
     return req.headers.get('x-coach-id') || (body && body.coach_id) || url.searchParams.get('coach_id') || null;
@@ -143,32 +172,55 @@ async function kvGet(env, key) {
 }
 function kvPut(env, key, obj, opts) { return env.BMOD_KV.put(key, JSON.stringify(obj), opts); }
 
-async function listByPrefix(env, prefix) {
+// Lista y lee hasta `max` registros de un prefijo. OJO: 1 list + N gets =
+// N+1 subrequests; solo para rutas admin o listas acotadas (rutinas por coach).
+async function listByPrefix(env, prefix, max = ROUTINES_LIST_MAX) {
     const out = [];
     let cursor;
     do {
-        const res = await env.BMOD_KV.list({ prefix, cursor });
+        const res = await env.BMOD_KV.list({ prefix, cursor, limit: Math.min(max - out.length, 1000) });
         for (const k of res.keys) {
+            if (out.length >= max) break;
             const v = await env.BMOD_KV.get(k.name);
             if (v) out.push(JSON.parse(v));
         }
-        cursor = res.list_complete ? null : res.cursor;
+        cursor = res.list_complete || out.length >= max ? null : res.cursor;
     } while (cursor);
     return out;
 }
 function routineKey(coachId, id) { return `routine:${coachId}:${id}`; }
-function editPrefix(routineId) { return `edit:${routineId}:`; }
+// Datos por rutina en UNA key agregada cada uno (1 get + 1 put, sin listar):
+//   edits:{routineId}    = { items: [edit, ...] }    más nuevo primero, tope EDITS_MAX
+//   sessions:{routineId} = { items: [sess, ...] }    fecha desc, una por fecha, tope SESSIONS_MAX
+// Los contadores que muestra la lista del coach viven denormalizados en el
+// registro de la rutina (edit_count, unreviewed_count, session_count, ...).
+function editsKey(routineId) { return `edits:${routineId}`; }
+function sessionsKey(routineId) { return `sessions:${routineId}`; }
+const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : null);
+
+// ── Rate limiting (binding nativo de Workers; no consume KV ni cuenta como subrequest) ──
+// Sin binding (tests, wrangler dev) no limita. Key por IP: es lo único que hay
+// en rutas anónimas; un gimnasio detrás de un NAT entra holgado en 60/min.
+async function rateLimited(env, name, key) {
+    const rl = env[name];
+    if (!rl || typeof rl.limit !== 'function') return false;
+    try { const { success } = await rl.limit({ key }); return !success; } catch { return false; }
+}
+function clientIp(req) { return req.headers.get('CF-Connecting-IP') || 'unknown'; }
 
 // =====================================================================
 //  Handlers
 // =====================================================================
 
 // ── Coach: rutinas ───────────────────────────────────────────────────
+function planTooBig(plan) { return JSON.stringify(plan).length > MAX_PLAN_JSON; }
+
 async function createRoutine(req, env, url) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
-    if (!coachId) return err('Missing coach_id', 401);
+    if (!coachId || String(coachId).length > 80) return err('Missing coach_id', 401);
     if (!body || !body.name || !body.plan) return err('Missing name or plan', 400);
+    if (typeof body.plan !== 'object' || planTooBig(body.plan)) return err('Plan inválido o demasiado grande', 413);
 
     let token = newShareToken();
     // colisión improbable; reintenta una vez
@@ -177,66 +229,51 @@ async function createRoutine(req, env, url) {
     const routine = {
         id: uuid(),
         coach_id: coachId,
-        coach_name: body.coach_name || null,
-        name: body.name,
+        coach_name: str(body.coach_name, 80),
+        name: str(body.name, 80),
         plan: body.plan,
-        alumno_name: body.alumno_name || null,
-        alumno_email: body.alumno_email || null,
+        alumno_name: str(body.alumno_name, 80),
+        alumno_email: str(body.alumno_email, 120),
         share_token: token,
         created_at: now,
         updated_at: now,
         last_coach_update_at: now,
-        last_seen_by_alumno_at: null
+        last_seen_by_alumno_at: null,
+        // contadores denormalizados (los mantiene postEdit / postShareSession / reviewRoutine)
+        edit_count: 0, unreviewed_count: 0, last_alumno_edit_at: null,
+        session_count: 0, last_session_at: null, recent_session_dates: []
     };
     await kvPut(env, routineKey(coachId, routine.id), routine);
     await kvPut(env, `token:${token}`, { coachId, routineId: routine.id });
     return json(routine, 201);
 }
 
-// Sesiones del alumno (adherencia): una por fecha, key sess:{routineId}:{date}
-const sessPrefix = (routineId) => `sess:${routineId}:`;
-
 async function listRoutines(env, url) {
     const coachId = url.searchParams.get('coach_id');
     if (!coachId) return err('Missing coach_id', 400);
-    const routines = await listByPrefix(env, `routine:${coachId}:`);
-    const enriched = [];
+    // 1 list + N gets (N ≤ ROUTINES_LIST_MAX). Todo lo demás sale del registro.
+    const routines = await listByPrefix(env, `routine:${coachId}:`, ROUTINES_LIST_MAX);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-    for (const r of routines) {
-        const edits = await listByPrefix(env, editPrefix(r.id));
-        const alumnoEdits = edits.filter((e) => e.edited_by === 'alumno');
-        const unreviewed = alumnoEdits.filter((e) => !e.reviewed_by_coach).length;
-        const lastEdit = alumnoEdits.length
-            ? alumnoEdits.map((e) => e.edited_at).sort().slice(-1)[0] : null;
-        // Adherencia del alumno (sesiones registradas desde su link)
-        const sessions = await listByPrefix(env, sessPrefix(r.id));
-        const dates = sessions.map((s) => s.date).sort();
-        enriched.push({
-            id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
-            share_token: r.share_token, created_at: r.created_at,
-            last_alumno_edit_at: lastEdit, edit_count: alumnoEdits.length,
-            unreviewed_count: unreviewed, last_seen_by_alumno_at: r.last_seen_by_alumno_at,
-            session_count: dates.length,
-            last_session_at: dates.length ? dates[dates.length - 1] : null,
-            week_sessions: dates.filter((d) => d >= weekAgo).length
-        });
-    }
-    return json(enriched);
+    return json(routines.map((r) => ({
+        id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
+        share_token: r.share_token, created_at: r.created_at,
+        last_alumno_edit_at: r.last_alumno_edit_at || null, edit_count: r.edit_count || 0,
+        unreviewed_count: r.unreviewed_count || 0, last_seen_by_alumno_at: r.last_seen_by_alumno_at,
+        session_count: r.session_count || 0,
+        last_session_at: r.last_session_at || null,
+        week_sessions: (r.recent_session_dates || []).filter((d) => d >= weekAgo).length
+    })));
 }
 
 async function getRoutine(env, url, id) {
     const coachId = url.searchParams.get('coach_id');
-    // Necesitamos coachId para construir la key; si no viene, buscamos por scan corto.
-    let r = coachId ? await kvGet(env, routineKey(coachId, id)) : null;
-    if (!r) {
-        // fallback: no sabemos el coach → no podemos listar todo el KV barato.
-        return err('Not found', 404);
-    }
-    if (coachId && r.coach_id !== coachId) return err('Forbidden', 403);
-    const edits = (await listByPrefix(env, editPrefix(id))).sort((a, b) => (a.edited_at < b.edited_at ? 1 : -1));
+    // Necesitamos coachId para construir la key; sin él no se puede buscar.
+    const r = coachId ? await kvGet(env, routineKey(coachId, id)) : null;
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const edits = ((await kvGet(env, editsKey(id))) || { items: [] }).items;
     // Sesiones del alumno (últimas 30) para que el coach vea la adherencia real.
-    const sessions = (await listByPrefix(env, sessPrefix(id)))
-        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+    const sessions = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items.slice(0, 30);
     return json({ routine: r, edits, sessions });
 }
 
@@ -247,8 +284,9 @@ async function updateRoutine(req, env, url, id) {
     const r = await kvGet(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (body.plan && (typeof body.plan !== 'object' || planTooBig(body.plan))) return err('Plan inválido o demasiado grande', 413);
     const now = nowISO();
-    if (body.name) r.name = body.name;
+    if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = body.plan;
     r.updated_at = now;
     r.last_coach_update_at = now;
@@ -264,11 +302,8 @@ async function deleteRoutine(req, env, url, id) {
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     await env.BMOD_KV.delete(routineKey(coachId, id));
     if (r.share_token) await env.BMOD_KV.delete(`token:${r.share_token}`);
-    // borrar edits y sesiones del alumno
-    const res = await env.BMOD_KV.list({ prefix: editPrefix(id) });
-    for (const k of res.keys) await env.BMOD_KV.delete(k.name);
-    const sres = await env.BMOD_KV.list({ prefix: sessPrefix(id) });
-    for (const k of sres.keys) await env.BMOD_KV.delete(k.name);
+    await env.BMOD_KV.delete(editsKey(id));
+    await env.BMOD_KV.delete(sessionsKey(id));
     return json({ ok: true });
 }
 
@@ -279,11 +314,11 @@ async function reviewRoutine(req, env, url, id) {
     const r = await kvGet(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
-    const res = await env.BMOD_KV.list({ prefix: editPrefix(id) });
-    for (const k of res.keys) {
-        const e = await kvGet(env, k.name);
-        if (e && !e.reviewed_by_coach) { e.reviewed_by_coach = true; await kvPut(env, k.name, e); }
-    }
+    const agg = (await kvGet(env, editsKey(id))) || { items: [] };
+    let changed = false;
+    for (const e of agg.items) if (!e.reviewed_by_coach) { e.reviewed_by_coach = true; changed = true; }
+    if (changed) await kvPut(env, editsKey(id), agg);
+    if (r.unreviewed_count) { r.unreviewed_count = 0; await kvPut(env, routineKey(coachId, id), r); }
     return json({ ok: true });
 }
 
@@ -293,13 +328,16 @@ async function getShare(env, token) {
     if (!idx) return err('Routine not found', 404);
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
-    r.last_seen_by_alumno_at = nowISO();
-    await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
-    const edits = (await listByPrefix(env, editPrefix(r.id)))
-        .sort((a, b) => (a.edited_at < b.edited_at ? 1 : -1)).slice(0, 20);
+    // "visto por el alumno": como mucho una escritura por hora (cada put gasta
+    // cuota de KV; sin esto, refrescar el link en loop la agota).
+    const seen = r.last_seen_by_alumno_at ? new Date(r.last_seen_by_alumno_at).getTime() : 0;
+    if (Date.now() - seen > 3600000) {
+        r.last_seen_by_alumno_at = nowISO();
+        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    }
+    const edits = ((await kvGet(env, editsKey(r.id))) || { items: [] }).items.slice(0, 20);
     // Sesiones del alumno (para que vea su propia adherencia y el check de hoy)
-    const sessions = (await listByPrefix(env, sessPrefix(r.id)))
-        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 30);
+    const sessions = ((await kvGet(env, sessionsKey(r.id))) || { items: [] }).items.slice(0, 30);
     const publicRoutine = {
         id: r.id, name: r.name, plan: r.plan, coach_name: r.coach_name,
         alumno_name: r.alumno_name, share_token: r.share_token,
@@ -308,19 +346,39 @@ async function getShare(env, token) {
     return json({ routine: publicRoutine, edits, sessions });
 }
 
+// Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
+// hasta un año atrás y un día adelante (huso horario del alumno).
+function validSessionDate(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return false;
+    const t = Date.parse(s + 'T12:00:00Z');
+    if (isNaN(t) || new Date(t).toISOString().slice(0, 10) !== s) return false;
+    const now = Date.now();
+    return t >= now - 366 * 86400000 && t <= now + 86400000;
+}
+
 // POST /api/shares/{token}/sessions — el alumno registra que entrenó (adherencia).
 // Una por fecha (idempotente): si registra dos veces el mismo día, se pisa.
 async function postShareSession(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
     const body = await readBody(req);
-    const date = (body && /^\d{4}-\d{2}-\d{2}$/.test(body.date || '')) ? body.date : new Date().toISOString().slice(0, 10);
-    const sess = {
-        date,
-        day_name: String((body && body.day_name) || '').slice(0, 60),
-        at: nowISO()
-    };
-    await kvPut(env, `${sessPrefix(idx.routineId)}${date}`, sess);
+    const date = (body && body.date) ? body.date : new Date().toISOString().slice(0, 10);
+    if (!validSessionDate(date)) return err('Fecha inválida', 400);
+    const sess = { date, day_name: str(body && body.day_name, 60) || '', at: nowISO() };
+
+    const agg = (await kvGet(env, sessionsKey(idx.routineId))) || { items: [] };
+    const isNew = !agg.items.some((s) => s.date === date);
+    agg.items = [sess].concat(agg.items.filter((s) => s.date !== date))
+        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, SESSIONS_MAX);
+    await kvPut(env, sessionsKey(idx.routineId), agg);
+
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (r && isNew) {
+        r.session_count = (r.session_count || 0) + 1;
+        r.recent_session_dates = agg.items.slice(0, 14).map((s) => s.date);
+        r.last_session_at = r.recent_session_dates[0] || null;
+        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    }
     return json({ ok: true, session: sess }, 201);
 }
 
@@ -329,17 +387,30 @@ async function postEdit(req, env, token) {
     if (!idx) return err('Routine not found', 404);
     const body = await readBody(req);
     if (!body || !body.changes_json) return err('Missing changes_json', 400);
+    if (JSON.stringify(body.changes_json).length > MAX_EDIT_JSON) return err('Edit demasiado grande', 413);
     const edit = {
         id: uuid(),
         routine_id: idx.routineId,
         share_token: token,
         changes_json: body.changes_json,
-        edited_by: body.edited_by || 'alumno',
-        editor_name: body.editor_name || null,
+        edited_by: body.edited_by === 'coach' ? 'coach' : 'alumno',
+        editor_name: str(body.editor_name, 40),
         edited_at: nowISO(),
         reviewed_by_coach: false
     };
-    await kvPut(env, `edit:${idx.routineId}:${edit.id}`, edit);
+    const agg = (await kvGet(env, editsKey(idx.routineId))) || { items: [] };
+    agg.items = [edit].concat(agg.items).slice(0, EDITS_MAX);
+    await kvPut(env, editsKey(idx.routineId), agg);
+
+    if (edit.edited_by === 'alumno') {
+        const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+        if (r) {
+            r.edit_count = (r.edit_count || 0) + 1;
+            r.unreviewed_count = (r.unreviewed_count || 0) + 1;
+            r.last_alumno_edit_at = edit.edited_at;
+            await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+        }
+    }
     return json(edit, 201);
 }
 
@@ -370,7 +441,9 @@ async function activateLicense(req, env) {
         // nuevo device (last-device-wins). Tope de movimientos para frenar que
         // un mismo código circule entre muchas personas.
         rec.rebinds = (rec.rebinds || 0) + 1;
-        if (rec.rebinds > 10) return err('Este código se usó en demasiados dispositivos', 409);
+        // Los regalos de tester (vitalicios) toleran menos cambios de teléfono:
+        // así un código no circula entre 10 personas.
+        if (rec.rebinds > (rec.source === 'tester-auto' ? 3 : 10)) return err('Este código se usó en demasiados dispositivos', 409);
         rec.deviceId = deviceId; rec.activated_at = nowISO();
         await kvPut(env, `code:${code}`, rec);
     }
@@ -730,7 +803,7 @@ async function ocrImage(env, b64) {
 
 async function parseRoutine(req, env) {
     if (!env.AI) return err('Importador de PDF no configurado (falta el binding AI de Workers AI)', 503);
-    const body = await readBody(req);
+    const body = await readBody(req, MAX_BODY_PDF);
     // Gate: solo licencias válidas (premium o coach).
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
@@ -805,28 +878,33 @@ async function parseRoutine(req, env) {
 }
 
 // ── Observabilidad ───────────────────────────────────────────────────
+// Ring buffer en UNA key (errors:ring): 1 get + 1 put por request, sin importar
+// cuántos errores traiga. Antes era una key por error (20 escrituras por
+// request: 50 requests agotaban la cuota diaria de KV del plan Free).
+// Dos ingests simultáneos pueden pisarse — para diagnóstico es aceptable.
 async function ingestErrors(req, env) {
     const body = await readBody(req);
     const list = body && Array.isArray(body.errors) ? body.errors : (body ? [body] : []);
-    let stored = 0;
-    for (const e of list.slice(0, 20)) {
-        const key = `error:${Date.now()}:${randToken(TOKEN_ALPHABET, 6)}`;
-        await kvPut(env, key, {
-            at: (e && e.at) || nowISO(),
-            source: (e && e.source) || 'unknown',
-            msg: String((e && e.msg) || '').slice(0, 300),
-            stack: String((e && e.stack) || '').slice(0, 800),
-            ua: (req.headers.get('user-agent') || '').slice(0, 200),
-            v: (e && e.v) || null
-        }, { expirationTtl: ERROR_TTL });
-        stored++;
-    }
-    return json({ ok: true, stored });
+    if (!list.length) return json({ ok: true, stored: 0 });
+    const ua = (req.headers.get('user-agent') || '').slice(0, 200);
+    const incoming = list.slice(0, 20).map((e) => ({
+        at: String((e && e.at) || nowISO()).slice(0, 40),
+        source: String((e && e.source) || 'unknown').slice(0, 40),
+        msg: String((e && e.msg) || '').slice(0, 300),
+        stack: String((e && e.stack) || '').slice(0, 800),
+        ua,
+        v: (e && e.v) ? String(e.v).slice(0, 40) : null
+    }));
+    const ring = (await kvGet(env, 'errors:ring')) || { items: [] };
+    const cutoff = new Date(Date.now() - ERROR_TTL * 1000).toISOString();
+    ring.items = incoming.concat((ring.items || []).filter((x) => x.at >= cutoff)).slice(0, ERRORS_RING_MAX);
+    await kvPut(env, 'errors:ring', ring);
+    return json({ ok: true, stored: incoming.length });
 }
 async function adminErrors(req, env) {
     if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
-    const list = (await listByPrefix(env, 'error:')).sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 200);
-    return json({ ok: true, count: list.length, errors: list });
+    const ring = (await kvGet(env, 'errors:ring')) || { items: [] };
+    return json({ ok: true, count: ring.items.length, errors: ring.items });
 }
 
 // ── Salud (off por defecto: privacidad) + server-info + ping ─────────
@@ -863,25 +941,39 @@ async function sha256hex(s) {
     return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Suscripciones en UNA key (push:all = { subs: { [sha256(endpoint)]: {...} } }).
+// Solo endpoints de servicios de push reales (PUSH_HOSTS): si no, cualquiera
+// registra su propio servidor y el cron le pega a diario con nuestra firma.
+function pushHostAllowed(endpoint) {
+    let u; try { u = new URL(endpoint); } catch { return false; }
+    if (u.protocol !== 'https:') return false;
+    return PUSH_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith('.' + h));
+}
+
 async function pushSubscribe(req, env) {
     const body = await readBody(req);
     const sub = body && body.subscription;
-    if (!sub || typeof sub.endpoint !== 'string' || !/^https:\/\//.test(sub.endpoint)) return err('Missing subscription', 400);
+    if (!sub || typeof sub.endpoint !== 'string' || sub.endpoint.length > 1024) return err('Missing subscription', 400);
+    if (!pushHostAllowed(sub.endpoint)) return err('Servicio de notificaciones no soportado', 400);
     const id = await sha256hex(sub.endpoint);
-    await kvPut(env, `push:${id}`, {
+    const all = (await kvGet(env, 'push:all')) || { subs: {} };
+    if (!all.subs[id] && Object.keys(all.subs).length >= PUSH_MAX) return err('Cupo de recordatorios completo', 409);
+    all.subs[id] = {
         endpoint: sub.endpoint,
-        keys: sub.keys || null, // p256dh/auth: hoy no se usan (push sin payload), guardados para el futuro
         lang: (body.lang === 'en' || body.lang === 'pt') ? body.lang : 'es',
-        created_at: nowISO()
-    });
+        created_at: (all.subs[id] && all.subs[id].created_at) || nowISO()
+    };
+    await kvPut(env, 'push:all', all);
     return json({ ok: true });
 }
 
 async function pushUnsubscribe(req, env) {
     const body = await readBody(req);
     const endpoint = body && body.endpoint;
-    if (!endpoint || typeof endpoint !== 'string') return err('Missing endpoint', 400);
-    await env.BMOD_KV.delete(`push:${await sha256hex(endpoint)}`);
+    if (!endpoint || typeof endpoint !== 'string' || endpoint.length > 1024) return err('Missing endpoint', 400);
+    const id = await sha256hex(endpoint);
+    const all = (await kvGet(env, 'push:all')) || { subs: {} };
+    if (all.subs[id]) { delete all.subs[id]; await kvPut(env, 'push:all', all); }
     return json({ ok: true });
 }
 
@@ -907,6 +999,14 @@ async function testersClaim(req, env) {
     const body = await readBody(req);
     const deviceId = body && String(body.deviceId || '').trim();
     if (!deviceId || deviceId.length > 80) return err('Missing deviceId', 400);
+    // La app solo muestra el reclamo dentro de la TWA, pero eso es un flag en
+    // localStorage: acá se exige lo que Chrome Android manda solo en cada
+    // request (client hints por defecto + UA). Un navegador de escritorio con
+    // DevTools no pasa; falsificarlo exige un cliente a medida y saber esto.
+    const ua = req.headers.get('user-agent') || '';
+    const chMobile = req.headers.get('sec-ch-ua-mobile') || '';
+    const chPlatform = req.headers.get('sec-ch-ua-platform') || '';
+    if (!/Android/i.test(ua) || chMobile.trim() !== '?1' || !/android/i.test(chPlatform)) return err('android_only', 403);
 
     const issue = async (code, rec) => {
         const iat = Date.now();
@@ -1048,27 +1148,39 @@ async function vapidJwt(env, audience) {
 }
 
 // Cron diario: un push vacío a cada suscripción. 404/410 = suscripción muerta → se borra.
+// El plan Free permite 50 subrequests por invocación, así que cada corrida
+// manda como mucho PUSH_BATCH y guarda por dónde va en push:cursor
+// ({ date, next }; next = -1 → hoy ya terminó). wrangler.toml dispara el cron
+// varias veces seguidas (21:00, :03, :06, :09, :12 UTC) para cubrir el resto.
 async function sendDailyReminders(env) {
     if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
-    const subs = await listByPrefix(env, 'push:');
+    const today = new Date().toISOString().slice(0, 10);
+    const cur = (await kvGet(env, 'push:cursor')) || {};
+    const start = cur.date === today ? cur.next : 0;
+    if (start < 0) return { sent: 0, note: 'hoy ya se mandó todo' };
+    const all = (await kvGet(env, 'push:all')) || { subs: {} };
+    const ids = Object.keys(all.subs).sort();
+    const batch = ids.slice(start, start + PUSH_BATCH);
     let sent = 0, removed = 0;
-    for (const s of subs) {
+    const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
+    for (const id of batch) {
+        const s = all.subs[id];
         if (!s || !s.endpoint) continue;
         try {
-            const jwt = await vapidJwt(env, new URL(s.endpoint).origin);
+            const origin = new URL(s.endpoint).origin;
+            if (!jwtByOrigin[origin]) jwtByOrigin[origin] = await vapidJwt(env, origin);
             const resp = await fetch(s.endpoint, {
                 method: 'POST',
-                headers: { TTL: '86400', Authorization: 'vapid t=' + jwt + ', k=' + env.VAPID_PUBLIC_KEY }
+                headers: { TTL: '86400', Authorization: 'vapid t=' + jwtByOrigin[origin] + ', k=' + env.VAPID_PUBLIC_KEY }
             });
-            if (resp.status === 404 || resp.status === 410) {
-                await env.BMOD_KV.delete(`push:${await sha256hex(s.endpoint)}`);
-                removed++;
-            } else if (resp.status < 400) {
-                sent++;
-            }
+            if (resp.status === 404 || resp.status === 410) { delete all.subs[id]; removed++; }
+            else if (resp.status < 400) sent++;
         } catch { /* push service caído → probamos mañana */ }
     }
-    return { sent, removed, total: subs.length };
+    const next = start + PUSH_BATCH >= ids.length ? -1 : start + PUSH_BATCH;
+    await kvPut(env, 'push:cursor', { date: today, next });
+    if (removed) await kvPut(env, 'push:all', all);
+    return { sent, removed, total: ids.length, next };
 }
 
 export default {
@@ -1081,6 +1193,14 @@ export default {
         const p = url.pathname.replace(/\/+$/, '') || '/';
         const m = req.method;
         let mt;
+
+        // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
+        const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
+        if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : MAX_BODY)) return err('Payload too large', 413);
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/');
+        if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
+            return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
+        }
 
         try {
             if (p === '/' || p === '/api/health') return json({ ok: true, service: 'berserkermod-api' });
@@ -1131,6 +1251,7 @@ export default {
 
             return err('Not found', 404);
         } catch (e) {
+            if (e instanceof PayloadTooLarge) return err('Payload too large', 413);
             return err('Internal error: ' + String(e && e.message), 500);
         }
     }
