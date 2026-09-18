@@ -678,6 +678,69 @@ let code, licToken;
     ok('el error más reciente va primero', ring.body.errors[0].msg === 'e9-0', ring.body.errors[0]);
 }
 
+// ── Pre-producción: trial por IP, cuota de IA, ticket de pago ──
+{
+    console.log('\nPre-producción: trial por IP / cuota IA / ticket de pago');
+    // Trial: 5 por IP cada 30 días aunque cambie el deviceId
+    let last;
+    for (let i = 0; i < 6; i++) last = await call('POST', '/api/license/trial', { deviceId: 'ipdev' + i, product: 'premium' }, { 'CF-Connecting-IP': '44.44.44.44' });
+    ok('6to trial desde la misma IP (deviceIds distintos) → 429', last.status === 429, last.body);
+    const otherIp = await call('POST', '/api/license/trial', { deviceId: 'ipdevX', product: 'premium' }, { 'CF-Connecting-IP': '55.55.55.55' });
+    ok('otra IP → trial ok', otherIp.status === 200 && otherIp.body.trial === true, otherIp.body);
+    ok('la IP no queda en claro en KV', ![...env.BMOD_KV._m.keys()].some(k => k.includes('44.44.44.44')));
+    const coachSameIp = await call('POST', '/api/license/trial', { deviceId: 'ipdevC', product: 'coach' }, { 'CF-Connecting-IP': '44.44.44.44' });
+    ok('el tope es por producto (coach desde esa IP sigue ok)', coachSameIp.status === 200, coachSameIp.body);
+
+    // Cuota diaria de IA por licencia: oracle 20, parse 5
+    env.AI = {
+        async run() { return { response: '{"insights":[{"icon":"📈","title":"t","text":"x"}]}' }; },
+        async toMarkdown() { return [{ data: 'Día 1: Press banca 3x8' }]; }
+    };
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+    const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'quota-dev' });
+    let oracleLast;
+    for (let i = 0; i < 21; i++) oracleLast = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
+    ok('Oracle: llamada 21 del día → 429', oracleLast.status === 429 && /límite diario/.test(oracleLast.body.error || ''), oracleLast.body);
+    const gen2 = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+    const act2 = await call('POST', '/api/license/activate', { code: gen2.body.codes[0], deviceId: 'quota-dev-2' });
+    const otherLic = await call('POST', '/api/oracle', { token: act2.body.token, prompt: 'x' });
+    ok('otra licencia tiene su propia cuota', otherLic.status === 200, otherLic.status);
+    let parseLast;
+    for (let i = 0; i < 6; i++) parseLast = await call('POST', '/api/parse-routine', { token: act.body.token, pdf_base64: 'JVBERi0=' });
+    ok('Importar PDF: llamada 6 del día → 429', parseLast.status === 429, parseLast.body);
+    const legacyKey = await call('POST', '/api/oracle', { apiKey: 'sk-ant-x', prompt: 'x' });
+    ok('camino legacy con API key propia no consume cuota (no 429)', legacyKey.status !== 429, legacyKey.status);
+    const dayKeys = [...env.BMOD_KV._m.keys()].filter(k => k.startsWith('aiq:') && (k.endsWith(gen.body.codes[0]) || k.endsWith(gen2.body.codes[0])));
+    const q1 = JSON.parse(await env.BMOD_KV.get('aiq:' + new Date().toISOString().slice(0, 10) + ':' + gen.body.codes[0]));
+    ok('cuota: una key por licencia y día, con ambos contadores', dayKeys.length === 2 && q1.oracle === 20 && q1.parse === 5, [dayKeys, q1]);
+    delete env.AI;
+
+    // Ticket de pago: durable paid:{id} + ticket payment:{id} con gracia tras el primer retiro
+    env.MP_ACCESS_TOKEN = 'TEST-mp-token';
+    const realFetch2 = globalThis.fetch;
+    globalThis.fetch = async (u) => String(u).includes('/v1/payments/888')
+        ? new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_1m' }), { status: 200 })
+        : new Response('{}', { status: 404 });
+    const wh1 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
+    const ticketRaw = JSON.parse(await env.BMOD_KV.get('payment:888'));
+    ok('webhook escribe ticket JSON sin retirar + marcador paid', wh1.body.code && ticketRaw.code === wh1.body.code && ticketRaw.retrieved_at === null && (await env.BMOD_KV.get('paid:888')) === wh1.body.code, ticketRaw);
+    const r1 = await call('GET', '/api/license/retrieve?payment=888');
+    const r2 = await call('GET', '/api/license/retrieve?payment=888');
+    ok('retirar dos veces (refresh) devuelve el mismo código', r1.body.status === 'ready' && r1.body.code === wh1.body.code && r2.body.code === wh1.body.code, [r1.body, r2.body]);
+    const ticketAfter = JSON.parse(await env.BMOD_KV.get('payment:888'));
+    ok('el primer retiro marca retrieved_at (ticket pasa a gracia corta)', typeof ticketAfter.retrieved_at === 'string', ticketAfter);
+    const wh2 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
+    ok('webhook repetido → mismo código (idempotente por paid:)', wh2.body.dup === true && wh2.body.code === wh1.body.code, wh2.body);
+    await env.BMOD_KV.delete('payment:888'); // simula el vencimiento de la gracia
+    const r3 = await call('GET', '/api/license/retrieve?payment=888');
+    ok('vencida la gracia → pending (el código sigue en code:)', r3.body.status === 'pending' && !!(await env.BMOD_KV.get('code:' + wh1.body.code)), r3.body);
+    await env.BMOD_KV.put('payment:legacy1', 'BMOD-LEGA-CY01');
+    const rl = await call('GET', '/api/license/retrieve?payment=legacy1');
+    ok('ticket con formato viejo (string) sigue funcionando', rl.body.status === 'ready' && rl.body.code === 'BMOD-LEGA-CY01', rl.body);
+    globalThis.fetch = realFetch2;
+    delete env.MP_ACCESS_TOKEN;
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

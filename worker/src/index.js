@@ -62,6 +62,19 @@ const PUSH_BATCH = 40;                  // pushes por corrida del cron (5 corrid
 // Solo servicios de push reales: sin esto cualquiera registra una URL propia y
 // el cron le pega todos los días con nuestra firma VAPID.
 const PUSH_HOSTS = ['googleapis.com', 'push.services.mozilla.com', 'push.apple.com', 'notify.windows.com', 'samsungosp.com'];
+// Trial: el deviceId lo elige el cliente (borrar localStorage = "dispositivo
+// nuevo"), así que además se cuentan las pruebas por IP: TRIAL_IP_MAX cada 30
+// días. Alcanza para un gimnasio detrás de un NAT y frena el trial infinito.
+const TRIAL_IP_MAX = 5;
+const TRIAL_IP_TTL = 30 * 24 * 3600;
+// IA: cuota diaria por licencia (Workers AI da 10.000 neuronas/día para TODOS;
+// sin esto una sola licencia —o un trial— puede dejar sin Oracle a los que pagan).
+const AI_QUOTA = { oracle: 20, parse: 5 };
+// Ticket de retiro del código tras pagar: vive hasta 7 días sin retirar (pagos
+// en efectivo) y 15 minutos después del primer retiro (refrescar la página no
+// lo pierde; enumerar payment_ids ajenos ya no sirve).
+const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
+const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
 const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/push/subscribe'];
 
@@ -207,6 +220,22 @@ async function rateLimited(env, name, key) {
     try { const { success } = await rl.limit({ key }); return !success; } catch { return false; }
 }
 function clientIp(req) { return req.headers.get('CF-Connecting-IP') || 'unknown'; }
+// Huella de IP para contadores anti-abuso: hash con sal, nunca la IP en claro.
+async function ipHash(ip) {
+    const digest = await crypto.subtle.digest('SHA-256', enc.encode('ip:' + ip));
+    return b64urlFromBytes(new Uint8Array(digest)).slice(0, 22);
+}
+// Cuota diaria de IA por licencia (1 get + 1 put por llamada). La identidad es
+// el código de licencia o, en trials/Play, el deviceId del token.
+async function aiQuotaOk(env, payload, kind) {
+    const id = (payload && (payload.code || payload.deviceId)) || 'anon';
+    const key = `aiq:${new Date().toISOString().slice(0, 10)}:${id}`;
+    const rec = (await kvGet(env, key)) || {};
+    if ((rec[kind] || 0) >= AI_QUOTA[kind]) return false;
+    rec[kind] = (rec[kind] || 0) + 1;
+    await kvPut(env, key, rec, { expirationTtl: 2 * 86400 });
+    return true;
+}
 
 // =====================================================================
 //  Handlers
@@ -483,20 +512,36 @@ async function startTrial(req, env) {
     if (!deviceId) return err('Missing deviceId', 400);
     const key = `trial:${product}:${deviceId}`;
     if (await kvGet(env, key)) return err('Ya usaste la prueba gratuita en este dispositivo', 409);
+    // tope por red (ver TRIAL_IP_MAX); la IP se guarda hasheada
+    const ipKey = `trial-ip:${product}:${await ipHash(clientIp(req))}`;
+    const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
+    if (ipRec.n >= TRIAL_IP_MAX) return err('Demasiadas pruebas gratuitas desde esta red. Si es un error, escribinos.', 429);
     const days = TRIAL_DAYS[product] || 3;
     const iat = Date.now();
     const exp = iat + days * 86400000;
     await kvPut(env, key, { issued_at: nowISO() });
+    await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TRIAL_IP_TTL });
     const token = await signLicense(secret, { product, tier: 'premium', deviceId, code: null, iat, exp, trial: true });
     return json({ ok: true, token, product, tier: 'premium', trial: true, days, expiresAt: new Date(exp).toISOString() });
 }
 
+// Devuelve el código de un pago aprobado. Al PRIMER retiro el ticket pasa a
+// vivir solo PAYMENT_TICKET_GRACE más (refrescar la página lo sigue mostrando;
+// alguien que adivine el payment_id después, no). Si el comprador lo perdió,
+// el código sigue en code:{...} con payment_id → soporte por mail.
 async function retrieveCode(env, url) {
     const payment = url.searchParams.get('payment');
-    if (!payment) return err('Missing payment', 400);
-    const code = await env.BMOD_KV.get(`payment:${payment}`);
-    if (!code) return json({ status: 'pending' }, 200);
-    return json({ status: 'ready', code });
+    if (!payment || payment.length > 40) return err('Missing payment', 400);
+    const raw = await env.BMOD_KV.get(`payment:${payment}`);
+    if (!raw) return json({ status: 'pending' }, 200);
+    let ticket;
+    try { ticket = JSON.parse(raw); } catch { ticket = null; }
+    if (!ticket || typeof ticket !== 'object') ticket = { code: raw, retrieved_at: null }; // formato viejo: string
+    if (!ticket.retrieved_at) {
+        ticket.retrieved_at = nowISO();
+        await kvPut(env, `payment:${payment}`, ticket, { expirationTtl: PAYMENT_TICKET_GRACE });
+    }
+    return json({ status: 'ready', code: ticket.code });
 }
 
 // admin: generar códigos a mano (regalos, promos). `months` (1|3|6|12) genera
@@ -621,8 +666,10 @@ async function mercadoPagoWebhook(req, env, url) {
         const payment = await mpRes.json();
         if (payment.status !== 'approved') return json({ ok: true, status: payment.status }, 200);
 
-        // idempotencia: si ya generamos código para este pago, no dupliques
-        const existing = await env.BMOD_KV.get(`payment:${paymentId}`);
+        // idempotencia: si ya generamos código para este pago, no dupliques.
+        // paid:{id} es el marcador durable (90 días); payment:{id} es el ticket
+        // de retiro, que se acorta al primer retiro (ver retrieveCode).
+        const existing = await env.BMOD_KV.get(`paid:${paymentId}`);
         if (existing) return json({ ok: true, code: existing, dup: true }, 200);
 
         // producto desde external_reference: "{coach|premium}_{N}m" (por
@@ -637,7 +684,8 @@ async function mercadoPagoWebhook(req, env, url) {
         let code = newCode();
         while (await kvGet(env, `code:${code}`)) code = newCode();
         await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: String(paymentId) });
-        await env.BMOD_KV.put(`payment:${paymentId}`, code, { expirationTtl: 90 * 86400 });
+        await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
+        await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
         return json({ ok: true, code }, 200);
     } catch (e) {
         return json({ ok: true, error: String(e && e.message) }, 200);
@@ -680,6 +728,7 @@ async function oracleProxy(req, env) {
     if (!env.AI) return err('Oracle no configurado (falta el binding AI)', 503);
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body.token) : null;
     if (!payload) return err('Función premium: activá tu código para usar el Oracle', 403);
+    if (!(await aiQuotaOk(env, payload, 'oracle'))) return err('Llegaste al límite diario del Oracle (' + AI_QUOTA.oracle + ' consultas). Mañana se renueva.', 429);
     const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
     try {
         const aiResp = await env.AI.run(model, {
@@ -807,6 +856,7 @@ async function parseRoutine(req, env) {
     // Gate: solo licencias válidas (premium o coach).
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
+    if (!(await aiQuotaOk(env, payload, 'parse'))) return err('Llegaste al límite diario de importaciones (' + AI_QUOTA.parse + ' por día). Mañana se renueva.', 429);
 
     // Aceptación única de la licencia del modelo de visión (Meta exige enviar
     // 'agree' una vez por cuenta antes de usarlo). Gateado, se llama una sola vez.
@@ -1031,8 +1081,7 @@ async function testersClaim(req, env) {
     const ip = req.headers.get('CF-Connecting-IP') || '';
     let ipKey = null;
     if (ip) {
-        const digest = await crypto.subtle.digest('SHA-256', enc.encode('tester-ip:' + ip));
-        ipKey = 'tester-ip:' + b64urlFromBytes(new Uint8Array(digest)).slice(0, 22);
+        ipKey = 'tester-ip:' + await ipHash(ip);
         const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
         if (ipRec.n >= TESTERS_IP_MAX) return err('Demasiados reclamos desde esta red', 429);
         await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TESTERS_IP_TTL });
