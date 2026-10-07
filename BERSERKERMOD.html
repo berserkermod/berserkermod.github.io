@@ -2151,7 +2151,7 @@
                 hr_zone_3: "Aerobic", hr_zone_4: "Umbral", hr_zone_5: "Máximo",
                 onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino",
                 train_add_custom: "Agregar", train_custom_ph: "+ Ejercicio personalizado...",
-                stats_need_more: "Necesitás +2 sesiones para ver el gráfico", stats_no_sess: "Sin sesiones de ",
+                stats_need_more: "Necesitás +2 sesiones para ver el gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Eliminar Sesión",
                 prof_country: "País", onb_country_ph: "Seleccionar país...",
                 share_title: "RESUMEN", share_sub: "¡Comparte tu progreso en redes!", share_btn: "Compartir 🚀", share_close: "Cerrar",
@@ -2414,7 +2414,7 @@
                 hr_zone_3: "Aerobic", hr_zone_4: "Threshold", hr_zone_5: "Max",
                 onb_sex: "SEX", onb_male: "Male", onb_female: "Female",
                 train_add_custom: "Add", train_custom_ph: "+ Custom exercise...",
-                stats_need_more: "Need +2 sessions to see the chart", stats_no_sess: "No sessions for ",
+                stats_need_more: "Need +2 sessions to see the chart",
                 stats_edit_btn: "✏️ Edit", stats_del_btn: "Delete Session",
                 prof_country: "Country", onb_country_ph: "Select country...",
                 share_title: "SUMMARY", share_sub: "Share your progress!", share_btn: "Share 🚀", share_close: "Close",
@@ -2678,7 +2678,7 @@
                 hr_zone_3: "Aeróbico", hr_zone_4: "Limiar", hr_zone_5: "Máximo",
                 onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino",
                 train_add_custom: "Adicionar", train_custom_ph: "+ Exercício personalizado...",
-                stats_need_more: "Precisa de +2 sessões para ver o gráfico", stats_no_sess: "Sem sessões para ",
+                stats_need_more: "Precisa de +2 sessões para ver o gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Excluir Sessão",
                 prof_country: "País", onb_country_ph: "Selecione o país...",
                 share_title: "RESUMO", share_sub: "Compartilhe seu progresso!", share_btn: "Compartilhar 🚀", share_close: "Fechar",
@@ -3438,7 +3438,7 @@
             sessionSets: [], sessionStart: null, sessionDate: null,
             exListOpen: false, exSearch: '',
             histFilter: 'TODOS', histExpanded: null,
-            statsDay: DAYS[0], statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
+            statsGroup: '', statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
             cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioIntensity: 1, cardioOtherName: '',
             restTimer: 0, restInterval: null,
             editSessId: null, editData: null,
@@ -7801,21 +7801,39 @@
             vc.appendChild(vGrid);
             v.appendChild(vc);
 
-            // Day filter for chart
+            // Progreso por ejercicio, agrupado por GRUPO MUSCULAR sobre TODAS las
+            // sesiones. Antes filtraba por la categoría del modo Libre
+            // (s.day === 'EMPUJES'…), y quien entrena con la rutina de la app
+            // —sesiones con s.day = nombre del día del plan, ej. "UPPER A — Push"—
+            // nunca veía su gráfico.
             const dc = h('div', { className: 'card fade-in' });
             dc.appendChild(h('p', { className: 'label' }, t('stats_prog')));
-            const pills = h('div', { className: 'pills', style: { marginBottom: '10px' } });
-            DAYS.forEach(d => pills.appendChild(h('button', {
-                className: 'pill' + (state.statsDay === d ? ' active' : ''), style: { fontSize: '10px' },
-                onclick: () => { state.statsDay = d; state.statsEx = ''; renderStats(); }
-            }, d)));
-            dc.appendChild(pills);
+            const exStats = {}; // ejercicio → { n: sesiones con ese ejercicio, max: kg máx, grp }
+            state.sessions.forEach(s => (s.exercises || []).forEach(e => {
+                const kgs = (e.sets || []).map(st => st.kg || 0);
+                if (!kgs.some(k => k > 0)) return; // peso corporal: no hay curva de kg
+                const r = exStats[e.exercise] || (exStats[e.exercise] = { n: 0, max: 0, grp: getMuscleGroup(e.exercise) });
+                r.n++; r.max = Math.max(r.max, ...kgs);
+            }));
+            const GROUP_ORDER = ['Pecho', 'Espalda', 'Piernas', 'Brazos', 'Core'];
+            const rank = g => { const i = GROUP_ORDER.indexOf(g); return i < 0 ? 99 : i; };
+            const groups = [...new Set(Object.values(exStats).map(r => r.grp))].sort((x, y) => rank(x) - rank(y));
+            if (!groups.includes(state.statsGroup)) { state.statsGroup = groups[0] || ''; state.statsEx = ''; }
 
-            const daySess = state.sessions.filter(s => s.day === state.statsDay);
-            const allEx = [...new Set(daySess.flatMap(s => s.exercises.map(e => e.exercise)))].sort();
-            if (!state.statsEx && allEx.length) state.statsEx = allEx[0];
+            if (groups.length) {
+                const pills = h('div', { className: 'pills', style: { marginBottom: '10px' } });
+                groups.forEach(g => pills.appendChild(h('button', {
+                    className: 'pill' + (state.statsGroup === g ? ' active' : ''), style: { fontSize: '10px' },
+                    onclick: () => { state.statsGroup = g; state.statsEx = ''; renderStats(); }
+                }, g.toUpperCase())));
+                dc.appendChild(pills);
 
-            if (allEx.length) {
+                // Más entrenados primero; a igual historia, el más pesado (el
+                // compuesto: press de banca antes que aperturas).
+                const allEx = Object.keys(exStats).filter(n => exStats[n].grp === state.statsGroup)
+                    .sort((x, y) => exStats[y].n - exStats[x].n || exStats[y].max - exStats[x].max || x.localeCompare(y));
+                if (!allEx.includes(state.statsEx)) state.statsEx = allEx[0] || '';
+
                 const sel = h('select', {
                     className: 'input', style: { padding: '8px 12px', fontSize: '12px', marginBottom: '12px' },
                     onchange: e => { state.statsEx = e.target.value; renderStats(); }
@@ -7823,18 +7841,19 @@
                 allEx.forEach(ex => { const o = h('option', { value: ex }, ex); if (ex === state.statsEx) o.selected = true; sel.appendChild(o); });
                 dc.appendChild(sel);
 
-                const data = daySess.filter(s => s.exercises.some(e => e.exercise === state.statsEx))
+                const data = state.sessions.filter(s => (s.exercises || []).some(e => e.exercise === state.statsEx))
                     .sort((a, b) => a.date.localeCompare(b.date)).map(s => {
                         const ex = s.exercises.find(e => e.exercise === state.statsEx);
+                        const maxKg = Math.max(...ex.sets.map(st => st.kg));
                         return {
-                            date: s.date.slice(5), maxKg: Math.max(...ex.sets.map(st => st.kg)),
+                            date: s.date.slice(5), maxKg,
                             vol: ex.sets.reduce((a, st) => a + st.kg * st.reps, 0),
-                            rm: calc1RM(Math.max(...ex.sets.map(st => st.kg)), ex.sets.find(st => st.kg === Math.max(...ex.sets.map(x => x.kg))).reps)
+                            rm: calc1RM(maxKg, ex.sets.find(st => st.kg === maxKg).reps)
                         };
                     });
                 if (data.length >= 2) dc.appendChild(renderChart(data, 'maxKg'));
                 else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_need_more')));
-            } else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_no_sess') + state.statsDay));
+            } else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_need_more')));
             v.appendChild(dc);
 
             // RÉCORDS PERSONALES — globales (todas las sesiones, no dependen del día
@@ -8030,7 +8049,7 @@
         }
 
         function renderChart(data, key) {
-            const W = 300, H = 130, P = { t: 10, r: 10, b: 22, l: 34 };
+            const W = 300, H = 130, P = { t: 20, r: 10, b: 22, l: 34 }; // t ≥ 20: la etiqueta del punto más alto va 8px arriba
             const pw = W - P.l - P.r, ph = H - P.t - P.b;
             const vals = data.map(d => d[key]), minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
             const xStep = pw / (data.length - 1 || 1);
