@@ -83,6 +83,11 @@ PLAY_PACKAGE = "io.github.berserkermod.twa"
 TESTERS_CLAIM_OPEN = "true"
 TESTERS_CLAIM_MAX = "25"
 
+# Metricas anonimas de la web (ver "METRICAS ANONIMAS" en src/index.js).
+# El account id no es secreto; el token de lectura SI (CF_ANALYTICS_TOKEN,
+# permiso "Account Analytics: Read"):  npx wrangler secret put CF_ANALYTICS_TOKEN
+CF_ACCOUNT_ID = "0a8cc9f61d77cd06dd7fb75d825e3aa1"
+
 # KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
 # El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
 [[kv_namespaces]]
@@ -108,6 +113,12 @@ crons = ["0 21 * * *", "3 21 * * *", "6 21 * * *", "9 21 * * *", "12 21 * * *"]
 #   RL_STRICT → rutas caras/abusables (errores, checkout, trial, testers, IA,
 #               push subscribe, admin): 5 req/min por IP.
 # Ver STRICT_ROUTES en src/index.js. Al pasarse → 429 + Retry-After: 60.
+# Workers Analytics Engine: eventos anonimos de la web (no usa KV).
+# Free: 100.000 eventos/dia.
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "bm_events"
+
 [[ratelimits]]
 name = "RL_OPEN"
 namespace_id = "1001"

@@ -1735,8 +1735,8 @@
                 </div>
                 <div class="privacy-card reveal reveal-delay-2">
                     <div class="privacy-icon">📵</div>
-                    <h3 class="privacy-title">Sin tracking</h3>
-                    <p class="privacy-desc">No hay Google Analytics. No hay Facebook Pixel. No hay cookies de terceros. No vendemos tus datos.</p>
+                    <h3 class="privacy-title">Sin rastreo</h3>
+                    <p class="privacy-desc">Sin Google Analytics, sin Facebook Pixel, sin cookies. Solo contamos visitas a esta web de forma anónima, en nuestro propio servidor. No vendemos tus datos.</p>
                 </div>
             </div>
         </section>
@@ -2121,5 +2121,44 @@
             }
         })();
     </script>
+<script>
+/* Métricas anónimas de la web: sin cookies, sin IP, sin identificadores
+   (ver privacy.html §2). Solo cuenta visitas y toques de botón por origen
+   (?ref=tiktok, o el sitio de donde viniste). No corre en local. */
+(function () {
+    try {
+        var API = 'https://berserkermod-api.berserkermod.workers.dev';
+        var clean = function (s) { return String(s || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 32); };
+        var q = new URLSearchParams(location.search);
+        var ref = clean(q.get('ref') || q.get('utm_source'));
+        if (!ref && document.referrer) {
+            try { var h = new URL(document.referrer).hostname.replace(/^www\./, ''); if (h && h !== location.hostname) ref = clean(h); } catch (e) { }
+        }
+        try { if (ref) sessionStorage.setItem('bm-ref', ref); else ref = sessionStorage.getItem('bm-ref') || ''; } catch (e) { }
+        ref = ref || 'direct';
+        var off = location.protocol === 'file:' || /^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname);
+        window.bmTrack = function (e, n) {
+            if (off) return;
+            try {
+                var body = JSON.stringify({ e: e, n: n || '', p: location.pathname, r: ref });
+                if (!(navigator.sendBeacon && navigator.sendBeacon(API + '/api/e', body))) fetch(API + '/api/e', { method: 'POST', body: body, keepalive: true });
+            } catch (x) { }
+        };
+        bmTrack('view');
+    } catch (e) { }
+})();
+</script>
+<script>
+document.addEventListener('click', function (ev) {
+    var el = ev.target.closest && ev.target.closest('a[href*="BERSERKERMOD.html"], #buy-premium-btn, #buy-coach-btn');
+    if (!el || !window.bmTrack) return;
+    var c = String(el.className || ''), sec = el.closest('section');
+    var n = el.id === 'buy-premium-btn' ? 'buy_premium' : el.id === 'buy-coach-btn' ? 'buy_coach'
+        : /header-cta/.test(c) ? 'app_header' : /sticky-bar/.test(c) ? 'app_sticky'
+        : /precio-cta-free/.test(c) ? 'app_free' : /precio-cta-premium/.test(c) ? 'try_premium'
+        : 'app_' + ((sec && sec.id) || 'other');
+    bmTrack('cta', n);
+}, true);
+</script>
 </body>
 </html>

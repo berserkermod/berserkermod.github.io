@@ -741,6 +741,53 @@ let code, licToken;
     delete env.MP_ACCESS_TOKEN;
 }
 
+// ── Métricas anónimas (Analytics Engine) ──
+{
+    console.log('\nMétricas anónimas: /api/e + conversiones server-side');
+    const points = [];
+    env.EVENTS = { writeDataPoint: (dp) => points.push(dp) };
+
+    const v = await call('POST', '/api/e', { e: 'view', p: '/testers.html', r: 'tiktok' }, { 'user-agent': 'Mozilla/5.0 (Linux; Android 14) Mobile', 'CF-Connecting-IP': '12.12.12.12' });
+    ok('view → 204 y un data point', v.status === 204 && points.length === 1, v.status);
+    ok('data point: [evento, nombre, ruta, origen, país, m|d], sin IP ni UA', JSON.stringify(points[0].blobs) === JSON.stringify(['view', '', '/testers.html', 'tiktok', '', 'm']) && !JSON.stringify(points[0]).includes('12.12.12.12') && !JSON.stringify(points[0]).includes('Android 14'), points[0]);
+
+    await call('POST', '/api/e', { e: 'cta', n: 'buy_premium', p: '/', r: 'TikTok' });
+    ok('cta con nombre; origen normalizado a minúsculas', points[1].blobs[0] === 'cta' && points[1].blobs[1] === 'buy_premium' && points[1].blobs[3] === 'tiktok', points[1].blobs);
+
+    await call('POST', '/api/e', { e: 'view', p: '/x?email=a@b.com', r: '<script>', n: 'DROP TABLE' });
+    ok('ruta/origen/nombre inválidos se sanean (no se guarda basura)', points[2].blobs[2] === '/' && points[2].blobs[3] === 'other' && points[2].blobs[1] === '', points[2].blobs);
+
+    const bad = await call('POST', '/api/e', { e: 'purchase_hack' });
+    ok('evento fuera de la lista → 400 y no escribe', bad.status === 400 && points.length === 3);
+    const big = await call('POST', '/api/e', { e: 'view', p: '/' + 'a'.repeat(5000) });
+    ok('beacon de más de 2 KB → 413', big.status === 413, big.status);
+
+    // conversiones desde los endpoints existentes
+    const before = points.length;
+    await call('POST', '/api/license/trial', { deviceId: 'ev-trial-dev', product: 'premium' }, { 'CF-Connecting-IP': '77.77.77.77' });
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'coach' }, { 'x-admin-secret': 'test-admin' });
+    await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'ev-act-dev' });
+    await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'ev-act-dev' }); // re-activar: no cuenta
+    const conv = points.slice(before).map(dp => dp.blobs[0] + ':' + dp.blobs[1]);
+    ok('trial y activación se registran una vez cada una', JSON.stringify(conv) === JSON.stringify(['trial:premium', 'activate:coach']), conv);
+
+    const noAuth = await call('GET', '/api/admin/stats');
+    ok('stats sin admin → 401', noAuth.status === 401);
+    const noTok = await call('GET', '/api/admin/stats', undefined, { 'x-admin-secret': 'test-admin' });
+    ok('stats sin token de Analytics → 503 explicativo', noTok.status === 503 && /CF_ANALYTICS_TOKEN/.test(noTok.body.error), noTok.body);
+
+    env.CF_ACCOUNT_ID = 'acc123'; env.CF_ANALYTICS_TOKEN = 'tok';
+    const realFetch3 = globalThis.fetch; const sqls = [];
+    globalThis.fetch = async (u, o) => { sqls.push({ u: String(u), sql: o.body, auth: o.headers.Authorization }); return new Response(JSON.stringify({ data: [{ evento: 'view', total: 3 }] }), { status: 200 }); };
+    const st = await call('GET', '/api/admin/stats?days=9999', undefined, { 'x-admin-secret': 'test-admin' });
+    ok('stats consulta el SQL API con el token y acota días a 90', st.status === 200 && st.body.days === 90 && sqls.length === 2 && sqls[0].u.includes('/accounts/acc123/analytics_engine/sql') && sqls[0].auth === 'Bearer tok' && sqls.every(q => q.sql.includes("INTERVAL '90' DAY")), [st.body, sqls.map(q => q.u)]);
+    globalThis.fetch = realFetch3;
+    delete env.CF_ACCOUNT_ID; delete env.CF_ANALYTICS_TOKEN; delete env.EVENTS;
+
+    const noBinding = await call('POST', '/api/e', { e: 'view', p: '/', r: 'x' });
+    ok('sin binding (wrangler dev / tests) → 204 igual, no rompe', noBinding.status === 204);
+}
+
 // ── Salud off + server-info + 404 ──
 {
     console.log('\nVarios');

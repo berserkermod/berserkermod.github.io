@@ -461,6 +461,7 @@ async function activateLicense(req, env) {
         // meses), el reloj arranca ACÁ — no en la compra — y queda fijado en el
         // código: re-activar o cambiar de teléfono no lo extiende.
         rec.used = true; rec.deviceId = deviceId; rec.activated_at = nowISO();
+        track(env, req, 'activate', rec.product || 'premium');
         if (rec.duration_days && !rec.expires_at) {
             rec.expires_at = new Date(Date.now() + rec.duration_days * 86400000).toISOString();
         }
@@ -521,6 +522,7 @@ async function startTrial(req, env) {
     const exp = iat + days * 86400000;
     await kvPut(env, key, { issued_at: nowISO() });
     await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TRIAL_IP_TTL });
+    track(env, req, 'trial', product);
     const token = await signLicense(secret, { product, tier: 'premium', deviceId, code: null, iat, exp, trial: true });
     return json({ ok: true, token, product, tier: 'premium', trial: true, days, expiresAt: new Date(exp).toISOString() });
 }
@@ -640,6 +642,7 @@ async function createCheckout(req, env) {
         });
         const data = await mp.json();
         if (!mp.ok || !data.init_point) return err('No se pudo crear el checkout', 502);
+        track(env, req, 'checkout', extRef);
         return json({ ok: true, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point || null, id: data.id });
     } catch {
         return err('Checkout upstream error', 502);
@@ -686,6 +689,7 @@ async function mercadoPagoWebhook(req, env, url) {
         await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: String(paymentId) });
         await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
         await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
+        track(env, req, 'paid', extRef);
         return json({ ok: true, code }, 200);
     } catch (e) {
         return json({ ok: true, error: String(e && e.message) }, 200);
@@ -1096,6 +1100,7 @@ async function testersClaim(req, env) {
     await kvPut(env, `code:${code}`, rec);
     await kvPut(env, `tester:${deviceId}`, { code, claimed_at: rec.created_at });
     await kvPut(env, 'testers:count', { n: counter.n + 1 });
+    track(env, req, 'tester_claim', 'premium');
     return issue(code, rec);
 }
 
@@ -1232,6 +1237,67 @@ async function sendDailyReminders(env) {
     return { sent, removed, total: ids.length, next };
 }
 
+// ─────────────────────────────────────────────
+// MÉTRICAS ANÓNIMAS (Workers Analytics Engine — no usa KV)
+// Para saber qué canal de marketing trae gente sin romper la promesa de la
+// landing: sin cookies, sin IP, sin identificadores. Cada evento guarda solo
+// [evento, nombre, ruta, origen, país, m|d]. La web manda 'view' y 'cta' a
+// /api/e; el server suma conversiones (trial, checkout, pago, tester, activación)
+// desde los endpoints que ya existen. La app instalada NO manda eventos.
+// Lectura: GET /api/admin/stats (admin) → consulta el SQL API de Analytics
+// Engine con CF_ACCOUNT_ID (var) + CF_ANALYTICS_TOKEN (secret, solo lectura).
+// ─────────────────────────────────────────────
+const EVENT_NAMES = ['view', 'cta'];
+const SAFE_TOKEN = /^[a-z0-9._-]{1,32}$/;
+
+function track(env, req, e, n, extra) {
+    if (!env.EVENTS || typeof env.EVENTS.writeDataPoint !== 'function') return;
+    try {
+        const ua = (req && req.headers.get('user-agent')) || '';
+        const country = (req && req.cf && req.cf.country) || '';
+        env.EVENTS.writeDataPoint({
+            blobs: [e, n || '', (extra && extra.p) || '', (extra && extra.r) || '', String(country).slice(0, 2), /Mobile|Android|iPhone|iPad/i.test(ua) ? 'm' : 'd'],
+            doubles: [1],
+            indexes: [e]
+        });
+    } catch { /* las métricas nunca rompen una ruta */ }
+}
+
+async function ingestEvent(req, env) {
+    const b = await readBody(req, 2048);
+    const e = b && String(b.e || '');
+    if (!EVENT_NAMES.includes(e)) return err('bad event', 400);
+    const n = String((b && b.n) || '').toLowerCase();
+    const r = String((b && b.r) || 'direct').toLowerCase();
+    const path = String((b && b.p) || '/');
+    track(env, req, e, SAFE_TOKEN.test(n) ? n : '', {
+        p: /^\/[A-Za-z0-9._/-]{0,63}$/.test(path) ? path : '/',
+        r: SAFE_TOKEN.test(r) ? r : 'other'
+    });
+    return new Response(null, { status: 204, headers: corsHeaders() });
+}
+
+async function aeQuery(env, sql) {
+    const resp = await fetch(`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/analytics_engine/sql`, {
+        method: 'POST', headers: { Authorization: 'Bearer ' + env.CF_ANALYTICS_TOKEN }, body: sql
+    });
+    if (!resp.ok) throw new Error('Analytics Engine ' + resp.status);
+    return (await resp.json()).data || [];
+}
+
+async function adminStats(req, env, url) {
+    if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
+    if (!env.CF_ACCOUNT_ID || !env.CF_ANALYTICS_TOKEN) return err('Falta CF_ANALYTICS_TOKEN (secret de solo lectura de Analytics)', 503);
+    const days = Math.min(Math.max(parseInt(url.searchParams.get('days'), 10) || 7, 1), 90);
+    const since = `timestamp > NOW() - INTERVAL '${days}' DAY`;
+    // _sample_interval: AE muestrea con mucho volumen; sumarlo da el conteo real.
+    const [porOrigen, porDia] = await Promise.all([
+        aeQuery(env, `SELECT blob1 AS evento, blob2 AS nombre, blob4 AS origen, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY evento, nombre, origen ORDER BY total DESC LIMIT 300 FORMAT JSON`),
+        aeQuery(env, `SELECT toStartOfDay(timestamp) AS dia, blob1 AS evento, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY dia, evento ORDER BY dia FORMAT JSON`)
+    ]);
+    return json({ ok: true, days, por_origen: porOrigen, por_dia: porDia });
+}
+
 export default {
     async scheduled(controller, env, ctx) {
         ctx.waitUntil(sendDailyReminders(env));
@@ -1273,6 +1339,8 @@ export default {
             if (p === '/api/admin/codes' && m === 'POST') return await adminCreateCodes(req, env);
             if (p === '/api/testers/claim' && m === 'POST') return await testersClaim(req, env);
             if (p === '/api/admin/testers' && m === 'GET') return await adminTesters(req, env);
+            if (p === '/api/admin/stats' && m === 'GET') return await adminStats(req, env, url);
+            if (p === '/api/e' && m === 'POST') return await ingestEvent(req, env);
 
             // Checkout / productos
             if (p === '/api/products' && m === 'GET') return productsInfo(env);

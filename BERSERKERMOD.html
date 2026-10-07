@@ -4858,7 +4858,7 @@
                 // Embed (either custom or default)
                 if (isCustom) videoSec.appendChild(h('span', { className: 'lib-custom-badge' }, t('lib_custom_video_badge')));
                 const embed = h('div', { className: 'lib-video-embed' });
-                embed.innerHTML = `<iframe src="https://www.youtube.com/embed/${effectiveVideoId}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                embed.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${effectiveVideoId}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                 videoSec.appendChild(embed);
                 if (ex.youtube_creator && !isCustom) {
                     videoSec.appendChild(h('p', { className: 'creator', style: { marginTop: '8px' } }, 'Video por: ', h('b', {}, ex.youtube_creator)));
