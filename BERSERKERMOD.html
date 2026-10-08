@@ -5056,7 +5056,7 @@
                     const style = getDayStyle(day.name);
                     // Day title (color won't be vivid since RGB from CSS isn't usable, fallback to dark)
                     doc.setFontSize(13); doc.setTextColor(0, 150, 130);
-                    doc.text('Día ' + (dIdx + 1) + ' — ' + day.name + (day.focus ? '  (' + day.focus + ')' : ''), margin, y);
+                    doc.text(dayLabel('Día', dIdx, day.name) + (day.focus ? '  (' + day.focus + ')' : ''), margin, y);
                     y += 5;
                     if (day.method) {
                         doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -5478,7 +5478,7 @@
                 const card = h('div', { className: 'card', style: { marginBottom: '12px' } });
 
                 // Day header
-                card.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, t('home_plan_day') + ' ' + (dIdx + 1) + ' — ' + day.name));
+                card.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, dayLabel(t('home_plan_day'), dIdx, day.name)));
                 if (day.focus) {
                     card.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--blue)', marginBottom: '4px', fontWeight: 600 } }, '🎯 ' + t('routine_focus') + ': ' + day.focus));
                 }
@@ -6207,7 +6207,7 @@
             banner.style.setProperty('--day-bg', dayStyle.bg);
             banner.appendChild(h('span', { className: 'rt-day-banner-icon' }, dayStyle.icon));
             const bt = h('div', { className: 'rt-day-banner-text' });
-            bt.appendChild(h('div', { className: 'rt-day-banner-name' }, t('home_plan_day') + ' ' + (dayIdx + 1) + ' — ' + today.name));
+            bt.appendChild(h('div', { className: 'rt-day-banner-name' }, dayLabel(t('home_plan_day'), dayIdx, today.name)));
             if (today.focus) bt.appendChild(h('div', { className: 'rt-day-banner-focus' }, '🎯 ' + today.focus + ' · ' + (today.method || '')));
             banner.appendChild(bt);
             v.appendChild(banner);
@@ -6659,6 +6659,13 @@
         }
         // Mapea la rutina parseada del Worker al modelo de plan de la app.
         // Compartido entre "guardar como rutina propia" y "llenar el creador (coach)".
+        // "DÍA 2 — Espalda". Si el nombre ya empieza con "Día 2" (rutinas importadas
+        // de PDF, días con nombre por defecto) no se repite: nada de "DÍA 2 — Día 2 — …".
+        function dayLabel(prefix, idx, name) {
+            const n = String(name || '').replace(/^\s*(d[ií]a|day)\s*\d+\s*[—–\-:.·]?\s*/i, '').trim();
+            return prefix + ' ' + (idx + 1) + (n ? ' — ' + n : '');
+        }
+
         function importedRoutineToPlan(routine) {
             const plan = (routine.days || []).map((d, i) => ({
                 name: d.name || ('Día ' + (i + 1)),
