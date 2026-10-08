@@ -4751,6 +4751,7 @@
         }
 
         function renderLibrary() {
+            $('lib-body').dataset.detailId = ''; // la próxima ficha que se abra arranca arriba
             // Render filter pills (target only — difficulty pill row optional)
             const filters = $('lib-target-filters');
             filters.innerHTML = '';
@@ -4822,6 +4823,10 @@
             const ex = getLibraryExercise(state.libDetailId);
             const body = $('lib-body');
             body.innerHTML = '';
+            // Abrir otra ficha arranca arriba (si no, hereda el scroll de la lista y
+            // abre a mitad de página, sin el nombre del ejercicio). Re-dibujar la misma
+            // ficha (favorito, video propio) mantiene la posición.
+            if (body.dataset.detailId !== String(state.libDetailId)) { body.scrollTop = 0; body.dataset.detailId = String(state.libDetailId); }
             if (!ex) { body.appendChild(h('p', { className: 'lib-empty' }, 'Ejercicio no encontrado')); return; }
 
             const wrap = h('div', { className: 'lib-detail' });
