@@ -1177,10 +1177,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(.8);
-            background: rgba(0, 212, 170, .1);
+            /* tinte sobre fondo opaco: el texto no se mezcla con lo de atrás */
+            background: linear-gradient(rgba(0, 212, 170, .1), rgba(0, 212, 170, .1)), var(--sf1);
             border: 2px solid var(--accent);
             border-radius: 20px;
             padding: 24px 36px;
+            width: max-content;
+            max-width: calc(100vw - 48px);
             text-align: center;
             z-index: 999;
             font-size: 18px;
@@ -1402,6 +1405,9 @@
         .food-macro-chip { flex: 1; background: var(--sf2); border-radius: 10px; padding: 6px 4px; text-align: center; }
         .food-macro-chip .val { font-size: 14px; font-weight: 800; }
         .food-macro-chip .lbl { font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-top: 1px; }
+        .food-macro-chip .of { font-size: 10px; color: var(--text3); font-weight: 700; }
+        .food-macro-chip .bar { height: 3px; background: var(--sf3); border-radius: 2px; margin: 4px 6px 3px; overflow: hidden; }
+        .food-macro-chip .bar > div { height: 100%; border-radius: 2px; }
 
         /* PROG BANNER */
         .prog-banner { background: linear-gradient(135deg,rgba(0,212,170,.1),rgba(0,212,170,.04)); border: 1.5px solid rgba(0,212,170,.25); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
@@ -1742,7 +1748,7 @@
         .portion-name small { color: var(--text3); font-size: 10px; font-weight: 600; display: block; margin-top: 2px; }
         .portion-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: var(--sf2); border-radius: 14px; padding: 8px; }
         .portion-btn { width: 34px; height: 34px; border-radius: 8px; background: var(--sf3); color: var(--text); font-size: 18px; font-weight: 900; border: none; cursor: pointer; flex-shrink: 0; }
-        .portion-input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 22px; font-weight: 900; text-align: center; padding: 0; }
+        .portion-input { flex: 1; min-width: 0; background: transparent; border: none; color: var(--text); font-size: 22px; font-weight: 900; text-align: center; padding: 0; }
         .portion-unit { color: var(--text3); font-size: 12px; font-weight: 700; padding-right: 8px; }
         .portion-presets { display: flex; gap: 6px; margin-bottom: 16px; }
         .portion-preset { flex: 1; padding: 7px 4px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; }
@@ -5872,6 +5878,8 @@
         }
 
         function switchTab(tab) {
+            // Otra pestaña abre arriba, no a la altura de scroll de la anterior.
+            if (state.tab !== tab) { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; }
             state.tab = tab;
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             const vw = $('view-' + tab); if (vw) vw.classList.add('active');
@@ -11605,15 +11613,25 @@
                 const totalProt = entries.reduce((a, e) => a + (e.protein || 0), 0);
                 const totalCarbs = entries.reduce((a, e) => a + (e.carbs || 0), 0);
                 const totalFat = entries.reduce((a, e) => a + (e.fat || 0), 0);
-                const target = state.user ? calcTDEE(state.user) : 2000;
+                // Daily target for the user's goal: the same numbers as the nutrition plan (not maintenance).
+                const goal = calcMacros(state.user);
+                const target = goal.targetCals;
 
-                // Macro summary chips
+                // Macro summary chips: consumed / target, with a mini progress bar
                 const macro = h('div', { className: 'food-macro-row' });
-                [{ v: totalKcal, l: 'KCAL', c: 'var(--orange)' }, { v: Math.round(totalProt) + 'g', l: 'PROT', c: 'var(--accent)' },
-                 { v: Math.round(totalCarbs) + 'g', l: 'CARBS', c: 'var(--blue)' }, { v: Math.round(totalFat) + 'g', l: 'GRASA', c: 'var(--purple)' }
-                ].forEach(({ v: val, l, c }) => {
+                [{ v: totalKcal, of: goal.targetCals, u: '', l: 'KCAL', c: 'var(--orange)' },
+                 { v: Math.round(totalProt), of: goal.protein, u: 'g', l: 'PROT', c: 'var(--accent)' },
+                 { v: Math.round(totalCarbs), of: goal.carbs, u: 'g', l: 'CARBS', c: 'var(--blue)' },
+                 { v: Math.round(totalFat), of: goal.fat, u: 'g', l: 'GRASA', c: 'var(--purple)' }
+                ].forEach(({ v: val, of, u, l, c }) => {
                     const chip = h('div', { className: 'food-macro-chip' });
-                    chip.appendChild(h('div', { className: 'val', style: { color: c } }, val + ''));
+                    chip.appendChild(h('div', { className: 'val', style: { color: c } }, val + u));
+                    if (of > 0) {
+                        chip.appendChild(h('div', { className: 'of' }, '/ ' + of + u));
+                        const mbar = h('div', { className: 'bar' });
+                        mbar.appendChild(h('div', { style: { width: Math.min(100, Math.round(val / of * 100)) + '%', background: c } }));
+                        chip.appendChild(mbar);
+                    }
                     chip.appendChild(h('div', { className: 'lbl' }, l));
                     macro.appendChild(chip);
                 });
