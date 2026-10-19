@@ -461,7 +461,7 @@ async function activateLicense(req, env) {
         // meses), el reloj arranca ACÁ — no en la compra — y queda fijado en el
         // código: re-activar o cambiar de teléfono no lo extiende.
         rec.used = true; rec.deviceId = deviceId; rec.activated_at = nowISO();
-        track(env, req, 'activate', rec.product || 'premium');
+        track(env, req, 'activate', rec.product || 'premium', { s: surfaceOf(body) });
         if (rec.duration_days && !rec.expires_at) {
             rec.expires_at = new Date(Date.now() + rec.duration_days * 86400000).toISOString();
         }
@@ -522,7 +522,7 @@ async function startTrial(req, env) {
     const exp = iat + days * 86400000;
     await kvPut(env, key, { issued_at: nowISO() });
     await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TRIAL_IP_TTL });
-    track(env, req, 'trial', product);
+    track(env, req, 'trial', product, { s: surfaceOf(body) });
     const token = await signLicense(secret, { product, tier: 'premium', deviceId, code: null, iat, exp, trial: true });
     return json({ ok: true, token, product, tier: 'premium', trial: true, days, expiresAt: new Date(exp).toISOString() });
 }
@@ -642,7 +642,7 @@ async function createCheckout(req, env) {
         });
         const data = await mp.json();
         if (!mp.ok || !data.init_point) return err('No se pudo crear el checkout', 502);
-        track(env, req, 'checkout', extRef);
+        track(env, req, 'checkout', extRef, { s: 'web' });
         return json({ ok: true, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point || null, id: data.id });
     } catch {
         return err('Checkout upstream error', 502);
@@ -689,7 +689,7 @@ async function mercadoPagoWebhook(req, env, url) {
         await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: String(paymentId) });
         await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
         await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
-        track(env, req, 'paid', extRef);
+        track(env, req, 'paid', extRef, { server: true });
         return json({ ok: true, code }, 200);
     } catch (e) {
         return json({ ok: true, error: String(e && e.message) }, 200);
@@ -1100,7 +1100,7 @@ async function testersClaim(req, env) {
     await kvPut(env, `code:${code}`, rec);
     await kvPut(env, `tester:${deviceId}`, { code, claimed_at: rec.created_at });
     await kvPut(env, 'testers:count', { n: counter.n + 1 });
-    track(env, req, 'tester_claim', 'premium');
+    track(env, req, 'tester_claim', 'premium', { s: surfaceOf(body) });
     return issue(code, rec);
 }
 
@@ -1241,22 +1241,31 @@ async function sendDailyReminders(env) {
 // MÉTRICAS ANÓNIMAS (Workers Analytics Engine — no usa KV)
 // Para saber qué canal de marketing trae gente sin romper la promesa de la
 // landing: sin cookies, sin IP, sin identificadores. Cada evento guarda solo
-// [evento, nombre, ruta, origen, país, m|d]. La web manda 'view' y 'cta' a
-// /api/e; el server suma conversiones (trial, checkout, pago, tester, activación)
-// desde los endpoints que ya existen. La app instalada NO manda eventos.
+// [evento, nombre, ruta, origen, país, m|d, sistema, superficie]. La web manda
+// 'view' y 'cta' a /api/e; el server suma conversiones (trial, checkout, pago,
+// tester, activación) desde los endpoints que ya existen. La app instalada NO
+// manda eventos: en sus pedidos de licencia solo agrega surface 'app' | 'web'.
+// sistema = android | ios | otro, sacado del user-agent que ya llega.
 // Lectura: GET /api/admin/stats (admin) → consulta el SQL API de Analytics
 // Engine con CF_ACCOUNT_ID (var) + CF_ANALYTICS_TOKEN (secret, solo lectura).
 // ─────────────────────────────────────────────
 const EVENT_NAMES = ['view', 'cta'];
 const SAFE_TOKEN = /^[a-z0-9._-]{1,32}$/;
 
+const SURFACES = ['web', 'app'];
+// Desde dónde vino un pedido de la app: 'app' (TWA de Play) o 'web'; '' si no lo dice (versiones viejas).
+const surfaceOf = (body) => (body && SURFACES.includes(body.surface) ? body.surface : '');
+
+// extra: p ruta, r origen, s superficie; server: true = pedido de otro servidor (webhook de MP), sin sistema.
 function track(env, req, e, n, extra) {
     if (!env.EVENTS || typeof env.EVENTS.writeDataPoint !== 'function') return;
     try {
         const ua = (req && req.headers.get('user-agent')) || '';
         const country = (req && req.cf && req.cf.country) || '';
+        const server = !!(extra && extra.server);
+        const os = server ? '' : /Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'ios' : 'otro';
         env.EVENTS.writeDataPoint({
-            blobs: [e, n || '', (extra && extra.p) || '', (extra && extra.r) || '', String(country).slice(0, 2), /Mobile|Android|iPhone|iPad/i.test(ua) ? 'm' : 'd'],
+            blobs: [e, n || '', (extra && extra.p) || '', (extra && extra.r) || '', String(country).slice(0, 2), /Mobile|Android|iPhone|iPad/i.test(ua) ? 'm' : 'd', os, (extra && extra.s) || ''],
             doubles: [1],
             indexes: [e]
         });
@@ -1272,7 +1281,8 @@ async function ingestEvent(req, env) {
     const path = String((b && b.p) || '/');
     track(env, req, e, SAFE_TOKEN.test(n) ? n : '', {
         p: /^\/[A-Za-z0-9._/-]{0,63}$/.test(path) ? path : '/',
-        r: SAFE_TOKEN.test(r) ? r : 'other'
+        r: SAFE_TOKEN.test(r) ? r : 'other',
+        s: 'web'
     });
     return new Response(null, { status: 204, headers: corsHeaders() });
 }
@@ -1291,11 +1301,12 @@ async function adminStats(req, env, url) {
     const days = Math.min(Math.max(parseInt(url.searchParams.get('days'), 10) || 7, 1), 90);
     const since = `timestamp > NOW() - INTERVAL '${days}' DAY`;
     // _sample_interval: AE muestrea con mucho volumen; sumarlo da el conteo real.
-    const [porOrigen, porDia] = await Promise.all([
+    const [porOrigen, porDia, porSistema] = await Promise.all([
         aeQuery(env, `SELECT blob1 AS evento, blob2 AS nombre, blob4 AS origen, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY evento, nombre, origen ORDER BY total DESC LIMIT 300 FORMAT JSON`),
-        aeQuery(env, `SELECT toStartOfDay(timestamp) AS dia, blob1 AS evento, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY dia, evento ORDER BY dia FORMAT JSON`)
+        aeQuery(env, `SELECT toStartOfDay(timestamp) AS dia, blob1 AS evento, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY dia, evento ORDER BY dia FORMAT JSON`),
+        aeQuery(env, `SELECT blob1 AS evento, blob7 AS sistema, blob8 AS superficie, SUM(_sample_interval) AS total FROM bm_events WHERE ${since} GROUP BY evento, sistema, superficie ORDER BY total DESC LIMIT 300 FORMAT JSON`)
     ]);
-    return json({ ok: true, days, por_origen: porOrigen, por_dia: porDia });
+    return json({ ok: true, days, por_origen: porOrigen, por_dia: porDia, por_sistema: porSistema });
 }
 
 export default {

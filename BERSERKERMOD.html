@@ -3613,7 +3613,7 @@
             try {
                 const resp = await fetch(getApiBase() + '/api/license/activate', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: String(code || '').trim().toUpperCase(), deviceId: getDeviceId() })
+                    body: JSON.stringify({ code: String(code || '').trim().toUpperCase(), deviceId: getDeviceId(), surface: appSurface() })
                 });
                 const j = await resp.json().catch(() => ({}));
                 if (!resp.ok) return { ok: false, error: j.error || ('Error ' + resp.status) };
@@ -3628,7 +3628,7 @@
             try {
                 const resp = await fetch(getApiBase() + '/api/license/trial', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: getDeviceId(), product: product || 'premium' })
+                    body: JSON.stringify({ deviceId: getDeviceId(), product: product || 'premium', surface: appSurface() })
                 });
                 const j = await resp.json().catch(() => ({}));
                 if (!resp.ok) return { ok: false, error: j.error || ('Error ' + resp.status) };
@@ -3656,6 +3656,8 @@
             try { if (localStorage.getItem('bm-twa') === '1') return true; } catch { /* noop */ }
             return typeof playAvailable === 'function' && playAvailable();
         }
+        // Para las métricas anónimas del server: si el pedido viene de la app de Play o de la web.
+        function appSurface() { return isTWA() ? 'app' : 'web'; }
         function testerCode() { try { return localStorage.getItem('bm-tester-code') || ''; } catch { return ''; } }
         // Eligible = corre en la TWA, ya guardó al menos un entrenamiento, no
         // reclamó todavía y no tiene ya una licencia paga (un trial no cuenta).
@@ -3669,7 +3671,7 @@
             try {
                 const resp = await fetch(getApiBase() + '/api/testers/claim', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ deviceId: getDeviceId() })
+                    body: JSON.stringify({ deviceId: getDeviceId(), surface: appSurface() })
                 });
                 const j = await resp.json().catch(() => ({}));
                 if (!resp.ok) {

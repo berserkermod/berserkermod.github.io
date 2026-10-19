@@ -672,7 +672,7 @@ let code, licToken;
     ok('editor_name recortado a 40', longName.body.editor_name.length === 40);
 
     // Ring de errores: una sola key, tope 150, más nuevo primero
-    for (let i = 0; i < 10; i++) await call('POST', '/api/errors', { errors: Array.from({ length: 20 }, (_, j) => ({ msg: 'e' + i + '-' + j, at: '2026-09-17T00:00:00Z' })) });
+    for (let i = 0; i < 10; i++) await call('POST', '/api/errors', { errors: Array.from({ length: 20 }, (_, j) => ({ msg: 'e' + i + '-' + j, at: new Date().toISOString() })) });
     const ring = await call('GET', '/api/admin/errors', undefined, { 'x-admin-secret': 'test-admin' });
     ok('ring de errores acotado a 150 y sin keys sueltas', ring.body.count === 150 && ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('error:')), ring.body.count);
     ok('el error más reciente va primero', ring.body.errors[0].msg === 'e9-0', ring.body.errors[0]);
@@ -749,7 +749,7 @@ let code, licToken;
 
     const v = await call('POST', '/api/e', { e: 'view', p: '/testers.html', r: 'tiktok' }, { 'user-agent': 'Mozilla/5.0 (Linux; Android 14) Mobile', 'CF-Connecting-IP': '12.12.12.12' });
     ok('view → 204 y un data point', v.status === 204 && points.length === 1, v.status);
-    ok('data point: [evento, nombre, ruta, origen, país, m|d], sin IP ni UA', JSON.stringify(points[0].blobs) === JSON.stringify(['view', '', '/testers.html', 'tiktok', '', 'm']) && !JSON.stringify(points[0]).includes('12.12.12.12') && !JSON.stringify(points[0]).includes('Android 14'), points[0]);
+    ok('data point: [evento, nombre, ruta, origen, país, m|d, sistema, superficie], sin IP ni UA', JSON.stringify(points[0].blobs) === JSON.stringify(['view', '', '/testers.html', 'tiktok', '', 'm', 'android', 'web']) && !JSON.stringify(points[0]).includes('12.12.12.12') && !JSON.stringify(points[0]).includes('Android 14'), points[0]);
 
     await call('POST', '/api/e', { e: 'cta', n: 'buy_premium', p: '/', r: 'TikTok' });
     ok('cta con nombre; origen normalizado a minúsculas', points[1].blobs[0] === 'cta' && points[1].blobs[1] === 'buy_premium' && points[1].blobs[3] === 'tiktok', points[1].blobs);
@@ -770,6 +770,17 @@ let code, licToken;
     await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'ev-act-dev' }); // re-activar: no cuenta
     const conv = points.slice(before).map(dp => dp.blobs[0] + ':' + dp.blobs[1]);
     ok('trial y activación se registran una vez cada una', JSON.stringify(conv) === JSON.stringify(['trial:premium', 'activate:coach']), conv);
+    const tr = points[before].blobs, act = points[before + 1].blobs;
+    ok('conversión sin superficie (app vieja) → sistema del UA y superficie vacía', tr[6] === 'otro' && tr[7] === '' && act[7] === '', [tr, act]);
+
+    await call('POST', '/api/license/trial', { deviceId: 'ev-trial-ios', product: 'premium', surface: 'web' }, { 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile/15E148 Safari/604.1', 'CF-Connecting-IP': '77.77.77.78' });
+    const ios = points[points.length - 1].blobs;
+    ok('trial desde iPhone en la web → ios / web / m', ios[0] === 'trial' && ios[5] === 'm' && ios[6] === 'ios' && ios[7] === 'web', ios);
+    await call('POST', '/api/license/trial', { deviceId: 'ev-trial-twa', product: 'premium', surface: 'app' }, { 'user-agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile Chrome/130.0', 'CF-Connecting-IP': '77.77.77.79' });
+    const twa = points[points.length - 1].blobs;
+    ok('trial desde la app de Play → android / app', twa[6] === 'android' && twa[7] === 'app', twa);
+    await call('POST', '/api/license/trial', { deviceId: 'ev-trial-bad', product: 'premium', surface: '<script>' }, { 'CF-Connecting-IP': '77.77.77.80' });
+    ok('superficie desconocida no se guarda', points[points.length - 1].blobs[7] === '', points[points.length - 1].blobs);
 
     const noAuth = await call('GET', '/api/admin/stats');
     ok('stats sin admin → 401', noAuth.status === 401);
@@ -780,7 +791,7 @@ let code, licToken;
     const realFetch3 = globalThis.fetch; const sqls = [];
     globalThis.fetch = async (u, o) => { sqls.push({ u: String(u), sql: o.body, auth: o.headers.Authorization }); return new Response(JSON.stringify({ data: [{ evento: 'view', total: 3 }] }), { status: 200 }); };
     const st = await call('GET', '/api/admin/stats?days=9999', undefined, { 'x-admin-secret': 'test-admin' });
-    ok('stats consulta el SQL API con el token y acota días a 90', st.status === 200 && st.body.days === 90 && sqls.length === 2 && sqls[0].u.includes('/accounts/acc123/analytics_engine/sql') && sqls[0].auth === 'Bearer tok' && sqls.every(q => q.sql.includes("INTERVAL '90' DAY")), [st.body, sqls.map(q => q.u)]);
+    ok('stats consulta el SQL API con el token y acota días a 90', st.status === 200 && st.body.days === 90 && sqls.length === 3 && st.body.por_sistema && sqls[0].u.includes('/accounts/acc123/analytics_engine/sql') && sqls[0].auth === 'Bearer tok' && sqls.every(q => q.sql.includes("INTERVAL '90' DAY")), [st.body, sqls.map(q => q.u)]);
     globalThis.fetch = realFetch3;
     delete env.CF_ACCOUNT_ID; delete env.CF_ANALYTICS_TOKEN; delete env.EVENTS;
 
