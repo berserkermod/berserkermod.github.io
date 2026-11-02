@@ -19,6 +19,17 @@
                 var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'light' ? '#F3F4F6' : '#0A0A0B';
             } catch (e) { }
         })();
+        // Vuelta de Google (copia en Drive por redirección): el permiso llega en el #.
+        // Se saca de la URL antes de que corra cualquier otra cosa.
+        (function () {
+            try {
+                var hs = location.hash;
+                if (hs.indexOf('state=') < 0 || (hs.indexOf('access_token=') < 0 && hs.indexOf('error=') < 0)) return;
+                var p = new URLSearchParams(hs.slice(1));
+                window.__bmOAuth = { token: p.get('access_token') || '', exp: Number(p.get('expires_in')) || 3600, scope: p.get('scope') || '', state: p.get('state') || '', error: p.get('error') || '' };
+                history.replaceState(history.state, '', location.pathname + location.search);
+            } catch (e) { }
+        })();
     </script>
     <!-- CSP: defense-in-depth against XSS/exfiltration. script-src keeps
          'unsafe-inline' while the app is a single inline script (hash-based
@@ -4101,7 +4112,7 @@
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
             'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
-            'bm-last-backup', 'bm-drive-last', 'bm-flash-once', 'bm-schema-version',
+            'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
             'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code'
         ];
@@ -4220,8 +4231,37 @@
             });
             return Drive.gis;
         }
-        function driveToken() {
+        // Dentro de la app de Play la ventana emergente no es confiable: se va a
+        // Google en la misma pestaña y se vuelve con el permiso en el # (flujo
+        // implícito, sin secreto ni servidor). Lo pedido se retoma al volver.
+        const DRIVE_PENDING = 'bm-drive-pending';
+        function driveRedirect(action) {
+            const st = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+            try { localStorage.setItem(DRIVE_PENDING, JSON.stringify({ action: action, state: st, at: Date.now() })); } catch { }
+            const q = new URLSearchParams({
+                client_id: GOOGLE_CLIENT_ID, redirect_uri: location.origin + '/BERSERKERMOD.html', response_type: 'token',
+                scope: DRIVE_SCOPE, state: st, include_granted_scopes: 'true'
+            });
+            location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + q);
+        }
+        function driveResume() {
+            const back = window.__bmOAuth; window.__bmOAuth = null;
+            if (!back) return;
+            let pend = null;
+            try { pend = JSON.parse(localStorage.getItem(DRIVE_PENDING) || 'null'); localStorage.removeItem(DRIVE_PENDING); } catch { }
+            // Sin pedido propio reciente con el mismo state, el permiso se descarta.
+            if (!pend || !back.state || pend.state !== back.state || Date.now() - pend.at > 15 * 60000 || !state.user) return;
+            if (back.error || !back.token || !back.scope.split(' ').includes(DRIVE_SCOPE)) {
+                flash(back.error && back.error !== 'access_denied' ? t('dr_err') : t('dr_err_closed'), 'var(--orange)');
+                return;
+            }
+            Drive.token = back.token; Drive.exp = Date.now() + back.exp * 1000;
+            if (state.tab !== 'profile') switchTab('profile');
+            if (pend.action === 'restore') driveRestore(); else driveBackup();
+        }
+        function driveToken(action) {
             if (Drive.token && Date.now() < Drive.exp - 60000) return Promise.resolve(Drive.token);
+            if (isTWA()) { driveRedirect(action); return new Promise(() => { }); }   // la página se va a Google
             return new Promise((res, rej) => {
                 const ask = () => {
                     Drive.client = google.accounts.oauth2.initTokenClient({
@@ -4296,7 +4336,7 @@
         async function driveBackup() {
             let busy = null;
             try {
-                const tk = driveToken();            // primero el permiso, dentro del toque
+                const tk = driveToken('backup');    // primero el permiso, dentro del toque
                 busy = showBusy(t('dr_busy_save'));
                 await tk;
                 const local = buildBackup();
@@ -4323,13 +4363,15 @@
                 if (state.tab === 'profile') renderProfile();
             } catch (e) {
                 if (!driveCancelled(e)) logAppError('drive-backup', e);
+                // Ventana bloqueada: mismo pedido por redirección en vez de pedir que reintente.
+                if (/popup_failed/.test(String(e && e.message))) { driveRedirect('backup'); return; }
                 flash(driveErr(e), 'var(--orange)');
             } finally { if (busy) busy.remove(); }
         }
         async function driveRestore() {
             let busy = null;
             try {
-                const tk = driveToken();
+                const tk = driveToken('restore');
                 busy = showBusy(t('dr_busy_read'));
                 await tk;
                 const cur = await driveFind(DRIVE_FILE);
@@ -4340,12 +4382,13 @@
                 showImportConfirm(parsed);
             } catch (e) {
                 if (!driveCancelled(e)) logAppError('drive-restore', e);
+                if (/popup_failed/.test(String(e && e.message))) { driveRedirect('restore'); return; }
                 flash(driveErr(e), 'var(--orange)');
             } finally { if (busy) busy.remove(); }
         }
         function renderDriveCard(container) {
             if (!driveEnabled()) return;
-            loadGis().catch(() => { });
+            if (!isTWA()) loadGis().catch(() => { });
             const card = h('div', { className: 'card fade-in' });
             card.appendChild(h('p', { className: 'label' }, ico('cloudUp'), t('dr_title')));
             let last = null; try { last = localStorage.getItem('bm-drive-last'); } catch { }
@@ -14558,7 +14601,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         // errores capturados al Worker. Todo best-effort: nunca bloquea el boot.
         (function bootstrapBackend() {
             try {
-                setTimeout(() => { handleMpReturn(); revalidateLicense(); flushErrors(); }, 800);
+                setTimeout(() => { handleMpReturn(); revalidateLicense(); flushErrors(); driveResume(); }, 800);
                 if ('serviceWorker' in navigator && location.protocol !== 'file:') setTimeout(resyncPush, 4000);
             } catch { /* never block boot */ }
         })();
