@@ -236,7 +236,83 @@
         return out;
     }
 
+    // ── Modo Coach: resultados que registra el alumno desde su link ──
+    // Semana ISO (lunes a domingo) de 'YYYY-MM-DD' → 'YYYY-Www'. Misma cuenta que el Worker.
+    function isoWeek(dateStr) {
+        var d = new Date(dateStr + 'T00:00:00Z');
+        if (isNaN(d)) return '';
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));   // el jueves define el año
+        var week = Math.ceil(((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+        return d.getUTCFullYear() + '-W' + (week < 10 ? '0' : '') + week;
+    }
+
+    function sameExercise(a, b) { return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); }
+
+    // Mejor serie: la de más kg; a igual kg, la de más reps. null si no hay series con reps.
+    function topSet(sets) {
+        var best = null;
+        (sets || []).forEach(function (s) {
+            var kg = Number(s && s.kg) || 0, reps = Number(s && s.reps) || 0;
+            if (reps <= 0) return;
+            if (!best || kg > best.kg || (kg === best.kg && reps > best.reps)) best = { kg: kg, reps: reps };
+        });
+        return best;
+    }
+
+    // Cómo le fue en un ejercicio de la sesión `idx` frente a la vez anterior que
+    // lo hizo (sesiones en orden desc): 1 subió, -1 bajó, 0 igual, null sin referencia.
+    // Manda la mejor serie (kg, después reps); si empata, el volumen total (kg × reps),
+    // así subir una serie de 77,5 a 80 con la misma mejor serie también cuenta.
+    function exerciseTrend(sessions, idx, name) {
+        var list = sessions || [];
+        var find = function (s) {
+            var exs = (s && s.exercises) || [];
+            for (var i = 0; i < exs.length; i++) {
+                if (!sameExercise(exs[i].name, name) || !exs[i].sets) continue;
+                var top = topSet(exs[i].sets);
+                if (!top) return null;
+                var vol = 0;
+                exs[i].sets.forEach(function (x) { vol += (Number(x.kg) || 0) * (Number(x.reps) || 0); });
+                return { kg: top.kg, reps: top.reps, vol: Math.round(vol * 10) / 10 };
+            }
+            return null;
+        };
+        var sign = function (a, b) { return a === b ? 0 : (a > b ? 1 : -1); };
+        var cur = find(list[idx]);
+        if (!cur) return null;
+        for (var j = idx + 1; j < list.length; j++) {
+            var prev = find(list[j]);
+            if (!prev) continue;
+            return sign(cur.kg, prev.kg) || sign(cur.reps, prev.reps) || sign(cur.vol, prev.vol);
+        }
+        return null;
+    }
+
+    // Series para precargar al registrar: las de la última vez que hizo ese
+    // ejercicio o, si nunca lo registró, las del plan (series × reps @ kg; '8-12' → 8).
+    function prefillSets(name, sessions, plan) {
+        var list = sessions || [];
+        for (var i = 0; i < list.length; i++) {
+            var exs = (list[i] && list[i].exercises) || [];
+            for (var j = 0; j < exs.length; j++) {
+                if (sameExercise(exs[j].name, name) && exs[j].sets && exs[j].sets.length) {
+                    return exs[j].sets.map(function (s) { return { kg: Number(s.kg) || 0, reps: Number(s.reps) || 0 }; });
+                }
+            }
+        }
+        var n = Math.min(Math.max(parseInt(plan && plan.sets, 10) || 3, 1), 12);
+        var m = String((plan && plan.reps) || '').match(/\d+/);
+        var reps = m ? parseInt(m[0], 10) : 0, kg = Number(plan && plan.kg) || 0;
+        var out = [];
+        for (var k = 0; k < n; k++) out.push({ kg: kg, reps: reps });
+        return out;
+    }
+
     return {
+        isoWeek: isoWeek,
+        topSet: topSet,
+        exerciseTrend: exerciseTrend,
+        prefillSets: prefillSets,
         MUSCLES: MUSCLES,
         muscleTargets: muscleTargets,
         muscleSets: muscleSets,

@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -175,6 +175,32 @@ console.log('warmupSets (series de aproximación)');
     ok('sin barra (mancuernas): solo porcentajes', eq(warmupSets(30, { step: 2 }).map(s => s.kg), [12, 18, 24]), warmupSets(30, { step: 2 }));
     ok('sin peso → nada', eq(warmupSets(0, { bar: 20 }), []) && eq(warmupSets(NaN), []));
     ok('nunca llega al peso de trabajo ni repite', warmupSets(22.5, { bar: 20 }).every((s, i, a) => s.kg < 22.5 && (!i || s.kg > a[i - 1].kg)), warmupSets(22.5, { bar: 20 }));
+}
+
+console.log('Modo Coach: semana ISO, mejor serie, progreso y precarga');
+{
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    ok('semana ISO (bordes de año incluidos)', isoWeek('2026-01-01') === '2026-W01' && isoWeek('2025-12-29') === '2026-W01' && isoWeek('2021-01-03') === '2020-W53' && isoWeek('2026-11-08') === '2026-W45' && isoWeek('2026-11-09') === '2026-W46');
+    ok('semana ISO de fecha inválida → vacío', isoWeek('nada') === '');
+    ok('mejor serie: más kg; a igual kg, más reps', eq(topSet([{ kg: 80, reps: 8 }, { kg: 82.5, reps: 5 }, { kg: 82.5, reps: 6 }]), { kg: 82.5, reps: 6 }));
+    ok('series sin reps no cuentan', topSet([{ kg: 100, reps: 0 }]) === null && topSet([]) === null);
+    const ses = [
+        { date: '2026-11-09', exercises: [{ name: 'Sentadilla', sets: [{ kg: 85, reps: 5 }] }, { name: 'Press', sets: [{ kg: 60, reps: 6 }] }, { name: 'Remo', sets: [{ kg: 50, reps: 10 }] }] },
+        { date: '2026-11-06' },
+        { date: '2026-11-04', exercises: [{ name: 'sentadilla ', sets: [{ kg: 80, reps: 8 }] }, { name: 'Press', sets: [{ kg: 60, reps: 8 }] }, { name: 'Remo', sets: [{ kg: 50, reps: 10 }] }] }
+    ];
+    ok('progreso: subió kg → 1 (sin importar mayúsculas ni sesiones sin detalle)', exerciseTrend(ses, 0, 'Sentadilla') === 1);
+    ok('progreso: mismo kg, menos reps → -1; igual → 0', exerciseTrend(ses, 0, 'Press') === -1 && exerciseTrend(ses, 0, 'Remo') === 0);
+    ok('progreso sin vez anterior → null', exerciseTrend(ses, 2, 'Press') === null && exerciseTrend(ses, 0, 'Curl') === null);
+    const vol = [
+        { exercises: [{ name: 'Sentadilla', sets: [{ kg: 80, reps: 6 }, { kg: 80, reps: 6 }, { kg: 80, reps: 6 }] }] },
+        { exercises: [{ name: 'Sentadilla', sets: [{ kg: 80, reps: 6 }, { kg: 80, reps: 6 }, { kg: 77.5, reps: 6 }] }] },
+        { exercises: [{ name: 'Sentadilla', sets: [{ kg: 80, reps: 6 }, { kg: 80, reps: 6 }, { kg: 80, reps: 6 }] }] }
+    ];
+    ok('misma mejor serie: desempata el volumen (77,5 → 80 en la S3 = subió; al revés = bajó)', exerciseTrend(vol, 0, 'Sentadilla') === 1 && exerciseTrend(vol, 1, 'Sentadilla') === -1);
+    ok('precarga: lo último que registró', eq(prefillSets('press', ses, { sets: 4, reps: '10', kg: 40 }), [{ kg: 60, reps: 6 }]));
+    ok('precarga sin historial: el plan (8-12 → 8)', eq(prefillSets('Curl', ses, { sets: 3, reps: '8-12', kg: 12.5 }), [{ kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }]));
+    ok('precarga sin plan: 3 series vacías; tope 12', prefillSets('X', [], null).length === 3 && prefillSets('X', [], { sets: 40 }).length === 12);
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');

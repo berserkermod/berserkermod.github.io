@@ -122,6 +122,69 @@ let token, routineId;
     ok('rutina sigue existiendo tras DELETE ajeno', stillExists.body.length === 1);
 }
 
+// ── Coach: sesiones con kg/reps y control semanal (bloque 4) ──
+{
+    console.log('\nCoach: resultados por sesión y control semanal');
+    const cr = await call('POST', '/api/routines', { coach_id: 'coachR', name: 'Fuerza', plan: [{ name: 'A' }], alumno_name: 'Ana' });
+    const tk = cr.body.share_token, rid = cr.body.id;
+    const today = new Date().toISOString().slice(0, 10);
+    const s = await call('POST', '/api/shares/' + tk + '/sessions', {
+        day_name: 'A', rpe: 8.4, note: '  Me costó la última serie  ',
+        exercises: [
+            { name: 'Sentadilla', sets: [{ kg: 80, reps: 8 }, { kg: '82.5', reps: 7 }, { kg: 80, reps: 0 }] },
+            { name: 'Cinta', kind: 'cardio', min: 20, km: 3.2 },
+            { name: 'Vacío', sets: [] },
+            { name: '', sets: [{ kg: 10, reps: 10 }] },
+            { name: 'Trucho', sets: [{ kg: 99999, reps: 5 }] }
+        ]
+    });
+    const ex = s.body.session.exercises;
+    ok('sesión con resultados 201', s.status === 201 && Array.isArray(ex), s.body);
+    ok('series sin reps descartadas, kg en texto aceptado', ex[0].name === 'Sentadilla' && ex[0].sets.length === 2 && ex[0].sets[1].kg === 82.5, ex[0]);
+    ok('cardio guarda min y km', ex[1].kind === 'cardio' && ex[1].min === 20 && ex[1].km === 3.2, ex[1]);
+    ok('ejercicio vacío o sin nombre no se guarda; kg absurdo queda en 0', ex.length === 3 && ex[2].name === 'Trucho' && ex[2].sets[0].kg === 0, ex);
+    ok('rpe redondeado y nota recortada', s.body.session.rpe === 8 && s.body.session.note === 'Me costó la última serie', s.body.session);
+    const rpeBad = await call('POST', '/api/shares/' + tk + '/sessions', { date: today, rpe: 42, exercises: 'no-array' });
+    ok('rpe fuera de rango y exercises inválido → se ignoran (sigue siendo adherencia)', rpeBad.status === 201 && rpeBad.body.session.rpe === undefined && rpeBad.body.session.exercises === undefined, rpeBad.body);
+    const many = Array.from({ length: 30 }, (_, i) => ({ name: 'Ej ' + i, sets: Array.from({ length: 20 }, () => ({ kg: 100, reps: 10 })) }));
+    const capped = await call('POST', '/api/shares/' + tk + '/sessions', { date: today, exercises: many });
+    ok('tope: 20 ejercicios × 12 series', capped.status === 201 && capped.body.session.exercises.length === 20 && capped.body.session.exercises[0].sets.length === 12, capped.body.session && capped.body.session.exercises.length);
+    const fat = await call('POST', '/api/shares/' + tk + '/sessions', { date: today, note: 'x'.repeat(400), exercises: Array.from({ length: 20 }, (_, i) => ({ name: 'N'.repeat(80) + i, sets: Array.from({ length: 12 }, () => ({ kg: 999.9, reps: 199.9 })) })) });
+    ok('peor caso válido entra y queda acotado (< 10 KB)', fat.status === 201 && JSON.stringify(fat.body.session).length < 10 * 1024, fat.status);
+
+    // Las 40 más nuevas guardan el detalle; las viejas quedan solo con fecha
+    for (let i = 1; i <= 45; i++) {
+        const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+        await call('POST', '/api/shares/' + tk + '/sessions', { date: d, day_name: 'A', exercises: [{ name: 'Press', sets: [{ kg: 50, reps: 5 }] }] });
+    }
+    const agg = JSON.parse(env.BMOD_KV._m.get('sessions:' + rid));
+    ok('detalle solo en las 40 más nuevas', agg.items.length === 46 && !!agg.items[39].exercises && agg.items[40].exercises === undefined && agg.items[45].date, agg.items.length);
+
+    // Control semanal
+    const c0 = await call('POST', '/api/shares/' + tk + '/checkins', {});
+    ok('control vacío → 400', c0.status === 400);
+    const c1 = await call('POST', '/api/shares/' + tk + '/checkins', { weight: '78.46', energy: 4, note: 'Bien, dormí poco' });
+    ok('control 201 (peso con un decimal, semana ISO)', c1.status === 201 && c1.body.checkin.weight === 78.5 && /^\d{4}-W\d{2}$/.test(c1.body.checkin.week), c1.body);
+    const lst = await call('GET', '/api/routines?coach_id=coachR');
+    ok('lista del coach marca control nuevo', lst.body[0].new_checkin === true && !!lst.body[0].last_checkin_at, lst.body[0]);
+    const c2 = await call('POST', '/api/shares/' + tk + '/checkins', { date: today, weight: 78.1, energy: 9 });
+    ok('misma semana pisa; energía fuera de rango se ignora', c2.status === 201 && c2.body.checkin.energy === undefined, c2.body);
+    const lastWeek = new Date(Date.now() - 8 * 86400000).toISOString().slice(0, 10);
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: lastWeek, weight: 79 });
+    const det = await call('GET', '/api/routines/' + rid + '?coach_id=coachR');
+    ok('coach ve 2 controles (desc) y las sesiones con detalle', det.body.checkins.length === 2 && det.body.checkins[0].weight === 78.1 && det.body.checkins[1].weight === 79 && !!det.body.sessions[0].exercises, det.body.checkins);
+    const lst2 = await call('GET', '/api/routines?coach_id=coachR');
+    ok('abrir el detalle marca el control como visto', lst2.body[0].new_checkin === false, lst2.body[0]);
+    const sh = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve sus controles', Array.isArray(sh.body.checkins) && sh.body.checkins.length === 2, sh.body.checkins);
+    const bad = await call('POST', '/api/shares/nonexist00/checkins', { weight: 70 });
+    ok('control con token inválido → 404', bad.status === 404);
+    const otherCoach = await call('GET', '/api/routines/' + rid + '?coach_id=coachB');
+    ok('otro coach no ve los controles', otherCoach.status === 404 || otherCoach.status === 403, otherCoach.status);
+    await call('DELETE', '/api/routines/' + rid + '?coach_id=coachR');
+    ok('borrar la rutina borra sesiones y controles', !env.BMOD_KV._m.has('checkins:' + rid) && !env.BMOD_KV._m.has('sessions:' + rid));
+}
+
 // ── Licencias: admin codes + activate + verify + binding ──
 let code, licToken;
 {

@@ -8,7 +8,8 @@
 //                     POST                /api/routines/{id}/review
 //                     GET                 /api/shares/{token}
 //                     POST                /api/shares/{token}/edits
-//                     POST                /api/shares/{token}/sessions  (adherencia alumno)
+//                     POST                /api/shares/{token}/sessions  (adherencia + kg/reps del alumno)
+//                     POST                /api/shares/{token}/checkins  (control semanal del alumno)
 //   Licencias:        POST                /api/license/activate
 //                     POST                /api/license/verify
 //                     POST                /api/license/trial
@@ -57,6 +58,11 @@ const MAX_PLAN_JSON = 100 * 1024;       // plan de una rutina serializado
 const MAX_EDIT_JSON = 4 * 1024;         // changes_json de un edit del alumno
 const EDITS_MAX = 50;                   // edits guardados por rutina (los viejos se pisan)
 const SESSIONS_MAX = 120;               // sesiones de adherencia guardadas por rutina
+const SESSIONS_DETAIL_MAX = 40;         // las más nuevas guardan kg/reps; las viejas quedan solo con fecha
+const SESSION_EX_MAX = 20;              // ejercicios por sesión registrada
+const SESSION_SETS_MAX = 12;            // series por ejercicio
+const MAX_SESSION_JSON = 10 * 1024;     // red de seguridad: el peor caso válido (20 × 12 + nota) ronda 8 KB
+const CHECKINS_MAX = 26;                // controles semanales por rutina (~6 meses)
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
@@ -207,11 +213,19 @@ function routineKey(coachId, id) { return `routine:${coachId}:${id}`; }
 // Datos por rutina en UNA key agregada cada uno (1 get + 1 put, sin listar):
 //   edits:{routineId}    = { items: [edit, ...] }    más nuevo primero, tope EDITS_MAX
 //   sessions:{routineId} = { items: [sess, ...] }    fecha desc, una por fecha, tope SESSIONS_MAX
+//   checkins:{routineId} = { items: [chk, ...] }     semana desc, uno por semana, tope CHECKINS_MAX
 // Los contadores que muestra la lista del coach viven denormalizados en el
 // registro de la rutina (edit_count, unreviewed_count, session_count, ...).
 function editsKey(routineId) { return `edits:${routineId}`; }
 function sessionsKey(routineId) { return `sessions:${routineId}`; }
+function checkinsKey(routineId) { return `checkins:${routineId}`; }
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : null);
+// Número dentro de [min, max] con un decimal, o null. Los datos del link del alumno son públicos.
+const num = (v, min, max) => {
+    if (v === null || v === undefined || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= min && n <= max ? Math.round(n * 10) / 10 : null;
+};
 
 // ── Rate limiting (binding nativo de Workers; no consume KV ni cuenta como subrequest) ──
 // Sin binding (tests, wrangler dev) no limita. Key por IP: es lo único que hay
@@ -272,7 +286,8 @@ async function createRoutine(req, env, url) {
         last_seen_by_alumno_at: null,
         // contadores denormalizados (los mantiene postEdit / postShareSession / reviewRoutine)
         edit_count: 0, unreviewed_count: 0, last_alumno_edit_at: null,
-        session_count: 0, last_session_at: null, recent_session_dates: []
+        session_count: 0, last_session_at: null, recent_session_dates: [],
+        last_checkin_at: null, coach_seen_checkin_at: null
     };
     await kvPut(env, routineKey(coachId, routine.id), routine);
     await kvPut(env, `token:${token}`, { coachId, routineId: routine.id });
@@ -292,7 +307,9 @@ async function listRoutines(env, url) {
         unreviewed_count: r.unreviewed_count || 0, last_seen_by_alumno_at: r.last_seen_by_alumno_at,
         session_count: r.session_count || 0,
         last_session_at: r.last_session_at || null,
-        week_sessions: (r.recent_session_dates || []).filter((d) => d >= weekAgo).length
+        week_sessions: (r.recent_session_dates || []).filter((d) => d >= weekAgo).length,
+        last_checkin_at: r.last_checkin_at || null,
+        new_checkin: !!r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)
     })));
 }
 
@@ -305,7 +322,13 @@ async function getRoutine(env, url, id) {
     const edits = ((await kvGet(env, editsKey(id))) || { items: [] }).items;
     // Sesiones del alumno (últimas 30) para que el coach vea la adherencia real.
     const sessions = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items.slice(0, 30);
-    return json({ routine: r, edits, sessions });
+    const checkins = ((await kvGet(env, checkinsKey(id))) || { items: [] }).items;
+    // Abrir el detalle marca el control como visto (se escribe solo si había uno nuevo).
+    if (r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)) {
+        r.coach_seen_checkin_at = r.last_checkin_at;
+        await kvPut(env, routineKey(coachId, id), r);
+    }
+    return json({ routine: r, edits, sessions, checkins });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -335,6 +358,7 @@ async function deleteRoutine(req, env, url, id) {
     if (r.share_token) await env.BMOD_KV.delete(`token:${r.share_token}`);
     await env.BMOD_KV.delete(editsKey(id));
     await env.BMOD_KV.delete(sessionsKey(id));
+    await env.BMOD_KV.delete(checkinsKey(id));
     return json({ ok: true });
 }
 
@@ -369,12 +393,14 @@ async function getShare(env, token) {
     const edits = ((await kvGet(env, editsKey(r.id))) || { items: [] }).items.slice(0, 20);
     // Sesiones del alumno (para que vea su propia adherencia y el check de hoy)
     const sessions = ((await kvGet(env, sessionsKey(r.id))) || { items: [] }).items.slice(0, 30);
+    // Sus últimos controles semanales (para ver si ya mandó el de esta semana y su peso).
+    const checkins = ((await kvGet(env, checkinsKey(r.id))) || { items: [] }).items.slice(0, 8);
     const publicRoutine = {
         id: r.id, name: r.name, plan: r.plan, coach_name: r.coach_name,
         alumno_name: r.alumno_name, share_token: r.share_token,
         last_coach_update_at: r.last_coach_update_at, created_at: r.created_at
     };
-    return json({ routine: publicRoutine, edits, sessions });
+    return json({ routine: publicRoutine, edits, sessions, checkins });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -387,8 +413,31 @@ function validSessionDate(s) {
     return t >= now - 366 * 86400000 && t <= now + 86400000;
 }
 
-// POST /api/shares/{token}/sessions — el alumno registra que entrenó (adherencia).
-// Una por fecha (idempotente): si registra dos veces el mismo día, se pisa.
+// Lo que el alumno hizo en cada ejercicio. Fuerza: series de kg × reps (las
+// series sin reps no cuentan). Cardio: minutos y km. Todo validado y recortado.
+function cleanSessionExercises(list) {
+    if (!Array.isArray(list)) return [];
+    return list.slice(0, SESSION_EX_MAX).map((e) => {
+        const name = str(e && e.name, 60);
+        if (!name) return null;
+        if (e.kind === 'cardio') {
+            const min = num(e.min, 0, 600), km = num(e.km, 0, 500);
+            if (!min && !km) return null;
+            const c = { name, kind: 'cardio' };
+            if (min) c.min = min;
+            if (km) c.km = km;
+            return c;
+        }
+        const sets = (Array.isArray(e.sets) ? e.sets : []).slice(0, SESSION_SETS_MAX)
+            .map((s) => ({ kg: num(s && s.kg, 0, 1000) || 0, reps: num(s && s.reps, 0, 200) || 0 }))
+            .filter((s) => s.reps > 0);
+        return sets.length ? { name, sets } : null;
+    }).filter(Boolean);
+}
+
+// POST /api/shares/{token}/sessions — el alumno registra que entrenó (adherencia)
+// y, opcionalmente, lo que hizo: exercises [{name, sets:[{kg,reps}]} | {name, kind:'cardio', min, km}],
+// rpe (esfuerzo 1-10) y una nota. Una por fecha (idempotente): si registra dos veces el mismo día, se pisa.
 async function postShareSession(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
@@ -396,11 +445,20 @@ async function postShareSession(req, env, token) {
     const date = (body && body.date) ? body.date : new Date().toISOString().slice(0, 10);
     if (!validSessionDate(date)) return err('Fecha inválida', 400);
     const sess = { date, day_name: str(body && body.day_name, 60) || '', at: nowISO() };
+    const exercises = cleanSessionExercises(body && body.exercises);
+    if (exercises.length) sess.exercises = exercises;
+    const rpe = num(body && body.rpe, 1, 10);
+    if (rpe !== null) sess.rpe = Math.round(rpe);
+    const note = str(body && body.note, 280);
+    if (note) sess.note = note;
+    if (JSON.stringify(sess).length > MAX_SESSION_JSON) return err('Sesión demasiado grande', 413);
 
     const agg = (await kvGet(env, sessionsKey(idx.routineId))) || { items: [] };
     const isNew = !agg.items.some((s) => s.date === date);
     agg.items = [sess].concat(agg.items.filter((s) => s.date !== date))
         .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, SESSIONS_MAX);
+    // Tope de tamaño de la key: el detalle se guarda solo en las más nuevas.
+    agg.items.forEach((s, i) => { if (i >= SESSIONS_DETAIL_MAX) { delete s.exercises; delete s.note; } });
     await kvPut(env, sessionsKey(idx.routineId), agg);
 
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
@@ -411,6 +469,45 @@ async function postShareSession(req, env, token) {
         await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     }
     return json({ ok: true, session: sess }, 201);
+}
+
+// Semana ISO (lunes a domingo) de una fecha YYYY-MM-DD → 'YYYY-Www'.
+function isoWeek(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));   // jueves de esa semana define el año
+    const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
+    const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return d.getUTCFullYear() + '-W' + String(week).padStart(2, '0');
+}
+
+// POST /api/shares/{token}/checkins — control semanal del alumno: peso, energía
+// (1-5) y un mensaje al coach. Uno por semana: el segundo de la misma semana pisa.
+async function postCheckin(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const body = await readBody(req);
+    const date = (body && body.date) ? body.date : new Date().toISOString().slice(0, 10);
+    if (!validSessionDate(date)) return err('Fecha inválida', 400);
+    const chk = { date, week: isoWeek(date), at: nowISO() };
+    const weight = num(body && body.weight, 20, 400);
+    if (weight !== null) chk.weight = weight;
+    const energy = num(body && body.energy, 1, 5);
+    if (energy !== null) chk.energy = Math.round(energy);
+    const note = str(body && body.note, 500);
+    if (note) chk.note = note;
+    if (chk.weight === undefined && chk.energy === undefined && !chk.note) return err('Control vacío', 400);
+
+    const agg = (await kvGet(env, checkinsKey(idx.routineId))) || { items: [] };
+    agg.items = [chk].concat(agg.items.filter((c) => c.week !== chk.week))
+        .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, CHECKINS_MAX);
+    await kvPut(env, checkinsKey(idx.routineId), agg);
+
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (r) {
+        r.last_checkin_at = chk.at;
+        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    }
+    return json({ ok: true, checkin: chk }, 201);
 }
 
 async function postEdit(req, env, token) {
@@ -1432,6 +1529,7 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'DELETE') return await deleteRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
 
             // Licencias
