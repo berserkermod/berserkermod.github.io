@@ -3,6 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script>
+        /* Idioma de la landing: ?lang= → el que eligió en el selector → idioma del navegador.
+           Corre antes de pintar: en inglés y portugués la página aparece ya traducida. */
+        (function () {
+            var ok = { es: 1, en: 1, pt: 1 }, q = '', s = '';
+            try { q = new URLSearchParams(location.search).get('lang') || ''; } catch (e) { }
+            try { s = localStorage.getItem('bm-landing-lang') || ''; } catch (e) { }
+            var nav = String((navigator.languages && navigator.languages[0]) || navigator.language || '').slice(0, 2).toLowerCase();
+            var lang = ok[q] ? q : ok[s] ? s : nav === 'es' ? 'es' : nav === 'pt' ? 'pt' : nav ? 'en' : 'es';
+            window.__bmLang = lang;
+            var root = document.documentElement;
+            root.lang = lang === 'en' ? 'en' : lang === 'pt' ? 'pt-BR' : 'es-AR';
+            if (lang !== 'es') root.classList.add('i18n-wait');
+            // La captura del hero, en el idioma de la página y pedida desde ya
+            var l = document.createElement('link');
+            l.rel = 'preload'; l.as = 'image'; l.setAttribute('fetchpriority', 'high');
+            l.href = 'img/landing/' + (lang === 'es' ? '' : lang + '/') + 'inicio.webp';
+            document.head.appendChild(l);
+            // Quien llega en inglés abre la app en inglés si todavía no eligió idioma.
+            // Portugués no: en la app es Premium.
+            if (lang === 'en') try { if (!localStorage.getItem('bm-lang')) localStorage.setItem('bm-lang', 'en'); } catch (e) { }
+        })();
+    </script>
     <meta name="theme-color" content="#0A0A0B">
     <title>BERSERKERMOD — Tu entrenador personal inteligente | Rutinas, registro, nutrición</title>
     <meta name="description" content="Rutinas que se arman solas según tu nivel y objetivo, registro de series con descanso automático, avisos para subir el peso, mapa del cuerpo y macros. Biblioteca de 37 ejercicios. Modo Coach para entrenadores. Empezá gratis, sin cuenta y sin publicidad.">
@@ -14,6 +37,8 @@
     <meta property="og:description" content="Rutinas que se arman solas, registro de series, avisos para subir el peso y macros. Modo Coach para entrenadores. Empezá gratis, sin cuenta.">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_AR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:locale:alternate" content="pt_BR">
     <meta property="og:url" content="https://berserkermod.github.io/">
     <meta property="og:image" content="https://berserkermod.github.io/og-image.png">
     <meta property="og:image:width" content="1200">
@@ -23,6 +48,12 @@
     <meta name="twitter:title" content="BERSERKERMOD — Tu entrenador personal inteligente">
     <meta name="twitter:description" content="Rutinas que se arman solas, registro de series, avisos para subir el peso y macros. Empezá gratis, sin cuenta.">
     <meta name="twitter:image" content="https://berserkermod.github.io/og-image.png">
+
+    <!-- Idiomas: es la misma página; el texto lo pone el script según ?lang= -->
+    <link rel="alternate" hreflang="es" href="https://berserkermod.github.io/?lang=es">
+    <link rel="alternate" hreflang="en" href="https://berserkermod.github.io/?lang=en">
+    <link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/?lang=pt">
+    <link rel="alternate" hreflang="x-default" href="https://berserkermod.github.io/">
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -190,12 +221,34 @@
             box-shadow: 0 2px 12px var(--accent-glow);
         }
         .header-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 18px var(--accent-glow); }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .lang-select {
+            -webkit-appearance: none; appearance: none;
+            background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center / 11px;
+            color: var(--text2); border: 1px solid var(--border); border-radius: 10px;
+            font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
+            padding: 8px 25px 8px 10px; cursor: pointer;
+            transition: color .2s, border-color .2s;
+        }
+        .lang-select:hover { color: var(--text); border-color: var(--text3); }
+        .lang-select option { background: var(--sf1); color: var(--text); }
+
+        /* Inglés y portugués: la página se muestra recién traducida (script del head).
+           Si el script fallara, la animación la muestra igual al segundo y medio. */
+        html.i18n-wait body { visibility: hidden; animation: i18n-show 0s 1.5s forwards; }
+        @keyframes i18n-show { to { visibility: visible; } }
 
         @media (max-width: 767px) {
             .nav-links { display: none; }
             .header { padding: 12px 16px; }
             .brand { font-size: 14px; }
             .header-cta { padding: 8px 14px; font-size: 12px; }
+            .header-inner { gap: 12px; }
+            .header-actions { gap: 8px; }
+            .lang-select { padding: 7px 21px 7px 8px; background-position: right 6px center; }
+        }
+        @media (max-width: 359px) {
+            .brand-logo { display: none; }
         }
 
         /* ============================================
@@ -1107,7 +1160,7 @@
     </style>
 </head>
 <body>
-    <a href="#main" class="skip-link">Saltar al contenido</a>
+    <a href="#main" class="skip-link" data-i18n>Saltar al contenido</a>
     <div class="bg-glow"></div>
     <div class="bg-grain"></div>
 
@@ -1136,17 +1189,24 @@
          ============================================ -->
     <header class="header" id="header">
         <div class="header-inner">
-            <a href="#hero" class="brand" aria-label="BERSERKERMOD inicio">
+            <a href="#hero" class="brand" aria-label="BERSERKERMOD inicio" data-i18n-aria>
                 <img class="brand-logo" src="icon-192.png" alt="" width="26" height="26">
                 <b>BERSERKER<span>MOD</span></b>
             </a>
-            <nav class="nav-links" aria-label="Navegación principal">
-                <a href="#features">Qué hace</a>
-                <a href="#precio">Precio</a>
-                <a href="#coach">Para entrenadores</a>
-                <a href="#faq">FAQ</a>
+            <nav class="nav-links" aria-label="Navegación principal" data-i18n-aria>
+                <a href="#features" data-i18n>Qué hace</a>
+                <a href="#precio" data-i18n>Precio</a>
+                <a href="#coach" data-i18n>Para entrenadores</a>
+                <a href="#faq" data-i18n>FAQ</a>
             </nav>
-            <a href="BERSERKERMOD.html" class="header-cta">Abrir app</a>
+            <div class="header-actions">
+                <select class="lang-select" id="lang-select" aria-label="Idioma" data-i18n-aria>
+                    <option value="es">ES</option>
+                    <option value="en">EN</option>
+                    <option value="pt">PT</option>
+                </select>
+                <a href="BERSERKERMOD.html" class="header-cta" data-i18n>Abrir app</a>
+            </div>
         </div>
     </header>
 
@@ -1158,29 +1218,28 @@
         <section class="hero" id="hero">
             <div class="hero-inner">
                 <div class="hero-copy">
-                    <div class="hero-kicker reveal">Gratis para siempre · Premium sin renovación automática</div>
-                    <h1 class="hero-title reveal reveal-delay-1">
+                    <div class="hero-kicker reveal" data-i18n>Gratis para siempre · Premium sin renovación automática</div>
+                    <h1 class="hero-title reveal reveal-delay-1" data-i18n>
                         Tu entrenador personal.<br>
                         En tu bolsillo. <span class="accent">Inteligente.</span>
                     </h1>
-                    <p class="hero-sub reveal reveal-delay-2">
+                    <p class="hero-sub reveal reveal-delay-2" data-i18n>
                         Te arma la rutina según tu nivel, tus días y tu objetivo. Registrás cada serie con el descanso en marcha, te avisa cuándo subir el peso y te muestra qué músculos trabajaste en la semana. Sin instalar nada, sin cuenta y sin publicidad.
                     </p>
                     <div class="hero-ctas reveal reveal-delay-3">
-                        <a href="BERSERKERMOD.html" class="btn btn-primary">Empezar gratis →</a>
-                        <a href="#features" class="btn btn-ghost">Ver cómo funciona</a>
+                        <a href="BERSERKERMOD.html" class="btn btn-primary" data-i18n>Empezar gratis →</a>
+                        <a href="#features" class="btn btn-ghost" data-i18n>Ver cómo funciona</a>
                     </div>
                     <div class="hero-meta reveal reveal-delay-4">
-                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Funciona offline</span>
-                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Sin cuenta</span>
-                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> Sin publicidad</span>
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> <span data-i18n>Funciona offline</span></span>
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> <span data-i18n>Sin cuenta</span></span>
+                        <span class="hero-meta-item"><span class="hero-meta-dot"></span> <span data-i18n>Sin publicidad</span></span>
                     </div>
                 </div>
                 <div class="hero-visual reveal reveal-delay-2">
                     <div class="hero-phone phone-frame">
                         <div class="phone-screen">
-                            <img src="img/landing/inicio.webp" width="540" height="1169" fetchpriority="high" decoding="async"
-                                alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
+                            <img data-shot="inicio.webp" width="540" height="1169" fetchpriority="high" decoding="async" data-i18n-alt alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
                         </div>
                     </div>
                 </div>
@@ -1190,24 +1249,24 @@
         <!-- ============================================
              STATS STRIP
              ============================================ -->
-        <section class="stats" aria-label="Números del producto">
-            <div class="stats-intro reveal">Hecho por gente que entrena. Para gente que entrena.</div>
+        <section class="stats" aria-label="Números del producto" data-i18n-aria>
+            <div class="stats-intro reveal" data-i18n>Hecho por gente que entrena. Para gente que entrena.</div>
             <div class="stats-grid">
                 <div class="stat reveal reveal-delay-1">
                     <div class="stat-num" data-count="37">0</div>
-                    <div class="stat-label">Ejercicios con técnica</div>
+                    <div class="stat-label" data-i18n>Ejercicios con técnica</div>
                 </div>
                 <div class="stat reveal reveal-delay-2">
                     <div class="stat-num" data-count="26">0</div>
-                    <div class="stat-label">Deportes de cardio</div>
+                    <div class="stat-label" data-i18n>Deportes de cardio</div>
                 </div>
                 <div class="stat reveal reveal-delay-3">
                     <div class="stat-num" data-count="3">0</div>
-                    <div class="stat-label">Idiomas</div>
+                    <div class="stat-label" data-i18n>Idiomas</div>
                 </div>
                 <div class="stat reveal reveal-delay-4">
                     <div class="stat-num" data-count="0">0</div>
-                    <div class="stat-label">Anuncios. Cero.</div>
+                    <div class="stat-label" data-i18n>Anuncios. Cero.</div>
                 </div>
             </div>
         </section>
@@ -1217,55 +1276,55 @@
              ============================================ -->
         <section class="features section" id="features">
             <div class="features-header reveal">
-                <div class="section-kicker">Lo que hace</div>
-                <h2 class="section-title">Todo lo que necesitás.<br>Nada que no.</h2>
-                <p class="section-sub" style="margin: 16px auto 0;">Del primer día al próximo récord, sin planillas ni cuentas. Lo marcado como <span class="tag-pro">Premium</span> lo probás gratis 7 días.</p>
+                <div class="section-kicker" data-i18n>Lo que hace</div>
+                <h2 class="section-title" data-i18n>Todo lo que necesitás.<br>Nada que no.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;" data-i18n>Del primer día al próximo récord, sin planillas ni cuentas. Lo marcado como <span class="tag-pro">Premium</span> lo probás gratis 7 días.</p>
             </div>
             <div class="features-grid">
                 <article class="feat-card reveal">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-target"/></svg></div>
-                    <h3 class="feat-title">Rutina que se arma sola</h3>
-                    <p class="feat-desc">Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si cambiás algo, se rearma sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class="tag-pro">Premium</span></p>
+                    <h3 class="feat-title" data-i18n>Rutina que se arma sola</h3>
+                    <p class="feat-desc" data-i18n>Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si cambiás algo, se rearma sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-1">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-timer"/></svg></div>
-                    <h3 class="feat-title">Registro sin fricción</h3>
-                    <p class="feat-desc">Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.</p>
+                    <h3 class="feat-title" data-i18n>Registro sin fricción</h3>
+                    <p class="feat-desc" data-i18n>Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-2">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-trend"/></svg></div>
-                    <h3 class="feat-title">Te dice cuándo subir el peso</h3>
-                    <p class="feat-desc">Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM y te avisa cuando un ejercicio se estanca.</p>
+                    <h3 class="feat-title" data-i18n>Te dice cuándo subir el peso</h3>
+                    <p class="feat-desc" data-i18n>Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM y te avisa cuando un ejercicio se estanca.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-3">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-body"/></svg></div>
-                    <h3 class="feat-title">Mapa del cuerpo</h3>
-                    <p class="feat-desc">Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Más tu constancia de los últimos 6 meses. Fotos y medidas de progreso&nbsp;<span class="tag-pro">Premium</span></p>
+                    <h3 class="feat-title" data-i18n>Mapa del cuerpo</h3>
+                    <p class="feat-desc" data-i18n>Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Más tu constancia de los últimos 6 meses. Fotos y medidas de progreso&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-4">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-utensils"/></svg></div>
-                    <h3 class="feat-title">Nutrición que cierra</h3>
-                    <p class="feat-desc">Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas por código de barras o con una foto de la etiqueta o del plato, plan de 7 días y ajuste semanal de calorías&nbsp;<span class="tag-pro">Premium</span></p>
+                    <h3 class="feat-title" data-i18n>Nutrición que cierra</h3>
+                    <p class="feat-desc" data-i18n>Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas por código de barras o con una foto de la etiqueta o del plato, plan de 7 días y ajuste semanal de calorías&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-5">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-book"/></svg></div>
-                    <h3 class="feat-title">Biblioteca de 37 ejercicios</h3>
-                    <p class="feat-desc">Técnica paso a paso, errores comunes, variaciones, RPE sugerido y un video de cada uno. Buscás por nombre o por músculo. Tu propio video o GIF por ejercicio&nbsp;<span class="tag-pro">Premium</span></p>
+                    <h3 class="feat-title" data-i18n>Biblioteca de 37 ejercicios</h3>
+                    <p class="feat-desc" data-i18n>Técnica paso a paso, errores comunes, variaciones, RPE sugerido y un video de cada uno. Buscás por nombre o por músculo. Tu propio video o GIF por ejercicio&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-heart"/></svg></div>
-                    <h3 class="feat-title">Cardio sin vueltas</h3>
-                    <p class="feat-desc">26 deportes con cronómetro y calorías según tu peso y la intensidad. Queda aparte del entreno de pesas y suma en el balance del día.</p>
+                    <h3 class="feat-title" data-i18n>Cardio sin vueltas</h3>
+                    <p class="feat-desc" data-i18n>26 deportes con cronómetro y calorías según tu peso y la intensidad. Queda aparte del entreno de pesas y suma en el balance del día.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-1">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-cloud"/></svg></div>
-                    <h3 class="feat-title">Tu historial, a salvo</h3>
-                    <p class="feat-desc">Sin cuenta ni contraseña: guardás una copia en tu propio Google Drive o en un archivo, y la restaurás en otro teléfono en un toque.</p>
+                    <h3 class="feat-title" data-i18n>Tu historial, a salvo</h3>
+                    <p class="feat-desc" data-i18n>Sin cuenta ni contraseña: guardás una copia en tu propio Google Drive o en un archivo, y la restaurás en otro teléfono en un toque.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-2">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-bell"/></svg></div>
-                    <h3 class="feat-title">Te recuerda entrenar</h3>
-                    <p class="feat-desc">Un aviso a las 18 h de tu hora, en el país que estés. Si ese día ya entrenaste, no te molesta. Tema claro u oscuro, en español o inglés. Portugués&nbsp;<span class="tag-pro">Premium</span></p>
+                    <h3 class="feat-title" data-i18n>Te recuerda entrenar</h3>
+                    <p class="feat-desc" data-i18n>Un aviso a las 18 h de tu hora, en el país que estés. Si ese día ya entrenaste, no te molesta. Tema claro u oscuro, en español o inglés. Portugués&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
             </div>
         </section>
@@ -1275,9 +1334,9 @@
              ============================================ -->
         <section class="deepdive">
             <div class="deepdive-header reveal">
-                <div class="section-kicker">Por dentro</div>
-                <h2 class="section-title">Así se ve por dentro</h2>
-                <p class="section-sub" style="margin: 16px auto 0;">Capturas de la app real. Sin maquetas.</p>
+                <div class="section-kicker" data-i18n>Por dentro</div>
+                <h2 class="section-title" data-i18n>Así se ve por dentro</h2>
+                <p class="section-sub" style="margin: 16px auto 0;" data-i18n>Capturas de la app real. Sin maquetas.</p>
             </div>
 
             <!-- Desktop: scroll story with sticky mockup -->
@@ -1287,32 +1346,28 @@
                         <div class="deepdive-mockup active" data-panel="0">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img src="img/landing/entreno.webp" width="540" height="1169" loading="lazy" decoding="async"
-                                        alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
+                                    <img data-shot="entreno.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="1">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img src="img/landing/progresion.webp" width="540" height="1169" loading="lazy" decoding="async"
-                                        alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 48,75 kg">
+                                    <img data-shot="progresion.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 48,75 kg">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="2">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img src="img/landing/mapa.webp" width="540" height="1169" loading="lazy" decoding="async"
-                                        alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
+                                    <img data-shot="mapa.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="3">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img src="img/landing/nutricion.webp" width="540" height="1169" loading="lazy" decoding="async"
-                                        alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
+                                    <img data-shot="nutricion.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
                                 </div>
                             </div>
                         </div>
@@ -1321,46 +1376,46 @@
                 <div class="deepdive-panels">
                     <article class="deepdive-panel" data-target="0">
                         <span class="deepdive-num">1</span>
-                        <h3 class="deepdive-title">Registrás la serie y arranca el descanso</h3>
-                        <p class="deepdive-desc">Anotás kg y reps, tocás ✓ y el cronómetro arranca solo. La app te muestra lo que hiciste la última vez y la carga que te conviene hoy.</p>
+                        <h3 class="deepdive-title" data-i18n>Registrás la serie y arranca el descanso</h3>
+                        <p class="deepdive-desc" data-i18n>Anotás kg y reps, tocás ✓ y el cronómetro arranca solo. La app te muestra lo que hiciste la última vez y la carga que te conviene hoy.</p>
                         <ul class="deepdive-bullets">
-                            <li>Descanso con vibración, ±15 s y pantalla encendida</li>
-                            <li>Calentamiento con los discos por lado calculados</li>
-                            <li>Superseries con un toque</li>
-                            <li>Resumen para compartir al terminar</li>
+                            <li data-i18n>Descanso con vibración, ±15 s y pantalla encendida</li>
+                            <li data-i18n>Calentamiento con los discos por lado calculados</li>
+                            <li data-i18n>Superseries con un toque</li>
+                            <li data-i18n>Resumen para compartir al terminar</li>
                         </ul>
                     </article>
                     <article class="deepdive-panel" data-target="1">
                         <span class="deepdive-num">2</span>
-                        <h3 class="deepdive-title">Sabés qué toca hoy y cuándo subir</h3>
-                        <p class="deepdive-desc">Al abrir la app ves la rutina del día y las progresiones pendientes: el ejercicio, el peso nuevo y cuánto hace que venís con la carga anterior.</p>
+                        <h3 class="deepdive-title" data-i18n>Sabés qué toca hoy y cuándo subir</h3>
+                        <p class="deepdive-desc" data-i18n>Al abrir la app ves la rutina del día y las progresiones pendientes: el ejercicio, el peso nuevo y cuánto hace que venís con la carga anterior.</p>
                         <ul class="deepdive-bullets">
-                            <li>Racha semanal y récord de constancia</li>
-                            <li>Récords personales y 1RM estimado</li>
-                            <li>Aviso cuando un ejercicio se estanca</li>
-                            <li>Sesiones, volumen, cardio y calorías de la semana</li>
+                            <li data-i18n>Racha semanal y récord de constancia</li>
+                            <li data-i18n>Récords personales y 1RM estimado</li>
+                            <li data-i18n>Aviso cuando un ejercicio se estanca</li>
+                            <li data-i18n>Sesiones, volumen, cardio y calorías de la semana</li>
                         </ul>
                     </article>
                     <article class="deepdive-panel" data-target="2">
                         <span class="deepdive-num">3</span>
-                        <h3 class="deepdive-title">Mirá qué músculos trabajaste</h3>
-                        <p class="deepdive-desc">Cada serie suma al músculo que entrena. Tocás uno y te dice cuántas series lleva en la semana y si está en el rango ideal para crecer.</p>
+                        <h3 class="deepdive-title" data-i18n>Mirá qué músculos trabajaste</h3>
+                        <p class="deepdive-desc" data-i18n>Cada serie suma al músculo que entrena. Tocás uno y te dice cuántas series lleva en la semana y si está en el rango ideal para crecer.</p>
                         <ul class="deepdive-bullets">
-                            <li>Frente y espalda, 13 grupos musculares</li>
-                            <li>Colores por rango: poco, medio, ideal, mucho</li>
-                            <li>Constancia de los últimos 6 meses</li>
-                            <li>Stats mensuales y anuales con Premium</li>
+                            <li data-i18n>Frente y espalda, 13 grupos musculares</li>
+                            <li data-i18n>Colores por rango: poco, medio, ideal, mucho</li>
+                            <li data-i18n>Constancia de los últimos 6 meses</li>
+                            <li data-i18n>Stats mensuales y anuales con Premium</li>
                         </ul>
                     </article>
                     <article class="deepdive-panel" data-target="3">
                         <span class="deepdive-num">4</span>
-                        <h3 class="deepdive-title">Nutrición con números, no a ojo</h3>
-                        <p class="deepdive-desc">Gratis: tus calorías y macros calculados para tu objetivo, con la estrategia explicada. Con Premium registrás lo que comés y ves el balance del día, contando el cardio.</p>
+                        <h3 class="deepdive-title" data-i18n>Nutrición con números, no a ojo</h3>
+                        <p class="deepdive-desc" data-i18n>Gratis: tus calorías y macros calculados para tu objetivo, con la estrategia explicada. Con Premium registrás lo que comés y ves el balance del día, contando el cardio.</p>
                         <ul class="deepdive-bullets">
-                            <li>Macros recomendados según tu objetivo</li>
-                            <li>Código de barras o foto con IA (Premium)</li>
-                            <li>Plan de 7 días con 5 comidas (Premium)</li>
-                            <li>Ajuste semanal según tu peso real (Premium)</li>
+                            <li data-i18n>Macros recomendados según tu objetivo</li>
+                            <li data-i18n>Código de barras o foto con IA (Premium)</li>
+                            <li data-i18n>Plan de 7 días con 5 comidas (Premium)</li>
+                            <li data-i18n>Ajuste semanal según tu peso real (Premium)</li>
                         </ul>
                     </article>
                 </div>
@@ -1372,58 +1427,58 @@
              ============================================ -->
         <section class="precio section" id="precio">
             <div class="precio-header reveal">
-                <div class="section-kicker">Precio</div>
-                <h2 class="section-title">Gratis para siempre.<br>Premium si querés más.</h2>
-                <p class="section-sub" style="margin: 16px auto 0;">Sin suscripciones que se renuevan solas. Empezás gratis y, si querés más, probás Premium 7 días y después elegís cuántos meses. Nada se te debita solo.</p>
+                <div class="section-kicker" data-i18n>Precio</div>
+                <h2 class="section-title" data-i18n>Gratis para siempre.<br>Premium si querés más.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;" data-i18n>Sin suscripciones que se renuevan solas. Empezás gratis y, si querés más, probás Premium 7 días y después elegís cuántos meses. Nada se te debita solo.</p>
             </div>
             <div class="precio-cards">
                 <div class="precio-card free reveal">
                     <div class="precio-tier">Free</div>
-                    <div class="precio-name">Empezá hoy</div>
-                    <div class="precio-tag">Todo lo que necesitás para entrenar bien.</div>
-                    <div class="precio-price">$0</div>
-                    <div class="precio-period">Para siempre. Sin tarjeta.</div>
+                    <div class="precio-name" data-i18n>Empezá hoy</div>
+                    <div class="precio-tag" data-i18n>Todo lo que necesitás para entrenar bien.</div>
+                    <div class="precio-price" data-i18n>$0</div>
+                    <div class="precio-period" data-i18n>Para siempre. Sin tarjeta.</div>
                     <ul class="precio-features">
-                        <li>Rutina automática según nivel, días y objetivo</li>
-                        <li>Registro de series con descanso, superseries y calentamiento</li>
-                        <li>Avisos de progresión, récords y 1RM estimado</li>
-                        <li>Biblioteca de 37 ejercicios con video</li>
-                        <li>Cardio: 26 deportes con kcal automáticas</li>
-                        <li>Stats semanales, mapa del cuerpo y constancia</li>
-                        <li>Calorías y macros recomendados para tu objetivo</li>
-                        <li>Peso corporal con tendencia</li>
-                        <li>Copia en Google Drive o en archivo · rutina en PDF</li>
-                        <li>Recordatorio diario · tema claro u oscuro</li>
-                        <li>Español + inglés</li>
-                        <li class="muted">Sin registro de comidas ni escáner</li>
-                        <li class="muted">Sin funciones de IA</li>
-                        <li class="muted">Sin modo Coach</li>
+                        <li data-i18n>Rutina automática según nivel, días y objetivo</li>
+                        <li data-i18n>Registro de series con descanso, superseries y calentamiento</li>
+                        <li data-i18n>Avisos de progresión, récords y 1RM estimado</li>
+                        <li data-i18n>Biblioteca de 37 ejercicios con video</li>
+                        <li data-i18n>Cardio: 26 deportes con kcal automáticas</li>
+                        <li data-i18n>Stats semanales, mapa del cuerpo y constancia</li>
+                        <li data-i18n>Calorías y macros recomendados para tu objetivo</li>
+                        <li data-i18n>Peso corporal con tendencia</li>
+                        <li data-i18n>Copia en Google Drive o en archivo · rutina en PDF</li>
+                        <li data-i18n>Recordatorio diario · tema claro u oscuro</li>
+                        <li data-i18n>Español + inglés</li>
+                        <li class="muted" data-i18n>Sin registro de comidas ni escáner</li>
+                        <li class="muted" data-i18n>Sin funciones de IA</li>
+                        <li class="muted" data-i18n>Sin modo Coach</li>
                     </ul>
-                    <a href="BERSERKERMOD.html" class="precio-cta precio-cta-free">Empezar gratis →</a>
+                    <a href="BERSERKERMOD.html" class="precio-cta precio-cta-free" data-i18n>Empezar gratis →</a>
                 </div>
                 <div class="precio-card premium reveal reveal-delay-1">
                     <div class="precio-tier"><svg class="i i-sm"><use href="#i-crown"/></svg>Premium</div>
-                    <div class="precio-name">Desbloqueá todo</div>
-                    <div class="precio-tag">Todas las funciones de la app desbloqueadas.</div>
-                    <div class="precio-price">7 días gratis</div>
-                    <div class="precio-period">Probalo sin tarjeta · después planes de 1 a 12 meses</div>
-                    <span class="precio-badge">Prueba gratis</span>
+                    <div class="precio-name" data-i18n>Desbloqueá todo</div>
+                    <div class="precio-tag" data-i18n>Todas las funciones de la app desbloqueadas.</div>
+                    <div class="precio-price" data-i18n>7 días gratis</div>
+                    <div class="precio-period" data-i18n>Probalo sin tarjeta · después planes de 1 a 12 meses</div>
+                    <span class="precio-badge" data-i18n>Prueba gratis</span>
                     <ul class="precio-features">
-                        <li><b>Todo lo del plan Free</b>, más:</li>
-                        <li>Registro de comidas: código de barras o foto de la etiqueta o del plato con IA</li>
-                        <li>Plan de comidas de 7 días con macros</li>
-                        <li>Ajuste semanal de calorías según tu peso real</li>
-                        <li>Rutinas propias ilimitadas + <b>importar desde PDF</b> con IA</li>
-                        <li>Fotos de progreso y medidas</li>
-                        <li>Stats mensuales, trimestrales y anuales</li>
-                        <li>Oracle IA · análisis personalizado de tu progreso</li>
-                        <li>Tu propio video o GIF por ejercicio</li>
-                        <li>Portugués (BR)</li>
-                        <li>Soporte prioritario directo</li>
+                        <li data-i18n><b>Todo lo del plan Free</b>, más:</li>
+                        <li data-i18n>Registro de comidas: código de barras o foto de la etiqueta o del plato con IA</li>
+                        <li data-i18n>Plan de comidas de 7 días con macros</li>
+                        <li data-i18n>Ajuste semanal de calorías según tu peso real</li>
+                        <li data-i18n>Rutinas propias ilimitadas + <b>importar desde PDF</b> con IA</li>
+                        <li data-i18n>Fotos de progreso y medidas</li>
+                        <li data-i18n>Stats mensuales, trimestrales y anuales</li>
+                        <li data-i18n>Oracle IA · análisis personalizado de tu progreso</li>
+                        <li data-i18n>Tu propio video o GIF por ejercicio</li>
+                        <li data-i18n>Portugués (BR)</li>
+                        <li data-i18n>Soporte prioritario directo</li>
                     </ul>
-                    <a href="BERSERKERMOD.html" class="precio-cta precio-cta-premium">Probar gratis →</a>
+                    <a href="BERSERKERMOD.html" class="precio-cta precio-cta-premium" data-i18n>Probar gratis →</a>
                     <div id="premium-plans" style="margin-top:12px"></div>
-                    <button id="buy-premium-btn" class="precio-cta precio-cta-premium" style="width:100%;margin-top:4px;cursor:pointer" onclick="comprarPremium()" disabled>Comprar Premium <span id="premium-price-label"></span></button>
+                    <button id="buy-premium-btn" class="precio-cta precio-cta-premium" style="width:100%;margin-top:4px;cursor:pointer" onclick="comprarPremium()" disabled><span data-i18n>Comprar Premium</span> <span id="premium-price-label"></span></button>
                     <p id="premium-buy-msg" style="font-size:12px;color:#A1A1A6;margin-top:8px;min-height:16px;text-align:center"></p>
                 </div>
             </div>
@@ -1435,31 +1490,30 @@
         <section class="coach" id="coach">
             <div class="coach-inner">
                 <div class="coach-copy">
-                    <div class="coach-tag reveal"><svg class="i i-sm"><use href="#i-users"/></svg>Plan Coach · Para entrenadores</div>
-                    <h2 class="coach-title reveal reveal-delay-1">¿Sos entrenador?<br>Tus alumnos, una sola pantalla.</h2>
-                    <p class="coach-desc reveal reveal-delay-2">
+                    <div class="coach-tag reveal"><svg class="i i-sm"><use href="#i-users"/></svg><span data-i18n>Plan Coach · Para entrenadores</span></div>
+                    <h2 class="coach-title reveal reveal-delay-1" data-i18n>¿Sos entrenador?<br>Tus alumnos, una sola pantalla.</h2>
+                    <p class="coach-desc reveal reveal-delay-2" data-i18n>
                         Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Incluye todo Premium.
                     </p>
                     <ul class="coach-features reveal reveal-delay-3">
-                        <li>Link único + QR por alumno · lo abre sin instalar nada</li>
-                        <li>El alumno registra kg y reps de cada serie</li>
-                        <li>Flechas de progreso por ejercicio, sesión a sesión</li>
-                        <li>Control semanal: peso, energía y un mensaje para vos</li>
-                        <li>Aviso de controles nuevos y de cambios en la rutina</li>
-                        <li>Sin costo extra por alumno</li>
+                        <li data-i18n>Link único + QR por alumno · lo abre sin instalar nada</li>
+                        <li data-i18n>El alumno registra kg y reps de cada serie</li>
+                        <li data-i18n>Flechas de progreso por ejercicio, sesión a sesión</li>
+                        <li data-i18n>Control semanal: peso, energía y un mensaje para vos</li>
+                        <li data-i18n>Aviso de controles nuevos y de cambios en la rutina</li>
+                        <li data-i18n>Sin costo extra por alumno</li>
                     </ul>
                     <div class="reveal reveal-delay-4">
                         <div id="coach-plans" style="margin:0 0 10px;max-width:420px"></div>
-                        <button id="buy-coach-btn" class="btn btn-primary" onclick="comprarCoach()" disabled>Comprar modo Coach <span id="coach-price-label"></span></button>
+                        <button id="buy-coach-btn" class="btn btn-primary" onclick="comprarCoach()" disabled><span data-i18n>Comprar modo Coach</span> <span id="coach-price-label"></span></button>
                         <p id="coach-buy-msg" style="font-size:12px;color:var(--text3);margin-top:12px;min-height:16px"></p>
-                        <a href="BERSERKERMOD.html" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline">o probalo gratis primero →</a>
+                        <a href="BERSERKERMOD.html" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline" data-i18n>o probalo gratis primero →</a>
                     </div>
                 </div>
                 <div class="coach-visual reveal reveal-delay-2">
                     <div class="phone-frame">
                         <div class="phone-screen">
-                            <img src="img/landing/coach.webp" width="540" height="1169" loading="lazy" decoding="async"
-                                alt="Lo que ve el coach de una alumna: control semanal con peso y energía, y sus sesiones con kg, reps y flechas de progreso">
+                            <img data-shot="coach.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Lo que ve el coach de una alumna: control semanal con peso y energía, y sus sesiones con kg, reps y flechas de progreso">
                         </div>
                     </div>
                 </div>
@@ -1471,24 +1525,24 @@
              ============================================ -->
         <section class="privacy section">
             <div class="privacy-header reveal">
-                <div class="section-kicker">Privacidad</div>
-                <h2 class="section-title">Tus datos son tuyos.<br>Punto.</h2>
+                <div class="section-kicker" data-i18n>Privacidad</div>
+                <h2 class="section-title" data-i18n>Tus datos son tuyos.<br>Punto.</h2>
             </div>
             <div class="privacy-grid">
                 <div class="privacy-card reveal">
                     <div class="privacy-icon icon-tile"><svg class="i"><use href="#i-phone"/></svg></div>
-                    <h3 class="privacy-title">En tu teléfono</h3>
-                    <p class="privacy-desc">Tus entrenamientos y comidas se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.</p>
+                    <h3 class="privacy-title" data-i18n>En tu teléfono</h3>
+                    <p class="privacy-desc" data-i18n>Tus entrenamientos y comidas se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.</p>
                 </div>
                 <div class="privacy-card reveal reveal-delay-1">
                     <div class="privacy-icon icon-tile"><svg class="i"><use href="#i-lock"/></svg></div>
-                    <h3 class="privacy-title">Sin cuenta</h3>
-                    <p class="privacy-desc">No te pedimos email ni contraseña. La copia va a una carpeta privada de tu propio Google Drive o a un archivo: la ves vos, no nosotros.</p>
+                    <h3 class="privacy-title" data-i18n>Sin cuenta</h3>
+                    <p class="privacy-desc" data-i18n>No te pedimos email ni contraseña. La copia va a una carpeta privada de tu propio Google Drive o a un archivo: la ves vos, no nosotros.</p>
                 </div>
                 <div class="privacy-card reveal reveal-delay-2">
                     <div class="privacy-icon icon-tile"><svg class="i"><use href="#i-eyeoff"/></svg></div>
-                    <h3 class="privacy-title">Sin rastreo</h3>
-                    <p class="privacy-desc">Sin Google Analytics, sin Facebook Pixel, sin cookies. Solo contamos visitas a esta web de forma anónima, en nuestro propio servidor. No vendemos tus datos.</p>
+                    <h3 class="privacy-title" data-i18n>Sin rastreo</h3>
+                    <p class="privacy-desc" data-i18n>Sin Google Analytics, sin Facebook Pixel, sin cookies. Solo contamos visitas a esta web de forma anónima, en nuestro propio servidor. No vendemos tus datos.</p>
                 </div>
             </div>
         </section>
@@ -1498,31 +1552,31 @@
              ============================================ -->
         <section class="install" id="install">
             <div class="install-header reveal">
-                <div class="section-kicker">Cómo instalarla</div>
-                <h2 class="section-title">Tres formas.<br>Vos elegís.</h2>
-                <p class="section-sub" style="margin: 16px auto 0;">Usala directo desde el navegador hoy, o esperá las apps en las tiendas. La experiencia y tus datos son los mismos.</p>
+                <div class="section-kicker" data-i18n>Cómo instalarla</div>
+                <h2 class="section-title" data-i18n>Tres formas.<br>Vos elegís.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;" data-i18n>Usala directo desde el navegador hoy, o esperá las apps en las tiendas. La experiencia y tus datos son los mismos.</p>
             </div>
             <div class="install-grid">
                 <div class="install-card now reveal">
                     <div class="install-icon icon-tile"><svg class="i"><use href="#i-globe"/></svg></div>
-                    <div class="install-title">Web App</div>
-                    <div class="install-status live">● Disponible ahora</div>
-                    <p class="install-desc">Abrila en tu navegador y tocá "Agregar a pantalla de inicio". Queda como una app más, a pantalla completa y con el recordatorio diario. Funciona en iPhone y Android.</p>
-                    <a href="BERSERKERMOD.html" class="install-cta install-cta-primary">Abrir ahora →</a>
+                    <div class="install-title" data-i18n>Web App</div>
+                    <div class="install-status live" data-i18n>● Disponible ahora</div>
+                    <p class="install-desc" data-i18n>Abrila en tu navegador y tocá "Agregar a pantalla de inicio". Queda como una app más, a pantalla completa y con el recordatorio diario. Funciona en iPhone y Android.</p>
+                    <a href="BERSERKERMOD.html" class="install-cta install-cta-primary" data-i18n>Abrir ahora →</a>
                 </div>
                 <div class="install-card reveal reveal-delay-1">
                     <div class="install-icon icon-tile"><svg class="i"><use href="#i-play"/></svg></div>
-                    <div class="install-title">Google Play</div>
-                    <div class="install-status">Próximamente</div>
-                    <p class="install-desc">La app de Android desde la tienda. Si ya usás la web, pasás tu historial con la copia de Drive o el archivo de backup.</p>
-                    <span class="install-cta install-cta-disabled">Pronto</span>
+                    <div class="install-title" data-i18n>Google Play</div>
+                    <div class="install-status" data-i18n>Próximamente</div>
+                    <p class="install-desc" data-i18n>La app de Android desde la tienda. Si ya usás la web, pasás tu historial con la copia de Drive o el archivo de backup.</p>
+                    <span class="install-cta install-cta-disabled" data-i18n>Pronto</span>
                 </div>
                 <div class="install-card reveal reveal-delay-2">
                     <div class="install-icon icon-tile"><svg class="i"><use href="#i-phone"/></svg></div>
-                    <div class="install-title">App Store</div>
-                    <div class="install-status">Próximamente</div>
-                    <p class="install-desc">App para iPhone y iPad. Mientras tanto, la web app anda en Safari: Compartir → Agregar a inicio.</p>
-                    <span class="install-cta install-cta-disabled">Pronto</span>
+                    <div class="install-title" data-i18n>App Store</div>
+                    <div class="install-status" data-i18n>Próximamente</div>
+                    <p class="install-desc" data-i18n>App para iPhone y iPad. Mientras tanto, la web app anda en Safari: Compartir → Agregar a inicio.</p>
+                    <span class="install-cta install-cta-disabled" data-i18n>Pronto</span>
                 </div>
             </div>
         </section>
@@ -1532,61 +1586,61 @@
              ============================================ -->
         <section class="faq" id="faq">
             <div class="faq-header reveal">
-                <div class="section-kicker">FAQ</div>
-                <h2 class="section-title">Lo que te estás preguntando</h2>
+                <div class="section-kicker" data-i18n>FAQ</div>
+                <h2 class="section-title" data-i18n>Lo que te estás preguntando</h2>
             </div>
             <div class="faq-list">
                 <details class="faq-item reveal">
-                    <summary class="faq-summary">¿Es realmente gratis?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Es realmente gratis?</summary>
+                    <div class="faq-body" data-i18n>
                         Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-1">
-                    <summary class="faq-summary">¿Necesito Play Store o App Store?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Necesito Play Store o App Store?</summary>
+                    <div class="faq-body" data-i18n>
                         No. BERSERKERMOD es una PWA (Progressive Web App). Entrás desde el navegador, le das "Agregar a pantalla de inicio" y queda como cualquier otra app — con su ícono en el home, a pantalla completa, sin barra del navegador. Funciona igual en iPhone (Safari) y Android (Chrome).
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-2">
-                    <summary class="faq-summary">¿Funciona offline?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Funciona offline?</summary>
+                    <div class="faq-body" data-i18n>
                         Sí. Después de la primera carga, todo funciona sin internet: tus rutinas, tu historial y tus stats. La conexión solo se usa para buscar alimentos, para las funciones de IA, para la copia en Drive y para el modo Coach. Si te quedás sin datos, la app sigue andando.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-3">
-                    <summary class="faq-summary">¿En iPhone funciona bien?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿En iPhone funciona bien?</summary>
+                    <div class="faq-body" data-i18n>
                         Sí, está probada en Safari de iPhone. Agregala a la pantalla de inicio (Compartir → Agregar a inicio) y se abre como cualquier app; así iOS también deja activar el recordatorio diario. El escáner de código de barras (Premium) también anda en Safari.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-4">
-                    <summary class="faq-summary">¿Necesito crear una cuenta?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Necesito crear una cuenta?</summary>
+                    <div class="faq-body" data-i18n>
                         No. BERSERKERMOD <b>no tiene cuentas</b>: no te pedimos email ni contraseña, y todo se guarda en tu teléfono. Para cambiar de teléfono o tener una copia, en <b>Perfil</b> tocás <b>Guardar copia en Drive</b> (va a tu propio Google Drive) o <b>Exportar Datos</b> (descarga un archivo), y del otro lado la restaurás con <b>Restaurar desde Drive</b> o <b>Importar Datos</b>.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-5">
-                    <summary class="faq-summary">¿Mis datos van a un servidor?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Mis datos van a un servidor?</summary>
+                    <div class="faq-body" data-i18n>
                         <b>Tus entrenamientos, comidas y stats viven en tu teléfono</b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive</b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach</b>, la rutina que compartís, los kg y reps que registrás y el control semanal se guardan en nuestro servidor para que vos y tu entrenador los vean; las <b>funciones de IA</b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; y si activás el <b>recordatorio</b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href="privacy.html">política de privacidad</a>.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-5">
-                    <summary class="faq-summary">¿Va a tener publicidad?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Va a tener publicidad?</summary>
+                    <div class="faq-body" data-i18n>
                         <b>No.</b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional: comprás el período que quieras y no se renueva solo.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-6">
-                    <summary class="faq-summary">¿Qué pasa con mis datos si borro la app?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Qué pasa con mis datos si borro la app?</summary>
+                    <div class="faq-body" data-i18n>
                         Tus datos viven en el navegador de tu teléfono: si desinstalás la app o borrás los datos del navegador, se pierden. Por eso conviene tener una copia — <b>Guardar copia en Drive</b> o <b>Exportar Datos</b> en Perfil — y la app te lo recuerda cada tanto. Las fotos de progreso quedan solo en el teléfono y no entran en la copia.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-6">
-                    <summary class="faq-summary">¿Hay versión para entrenadores con alumnos?</summary>
-                    <div class="faq-body">
+                    <summary class="faq-summary" data-i18n>¿Hay versión para entrenadores con alumnos?</summary>
+                    <div class="faq-body" data-i18n>
                         Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal con su peso, su energía y un mensaje. Vos ves sus sesiones con flechas de progreso y un aviso cuando hay algo nuevo. Sin costo extra por alumno.
                     </div>
                 </details>
@@ -1598,10 +1652,10 @@
              ============================================ -->
         <section class="final-cta">
             <div class="final-cta-inner">
-                <h2 class="final-cta-title reveal">Dejá de buscar.<br><span class="accent">Empezá a entrenar.</span></h2>
-                <p class="final-cta-sub reveal reveal-delay-1">Mientras leés esto, otros ya van por el día 3 de su racha. Tu próximo PR está a un toque.</p>
+                <h2 class="final-cta-title reveal" data-i18n>Dejá de buscar.<br><span class="accent">Empezá a entrenar.</span></h2>
+                <p class="final-cta-sub reveal reveal-delay-1" data-i18n>Mientras leés esto, otros ya van por el día 3 de su racha. Tu próximo PR está a un toque.</p>
                 <div class="reveal reveal-delay-2">
-                    <a href="BERSERKERMOD.html" class="final-cta-btn">Abrir BERSERKERMOD →</a>
+                    <a href="BERSERKERMOD.html" class="final-cta-btn" data-i18n>Abrir BERSERKERMOD →</a>
                 </div>
             </div>
         </section>
@@ -1615,10 +1669,10 @@
             <img class="brand-logo" src="icon-192.png" alt="" width="22" height="22" loading="lazy">
             <b>BERSERKER<span>MOD</span></b>
         </div>
-        <div class="footer-tag">Tu entrenador personal inteligente · Hecho en Argentina</div>
-        <div class="footer-copy">© 2026 BERSERKERMOD · Todos los derechos reservados</div>
+        <div class="footer-tag" data-i18n>Tu entrenador personal inteligente · Hecho en Argentina</div>
+        <div class="footer-copy" data-i18n>© 2026 BERSERKERMOD · Todos los derechos reservados</div>
         <div style="margin-top: 14px; font-size: 12px;">
-            <a href="privacy.html" style="color: var(--text3); margin: 0 8px;">Política de privacidad</a>
+            <a href="privacy.html" style="color: var(--text3); margin: 0 8px;" data-i18n>Política de privacidad</a>
         </div>
     </footer>
 
@@ -1626,9 +1680,252 @@
          MOBILE STICKY BAR
          ============================================ -->
     <div class="sticky-bar" id="sticky-bar" aria-hidden="true">
-        <a href="BERSERKERMOD.html" class="sticky-bar-btn">Abrir BERSERKERMOD →</a>
+        <a href="BERSERKERMOD.html" class="sticky-bar-btn" data-i18n>Abrir BERSERKERMOD →</a>
     </div>
 
+    <!-- Traducciones: { "texto en español, con los espacios colapsados": ["inglés", "portugués"] }.
+         test/landing-i18n.test.mjs falla si un texto marcado no está acá o si algo queda sin marcar. -->
+    <script type="application/json" id="landing-i18n">
+{
+  "Saltar al contenido": ["Skip to content", "Pular para o conteúdo"],
+  "Qué hace": ["What it does", "O que faz"],
+  "Precio": ["Pricing", "Preço"],
+  "Para entrenadores": ["For coaches", "Para treinadores"],
+  "FAQ": ["FAQ", "FAQ"],
+  "Abrir app": ["Open app", "Abrir app"],
+  "Gratis para siempre · Premium sin renovación automática": ["Free forever · Premium never auto-renews", "Grátis para sempre · Premium sem renovação automática"],
+  "Tu entrenador personal.<br> En tu bolsillo. <span class=\"accent\">Inteligente.<\/span>": ["Your personal trainer.<br> In your pocket. <span class=\"accent\">Smart.<\/span>", "Seu personal trainer.<br> No seu bolso. <span class=\"accent\">Inteligente.<\/span>"],
+  "Te arma la rutina según tu nivel, tus días y tu objetivo. Registrás cada serie con el descanso en marcha, te avisa cuándo subir el peso y te muestra qué músculos trabajaste en la semana. Sin instalar nada, sin cuenta y sin publicidad.": ["Builds your routine around your level, your schedule and your goal. Log every set with the rest timer running, get told when to add weight and see which muscles you worked this week. Nothing to install, no account, no ads.", "Monta sua rotina de acordo com seu nível, seus dias e seu objetivo. Você registra cada série com o descanso rodando, ele avisa quando aumentar a carga e mostra quais músculos você treinou na semana. Sem instalar nada, sem conta e sem anúncios."],
+  "Empezar gratis →": ["Start free →", "Começar grátis →"],
+  "Ver cómo funciona": ["See how it works", "Ver como funciona"],
+  "Funciona offline": ["Works offline", "Funciona offline"],
+  "Sin cuenta": ["No account", "Sem conta"],
+  "Sin publicidad": ["No ads", "Sem anúncios"],
+  "Hecho por gente que entrena. Para gente que entrena.": ["Made by people who train. For people who train.", "Feito por quem treina. Para quem treina."],
+  "Ejercicios con técnica": ["Exercises with technique", "Exercícios com técnica"],
+  "Deportes de cardio": ["Cardio sports", "Esportes de cardio"],
+  "Idiomas": ["Languages", "Idiomas"],
+  "Anuncios. Cero.": ["Ads. Zero.", "Anúncios. Zero."],
+  "Lo que hace": ["What it does", "O que faz"],
+  "Todo lo que necesitás.<br>Nada que no.": ["Everything you need.<br>Nothing you don't.", "Tudo o que você precisa.<br>Nada além disso."],
+  "Del primer día al próximo récord, sin planillas ni cuentas. Lo marcado como <span class=\"tag-pro\">Premium<\/span> lo probás gratis 7 días.": ["From day one to your next PR, no spreadsheets, no math. Anything marked <span class=\"tag-pro\">Premium<\/span> you can try free for 7 days.", "Do primeiro dia ao próximo recorde, sem planilhas nem contas. O que estiver marcado como <span class=\"tag-pro\">Premium<\/span> você testa grátis por 7 dias."],
+  "Rutina que se arma sola": ["A routine that builds itself", "Rotina que se monta sozinha"],
+  "Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si cambiás algo, se rearma sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Tell it your level, how many days you train and your goal, and it builds the plan: Full Body, Upper/Lower or PPL. Change anything and it rebuilds without losing your history. Already have a routine? Import it from a PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Você informa seu nível, quantos dias treina e seu objetivo, e ele monta o plano: Full Body, Upper/Lower ou PPL. Se mudar algo, ele remonta sem perder seu histórico. Já tem sua rotina? Importe de um PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Registro sin fricción": ["Frictionless logging", "Registro sem atrito"],
+  "Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.": ["Tap ✓ and the rest timer starts, vibrating when it's done and keeping the screen on while you train. Supersets, warm-ups with the plates worked out, and if you close the app your session isn't lost.", "Toque em ✓ e o descanso começa, com vibração no final e a tela acesa enquanto você treina. Superséries, aquecimento com as anilhas calculadas, e se você fechar o app a sessão não se perde."],
+  "Te dice cuándo subir el peso": ["Tells you when to add weight", "Avisa quando aumentar a carga"],
+  "Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM y te avisa cuando un ejercicio se estanca.": ["Hit the top of your rep range and it suggests today's load, filled in with one tap. It spots PRs, estimates your 1RM and warns you when a lift stalls.", "Se você completou a faixa de repetições, ele sugere a carga de hoje e você preenche com um toque. Detecta recordes, estima seu 1RM e avisa quando um exercício estagna."],
+  "Mapa del cuerpo": ["Body map", "Mapa do corpo"],
+  "Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Más tu constancia de los últimos 6 meses. Fotos y medidas de progreso&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["This week's sets per muscle, front and back, with the ideal range for growth. Plus your consistency over the last 6 months. Progress photos and measurements&nbsp;<span class=\"tag-pro\">Premium<\/span>", "As séries da semana por músculo, de frente e de costas, com a faixa ideal para crescer. Mais sua constância dos últimos 6 meses. Fotos e medidas de progresso&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Nutrición que cierra": ["Nutrition that adds up", "Nutrição que fecha a conta"],
+  "Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas por código de barras o con una foto de la etiqueta o del plato, plan de 7 días y ajuste semanal de calorías&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Calories and macros worked out for your goal, plus your body-weight trend. Food logging by barcode or with a photo of the label or the plate, a 7-day meal plan and weekly calorie adjustments&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Calorias e macros calculados para o seu objetivo, e seu peso com tendência. Registro de refeições por código de barras ou com foto do rótulo ou do prato, plano de 7 dias e ajuste semanal de calorias&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Biblioteca de 37 ejercicios": ["Library of 37 exercises", "Biblioteca de 37 exercícios"],
+  "Técnica paso a paso, errores comunes, variaciones, RPE sugerido y un video de cada uno. Buscás por nombre o por músculo. Tu propio video o GIF por ejercicio&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Step-by-step technique, common mistakes, variations, suggested RPE and a video for each one. Search by name or by muscle. Your own video or GIF per exercise&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Técnica passo a passo, erros comuns, variações, RPE sugerido e um vídeo de cada um. Busque por nome ou por músculo. Seu próprio vídeo ou GIF por exercício&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Cardio sin vueltas": ["Cardio, no fuss", "Cardio sem complicação"],
+  "26 deportes con cronómetro y calorías según tu peso y la intensidad. Queda aparte del entreno de pesas y suma en el balance del día.": ["26 sports with a timer and calories based on your weight and intensity. Kept separate from your lifting, but counted in your daily balance.", "26 esportes com cronômetro e calorias de acordo com seu peso e a intensidade. Fica separado da musculação e entra no balanço do dia."],
+  "Tu historial, a salvo": ["Your history, safe", "Seu histórico, seguro"],
+  "Sin cuenta ni contraseña: guardás una copia en tu propio Google Drive o en un archivo, y la restaurás en otro teléfono en un toque.": ["No account, no password: save a backup to your own Google Drive or to a file, and restore it on another phone in one tap.", "Sem conta nem senha: você salva um backup no seu próprio Google Drive ou em um arquivo e restaura em outro celular com um toque."],
+  "Te recuerda entrenar": ["Reminds you to train", "Lembra você de treinar"],
+  "Un aviso a las 18 h de tu hora, en el país que estés. Si ese día ya entrenaste, no te molesta. Tema claro u oscuro, en español o inglés. Portugués&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["One reminder at 6 p.m. your local time, wherever you are. If you've already trained that day, it leaves you alone. Light or dark theme, in Spanish or English. Portuguese&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Um aviso às 18h no seu horário, em qualquer país. Se você já treinou naquele dia, ele não incomoda. Tema claro ou escuro, em espanhol ou inglês. Português&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Por dentro": ["Inside", "Por dentro"],
+  "Así se ve por dentro": ["Here's what it looks like", "Veja como é por dentro"],
+  "Capturas de la app real. Sin maquetas.": ["Screenshots of the real app. No mockups.", "Capturas de tela do app real. Sem maquetes."],
+  "Registrás la serie y arranca el descanso": ["Log the set and the rest timer starts", "Registre a série e o descanso começa"],
+  "Anotás kg y reps, tocás ✓ y el cronómetro arranca solo. La app te muestra lo que hiciste la última vez y la carga que te conviene hoy.": ["Enter kg and reps, tap ✓ and the timer starts on its own. The app shows what you did last time and the load that makes sense today.", "Anote kg e repetições, toque em ✓ e o cronômetro começa sozinho. O app mostra o que você fez da última vez e a carga ideal para hoje."],
+  "Descanso con vibración, ±15 s y pantalla encendida": ["Rest timer with vibration, ±15 s and screen kept on", "Descanso com vibração, ±15 s e tela acesa"],
+  "Calentamiento con los discos por lado calculados": ["Warm-up with plates per side worked out", "Aquecimento com as anilhas por lado calculadas"],
+  "Superseries con un toque": ["Supersets in one tap", "Superséries com um toque"],
+  "Resumen para compartir al terminar": ["A summary to share when you finish", "Resumo para compartilhar ao terminar"],
+  "Sabés qué toca hoy y cuándo subir": ["Know what's on today and when to go up", "Saiba o que treinar hoje e quando subir"],
+  "Al abrir la app ves la rutina del día y las progresiones pendientes: el ejercicio, el peso nuevo y cuánto hace que venís con la carga anterior.": ["Open the app and you see today's workout and pending progressions: the exercise, the new weight and how long you've been on the old one.", "Ao abrir o app você vê o treino do dia e as progressões pendentes: o exercício, o peso novo e há quanto tempo você está com a carga anterior."],
+  "Racha semanal y récord de constancia": ["Weekly streak and consistency record", "Sequência semanal e recorde de constância"],
+  "Récords personales y 1RM estimado": ["Personal records and estimated 1RM", "Recordes pessoais e 1RM estimado"],
+  "Aviso cuando un ejercicio se estanca": ["A heads-up when a lift stalls", "Aviso quando um exercício estagna"],
+  "Sesiones, volumen, cardio y calorías de la semana": ["Sessions, volume, cardio and calories for the week", "Sessões, volume, cardio e calorias da semana"],
+  "Mirá qué músculos trabajaste": ["See which muscles you worked", "Veja quais músculos você treinou"],
+  "Cada serie suma al músculo que entrena. Tocás uno y te dice cuántas series lleva en la semana y si está en el rango ideal para crecer.": ["Every set counts toward the muscle it trains. Tap one and it tells you how many sets it got this week and whether that's in the ideal range for growth.", "Cada série conta para o músculo que ela treina. Toque em um e ele mostra quantas séries teve na semana e se está na faixa ideal para crescer."],
+  "Frente y espalda, 13 grupos musculares": ["Front and back, 13 muscle groups", "Frente e costas, 13 grupos musculares"],
+  "Colores por rango: poco, medio, ideal, mucho": ["Colors by range: low, medium, ideal, high", "Cores por faixa: pouco, médio, ideal, muito"],
+  "Constancia de los últimos 6 meses": ["Consistency over the last 6 months", "Constância dos últimos 6 meses"],
+  "Stats mensuales y anuales con Premium": ["Monthly and yearly stats with Premium", "Estatísticas mensais e anuais com Premium"],
+  "Nutrición con números, no a ojo": ["Nutrition by the numbers, not by eye", "Nutrição com números, não no olho"],
+  "Gratis: tus calorías y macros calculados para tu objetivo, con la estrategia explicada. Con Premium registrás lo que comés y ves el balance del día, contando el cardio.": ["Free: your calories and macros worked out for your goal, with the strategy explained. With Premium you log what you eat and see the day's balance, cardio included.", "Grátis: suas calorias e macros calculados para o seu objetivo, com a estratégia explicada. Com Premium você registra o que come e vê o balanço do dia, contando o cardio."],
+  "Macros recomendados según tu objetivo": ["Recommended macros for your goal", "Macros recomendados para o seu objetivo"],
+  "Código de barras o foto con IA (Premium)": ["Barcode or AI photo (Premium)", "Código de barras ou foto com IA (Premium)"],
+  "Plan de 7 días con 5 comidas (Premium)": ["7-day plan with 5 meals (Premium)", "Plano de 7 dias com 5 refeições (Premium)"],
+  "Ajuste semanal según tu peso real (Premium)": ["Weekly adjustment based on your real weight (Premium)", "Ajuste semanal de acordo com seu peso real (Premium)"],
+  "Gratis para siempre.<br>Premium si querés más.": ["Free forever.<br>Premium if you want more.", "Grátis para sempre.<br>Premium se quiser mais."],
+  "Sin suscripciones que se renuevan solas. Empezás gratis y, si querés más, probás Premium 7 días y después elegís cuántos meses. Nada se te debita solo.": ["No subscriptions that renew on their own. Start free and, if you want more, try Premium for 7 days and then choose how many months. Nothing is ever charged automatically.", "Sem assinaturas que se renovam sozinhas. Você começa grátis e, se quiser mais, testa o Premium por 7 dias e depois escolhe quantos meses. Nada é cobrado automaticamente."],
+  "Empezá hoy": ["Start today", "Comece hoje"],
+  "Todo lo que necesitás para entrenar bien.": ["Everything you need to train well.", "Tudo o que você precisa para treinar bem."],
+  "$0": ["$0", "Grátis"],
+  "Para siempre. Sin tarjeta.": ["Forever. No card.", "Para sempre. Sem cartão."],
+  "Rutina automática según nivel, días y objetivo": ["Automatic routine by level, days and goal", "Rotina automática por nível, dias e objetivo"],
+  "Registro de series con descanso, superseries y calentamiento": ["Set logging with rest timer, supersets and warm-ups", "Registro de séries com descanso, superséries e aquecimento"],
+  "Avisos de progresión, récords y 1RM estimado": ["Progression alerts, PRs and estimated 1RM", "Avisos de progressão, recordes e 1RM estimado"],
+  "Biblioteca de 37 ejercicios con video": ["Library of 37 exercises with video", "Biblioteca de 37 exercícios com vídeo"],
+  "Cardio: 26 deportes con kcal automáticas": ["Cardio: 26 sports with automatic kcal", "Cardio: 26 esportes com kcal automáticas"],
+  "Stats semanales, mapa del cuerpo y constancia": ["Weekly stats, body map and consistency", "Estatísticas semanais, mapa do corpo e constância"],
+  "Calorías y macros recomendados para tu objetivo": ["Recommended calories and macros for your goal", "Calorias e macros recomendados para o seu objetivo"],
+  "Peso corporal con tendencia": ["Body weight with trend", "Peso corporal com tendência"],
+  "Copia en Google Drive o en archivo · rutina en PDF": ["Backup to Google Drive or a file · routine as PDF", "Backup no Google Drive ou em arquivo · rotina em PDF"],
+  "Recordatorio diario · tema claro u oscuro": ["Daily reminder · light or dark theme", "Lembrete diário · tema claro ou escuro"],
+  "Español + inglés": ["Spanish + English", "Espanhol + inglês"],
+  "Sin registro de comidas ni escáner": ["No food logging or scanner", "Sem registro de refeições nem scanner"],
+  "Sin funciones de IA": ["No AI features", "Sem funções de IA"],
+  "Sin modo Coach": ["No Coach mode", "Sem modo Coach"],
+  "Desbloqueá todo": ["Unlock everything", "Desbloqueie tudo"],
+  "Todas las funciones de la app desbloqueadas.": ["Every feature in the app, unlocked.", "Todas as funções do app desbloqueadas."],
+  "7 días gratis": ["7 days free", "7 dias grátis"],
+  "Probalo sin tarjeta · después planes de 1 a 12 meses": ["Try it with no card · then plans from 1 to 12 months", "Teste sem cartão · depois planos de 1 a 12 meses"],
+  "Prueba gratis": ["Free trial", "Teste grátis"],
+  "<b>Todo lo del plan Free<\/b>, más:": ["<b>Everything in Free<\/b>, plus:", "<b>Tudo do plano Free<\/b>, mais:"],
+  "Registro de comidas: código de barras o foto de la etiqueta o del plato con IA": ["Food logging: barcode, or an AI photo of the label or the plate", "Registro de refeições: código de barras ou foto do rótulo ou do prato com IA"],
+  "Plan de comidas de 7 días con macros": ["7-day meal plan with macros", "Plano de refeições de 7 dias com macros"],
+  "Ajuste semanal de calorías según tu peso real": ["Weekly calorie adjustment based on your real weight", "Ajuste semanal de calorias de acordo com seu peso real"],
+  "Rutinas propias ilimitadas + <b>importar desde PDF<\/b> con IA": ["Unlimited custom routines + <b>import from PDF<\/b> with AI", "Rotinas próprias ilimitadas + <b>importar de PDF<\/b> com IA"],
+  "Fotos de progreso y medidas": ["Progress photos and measurements", "Fotos de progresso e medidas"],
+  "Stats mensuales, trimestrales y anuales": ["Monthly, quarterly and yearly stats", "Estatísticas mensais, trimestrais e anuais"],
+  "Oracle IA · análisis personalizado de tu progreso": ["Oracle AI · personalized analysis of your progress", "Oracle IA · análise personalizada do seu progresso"],
+  "Tu propio video o GIF por ejercicio": ["Your own video or GIF per exercise", "Seu próprio vídeo ou GIF por exercício"],
+  "Portugués (BR)": ["Portuguese (BR)", "Português (BR)"],
+  "Soporte prioritario directo": ["Priority direct support", "Suporte prioritário direto"],
+  "Probar gratis →": ["Try it free →", "Testar grátis →"],
+  "Comprar Premium": ["Buy Premium", "Comprar Premium"],
+  "Plan Coach · Para entrenadores": ["Coach plan · For coaches", "Plano Coach · Para treinadores"],
+  "¿Sos entrenador?<br>Tus alumnos, una sola pantalla.": ["Are you a coach?<br>All your clients, one screen.", "Você é treinador?<br>Seus alunos, uma só tela."],
+  "Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Incluye todo Premium.": ["Forget spreadsheets and WhatsApp groups. Build each client's routine, send them a link and see how they train: what they lifted, how many reps they did and how they finished the week. Includes all of Premium.", "Esqueça as planilhas e os grupos de WhatsApp. Você monta a rotina de cada aluno, manda um link e vê como ele treina: que carga usou, quantas repetições fez e como chegou ao fim da semana. Inclui todo o Premium."],
+  "Link único + QR por alumno · lo abre sin instalar nada": ["Unique link + QR per client · opens with nothing to install", "Link único + QR por aluno · abre sem instalar nada"],
+  "El alumno registra kg y reps de cada serie": ["Clients log kg and reps for every set", "O aluno registra kg e repetições de cada série"],
+  "Flechas de progreso por ejercicio, sesión a sesión": ["Progress arrows per exercise, session to session", "Setas de progresso por exercício, sessão a sessão"],
+  "Control semanal: peso, energía y un mensaje para vos": ["Weekly check-in: weight, energy and a message for you", "Check-in semanal: peso, energia e uma mensagem para você"],
+  "Aviso de controles nuevos y de cambios en la rutina": ["Alerts for new check-ins and routine changes", "Aviso de novos check-ins e de mudanças na rotina"],
+  "Sin costo extra por alumno": ["No extra cost per client", "Sem custo extra por aluno"],
+  "Comprar modo Coach": ["Buy Coach mode", "Comprar modo Coach"],
+  "o probalo gratis primero →": ["or try it free first →", "ou teste grátis primeiro →"],
+  "Privacidad": ["Privacy", "Privacidade"],
+  "Tus datos son tuyos.<br>Punto.": ["Your data is yours.<br>Period.", "Seus dados são seus.<br>Ponto."],
+  "En tu teléfono": ["On your phone", "No seu celular"],
+  "Tus entrenamientos y comidas se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.": ["Your workouts and meals are stored on your phone, not on our server. And it works without internet.", "Seus treinos e refeições ficam no seu celular, não no nosso servidor. E funciona sem internet."],
+  "No te pedimos email ni contraseña. La copia va a una carpeta privada de tu propio Google Drive o a un archivo: la ves vos, no nosotros.": ["We don't ask for an email or a password. Backups go to a private folder in your own Google Drive or to a file: you can see them, we can't.", "Não pedimos e-mail nem senha. O backup vai para uma pasta privada do seu próprio Google Drive ou para um arquivo: quem vê é você, não nós."],
+  "Sin rastreo": ["No tracking", "Sem rastreamento"],
+  "Sin Google Analytics, sin Facebook Pixel, sin cookies. Solo contamos visitas a esta web de forma anónima, en nuestro propio servidor. No vendemos tus datos.": ["No Google Analytics, no Facebook Pixel, no cookies. We only count visits to this site anonymously, on our own server. We don't sell your data.", "Sem Google Analytics, sem Facebook Pixel, sem cookies. Só contamos as visitas a este site de forma anônima, no nosso próprio servidor. Não vendemos seus dados."],
+  "Cómo instalarla": ["How to install it", "Como instalar"],
+  "Tres formas.<br>Vos elegís.": ["Three ways.<br>Your choice.", "Três jeitos.<br>Você escolhe."],
+  "Usala directo desde el navegador hoy, o esperá las apps en las tiendas. La experiencia y tus datos son los mismos.": ["Use it straight from your browser today, or wait for the store apps. The experience and your data are the same.", "Use direto no navegador hoje ou espere os apps nas lojas. A experiência e seus dados são os mesmos."],
+  "Web App": ["Web App", "Web App"],
+  "● Disponible ahora": ["● Available now", "● Disponível agora"],
+  "Abrila en tu navegador y tocá \"Agregar a pantalla de inicio\". Queda como una app más, a pantalla completa y con el recordatorio diario. Funciona en iPhone y Android.": ["Open it in your browser and tap \"Add to Home Screen\". It sits there like any other app, full screen and with the daily reminder. Works on iPhone and Android.", "Abra no navegador e toque em \"Adicionar à Tela de Início\". Fica como mais um app, em tela cheia e com o lembrete diário. Funciona no iPhone e no Android."],
+  "Abrir ahora →": ["Open now →", "Abrir agora →"],
+  "Google Play": ["Google Play", "Google Play"],
+  "Próximamente": ["Coming soon", "Em breve"],
+  "La app de Android desde la tienda. Si ya usás la web, pasás tu historial con la copia de Drive o el archivo de backup.": ["The Android app from the store. If you already use the web version, bring your history over with the Drive backup or the backup file.", "O app de Android pela loja. Se você já usa a versão web, leva seu histórico com o backup do Drive ou o arquivo de backup."],
+  "Pronto": ["Soon", "Em breve"],
+  "App Store": ["App Store", "App Store"],
+  "App para iPhone y iPad. Mientras tanto, la web app anda en Safari: Compartir → Agregar a inicio.": ["An app for iPhone and iPad. In the meantime, the web app works in Safari: Share → Add to Home Screen.", "App para iPhone e iPad. Enquanto isso, o web app funciona no Safari: Compartilhar → Adicionar à Tela de Início."],
+  "Lo que te estás preguntando": ["What you're probably wondering", "O que você deve estar se perguntando"],
+  "¿Es realmente gratis?": ["Is it really free?", "É grátis mesmo?"],
+  "Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo.": ["Yes. The Free version includes the automatic routine, set logging with the rest timer, progression alerts, the library, cardio, weekly stats with the body map, and your recommended calories and macros. Forever, no card. Premium adds food logging with the scanner and AI photos, the meal plan, Oracle AI, importing routines from PDF and more: try it free for 7 days, then buy whatever period you want (1 to 12 months). No automatic subscription: nothing renews or gets charged on its own.", "Sim. A versão Free inclui a rotina automática, o registro de séries com descanso, os avisos de progressão, a biblioteca, o cardio, as estatísticas semanais com o mapa do corpo e suas calorias e macros recomendados. Para sempre, sem cartão. O Premium acrescenta o registro de refeições com scanner e fotos com IA, o plano de refeições, o Oracle IA, importar rotinas de PDF e mais: você testa grátis por 7 dias e depois compra o período que quiser (1 a 12 meses). Sem assinatura automática: nada se renova nem é cobrado sozinho."],
+  "¿Necesito Play Store o App Store?": ["Do I need the Play Store or the App Store?", "Preciso da Play Store ou da App Store?"],
+  "No. BERSERKERMOD es una PWA (Progressive Web App). Entrás desde el navegador, le das \"Agregar a pantalla de inicio\" y queda como cualquier otra app — con su ícono en el home, a pantalla completa, sin barra del navegador. Funciona igual en iPhone (Safari) y Android (Chrome).": ["No. BERSERKERMOD is a PWA (Progressive Web App). Open it in your browser, tap \"Add to Home Screen\" and it works like any other app — with its icon on your home screen, full screen, no browser bar. It works the same on iPhone (Safari) and Android (Chrome).", "Não. O BERSERKERMOD é um PWA (Progressive Web App). Você abre no navegador, toca em \"Adicionar à Tela de Início\" e ele fica como qualquer outro app — com ícone na tela inicial, em tela cheia, sem a barra do navegador. Funciona igual no iPhone (Safari) e no Android (Chrome)."],
+  "¿Funciona offline?": ["Does it work offline?", "Funciona offline?"],
+  "Sí. Después de la primera carga, todo funciona sin internet: tus rutinas, tu historial y tus stats. La conexión solo se usa para buscar alimentos, para las funciones de IA, para la copia en Drive y para el modo Coach. Si te quedás sin datos, la app sigue andando.": ["Yes. After the first load, everything works without internet: your routines, your history and your stats. The connection is only used to look up foods, for AI features, for the Drive backup and for Coach mode. If you run out of data, the app keeps working.", "Sim. Depois do primeiro carregamento, tudo funciona sem internet: suas rotinas, seu histórico e suas estatísticas. A conexão só é usada para buscar alimentos, para as funções de IA, para o backup no Drive e para o modo Coach. Se ficar sem dados, o app continua funcionando."],
+  "¿En iPhone funciona bien?": ["Does it work well on iPhone?", "Funciona bem no iPhone?"],
+  "Sí, está probada en Safari de iPhone. Agregala a la pantalla de inicio (Compartir → Agregar a inicio) y se abre como cualquier app; así iOS también deja activar el recordatorio diario. El escáner de código de barras (Premium) también anda en Safari.": ["Yes, it's tested on Safari for iPhone. Add it to your home screen (Share → Add to Home Screen) and it opens like any app; that's also what lets iOS turn on the daily reminder. The barcode scanner (Premium) works in Safari too.", "Sim, foi testado no Safari do iPhone. Adicione à tela de início (Compartilhar → Adicionar à Tela de Início) e ele abre como qualquer app; é assim também que o iOS permite ativar o lembrete diário. O scanner de código de barras (Premium) também funciona no Safari."],
+  "¿Necesito crear una cuenta?": ["Do I need to create an account?", "Preciso criar uma conta?"],
+  "No. BERSERKERMOD <b>no tiene cuentas<\/b>: no te pedimos email ni contraseña, y todo se guarda en tu teléfono. Para cambiar de teléfono o tener una copia, en <b>Perfil<\/b> tocás <b>Guardar copia en Drive<\/b> (va a tu propio Google Drive) o <b>Exportar Datos<\/b> (descarga un archivo), y del otro lado la restaurás con <b>Restaurar desde Drive<\/b> o <b>Importar Datos<\/b>.": ["No. BERSERKERMOD <b>has no accounts<\/b>: we don't ask for an email or a password, and everything is stored on your phone. To switch phones or keep a backup, go to <b>Profile<\/b> and tap <b>Back up to Drive<\/b> (it goes to your own Google Drive) or <b>Export Data<\/b> (downloads a file), then restore it on the other phone with <b>Restore from Drive<\/b> or <b>Import Data<\/b>.", "Não. O BERSERKERMOD <b>não tem contas<\/b>: não pedimos e-mail nem senha, e tudo fica salvo no seu celular. Para trocar de celular ou ter um backup, em <b>Perfil<\/b> toque em <b>Salvar backup no Drive<\/b> (vai para o seu próprio Google Drive) ou <b>Exportar Dados<\/b> (baixa um arquivo), e no outro celular restaure com <b>Restaurar do Drive<\/b> ou <b>Importar Dados<\/b>."],
+  "¿Mis datos van a un servidor?": ["Does my data go to a server?", "Meus dados vão para um servidor?"],
+  "<b>Tus entrenamientos, comidas y stats viven en tu teléfono<\/b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive<\/b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach<\/b>, la rutina que compartís, los kg y reps que registrás y el control semanal se guardan en nuestro servidor para que vos y tu entrenador los vean; las <b>funciones de IA<\/b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; y si activás el <b>recordatorio<\/b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href=\"privacy.html\">política de privacidad<\/a>.": ["<b>Your workouts, meals and stats live on your phone<\/b> and aren't uploaded to our server. The exceptions are features you turn on yourself: the <b>Drive backup<\/b> goes to your own Google account, not ours; in <b>Coach mode<\/b>, the routine you share, the kg and reps you log and the weekly check-in are stored on our server so you and your coach can both see them; the <b>AI features<\/b> (Oracle, PDF import and photos of labels or plates) process what you send and don't keep it; and if you turn on the <b>reminder<\/b>, we store your time zone so we can remind you at your local time. We never sell or share data. Full details in the <a href=\"privacy.html\">privacy policy<\/a> (in Spanish).", "<b>Seus treinos, refeições e estatísticas ficam no seu celular<\/b> e não são enviados ao nosso servidor. As exceções são funções que você mesmo ativa: o <b>backup no Drive<\/b> vai para a sua própria conta do Google, não para a nossa; no <b>modo Coach<\/b>, a rotina que você compartilha, os kg e repetições que registra e o check-in semanal ficam no nosso servidor para que você e seu treinador possam ver; as <b>funções de IA<\/b> (Oracle, importar PDF e as fotos de rótulos ou pratos) processam o que você envia e não guardam nada; e se você ativar o <b>lembrete<\/b>, guardamos seu fuso horário para avisar no seu horário. Nunca vendemos nem compartilhamos dados. Detalhes completos na <a href=\"privacy.html\">política de privacidade<\/a> (em espanhol)."],
+  "¿Va a tener publicidad?": ["Will it have ads?", "Vai ter anúncios?"],
+  "<b>No.<\/b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional: comprás el período que quieras y no se renueva solo.": ["<b>No.<\/b> Not in Free, not in Premium. Neither Google Play nor the App Store makes us show ads — that's our call, and the answer is no. If the app is good, there's no need to interrupt you with banners. Premium is optional: you buy whatever period you want and it doesn't renew on its own.", "<b>Não.<\/b> Nem no Free, nem no Premium. Nem o Google Play nem a App Store nos obrigam a mostrar anúncios — essa decisão é nossa, e a resposta é não. Se o app é bom, não precisa interromper você com banners. O Premium é opcional: você compra o período que quiser e ele não se renova sozinho."],
+  "¿Qué pasa con mis datos si borro la app?": ["What happens to my data if I delete the app?", "O que acontece com meus dados se eu apagar o app?"],
+  "Tus datos viven en el navegador de tu teléfono: si desinstalás la app o borrás los datos del navegador, se pierden. Por eso conviene tener una copia — <b>Guardar copia en Drive<\/b> o <b>Exportar Datos<\/b> en Perfil — y la app te lo recuerda cada tanto. Las fotos de progreso quedan solo en el teléfono y no entran en la copia.": ["Your data lives in your phone's browser: if you uninstall the app or clear the browser data, it's gone. That's why it's worth keeping a backup — <b>Back up to Drive<\/b> or <b>Export Data<\/b> in Profile — and the app reminds you every so often. Progress photos stay on your phone only and aren't included in the backup.", "Seus dados ficam no navegador do seu celular: se você desinstalar o app ou apagar os dados do navegador, eles se perdem. Por isso vale a pena ter um backup — <b>Salvar backup no Drive<\/b> ou <b>Exportar Dados<\/b> no Perfil — e o app lembra você de vez em quando. As fotos de progresso ficam só no celular e não entram no backup."],
+  "¿Hay versión para entrenadores con alumnos?": ["Is there a version for coaches with clients?", "Tem versão para treinadores com alunos?"],
+  "Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal con su peso, su energía y un mensaje. Vos ves sus sesiones con flechas de progreso y un aviso cuando hay algo nuevo. Sin costo extra por alumno.": ["Yes, the Coach plan: built for coaches, and it includes all of Premium. Build each client's routine and send them a link + QR; they open it with nothing to install. Your client logs kg and reps for every set and sends you a weekly check-in with their weight, energy and a message. You see their sessions with progress arrows and get an alert when there's something new. No extra cost per client.", "Sim, o plano Coach: pensado para treinadores, e inclui todo o Premium. Você monta a rotina de cada aluno e manda um link + QR; ele abre sem instalar nada. O aluno registra kg e repetições de cada série e manda um check-in semanal com o peso, a energia e uma mensagem. Você vê as sessões com setas de progresso e recebe um aviso quando há algo novo. Sem custo extra por aluno."],
+  "Dejá de buscar.<br><span class=\"accent\">Empezá a entrenar.<\/span>": ["Stop searching.<br><span class=\"accent\">Start training.<\/span>", "Pare de procurar.<br><span class=\"accent\">Comece a treinar.<\/span>"],
+  "Mientras leés esto, otros ya van por el día 3 de su racha. Tu próximo PR está a un toque.": ["While you read this, others are already on day 3 of their streak. Your next PR is one tap away.", "Enquanto você lê isto, outros já estão no dia 3 da sequência. Seu próximo recorde está a um toque."],
+  "Abrir BERSERKERMOD →": ["Open BERSERKERMOD →", "Abrir BERSERKERMOD →"],
+  "Tu entrenador personal inteligente · Hecho en Argentina": ["Your smart personal trainer · Made in Argentina", "Seu personal trainer inteligente · Feito na Argentina"],
+  "© 2026 BERSERKERMOD · Todos los derechos reservados": ["© 2026 BERSERKERMOD · All rights reserved", "© 2026 BERSERKERMOD · Todos os direitos reservados"],
+  "Política de privacidad": ["Privacy policy (in Spanish)", "Política de privacidade (em espanhol)"],
+  "Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy": ["BERSERKERMOD home screen: weekly streak, sessions, volume, cardio and today's workout", "Início do BERSERKERMOD: sequência da semana, sessões, volume, cardio e o treino de hoje"],
+  "Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27": ["Bench press logging: two sets checked off, today's suggested load and the rest timer at 1:27", "Registro do supino: duas séries marcadas, a carga sugerida para hoje e o descanso em 1:27"],
+  "Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 48,75 kg": ["Home screen with today's workout and a pending progression: overhead press from 45 to 48.75 kg", "Início com o treino de hoje e uma progressão pendente: desenvolvimento militar de 45 para 48,75 kg"],
+  "Mapa del cuerpo de frente y de espalda con las series de la semana por músculo": ["Front and back body map with this week's sets per muscle", "Mapa do corpo de frente e de costas com as séries da semana por músculo"],
+  "Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico": ["Today's nutrition: calories and macros against the target, logged meals and calorie balance", "Alimentação do dia: calorias e macros contra a meta, refeições registradas e balanço calórico"],
+  "Lo que ve el coach de una alumna: control semanal con peso y energía, y sus sesiones con kg, reps y flechas de progreso": ["What the coach sees for a client: weekly check-in with weight and energy, and her sessions with kg, reps and progress arrows", "O que o treinador vê de uma aluna: check-in semanal com peso e energia, e as sessões com kg, repetições e setas de progresso"],
+  "BERSERKERMOD inicio": ["BERSERKERMOD home", "BERSERKERMOD início"],
+  "Navegación principal": ["Main navigation", "Navegação principal"],
+  "Números del producto": ["Product numbers", "Números do produto"],
+  "BERSERKERMOD — Tu entrenador personal inteligente | Rutinas, registro, nutrición": ["BERSERKERMOD — Your smart personal trainer | Routines, logging, nutrition", "BERSERKERMOD — Seu personal trainer inteligente | Rotinas, registro, nutrição"],
+  "Rutinas que se arman solas según tu nivel y objetivo, registro de series con descanso automático, avisos para subir el peso, mapa del cuerpo y macros. Biblioteca de 37 ejercicios. Modo Coach para entrenadores. Empezá gratis, sin cuenta y sin publicidad.": ["Routines that build themselves around your level and goal, set logging with an automatic rest timer, alerts for when to add weight, a body map and macros. A library of 37 exercises. Coach mode for trainers. Start free, no account, no ads.", "Rotinas que se montam sozinhas de acordo com seu nível e objetivo, registro de séries com descanso automático, avisos para aumentar a carga, mapa do corpo e macros. Biblioteca de 37 exercícios. Modo Coach para treinadores. Comece grátis, sem conta e sem anúncios."],
+  "Idioma": ["Language", "Idioma"],
+  "Disponible muy pronto.": ["Available very soon.", "Disponível muito em breve."],
+  "Compra directa muy pronto — mientras tanto, probalo gratis.": ["Direct purchase coming very soon — in the meantime, try it free.", "Compra direta muito em breve — enquanto isso, teste grátis."],
+  "mes": ["month", "mês"],
+  "meses": ["months", "meses"],
+  "/mes": ["/month", "/mês"],
+  "Precios en pesos argentinos (ARS), con Mercado Pago.": ["Prices in Argentine pesos (ARS), paid via Mercado Pago.", "Preços em pesos argentinos (ARS), pagos pelo Mercado Pago."],
+  "Abriendo el checkout…": ["Opening checkout…", "Abrindo o checkout…"],
+  "No se pudo abrir el checkout.": ["Couldn't open checkout.", "Não foi possível abrir o checkout."],
+  "No se pudo conectar. Probá de nuevo.": ["Couldn't connect. Try again.", "Não foi possível conectar. Tente de novo."],
+  "¡Compra confirmada!": ["Purchase confirmed!", "Compra confirmada!"],
+  "Este es tu código Premium. Guardalo y activalo en la app: <b>Perfil → Activar código<\/b>.": ["This is your Premium code. Keep it and activate it in the app: <b>Profile → Activate code<\/b>.", "Este é seu código Premium. Guarde e ative no app: <b>Perfil → Ativar código<\/b>."],
+  "Este es tu código del modo Coach. Guardalo y activalo en la app: <b>Perfil → Activar código<\/b>.": ["This is your Coach mode code. Keep it and activate it in the app: <b>Profile → Activate code<\/b>.", "Este é seu código do modo Coach. Guarde e ative no app: <b>Perfil → Ativar código<\/b>."],
+  "Abrir la app y activar →": ["Open the app and activate →", "Abrir o app e ativar →"],
+  "Confirmando tu pago…": ["Confirming your payment…", "Confirmando seu pagamento…"],
+  "Pago en proceso": ["Payment in progress", "Pagamento em processamento"],
+  "Cuando se acredite (los pagos en efectivo pueden tardar) volvé a esta página o escribinos para recibir tu código.": ["Once it clears (cash payments can take a while), come back to this page or write to us to get your code.", "Quando for confirmado (pagamentos em dinheiro podem demorar), volte a esta página ou escreva para nós para receber seu código."],
+  "Tu código está casi listo": ["Your code is almost ready", "Seu código está quase pronto"],
+  "El pago se está acreditando. Recargá esta página en un minuto y va a aparecer tu código.": ["Your payment is clearing. Reload this page in a minute and your code will show up.", "O pagamento está sendo confirmado. Recarregue esta página em um minuto e seu código vai aparecer."],
+  "Cerrar": ["Close", "Fechar"]
+}
+    </script>
+    <script>
+        /* El español es el HTML; en inglés y portugués se reemplaza lo marcado con
+           data-i18n (contenido), data-i18n-alt y data-i18n-aria. Va antes de los
+           demás scripts: el de compra usa bmT() para sus textos. */
+        (function () {
+            var root = document.documentElement;
+            try {
+                var lang = window.__bmLang || 'es', idx = lang === 'en' ? 0 : lang === 'pt' ? 1 : -1;
+                var dict = JSON.parse(document.getElementById('landing-i18n').textContent);
+                var norm = function (x) { return String(x).replace(/\s+/g, ' ').trim(); };
+                var tr = function (es) { var e = idx >= 0 && dict[norm(es)]; return (e && e[idx]) || es; };
+                window.bmT = tr;
+                // Capturas de la app en el idioma de la página
+                document.querySelectorAll('img[data-shot]').forEach(function (img) {
+                    img.src = 'img/landing/' + (idx >= 0 ? lang + '/' : '') + img.getAttribute('data-shot');
+                });
+                if (idx >= 0) {
+                    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+                        var e = dict[norm(el.innerHTML)];
+                        if (e) el.innerHTML = e[idx];
+                    });
+                    document.querySelectorAll('[data-i18n-alt]').forEach(function (el) { el.alt = tr(el.alt); });
+                    document.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', tr(el.getAttribute('aria-label'))); });
+                    document.title = tr(document.title);
+                    var md = document.querySelector('meta[name="description"]');
+                    if (md) md.content = tr(md.content);
+                }
+                var sel = document.getElementById('lang-select');
+                if (sel) {
+                    sel.value = lang;
+                    sel.addEventListener('change', function () {
+                        // Recarga con ?lang= (link para compartir) sin contar otra visita
+                        try { localStorage.setItem('bm-landing-lang', sel.value); sessionStorage.setItem('bm-noview', '1'); } catch (e) { }
+                        var u = new URL(location.href);
+                        u.searchParams.set('lang', sel.value);
+                        location.replace(u.href);
+                    });
+                }
+            } catch (e) {
+                window.bmT = window.bmT || function (x) { return x; };
+            } finally {
+                root.classList.remove('i18n-wait');
+            }
+        })();
+    </script>
     <script>
         (function () {
             'use strict';
@@ -1734,8 +2031,11 @@
             var msg = document.getElementById('coach-buy-msg');
             var priceLabel = document.getElementById('coach-price-label');
 
+            var LANG = window.__bmLang || 'es', LOC = LANG === 'en' ? 'en-US' : LANG === 'pt' ? 'pt-BR' : 'es-AR';
+            var T = window.bmT || function (x) { return x; };
+            // Fuera del español, "$" se leería como dólares: los precios son en pesos argentinos
             function fmtPrice(p) {
-                try { return (p.currency === 'ARS' ? '$' : (p.currency + ' ')) + Number(p.price).toLocaleString('es-AR'); }
+                try { return (p.currency === 'ARS' ? (LANG === 'es' ? '$' : 'ARS ') : (p.currency + ' ')) + Number(p.price).toLocaleString(LOC); }
                 catch (e) { return p.currency + ' ' + p.price; }
             }
 
@@ -1759,16 +2059,22 @@
                     row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px;padding:10px 14px;border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;' +
                         (sel ? 'background:' + color.bg + ';border:1.5px solid ' + color.main + ';color:var(--text,#F5F5F7);'
                              : 'background:transparent;border:1.5px solid var(--border,#2C2C2E);color:var(--text2,#A1A1A6);');
-                    var left = '<span style="font-weight:800;font-size:14px">' + p.months + (p.months === 1 ? ' mes' : ' meses') +
+                    var left = '<span style="font-weight:800;font-size:14px">' + p.months + ' ' + T(p.months === 1 ? 'mes' : 'meses') +
                         (p.discount_pct > 0 ? ' <span style="font-size:10px;font-weight:900;color:' + color.main + ';background:' + color.bg + ';padding:2px 6px;border-radius:8px;margin-left:4px">-' + p.discount_pct + '%</span>' : '') + '</span>';
                     var right = '<span style="text-align:right"><b style="font-size:14px">' + fmtPrice(p) + '</b>' +
-                        (p.months > 1 ? '<br><span style="font-size:10px;color:var(--text3,#6E6E73)">$' + Number(p.per_month).toLocaleString('es-AR') + '/mes</span>' : '') + '</span>';
+                        (p.months > 1 ? '<br><span style="font-size:10px;color:var(--text3,#6E6E73)">' + fmtPrice({ currency: p.currency, price: p.per_month }) + T('/mes') + '</span>' : '') + '</span>';
                     row.innerHTML = left + right;
                     row.onclick = function () { _sel[prod] = p.months; renderPlans(prod, boxId, labelEl, color); };
                     box.appendChild(row);
                 });
+                if (LANG !== 'es') {
+                    var note = document.createElement('p');
+                    note.style.cssText = 'font-size:11px;color:var(--text3,#6E6E73);margin:2px 0 8px';
+                    note.textContent = T('Precios en pesos argentinos (ARS), con Mercado Pago.');
+                    box.appendChild(note);
+                }
                 var cur = _plans[prod].find(function (p) { return p.months === _sel[prod]; });
-                if (labelEl && cur) labelEl.textContent = '· ' + cur.months + (cur.months === 1 ? ' mes ' : ' meses ') + fmtPrice(cur);
+                if (labelEl && cur) labelEl.textContent = '· ' + cur.months + ' ' + T(cur.months === 1 ? 'mes' : 'meses') + ' ' + fmtPrice(cur);
             }
 
             // Mostrar precios / habilitar botones según la config del Worker.
@@ -1781,7 +2087,7 @@
                     if (btn) btn.disabled = false;
                 } else {
                     if (priceLabel) priceLabel.textContent = '';
-                    if (msg) msg.textContent = 'Disponible muy pronto.';
+                    if (msg) msg.textContent = T('Disponible muy pronto.');
                 }
                 var pPlans = ((d && d.premium_plans) || []).filter(function (p) { return p.available; });
                 if (pPlans.length) {
@@ -1791,24 +2097,24 @@
                     if (btnP) btnP.disabled = false;
                 } else {
                     if (priceLabelP) priceLabelP.textContent = '';
-                    if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
+                    if (msgP) msgP.textContent = T('Compra directa muy pronto — mientras tanto, probalo gratis.');
                 }
             }).catch(function () {
-                if (msg) msg.textContent = 'Disponible muy pronto.';
-                if (msgP) msgP.textContent = 'Compra directa muy pronto — mientras tanto, probalo gratis.';
+                if (msg) msg.textContent = T('Disponible muy pronto.');
+                if (msgP) msgP.textContent = T('Compra directa muy pronto — mientras tanto, probalo gratis.');
             });
 
             // Botones comprar → crean la preferencia del producto y redirigen al checkout de MP.
             function comprar(payload, b, m) {
                 if (!b) return;
-                b.disabled = true; if (m) { m.style.color = ''; m.textContent = 'Abriendo el checkout…'; }
+                b.disabled = true; if (m) { m.style.color = ''; m.textContent = T('Abriendo el checkout…'); }
                 fetch(API + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
                     .then(function (res) {
                         if (res.ok && res.j.init_point) { window.location.href = res.j.init_point; }
-                        else { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = (res.j && res.j.error) || 'No se pudo abrir el checkout.'; } }
+                        else { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = (res.j && res.j.error) || T('No se pudo abrir el checkout.'); } }
                     })
-                    .catch(function () { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = 'No se pudo conectar. Probá de nuevo.'; } });
+                    .catch(function () { b.disabled = false; if (m) { m.style.color = 'var(--red,#FF6B6B)'; m.textContent = T('No se pudo conectar. Probá de nuevo.'); } });
             }
             window.comprarCoach = function () { comprar({ product: 'coach', months: _sel.coach || 1 }, btn, msg); };
             window.comprarPremium = function () { comprar({ product: 'premium', months: _sel.premium || 1 }, btnP, msgP); };
@@ -1847,24 +2153,26 @@
                 card.style.cssText = 'background:#141416;border:1px solid #2C2C2E;border-radius:18px;padding:28px;max-width:420px;width:100%;text-align:center;color:#F5F5F7';
                 var html = '';
                 if (state === 'ready') {
-                    var prodName = window._bmBoughtProduct === 'premium' ? 'Premium' : 'del modo Coach';
+                    var codeMsg = window._bmBoughtProduct === 'premium'
+                        ? T('Este es tu código Premium. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.')
+                        : T('Este es tu código del modo Coach. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.');
                     html = '<div style="font-size:42px;margin-bottom:8px">✅</div>' +
-                        '<div style="font-size:20px;font-weight:900;margin-bottom:6px">¡Compra confirmada!</div>' +
-                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">Este es tu código ' + prodName + '. Guardalo y activalo en la app: <b>Perfil → Activar código</b>.</div>' +
+                        '<div style="font-size:20px;font-weight:900;margin-bottom:6px">' + T('¡Compra confirmada!') + '</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">' + codeMsg + '</div>' +
                         '<div style="font-size:24px;font-weight:900;letter-spacing:.08em;background:#0A0A0B;border:1.5px dashed #00D4AA;color:#00D4AA;border-radius:12px;padding:16px;margin-bottom:18px;user-select:all">' + code + '</div>' +
-                        '<a href="BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">Abrir la app y activar →</a>';
+                        '<a href="BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">' + T('Abrir la app y activar →') + '</a>';
                 } else if (state === 'loading') {
-                    html = '<div style="font-size:32px;margin-bottom:10px">⏳</div><div style="font-size:16px;font-weight:800">Confirmando tu pago…</div>';
+                    html = '<div style="font-size:32px;margin-bottom:10px">⏳</div><div style="font-size:16px;font-weight:800">' + T('Confirmando tu pago…') + '</div>';
                 } else if (state === 'pending') {
-                    html = '<div style="font-size:36px;margin-bottom:8px">🕓</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">Pago en proceso</div>' +
-                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">Cuando se acredite (los pagos en efectivo pueden tardar) volvé a esta página o escribinos para recibir tu código.</div>';
+                    html = '<div style="font-size:36px;margin-bottom:8px">🕓</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">' + T('Pago en proceso') + '</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">' + T('Cuando se acredite (los pagos en efectivo pueden tardar) volvé a esta página o escribinos para recibir tu código.') + '</div>';
                 } else {
-                    html = '<div style="font-size:36px;margin-bottom:8px">📩</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">Tu código está casi listo</div>' +
-                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">El pago se está acreditando. Recargá esta página en un minuto y va a aparecer tu código.</div>';
+                    html = '<div style="font-size:36px;margin-bottom:8px">📩</div><div style="font-size:18px;font-weight:900;margin-bottom:6px">' + T('Tu código está casi listo') + '</div>' +
+                        '<div style="font-size:13px;color:#A1A1A6;line-height:1.5">' + T('El pago se está acreditando. Recargá esta página en un minuto y va a aparecer tu código.') + '</div>';
                 }
                 card.innerHTML = html;
                 var close = document.createElement('button');
-                close.textContent = 'Cerrar';
+                close.textContent = T('Cerrar');
                 close.style.cssText = 'margin-top:6px;background:transparent;border:1px solid #333;color:#A1A1A6;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer;width:100%';
                 close.onclick = function () { ov.remove(); try { history.replaceState({}, '', location.pathname); } catch (e) {} };
                 card.appendChild(close);
@@ -1896,7 +2204,10 @@
                 if (!(navigator.sendBeacon && navigator.sendBeacon(API + '/api/e', body))) fetch(API + '/api/e', { method: 'POST', body: body, keepalive: true });
             } catch (x) { }
         };
-        bmTrack('view');
+        // n = idioma de la página. Cambiar de idioma recarga: esa vista no se cuenta otra vez.
+        var again = false;
+        try { again = sessionStorage.getItem('bm-noview') === '1'; sessionStorage.removeItem('bm-noview'); } catch (e) { }
+        if (!again) bmTrack('view', window.__bmLang || 'es');
     } catch (e) { }
 })();
 </script>

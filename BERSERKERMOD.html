@@ -3647,6 +3647,12 @@
             const s = new Date(2024, 0, 1 + i).toLocaleDateString(appLocale(), { weekday: 'short' }).replace('.', '');
             return s.charAt(0).toUpperCase() + s.slice(1);
         }
+        // Inicial del día (0 = lunes): L M X J V S D / M T W T F S S / S T Q Q S S D
+        // (en español va la X del miércoles, que Intl no usa: daría dos M)
+        function weekdayInitial(i) {
+            if (state.lang === 'es') return 'LMXJVSD'[i];
+            return new Date(2024, 0, 1 + i).toLocaleDateString(appLocale(), { weekday: 'narrow' }).toUpperCase();
+        }
         // Texto fijo del HTML (modales): data-i18n="clave" (texto), data-i18n-ph
         // (placeholder) y data-i18n-aria (aria-label). Corre al arrancar y al cambiar de idioma.
         function applyStaticI18n() {
@@ -6954,12 +6960,11 @@
             const sc = h('div', { className: 'card fade-in' });
             sc.appendChild(h('p', { className: 'label' }, t('home_streak_label')));
             const sb = h('div', { className: 'streak-bar' });
-            const dayNames = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
             const today = new Date().getDay();
             for (let i = 0; i < 7; i++) {
                 const dayIdx = (i + 1) % 7;
                 const d = h('div', { className: 'streak-dot' + (isDayTrained(i) ? (' done') : '') + (dayIdx === today ? ' today' : '') });
-                d.textContent = dayNames[i]; sb.appendChild(d);
+                d.textContent = weekdayInitial(i); sb.appendChild(d);
             }
             sc.appendChild(sb);
             sc.appendChild(h('p', { style: { textAlign: 'center', fontSize: '13px', color: 'var(--text2)' } },
