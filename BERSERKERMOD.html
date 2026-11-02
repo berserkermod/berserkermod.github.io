@@ -8799,14 +8799,21 @@
             line.setAttribute('d', pathD); line.setAttribute('fill', 'none');
             line.setAttribute('stroke', '#00D4AA'); line.setAttribute('stroke-width', '2');
             line.setAttribute('stroke-linecap', 'round'); svg.appendChild(line);
-            // Dots
+            // Dots. Con muchos puntos, el valor solo va donde cambia y sin pisarse
+            // (antes, con meses de historia, quedaba "57.5 57.5 57.5" encimado); el último siempre.
+            let lblX = -99, lblV = null, lblEl = null;
             pts.forEach((p, i) => {
                 const c = document.createElementNS(ns, 'circle');
-                c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', '3.5'); c.setAttribute('fill', '#00D4AA'); svg.appendChild(c);
-                const t = document.createElementNS(ns, 'text');
-                t.setAttribute('x', p.x); t.setAttribute('y', p.y - 8); t.setAttribute('text-anchor', 'middle');
-                t.setAttribute('fill', '#F5F5F7'); t.setAttribute('font-size', '8'); t.setAttribute('font-weight', '700');
-                t.textContent = p.d[key]; svg.appendChild(t);
+                c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', data.length > 20 ? '2.5' : '3.5'); c.setAttribute('fill', '#00D4AA'); svg.appendChild(c);
+                const v = p.d[key], last = i === pts.length - 1, far = p.x - lblX >= 18;
+                if (data.length <= 8 || (v !== lblV && (far || last))) {
+                    if (last && !far && lblEl) lblEl.remove(); // el último manda
+                    const t = document.createElementNS(ns, 'text');
+                    t.setAttribute('x', p.x); t.setAttribute('y', p.y - 8); t.setAttribute('text-anchor', 'middle');
+                    t.setAttribute('fill', '#F5F5F7'); t.setAttribute('font-size', '8'); t.setAttribute('font-weight', '700');
+                    t.textContent = v; svg.appendChild(t);
+                    lblX = p.x; lblV = v; lblEl = t;
+                }
                 if (data.length <= 8 || i % Math.ceil(data.length / 6) === 0) {
                     const xl = document.createElementNS(ns, 'text');
                     xl.setAttribute('x', p.x); xl.setAttribute('y', H - 4); xl.setAttribute('text-anchor', 'middle');
