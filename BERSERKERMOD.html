@@ -25,7 +25,7 @@
          planned when JS moves to module files); unpkg is allowed only for the
          two SRI-pinned lazy libs (jsPDF, ZXing). img-src stays broad (https:)
          because exercise GIFs and QR codes are user/third-party URLs. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com https://berserkermod-api.berserkermod.workers.dev; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self' blob:" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://api.anthropic.com https://berserkermod-api.berserkermod.workers.dev https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; worker-src 'self' blob:" />
     <meta name="description"
         content="BERSERKERMOD — Tu entrenador personal inteligente. Rutinas personalizadas, cardio, nutrición y métricas profesionales." />
     <meta property="og:title" content="BERSERKERMOD — Tu entrenador personal inteligente" />
@@ -2305,6 +2305,7 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
+                dr_title: "COPIA EN GOOGLE DRIVE", dr_save: "Guardar copia en Drive", dr_restore: "Restaurar desde Drive", dr_last: "Última copia en Drive: {when}", dr_never: "Todavía no guardaste una copia en Drive.", dr_note: "Se guarda en una carpeta privada de tu Google Drive (no aparece entre tus archivos). Nuestro servidor no la ve. No incluye las fotos de progreso.", dr_busy_save: "Guardando en Drive…", dr_busy_read: "Buscando tu copia en Drive…", dr_saved: "✓ Copia guardada en Drive", dr_none: "Todavía no hay ninguna copia en tu Drive.", dr_err_closed: "Se cerró la ventana de Google sin dar permiso.", dr_err_blocked: "El navegador bloqueó la ventana de Google. Probá de nuevo.", dr_err: "No se pudo conectar con Google Drive. Revisá la conexión y probá de nuevo.", dr_more_title: "Tu copia en Drive tiene más entrenamientos", dr_more_msg: "La copia del {date} tiene {r} entrenamientos y este teléfono tiene {l}. Si guardás ahora, la reemplazás (la anterior queda guardada aparte).", dr_more_restore: "Restaurar la copia de Drive", dr_more_save: "Guardar igual",
                 theme_dark: "Oscuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Mucho (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
                 fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
@@ -2573,6 +2574,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
+                dr_title: "GOOGLE DRIVE BACKUP", dr_save: "Back up to Drive", dr_restore: "Restore from Drive", dr_last: "Last Drive backup: {when}", dr_never: "You have not backed up to Drive yet.", dr_note: "Saved in a private folder in your Google Drive (it does not show among your files). Our server never sees it. Progress photos are not included.", dr_busy_save: "Saving to Drive…", dr_busy_read: "Looking for your Drive backup…", dr_saved: "✓ Backup saved to Drive", dr_none: "There is no backup in your Drive yet.", dr_err_closed: "The Google window was closed without granting access.", dr_err_blocked: "The browser blocked the Google window. Try again.", dr_err: "Could not connect to Google Drive. Check your connection and try again.", dr_more_title: "Your Drive backup has more workouts", dr_more_msg: "The backup from {date} has {r} workouts and this phone has {l}. Saving now replaces it (the previous one is kept separately).", dr_more_restore: "Restore the Drive backup", dr_more_save: "Save anyway",
                 theme_dark: "Dark", theme_light: "Light", theme_auto: "Automatic",
                 bm_title: "BODY MAP", bm_this_week: "SETS THIS WEEK", bm_per_week: "SETS PER WEEK (AVERAGE)", bm_tap: "Tap a muscle to see its sets", bm_sets: "sets", bm_lvl0: "Not trained", bm_lvl1: "Low (1-4)", bm_lvl2: "Medium (5-9)", bm_lvl3: "Ideal for growth (10-20)", bm_lvl4: "High (20+)", bm_front: "FRONT", bm_back: "BACK", bm_unknown: "{n} sets of exercises we do not recognize are not on the map.", mus_chest: "Chest", mus_shoulders: "Shoulders", mus_biceps: "Biceps", mus_forearms: "Forearms", mus_abs: "Abs", mus_quads: "Quads", mus_traps: "Traps", mus_lats: "Lats", mus_triceps: "Triceps", mus_lowback: "Lower back", mus_glutes: "Glutes", mus_hamstrings: "Hamstrings", mus_calves: "Calves", cal_title: "CONSISTENCY · LAST 6 MONTHS", cal_gym: "Weights", cal_cardio: "Cardio", cal_both: "Both", cal_summary: "{n} training days · {w} per week on average", pg_title: "PROGRESS PHOTOS", pg_teaser: "Compare your body month by month with photos and measurements. Everything stays on your phone.", pg_add: "+ Add photo", pg_private: "Photos stay only on this phone: they are not uploaded anywhere and are not included in the backup.", pg_unavailable: "Photos could not be saved in this browser.", pg_empty: "Take a photo today (same light and same pose every time) and in a few weeks you will see the change.", pg_compare: "Compare before and after", pg_saved: "✓ Photo saved", pg_before: "Before", pg_after: "After", pg_delete: "Delete \"After\"", pg_del_confirm: "Delete this photo? This cannot be undone.", pg_close: "Close", ms_title: "MEASUREMENTS (CM)", ms_waist: "Waist", ms_hips: "Hips", ms_chest: "Chest", ms_arm: "Arm", ms_thigh: "Thigh", ms_since: "Change since {date}.", ms_save: "Save measurements", ms_saved: "✓ Measurements saved",
                 fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "This is an estimate: check the grams. Photos tend to miss oil and sauces.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
@@ -2840,6 +2842,7 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
+                dr_title: "BACKUP NO GOOGLE DRIVE", dr_save: "Salvar backup no Drive", dr_restore: "Restaurar do Drive", dr_last: "Último backup no Drive: {when}", dr_never: "Você ainda não salvou um backup no Drive.", dr_note: "Fica numa pasta privada do seu Google Drive (não aparece entre seus arquivos). Nosso servidor não vê. Não inclui as fotos de progresso.", dr_busy_save: "Salvando no Drive…", dr_busy_read: "Procurando seu backup no Drive…", dr_saved: "✓ Backup salvo no Drive", dr_none: "Ainda não há nenhum backup no seu Drive.", dr_err_closed: "A janela do Google foi fechada sem dar permissão.", dr_err_blocked: "O navegador bloqueou a janela do Google. Tente de novo.", dr_err: "Não foi possível conectar ao Google Drive. Verifique a conexão e tente de novo.", dr_more_title: "Seu backup no Drive tem mais treinos", dr_more_msg: "O backup de {date} tem {r} treinos e este celular tem {l}. Se salvar agora, ele é substituído (o anterior fica guardado à parte).", dr_more_restore: "Restaurar o backup do Drive", dr_more_save: "Salvar mesmo assim",
                 theme_dark: "Escuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Muito (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
                 fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
@@ -4098,7 +4101,7 @@
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
             'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
-            'bm-last-backup', 'bm-flash-once', 'bm-schema-version',
+            'bm-last-backup', 'bm-drive-last', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
             'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code'
         ];
@@ -4162,7 +4165,7 @@
             if (parsed.exportedAt) parts.push(t('imp_exported').replace('{date}', String(parsed.exportedAt).slice(0, 10)));
             const ov = h('div', { style: { position: 'fixed', inset: '0', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)', webkitBackdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' } });
             const card = h('div', { style: { background: 'var(--sf1)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', maxWidth: '380px', width: '100%' } });
-            card.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '10px' } }, '📥 ' + t('imp_title')));
+            card.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' } }, ico('upload', 'ico-accent'), t('imp_title')));
             card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: '1.6', marginBottom: '10px' } }, parts.join(' · ')));
             card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--red)', lineHeight: '1.5', marginBottom: '20px' } }, t('imp_warning')));
             card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => applyBackup(parsed) }, t('imp_confirm')));
@@ -4190,6 +4193,170 @@
                 flash(t('imp_invalid'), 'var(--red)');
             }
         }
+
+        // ─────────────────────────────────────────
+        // COPIA EN GOOGLE DRIVE — en la carpeta privada de la app (scope drive.appdata):
+        // no aparece entre los archivos del usuario y nuestro servidor nunca la ve; el
+        // token de Google queda solo en este navegador y vence en 1 hora. Reusa el
+        // mismo formato que el backup en archivo (buildBackup / parseBackup).
+        // ─────────────────────────────────────────
+        // ID público del cliente web (proyecto "berserkermod" en Google Cloud). No es un secreto.
+        const GOOGLE_CLIENT_ID = '701502844866-ip1v4r9pjootcmp23m3d0kfiupqus4f1.apps.googleusercontent.com';
+        const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+        const DRIVE_FILE = 'berserkermod-backup.json', DRIVE_FILE_PREV = 'berserkermod-backup-anterior.json';
+        const Drive = { token: null, exp: 0, client: null, gis: null };
+        // Sin client ID configurado, la tarjeta no aparece. No depende de nuestro servidor.
+        function driveEnabled() { return !!GOOGLE_CLIENT_ID; }
+        // Se carga apenas se muestra el Perfil: el pedido de permiso tiene que salir
+        // en el mismo toque del usuario o el navegador bloquea la ventana de Google.
+        function loadGis() {
+            if (window.google && google.accounts && google.accounts.oauth2) return Promise.resolve();
+            if (Drive.gis) return Drive.gis;
+            Drive.gis = new Promise((res, rej) => {
+                const sc = document.createElement('script');
+                sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+                sc.onload = () => res(); sc.onerror = () => { Drive.gis = null; rej(new Error('gis_load')); };
+                document.head.appendChild(sc);
+            });
+            return Drive.gis;
+        }
+        function driveToken() {
+            if (Drive.token && Date.now() < Drive.exp - 60000) return Promise.resolve(Drive.token);
+            return new Promise((res, rej) => {
+                const ask = () => {
+                    Drive.client = google.accounts.oauth2.initTokenClient({
+                        client_id: GOOGLE_CLIENT_ID, scope: DRIVE_SCOPE, prompt: '',
+                        callback: (r) => {
+                            if (!r || r.error || !r.access_token) { rej(new Error((r && r.error) || 'denied')); return; }
+                            if (!google.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) { rej(new Error('denied')); return; }
+                            Drive.token = r.access_token; Drive.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+                            res(Drive.token);
+                        },
+                        error_callback: (e) => rej(new Error((e && e.type) || 'popup_closed'))
+                    });
+                    Drive.client.requestAccessToken();
+                };
+                // Si la librería ya está, se pide en este mismo toque (sin await antes).
+                if (window.google && google.accounts && google.accounts.oauth2) ask();
+                else loadGis().then(ask, rej);
+            });
+        }
+        async function driveFetch(path, opts) {
+            const o = opts || {};
+            const r = await fetch('https://www.googleapis.com' + path, Object.assign({}, o, { headers: Object.assign({ Authorization: 'Bearer ' + Drive.token }, o.headers || {}) }));
+            if (r.status === 401) { Drive.token = null; throw new Error('auth'); }
+            if (!r.ok) throw new Error('drive_' + r.status);
+            return r;
+        }
+        async function driveFind(name) {
+            const q = encodeURIComponent("name='" + name + "' and trashed=false");
+            const r = await driveFetch('/drive/v3/files?spaces=appDataFolder&pageSize=5&fields=files(id,name,modifiedTime)&q=' + q);
+            return ((await r.json()).files || [])[0] || null;
+        }
+        async function driveRead(id) { return (await driveFetch('/drive/v3/files/' + id + '?alt=media')).json(); }
+        async function driveWrite(name, obj, id) {
+            const body = JSON.stringify(obj);
+            if (id) {
+                await driveFetch('/upload/drive/v3/files/' + id + '?uploadType=media', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body });
+                return id;
+            }
+            const b = 'bm' + Date.now();
+            const meta = JSON.stringify({ name, parents: ['appDataFolder'], mimeType: 'application/json' });
+            const multipart = '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + meta + '\r\n--' + b + '\r\nContent-Type: application/json\r\n\r\n' + body + '\r\n--' + b + '--';
+            const r = await driveFetch('/upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: multipart });
+            return (await r.json()).id;
+        }
+        function backupSessionCount(obj) {
+            try { return JSON.parse((obj && obj.data && obj.data['bm-sessions']) || '[]').length; } catch { return 0; }
+        }
+        // Cerrar la ventana de Google o decir que no es una decisión, no un error a reportar.
+        function driveCancelled(e) { return /popup_closed|denied/.test(String((e && e.message) || e)); }
+        function driveErr(e) {
+            const m = String((e && e.message) || e);
+            if (driveCancelled(e)) return t('dr_err_closed');
+            if (/popup_failed|blocked/.test(m)) return t('dr_err_blocked');
+            return t('dr_err');
+        }
+        // Teléfono nuevo y vacío que guarda arriba de una copia con historia: se pregunta.
+        function askDriveOverwrite(remoteCount, localCount, when) {
+            return new Promise((res) => {
+                const ov = h('div', { className: 'fv-modal' });
+                const card = h('div', { className: 'fv-card' });
+                const done = (v) => { ov.remove(); res(v); };
+                card.appendChild(h('p', { className: 'fv-title' }, ico('alert', 'ico-orange'), ' ' + t('dr_more_title')));
+                card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: 1.5, margin: '8px 0 16px' } },
+                    t('dr_more_msg').replace('{date}', String(when || '').slice(0, 10).split('-').reverse().join('/')).replace('{r}', remoteCount).replace('{l}', localCount)));
+                card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => done('restore') }, ico('cloudDown'), ' ' + t('dr_more_restore')));
+                card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' }, onclick: () => done('save') }, t('dr_more_save')));
+                card.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: () => done(null) }, t('btn_cancel')));
+                ov.appendChild(card);
+                document.body.appendChild(ov);
+            });
+        }
+        async function driveBackup() {
+            let busy = null;
+            try {
+                const tk = driveToken();            // primero el permiso, dentro del toque
+                busy = showBusy(t('dr_busy_save'));
+                await tk;
+                const local = buildBackup();
+                const cur = await driveFind(DRIVE_FILE);
+                if (cur) {
+                    const remote = await driveRead(cur.id);
+                    const rc = backupSessionCount(remote), lc = backupSessionCount(local);
+                    if (rc > lc) {
+                        busy.remove(); busy = null;
+                        const choice = await askDriveOverwrite(rc, lc, remote && remote.exportedAt);
+                        if (choice === 'restore') { const parsed = parseBackup(remote); if (parsed) showImportConfirm(parsed); return; }
+                        if (choice !== 'save') return;
+                        busy = showBusy(t('dr_busy_save'));
+                    }
+                    // La copia anterior queda guardada aparte, por si la nueva sale mal.
+                    const prev = await driveFind(DRIVE_FILE_PREV);
+                    await driveWrite(DRIVE_FILE_PREV, remote, prev && prev.id);
+                    await driveWrite(DRIVE_FILE, local, cur.id);
+                } else {
+                    await driveWrite(DRIVE_FILE, local);
+                }
+                try { localStorage.setItem('bm-drive-last', new Date().toISOString()); localStorage.setItem('bm-last-backup', todayStr()); } catch { }
+                flash(t('dr_saved'));
+                if (state.tab === 'profile') renderProfile();
+            } catch (e) {
+                if (!driveCancelled(e)) logAppError('drive-backup', e);
+                flash(driveErr(e), 'var(--orange)');
+            } finally { if (busy) busy.remove(); }
+        }
+        async function driveRestore() {
+            let busy = null;
+            try {
+                const tk = driveToken();
+                busy = showBusy(t('dr_busy_read'));
+                await tk;
+                const cur = await driveFind(DRIVE_FILE);
+                if (!cur) { flash(t('dr_none'), 'var(--orange)'); return; }
+                const parsed = parseBackup(await driveRead(cur.id));
+                if (!parsed) { flash(t('imp_invalid'), 'var(--red)'); return; }
+                busy.remove(); busy = null;
+                showImportConfirm(parsed);
+            } catch (e) {
+                if (!driveCancelled(e)) logAppError('drive-restore', e);
+                flash(driveErr(e), 'var(--orange)');
+            } finally { if (busy) busy.remove(); }
+        }
+        function renderDriveCard(container) {
+            if (!driveEnabled()) return;
+            loadGis().catch(() => { });
+            const card = h('div', { className: 'card fade-in' });
+            card.appendChild(h('p', { className: 'label' }, ico('cloudUp'), t('dr_title')));
+            let last = null; try { last = localStorage.getItem('bm-drive-last'); } catch { }
+            card.appendChild(h('p', { style: { fontSize: '13px', color: last ? 'var(--text2)' : 'var(--orange)', fontWeight: 700, marginBottom: '10px' } },
+                last ? t('dr_last').replace('{when}', relativeTime(last)) : t('dr_never')));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: driveBackup }, ico('cloudUp'), ' ' + t('dr_save')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: driveRestore }, ico('cloudDown'), ' ' + t('dr_restore')));
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.45, marginTop: '10px' } }, t('dr_note')));
+            container.appendChild(card);
+        }
+
         // Shown when the user has real data and hasn't exported a backup in
         // 30+ days (or ever). localStorage is the only copy of their history,
         // so this is their safety net against eviction / losing the phone.
@@ -4309,7 +4476,9 @@
             pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
             sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
             moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
-            contrast: '<circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/>'
+            contrast: '<circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/>',
+            cloudUp: '<path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="m8 17 4-4 4 4"/>',
+            cloudDown: '<path d="M12 13v8l-4-4"/><path d="m12 21 4-4"/><path d="M4.39 15.4A7 7 0 1 1 15.7 8h1.79a4.5 4.5 0 0 1 2.5 8.2"/>'
         };
         function icoSvg(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; }
         function ico(name, cls) { const s = document.createElement('span'); s.className = 'ico' + (cls ? ' ' + cls : ''); s.innerHTML = icoSvg(name); return s; }
@@ -9359,9 +9528,12 @@
                 const bc = h('div', { className: 'card fade-in', style: { border: '1.5px solid var(--orange)' } });
                 bc.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, marginBottom: '6px' } }, t('backup_remind_title')));
                 bc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '12px' } }, t('backup_remind_msg')));
-                bc.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { exportBackup(); renderProfile(); } }, ico('download'), ' ' + t('prof_export')));
+                if (driveEnabled()) bc.appendChild(h('button', { className: 'btn btn-primary btn-sm', style: { marginRight: '8px' }, onclick: driveBackup }, ico('cloudUp'), ' ' + t('dr_save')));
+                bc.appendChild(h('button', { className: 'btn ' + (driveEnabled() ? 'btn-secondary' : 'btn-primary') + ' btn-sm', onclick: () => { exportBackup(); renderProfile(); } }, ico('download'), ' ' + t('prof_export')));
                 v.appendChild(bc);
             }
+
+            renderDriveCard(v);
 
             // Actions
             const ac = h('div', { className: 'card fade-in' });

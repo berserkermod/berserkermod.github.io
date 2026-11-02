@@ -177,7 +177,7 @@
         </ul>
 
         <h2>2. Dónde se guardan tus datos</h2>
-        <p>Todo lo que registrás (perfil, rutinas, sesiones, cardio, nutrición) se guarda <strong>exclusivamente en tu dispositivo</strong>, dentro del almacenamiento local del navegador (<code>localStorage</code>). Hoy no existe sincronización en la nube: para pasar tus datos a otro dispositivo o tener una copia, usá <strong>Exportar Datos</strong> e <strong>Importar Datos</strong> en tu perfil.</p>
+        <p>Todo lo que registrás (perfil, rutinas, sesiones, cardio, nutrición) se guarda <strong>exclusivamente en tu dispositivo</strong>, dentro del almacenamiento local del navegador (<code>localStorage</code>). No hay sincronización automática en la nube: para pasar tus datos a otro dispositivo o tener una copia, usá <strong>Exportar Datos</strong> e <strong>Importar Datos</strong> en tu perfil, o la copia opcional en tu propio Google Drive (ver sección 3).</p>
         <p>Nuestro servidor (Cloudflare Workers) recibe <strong>solo</strong> lo necesario para estas funciones:</p>
         <ul>
             <li><strong>Licencias Premium / Coach</strong>: el código, un identificador aleatorio de instalación que genera la app (no está ligado a tu nombre, email ni teléfono) y las fechas de activación y vencimiento.</li>
@@ -195,6 +195,7 @@
             <li><strong>Fotos de comida (Premium)</strong>: cuando escaneás la tabla nutricional de un envase o sacás una foto de tu plato, la imagen (achicada en tu teléfono) se envía a nuestro servidor para que la analice la IA de Cloudflare Workers AI. Se procesa en el momento y se descarta: no la guardamos ni la usamos para otra cosa. Lo que vuelve (calorías y macros) queda solo en tu teléfono.</li>
             <li><strong>Peso corporal</strong>: las pesadas que anotás y el ajuste semanal de calorías se calculan y se guardan solo en tu teléfono.</li>
             <li><strong>Fotos de progreso y medidas</strong>: se guardan solo en tu teléfono (en el almacenamiento del navegador). No se suben a ningún servidor. Las fotos no se incluyen en el backup; las medidas sí.</li>
+            <li><strong>Copia de seguridad en Google Drive</strong> (opcional): si tocás "Guardar copia en Drive", Google te pide permiso y la app guarda tu backup en una carpeta privada de tu propio Drive que solo ve esta app (<code>appDataFolder</code>). La app no puede ver ni tocar ningún otro archivo de tu Drive y no conoce tu email. La copia va directo de tu teléfono a Google: no pasa por nuestro servidor. Guardamos dos archivos: la copia actual y la anterior.</li>
             <li><strong>Oracle IA (análisis de entrenamiento, Premium)</strong>: al pedir un análisis, se envían estadísticas agregadas de tus últimas 4 semanas (cantidad de sesiones, volumen, series por grupo muscular, evolución de pesos, promedios de calorías/proteína y tu objetivo/nivel/peso) a nuestro servidor (Cloudflare Workers AI), que genera los insights y no almacena esos datos. No se envían nombres, emails ni identificadores personales. Opcionalmente, si preferís que el análisis lo haga Claude con <em>tu propia</em> API key de Anthropic, la key se guarda solo en tu teléfono y las consultas van a <code>api.anthropic.com</code> bajo tu cuenta — BERSERKERMOD nunca recibe ni almacena tu key.</li>
             <li><strong>OpenFoodFacts</strong>: usado para búsqueda de productos por nombre o código de barras (Premium). Las consultas se hacen anónimamente a su API pública (<code>world.openfoodfacts.org</code>).</li>
             <li><strong>Mercado Pago</strong>: si comprás desde la web, el pago se hace en Mercado Pago bajo sus propios términos. Nunca vemos ni guardamos los datos de tu tarjeta.</li>
@@ -220,6 +221,7 @@
         <ul>
             <li><strong>Acceder</strong>: usá el botón "Exportar Datos" en tu perfil para descargar un backup JSON con todo lo que la app guardó.</li>
             <li><strong>Eliminar (en tu dispositivo)</strong>: el botón "Reset" en tu perfil borra todo el <code>localStorage</code> del navegador. Acción irreversible y no requiere pedírnoslo: es inmediata y la hacés vos.</li>
+            <li><strong>Eliminar (copia en tu Google Drive)</strong>: en Google Drive entrá a Configuración → Administrar apps → BERSERKERMOD → "Borrar datos ocultos de la app". Para quitarle el permiso a la app: <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</li>
             <li><strong>Eliminar (datos en nuestro servidor)</strong>: si usaste el modo Coach, escribinos a
                 <a href="mailto:tornatiezequiel0@gmail.com?subject=Solicitud%20de%20borrado%20de%20datos">tornatiezequiel0@gmail.com</a>
                 indicando el link o token de la rutina compartida. Borramos la rutina, las ediciones y las sesiones registradas dentro de los 30 días.
