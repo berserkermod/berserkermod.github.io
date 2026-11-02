@@ -3,7 +3,7 @@
 // so live sync / coach data stay fresh.
 
 // VERSION va también en la URL de core/calc.js en BERSERKERMOD.html (test/release.test.mjs lo chequea).
-const VERSION = '2-23';
+const VERSION = '2-24';
 const CACHE = 'berserkermod-v' + VERSION;
 // Paths are relative to the SW's scope so the same shell list works both on
 // local serve.ps1 (root scope) and on GitHub Pages subpath (/berserkermod/).
@@ -12,6 +12,7 @@ const SHELL = [
     './index.html',
     './BERSERKERMOD.html',
     './core/calc.js?v=' + VERSION,
+    './core/i18n-data.js?v=' + VERSION,
     './manifest.json',
     './icon-192.png',
     './icon-512.png',

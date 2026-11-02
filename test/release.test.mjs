@@ -1,7 +1,7 @@
-// Coherencia de la publicación: el Service Worker sirve core/calc.js desde su
-// caché, así que la URL con que lo carga el HTML tiene que llevar la versión del
-// SW. Si no coinciden, la primera apertura tras publicar mezcla HTML nuevo con
-// calc.js viejo y la app se rompe cuando el HTML usa una función nueva.
+// Coherencia de la publicación: el Service Worker sirve los scripts de core/
+// desde su caché, así que la URL con que los carga el HTML tiene que llevar la
+// versión del SW. Si no coinciden, la primera apertura tras publicar mezcla HTML
+// nuevo con un script viejo y la app se rompe cuando el HTML usa algo nuevo.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -15,12 +15,16 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log('  ✓ ' + n
 
 console.log('\n=== release ===\n');
 const swVersion = (sw.match(/const VERSION = '([^']+)'/) || [])[1];
-const htmlVersions = [...html.matchAll(/<script src="core\/calc\.js(?:\?v=([^"]*))?"><\/script>/g)].map((m) => m[1] || '');
 ok('sw.js declara VERSION', !!swVersion, swVersion);
-ok('el HTML carga calc.js una sola vez', htmlVersions.length === 1, htmlVersions);
-ok('la versión de calc.js en el HTML coincide con la del SW', htmlVersions[0] === swVersion, { html: htmlVersions[0], sw: swVersion });
-ok('el SW precachea calc.js con esa misma versión', /'\.\/core\/calc\.js\?v=' \+ VERSION/.test(sw));
 ok('la caché del SW se nombra con la versión', /const CACHE = 'berserkermod-v' \+ VERSION/.test(sw));
+
+const scripts = [...html.matchAll(/<script src="(core\/[\w-]+\.js)(?:\?v=([^"]*))?"><\/script>/g)].map((m) => ({ file: m[1], v: m[2] || '' }));
+ok('el HTML carga calc.js e i18n-data.js', ['core/calc.js', 'core/i18n-data.js'].every((f) => scripts.some((s) => s.file === f)), scripts);
+for (const s of scripts) {
+    ok(`${s.file} se carga una sola vez`, scripts.filter((x) => x.file === s.file).length === 1);
+    ok(`${s.file}: la versión en el HTML coincide con la del SW`, s.v === swVersion, { html: s.v, sw: swVersion });
+    ok(`${s.file}: el SW lo precachea con esa misma versión`, sw.includes(`'./${s.file}?v=' + VERSION`));
+}
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

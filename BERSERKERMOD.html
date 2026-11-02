@@ -1991,9 +1991,9 @@
     <!-- REST TIMER -->
     <div class="rest-timer" id="rest-timer">
         <div class="rest-timer-row">
-            <span class="rest-timer-label" id="rest-timer-label">Descanso</span>
+            <span class="rest-timer-label" id="rest-timer-label" data-i18n="train_rest">Descanso</span>
             <div class="rest-timer-tools">
-                <button class="rest-timer-sound" id="rest-timer-sound" onclick="toggleRestSound()" aria-label="Sonido"></button>
+                <button class="rest-timer-sound" id="rest-timer-sound" onclick="toggleRestSound()" aria-label="Sonido" data-i18n-aria="rest_sound"></button>
                 <button class="rest-timer-skip" onclick="stopRestTimer()">SKIP ✕</button>
             </div>
         </div>
@@ -2009,7 +2009,7 @@
     <div class="hr-widget" id="hr-widget" role="status" aria-live="polite">
         <div class="hr-widget-row">
             <span class="hr-widget-zone" id="hr-widget-zone">Z0</span>
-            <button class="hr-widget-close" onclick="hideHrWidget(true)" aria-label="Ocultar HR">✕</button>
+            <button class="hr-widget-close" onclick="hideHrWidget(true)" aria-label="Ocultar HR" data-i18n-aria="hr_hide_aria">✕</button>
         </div>
         <div class="hr-widget-main">
             <span class="hr-widget-heart" aria-hidden="true">❤️</span>
@@ -2030,8 +2030,8 @@
         <button class="scanner-close" onclick="closeBarcodeScanner()">✕</button>
         <video id="scanner-video" autoplay playsinline muted></video>
         <div class="scanner-frame"><div class="scanner-line"></div></div>
-        <p class="scanner-hint" id="scanner-hint">Apuntá al código de barras</p>
-        <button class="scanner-manual" onclick="closeBarcodeScanner('manual')">✏️ Ingresar manualmente</button>
+        <p class="scanner-hint" id="scanner-hint" data-i18n="food_scanner_hint">Apuntá al código de barras</p>
+        <button class="scanner-manual" onclick="closeBarcodeScanner('manual')" data-i18n="scan_manual">✏️ Ingresar manualmente</button>
     </div>
 
     <!-- ADD FOOD MODAL v2 (tabs: Saludables / Buscar / Mis Alimentos / Manual) -->
@@ -2040,21 +2040,21 @@
             <div class="food-add-handle"></div>
             <div class="food-add-header">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                    <div class="food-add-title">Agregar Alimento</div>
+                    <div class="food-add-title" data-i18n="food_add_title2">Agregar Alimento</div>
                     <button onclick="closeFoodAddModal()" style="color:var(--text2);font-size:20px;padding:2px 8px;background:none;border:none;cursor:pointer">✕</button>
                 </div>
                 <!-- Atajos con cámara (Premium): código de barras, tabla nutricional, foto del plato -->
                 <div class="food-quick">
-                    <button id="food-scan-btn" onclick="scanFromFoodModal()"><span class="fq-ico" data-ico="scan"></span><span id="fq-scan-lbl">Código</span><span class="fq-lock" id="food-scan-btn-lock" data-ico="lock"></span></button>
-                    <button id="food-label-btn" onclick="foodPhoto('label')"><span class="fq-ico" data-ico="tag"></span><span id="fq-label-lbl">Tabla</span><span class="fq-lock" data-ico="lock"></span></button>
-                    <button id="food-meal-btn" onclick="foodPhoto('meal')"><span class="fq-ico" data-ico="utensils"></span><span id="fq-meal-lbl">Foto del plato</span><span class="fq-lock" data-ico="lock"></span></button>
+                    <button id="food-scan-btn" onclick="scanFromFoodModal()"><span class="fq-ico" data-ico="scan"></span><span id="fq-scan-lbl" data-i18n="fv_code">Código</span><span class="fq-lock" id="food-scan-btn-lock" data-ico="lock"></span></button>
+                    <button id="food-label-btn" onclick="foodPhoto('label')"><span class="fq-ico" data-ico="tag"></span><span id="fq-label-lbl" data-i18n="fv_label">Tabla</span><span class="fq-lock" data-ico="lock"></span></button>
+                    <button id="food-meal-btn" onclick="foodPhoto('meal')"><span class="fq-ico" data-ico="utensils"></span><span id="fq-meal-lbl" data-i18n="fv_meal">Foto del plato</span><span class="fq-lock" data-ico="lock"></span></button>
                 </div>
                 <div class="food-hint" id="food-hint"></div>
                 <div class="food-tabs">
-                    <button class="food-tab active" id="food-tab-healthy" onclick="setFoodTab('healthy')">Saludables</button>
-                    <button class="food-tab" id="food-tab-search" onclick="setFoodTab('search')">Buscar</button>
-                    <button class="food-tab" id="food-tab-mine" onclick="setFoodTab('mine')">Míos</button>
-                    <button class="food-tab" id="food-tab-manual" onclick="setFoodTab('manual')">Manual</button>
+                    <button class="food-tab active" id="food-tab-healthy" onclick="setFoodTab('healthy')" data-i18n="food_tab_healthy">Saludables</button>
+                    <button class="food-tab" id="food-tab-search" onclick="setFoodTab('search')" data-i18n="food_tab_search">Buscar</button>
+                    <button class="food-tab" id="food-tab-mine" onclick="setFoodTab('mine')" data-i18n="food_tab_mine">Míos</button>
+                    <button class="food-tab" id="food-tab-manual" onclick="setFoodTab('manual')" data-i18n="food_tab_manual">Manual</button>
                 </div>
             </div>
             <div class="food-tab-content" id="food-tab-content"></div>
@@ -2068,7 +2068,7 @@
                 <div class="portion-icon" id="portion-icon">🍽️</div>
                 <div class="portion-name" id="portion-name">—<small id="portion-source"></small></div>
             </div>
-            <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin-bottom:6px">PORCIÓN</p>
+            <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin-bottom:6px" data-i18n="portion_lbl">PORCIÓN</p>
             <div class="portion-input-row">
                 <button class="portion-btn" onclick="adjustPortion(-10)">−</button>
                 <input id="portion-grams" class="portion-input" type="number" value="100" oninput="recalcPortionMacros()" />
@@ -2076,19 +2076,19 @@
                 <button class="portion-btn" onclick="adjustPortion(10)">+</button>
             </div>
             <div class="portion-presets" id="portion-presets"></div>
-            <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin:4px 0 6px" id="portion-meal-label">¿A QUÉ COMIDA?</p>
+            <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin:4px 0 6px" id="portion-meal-label" data-i18n="food_which_meal">¿A QUÉ COMIDA?</p>
             <div class="portion-presets" id="portion-meal-sel"></div>
             <div class="portion-macros">
                 <div class="portion-macros-kcal"><span id="portion-kcal">0</span><small>kcal</small></div>
                 <div class="portion-macros-row">
-                    <div class="portion-macros-chip"><div class="v" style="color:var(--accent)"><span id="portion-protein">0</span>g</div><div class="l">Prot</div></div>
-                    <div class="portion-macros-chip"><div class="v" style="color:var(--blue)"><span id="portion-carbs">0</span>g</div><div class="l">Carbs</div></div>
-                    <div class="portion-macros-chip"><div class="v" style="color:var(--purple)"><span id="portion-fat">0</span>g</div><div class="l">Grasa</div></div>
+                    <div class="portion-macros-chip"><div class="v" style="color:var(--accent)"><span id="portion-protein">0</span>g</div><div class="l" data-i18n="macro_prot_s">Prot</div></div>
+                    <div class="portion-macros-chip"><div class="v" style="color:var(--blue)"><span id="portion-carbs">0</span>g</div><div class="l" data-i18n="macro_carbs_s">Carbs</div></div>
+                    <div class="portion-macros-chip"><div class="v" style="color:var(--purple)"><span id="portion-fat">0</span>g</div><div class="l" data-i18n="macro_fat_s">Grasa</div></div>
                 </div>
             </div>
             <div style="display:flex;gap:8px">
-                <button class="btn btn-secondary" style="flex:1" onclick="closePortionModal()">Cancelar</button>
-                <button class="btn btn-primary" style="flex:2" onclick="confirmPortionAdd()">✓ Agregar</button>
+                <button class="btn btn-secondary" style="flex:1" onclick="closePortionModal()" data-i18n="btn_cancel">Cancelar</button>
+                <button class="btn btn-primary" style="flex:2" onclick="confirmPortionAdd()" data-i18n="btn_add_check">✓ Agregar</button>
             </div>
         </div>
     </div>
@@ -2099,16 +2099,16 @@
             <div class="ex-picker-handle"></div>
             <div class="ex-picker-header">
                 <div class="ex-picker-tabs">
-                    <button class="ex-picker-tab active" id="ex-tab-all" onclick="setExPickerFilter('all')">Todos</button>
-                    <button class="ex-picker-tab" id="ex-tab-strength" onclick="setExPickerFilter('strength')">💪 Fuerza</button>
+                    <button class="ex-picker-tab active" id="ex-tab-all" onclick="setExPickerFilter('all')" data-i18n="food_cat_all">Todos</button>
+                    <button class="ex-picker-tab" id="ex-tab-strength" onclick="setExPickerFilter('strength')" data-i18n="picker_strength">💪 Fuerza</button>
                     <button class="ex-picker-tab" id="ex-tab-cardio" onclick="setExPickerFilter('cardio')">🏃 Cardio</button>
                 </div>
                 <input id="ex-picker-search" class="ex-picker-search" placeholder="Buscar ejercicio..." oninput="filterExPicker(this.value)" />
             </div>
             <div class="ex-picker-list" id="ex-picker-list"></div>
             <div class="ex-picker-custom-row">
-                <input id="ex-picker-custom-name" placeholder="O agregar uno custom..." />
-                <button onclick="addCustomExFromPicker()">+ Agregar</button>
+                <input id="ex-picker-custom-name" placeholder="O agregar uno propio..." data-i18n-ph="picker_custom_ph" />
+                <button onclick="addCustomExFromPicker()" data-i18n="btn_add_plus">+ Agregar</button>
             </div>
         </div>
     </div>
@@ -2116,28 +2116,28 @@
     <!-- SHARE LINK MODAL (coach) -->
     <div id="share-link-modal">
         <div class="share-link-card">
-            <p style="text-align:center;font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.1em;margin-bottom:6px">RUTINA COMPARTIDA</p>
+            <p style="text-align:center;font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.1em;margin-bottom:6px" data-i18n="sl_title">RUTINA COMPARTIDA</p>
             <p style="text-align:center;font-size:18px;font-weight:900;margin-bottom:18px" id="share-link-routine-name">—</p>
             <img id="share-link-qr" class="share-qr" alt="QR" />
-            <p class="share-no-login">📱 <b>El alumno NO necesita crear cuenta.</b> Solo abre el link.</p>
+            <p class="share-no-login">📱 <b data-i18n="sl_no_account">El alumno NO necesita crear cuenta.</b> <span data-i18n="sl_just_open">Solo abre el link.</span></p>
             <div id="share-localhost-warn" style="display:none;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.3);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--red);margin-bottom:12px;line-height:1.5">
                 ⚠️ <b>Este link tiene <code>localhost</code></b> — solo funciona en esta laptop.<br>
                 Para que tu alumno lo abra: usá el botón <b>⚙️ Cambiar URL base</b> y poné la IP de tu red local (o un dominio público).
             </div>
-            <p style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:8px;letter-spacing:.06em">LINK ÚNICO PARA TU ALUMNO</p>
+            <p style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:8px;letter-spacing:.06em" data-i18n="sl_unique">LINK ÚNICO PARA TU ALUMNO</p>
             <div class="share-url-box" id="share-link-url"></div>
-            <div class="share-base-toggle" id="share-base-toggle" onclick="toggleShareBaseInput()">⚙️ Cambiar URL base (para QR / celular)</div>
+            <div class="share-base-toggle" id="share-base-toggle" onclick="toggleShareBaseInput()" data-i18n="sl_change_base">⚙️ Cambiar URL base (para QR / celular)</div>
             <div class="share-base-input" id="share-base-input-row">
                 <input id="share-base-input" placeholder="http://192.168.1.20:3000" />
                 <button onclick="applyShareBaseUrl()">OK</button>
             </div>
             <div class="share-btn-grid">
-                <button id="share-btn-copy" class="btn btn-secondary share-btn-copy" onclick="copyShareLink()">📋 Copiar link</button>
-                <button class="btn btn-secondary" onclick="downloadShareQR()">⬇ Descargar QR</button>
+                <button id="share-btn-copy" class="btn btn-secondary share-btn-copy" onclick="copyShareLink()" data-i18n="sl_copy_btn">📋 Copiar link</button>
+                <button class="btn btn-secondary" onclick="downloadShareQR()" data-i18n="sl_dl_qr">⬇ Descargar QR</button>
                 <button class="btn btn-secondary" onclick="shareViaWhatsApp()">💬 WhatsApp</button>
                 <button class="btn btn-secondary" onclick="shareViaEmail()">✉ Email</button>
             </div>
-            <button class="btn btn-primary btn-full" onclick="closeShareLinkModal()">✓ Listo</button>
+            <button class="btn btn-primary btn-full" onclick="closeShareLinkModal()" data-i18n="btn_done_check">✓ Listo</button>
         </div>
     </div>
 
@@ -2168,11 +2168,11 @@
     <!-- ORACLE MODAL -->
     <div id="oracle-modal">
         <div class="oracle-header">
-            <div class="oracle-title">🔮 Oracle <span style="color:var(--accent)">IA</span></div>
+            <div class="oracle-title">🔮 Oracle <span style="color:var(--accent)" data-i18n="oracle_ai_tag">IA</span></div>
             <button onclick="closeOracle()" style="color:var(--text2);font-size:20px;padding:4px 10px">✕</button>
         </div>
         <div class="oracle-body" id="oracle-body">
-            <div class="oracle-loading"><div class="oracle-spinner"></div>Analizando tus últimas 4 semanas...</div>
+            <div class="oracle-loading"><div class="oracle-spinner"></div><span data-i18n="oracle_analyzing">Analizando tus últimas 4 semanas...</span></div>
         </div>
     </div>
 
@@ -2182,15 +2182,15 @@
             <div class="upgrade-handle"></div>
             <div class="upgrade-crown">👑</div>
             <div class="upgrade-title" id="upgrade-title">BERSERKER<span style="color:var(--accent)">PREMIUM</span></div>
-            <div class="upgrade-sub" id="upgrade-sub">Desbloqueá todas las funciones del entrenador más inteligente.</div>
+            <div class="upgrade-sub" id="upgrade-sub" data-i18n="upgrade_sub">Desbloqueá todas las funciones del entrenador más inteligente.</div>
             <div id="upgrade-features">
-                <div class="upgrade-feature"><div class="upgrade-feature-icon">📋</div><div class="upgrade-feature-text"><b>Rutinas ilimitadas</b><span>Creá tantas rutinas personalizadas como quieras</span></div></div>
-                <div class="upgrade-feature"><div class="upgrade-feature-icon">📊</div><div class="upgrade-feature-text"><b>Estadísticas completas</b><span>Mensual, trimestral y anual</span></div></div>
-                <div class="upgrade-feature"><div class="upgrade-feature-icon">🌎</div><div class="upgrade-feature-text"><b>Todos los idiomas</b><span>Español, English y Português</span></div></div>
-                <div class="upgrade-feature"><div class="upgrade-feature-icon">📷</div><div class="upgrade-feature-text"><b>Escáner de ejercicios</b><span>Identificá ejercicios con la cámara (próximamente)</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">📋</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_routines">Rutinas ilimitadas</b><span data-i18n="upgrade_feat_routines_d">Creá tantas rutinas personalizadas como quieras</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">📊</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_stats">Estadísticas completas</b><span data-i18n="upgrade_feat_stats_d">Mensual, trimestral y anual</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">🌎</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_lang">Todos los idiomas</b><span data-i18n="upgrade_feat_lang_d">Español, English y Português</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">📷</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_scanner">Escáner de ejercicios</b><span data-i18n="upgrade_feat_scanner_d">Identificá ejercicios con la cámara (próximamente)</span></div></div>
             </div>
-            <button class="upgrade-cta" onclick="activatePremium()">⚡ ACTIVAR PREMIUM</button>
-            <button class="upgrade-cancel" onclick="closeUpgradeModal()">Ahora no</button>
+            <button class="upgrade-cta" onclick="activatePremium()" data-i18n="upgrade_cta">⚡ ACTIVAR PREMIUM</button>
+            <button class="upgrade-cancel" onclick="closeUpgradeModal()" data-i18n="upgrade_cancel">Ahora no</button>
         </div>
     </div>
 
@@ -2200,8 +2200,8 @@
         <div id="share-summary" style="margin-bottom:12px;"></div>
         <div id="share-preview"></div>
         <div class="share-actions">
-            <button class="btn btn-secondary" style="flex:1" onclick="closeShareModal()">Cerrar</button>
-            <button class="btn btn-primary" style="flex:2" id="share-btn-action">Compartir 🚀</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="closeShareModal()" data-i18n="pg_close">Cerrar</button>
+            <button class="btn btn-primary" style="flex:2" id="share-btn-action" data-i18n="share_btn_rocket">Compartir 🚀</button>
         </div>
     </div>
 
@@ -2211,7 +2211,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-23"></script>
+    <script src="core/calc.js?v=2-24"></script>
+    <script src="core/i18n-data.js?v=2-24"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2520,6 +2521,170 @@
                 coach_chk_title: "CONTROL SEMANAL", coach_chk_none: "Todavía no mandó controles. El link se lo pide una vez por semana.", coach_chk_new: "Control nuevo",
                 coach_chk_weight: "peso", coach_chk_energy: "energía", coach_chk_prev: "ANTERIORES", coach_sess_rpe: "Esfuerzo: {x}",
                 coach_trend_up: "Mejoró respecto de la vez anterior", coach_trend_down: "Bajó respecto de la vez anterior", coach_trend_same: "Igual que la vez anterior",
+                nutri_per100: " (por 100g)",
+                plan_updated_goals: "🔄 Rutina actualizada según tus nuevos objetivos",
+                plan_updated_goal: "🔄 Tu plan se actualizó por el nuevo objetivo",
+                rat_goal_muscle: "Para hipertrofia priorizamos frecuencia (2x por grupo en planes 4+) y reps moderadas (8-12) con tempo controlado.",
+                rat_goal_fat: "En definición mantenemos el volumen pero con reps más altos y descansos cortos para sostener gasto calórico.",
+                rat_goal_strength: "Para fuerza priorizamos compuestos pesados, reps bajas (4-6) y descansos largos (3-5min).",
+                rat_goal_recomp: "Recomposición balancea compuestos pesados con accesorios — crecer mientras perdés grasa.",
+                rat_goal_endurance: "Resistencia con alto volumen y bajo descanso — acondicionamiento físico general.",
+                rat_days_3: "3 días Full Body permite 3x de frecuencia por grupo, ideal para principiantes/intermedios.",
+                rat_days_4: "Upper/Lower con 4 días balancea volumen y recuperación: cada grupo 2x por semana.",
+                rat_days_5: "PPL+UL con 5 días es el sweet spot: alta frecuencia + volumen alto.",
+                rat_days_6: "PPL x2 con 6 días es para avanzados que toleran alto volumen y recuperan rápido.",
+                prog_beg: "Subí 2.5kg cuando completes todas las series del tope del rango (ej. 4×8). Cambiá la rutina cada 12-16 semanas.",
+                prog_int: "Subí 1.25-2.5kg por semana. Si no podés subir peso, agregá 1 rep. Considerá un deload cada 6 semanas.",
+                prog_adv: "Progresión ondulada (intensidad/volumen). Deloads programados cada 4-5 semanas. Tracking detallado de PRs.",
+                prog_default: "Progresá subiendo peso o reps cuando puedas completar todas las series con buena técnica.",
+                pdf_lib_fail: "No se pudo cargar la librería PDF",
+                yt_link_copied: "🔗 Link copiado. Pegalo en una pestaña nueva.",
+                yt_copy_manual: "🔗 Copiá el link manualmente y abrilo en YouTube",
+                lib_not_found: "Ejercicio no encontrado",
+                lib_video_by: "Video por: ",
+                lib_card_sub: "{n} ejercicios con técnica, tips, errores comunes y variaciones",
+                pdf_no_routine: "No hay rutina para descargar",
+                pdf_generating: "⏳ Generando PDF...",
+                pdf_days: "{n} días",
+                pdf_day: "Día",
+                pdf_rest: "desc",
+                pdf_last: "último",
+                pdf_footer: "Generado por BERSERKERMOD · ",
+                pdf_done: "⬇ PDF descargado",
+                pdf_error: "Error generando PDF",
+                home_scanner_feat: "Escáner de código de barras + registro nutricional",
+                rt_my_version: "Mi versión — ",
+                nav_prev: "◀ Anterior",
+                nav_next: "Siguiente ▶",
+                rt_prev_label: "Anterior: ",
+                share_t_done: "🔥 ¡Entrenamiento completado!",
+                share_t_pr: "🏆 ¡Nuevo récord personal!",
+                share_t_streak7: "⚡ ¡{n} días consecutivos!",
+                share_t_streak3: "🔥 ¡{n} días seguidos!",
+                share_generating: "Generando tu card... ✨",
+                share_img_error: "Error generando imagen",
+                share_mode_default: "🔥 Logro",
+                share_mode_pr: "🏆 Récord",
+                share_mode_streak: "⚡ Racha",
+                share_mode_routine: "💪 Rutina",
+                share_btn_lbl: "Compartir",
+                share_btn_rocket: "Compartir 🚀",
+                share_text: "¡Terminé mi entrenamiento! 💪",
+                card_default_name: "GUERRERO",
+                card_streak_days: "DÍAS DE RACHA  🔥",
+                card_new_pr: "🏆  NUEVO RÉCORD PERSONAL",
+                card_training_day: "DÍA DE ENTRENAMIENTO",
+                card_done: "ENTRENAMIENTO COMPLETADO  🔥",
+                card_exercises: "EJERCICIOS",
+                card_more: "+ {n} ejercicios más",
+                card_streak_1: "🔥  {n} día de racha",
+                card_streak_n: "🔥  {n} días de racha",
+                unit_kcal_day: " kcal/día",
+                nutri_disclaimer: "Valores estimados. Consultá un profesional para un plan personalizado.",
+                nutri_cancel_plan: "Cancelar plan",
+                prof_premium_sub: "Rutinas ilimitadas, stats avanzadas y más.",
+                hr_pct_max: "% máx",
+                food_type2: "Tipeá al menos 2 letras para buscar.",
+                food_off_fail: "No se pudo conectar con OpenFoodFacts.",
+                food_create_manual: "✏️ Crear manualmente",
+                food_no_results: "Sin resultados para \"{q}\"",
+                food_mine_empty1: "Aún no creaste alimentos personalizados.",
+                food_mine_empty2: "Cuando crees uno en la pestaña Manual, va a quedar acá para futuros usos.",
+                food_create_first: "✏️ Crear el primero",
+                food_del_confirm: "¿Eliminar \"{name}\"?",
+                food_manual_hint: "Ingresá los valores por 100g. Se guarda en \"Míos\" para reutilizarlo.",
+                food_lbl_protein: "PROTEÍNA (g)",
+                food_lbl_carbs: "CARBOS (g)",
+                food_lbl_fat: "GRASAS (g)",
+                food_name_missing: "Falta el nombre",
+                food_save_add: "💾 Guardar y agregar al día",
+                food_bad_portion: "Porción inválida",
+                food_add_title2: "Agregar alimento",
+                food_tab_healthy: "Saludables",
+                food_tab_search: "Buscar",
+                food_tab_mine: "Míos",
+                food_tab_manual: "Manual",
+                portion_lbl: "PORCIÓN",
+                macro_prot_s: "Prot",
+                macro_carbs_s: "Carbs",
+                macro_fat_s: "Grasa",
+                btn_add_check: "✓ Agregar",
+                btn_add_plus: "+ Agregar",
+                btn_done_check: "✓ Listo",
+                scan_manual: "✏️ Ingresar manualmente",
+                scan_load_fail: "No se pudo cargar el escáner. Revisá tu conexión.",
+                scan_https_title: "⚠️ Necesita HTTPS",
+                scan_https_hint: "iOS Safari solo permite la cámara en HTTPS o localhost.",
+                scan_loading: "⏳ Cargando escáner...",
+                scan_no_perm: "⚠️ Sin permiso de cámara",
+                scan_perm_hint: "Ajustes → Safari → Cámara → Permitir",
+                scan_no_cam: "⚠️ Cámara no disponible",
+                rest_sound: "Sonido",
+                hr_hide_aria: "Ocultar HR",
+                picker_strength: "💪 Fuerza",
+                picker_custom_ph: "O agregar uno propio...",
+                oracle_no_insights: "Sin insights disponibles.",
+                oracle_ai_tag: "IA",
+                oracle_analyzing: "Analizando tus últimas 4 semanas...",
+                api_link_conn: "No se pudo conectar al servidor. Pedile a tu coach un link nuevo si esto persiste.",
+                api_link_bad: "Link inválido o expirado.",
+                api_offline: "Sin conexión. Intentá de nuevo.",
+                api_save_fail: "No se pudo guardar el cambio.",
+                api_log_fail: "No se pudo registrar.",
+                sl_title: "RUTINA COMPARTIDA",
+                sl_no_account: "El alumno NO necesita crear cuenta.",
+                sl_just_open: "Solo abre el link.",
+                sl_unique: "LINK ÚNICO PARA TU ALUMNO",
+                sl_change_base: "⚙️ Cambiar URL base (para QR / celular)",
+                sl_copy_btn: "📋 Copiar link",
+                sl_copy_link: "Copiar link",
+                sl_dl_qr: "⬇ Descargar QR",
+                sl_bad_url: "La URL debe empezar con http:// o https://",
+                sl_copy_fail: "No se pudo copiar. Seleccioná el link y copialo manualmente.",
+                sl_share_text: "💪 Tu rutina personalizada: ",
+                sl_share_title: "Rutina BERSERKERMOD",
+                sl_wa_copied: "📋 Mensaje copiado. Abrí WhatsApp Web y pegalo.",
+                sl_wa_manual: "Copiá el link manualmente y compartilo por WhatsApp.",
+                sl_mail_subject: "Tu rutina de entrenamiento — ",
+                sl_mail_body1: "Hola!\n\nAcá te dejo la rutina que armé para vos:\n\n",
+                sl_mail_body2: "\n\nNo necesitás crear cuenta — solo abrí el link, marcá lo que vas haciendo y los cambios me llegan automáticamente.\n\n💪",
+                sl_mail_fail: "No se pudo abrir el cliente de email.",
+                sl_qr_newtab: "Abrí el QR en una pestaña nueva — guardalo con click derecho.",
+                edit_duration_lbl: "cambió duración en",
+                edit_distance_lbl: "cambió distancia en",
+                edit_intensity_lbl: "cambió intensidad en",
+                coach_back: "← Volver",
+                coach_routine_lbl: "RUTINA · ",
+                coach_view_link: "Ver link / QR",
+                coach_edit_history: "HISTORIAL DE EDICIONES",
+                coach_student_fallback: "Alumno",
+                al_loading: "Cargando rutina...",
+                al_bad_link: "Link inválido",
+                al_ask_new: "Pedile a tu coach un link nuevo.",
+                al_empty: "Rutina vacía",
+                al_name_needed: "Ingresá tu nombre arriba",
+                boot_fail_title: "Algo salió mal al iniciar",
+                boot_fail_sub: "Tus datos siguen guardados en el dispositivo. Probá recargar; si sigue fallando, descargá un backup de tus datos.",
+                boot_reload: "🔄 Recargar",
+                boot_backup: "📦 Descargar backup",
+                eq_bodyweight: "peso corporal",
+                eq_barbell: "barra",
+                eq_bench: "banco",
+                eq_dumbbell: "mancuernas",
+                eq_cable_machine: "polea",
+                eq_pullup_bar: "barra de dominadas",
+                eq_rack: "rack",
+                eq_parallel_bars: "paralelas",
+                eq_none: "sin equipo",
+                eq_leg_press_machine: "prensa",
+                eq_jump_rope: "soga",
+                eq_heavy_bag_optional: "bolsa (opcional)",
+                eq_gloves: "guantes",
+                eq_dumbbell_optional: "mancuerna (opcional)",
+                eq_cable: "polea",
+                eq_bike: "bicicleta",
+                eq_ab_wheel: "rueda abdominal",
+                n_days: "{n} días",
                 coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetales", food_cat_fruit: "Frutas", food_cat_fat: "Grasas", food_cat_dairy: "Lácteos",
                 food_search_ph: "Buscar alimento (manzana, pollo, yogur...)", food_manual_name_ph: "Nombre del alimento", creator_name_ph: "Ej. Volumen Extremo",
@@ -2798,6 +2963,170 @@
                 coach_chk_title: "WEEKLY CHECK-IN", coach_chk_none: "No check-ins yet. The link asks for one every week.", coach_chk_new: "New check-in",
                 coach_chk_weight: "weight", coach_chk_energy: "energy", coach_chk_prev: "PREVIOUS", coach_sess_rpe: "Effort: {x}",
                 coach_trend_up: "Better than last time", coach_trend_down: "Lower than last time", coach_trend_same: "Same as last time",
+                nutri_per100: " (per 100g)",
+                plan_updated_goals: "🔄 Routine updated for your new goals",
+                plan_updated_goal: "🔄 Your plan was updated for your new goal",
+                rat_goal_muscle: "For hypertrophy we prioritize frequency (2x per muscle group on 4+ day plans) and moderate reps (8-12) with a controlled tempo.",
+                rat_goal_fat: "On a cut we keep the volume but with higher reps and short rests to keep calorie burn up.",
+                rat_goal_strength: "For strength we prioritize heavy compound lifts, low reps (4-6) and long rests (3-5min).",
+                rat_goal_recomp: "Recomposition balances heavy compounds with accessories — build muscle while you lose fat.",
+                rat_goal_endurance: "Endurance with high volume and short rests — general conditioning.",
+                rat_days_3: "3 Full Body days give each muscle group 3x frequency, ideal for beginners/intermediates.",
+                rat_days_4: "Upper/Lower on 4 days balances volume and recovery: each group 2x a week.",
+                rat_days_5: "PPL+UL on 5 days is the sweet spot: high frequency + high volume.",
+                rat_days_6: "PPL x2 on 6 days is for advanced lifters who handle high volume and recover fast.",
+                prog_beg: "Add 2.5kg once you complete every set at the top of the range (e.g. 4×8). Change the routine every 12-16 weeks.",
+                prog_int: "Add 1.25-2.5kg a week. If you can’t add weight, add 1 rep. Consider a deload every 6 weeks.",
+                prog_adv: "Undulating progression (intensity/volume). Planned deloads every 4-5 weeks. Detailed PR tracking.",
+                prog_default: "Progress by adding weight or reps when you can complete every set with good technique.",
+                pdf_lib_fail: "Couldn’t load the PDF library",
+                yt_link_copied: "🔗 Link copied. Paste it in a new tab.",
+                yt_copy_manual: "🔗 Copy the link manually and open it on YouTube",
+                lib_not_found: "Exercise not found",
+                lib_video_by: "Video by: ",
+                lib_card_sub: "{n} exercises with technique, tips, common mistakes and variations",
+                pdf_no_routine: "No routine to download",
+                pdf_generating: "⏳ Generating PDF...",
+                pdf_days: "{n} days",
+                pdf_day: "Day",
+                pdf_rest: "rest",
+                pdf_last: "last",
+                pdf_footer: "Generated by BERSERKERMOD · ",
+                pdf_done: "⬇ PDF downloaded",
+                pdf_error: "Error generating PDF",
+                home_scanner_feat: "Barcode scanner + food logging",
+                rt_my_version: "My version — ",
+                nav_prev: "◀ Previous",
+                nav_next: "Next ▶",
+                rt_prev_label: "Last time: ",
+                share_t_done: "🔥 Workout complete!",
+                share_t_pr: "🏆 New personal record!",
+                share_t_streak7: "⚡ {n} days in a row!",
+                share_t_streak3: "🔥 {n} straight days!",
+                share_generating: "Creating your card... ✨",
+                share_img_error: "Error creating the image",
+                share_mode_default: "🔥 Achievement",
+                share_mode_pr: "🏆 Record",
+                share_mode_streak: "⚡ Streak",
+                share_mode_routine: "💪 Routine",
+                share_btn_lbl: "Share",
+                share_btn_rocket: "Share 🚀",
+                share_text: "Workout done! 💪",
+                card_default_name: "WARRIOR",
+                card_streak_days: "DAY STREAK  🔥",
+                card_new_pr: "🏆  NEW PERSONAL RECORD",
+                card_training_day: "TRAINING DAY",
+                card_done: "WORKOUT COMPLETE  🔥",
+                card_exercises: "EXERCISES",
+                card_more: "+ {n} more exercises",
+                card_streak_1: "🔥  {n}-day streak",
+                card_streak_n: "🔥  {n}-day streak",
+                unit_kcal_day: " kcal/day",
+                nutri_disclaimer: "Estimated values. See a professional for a personalized plan.",
+                nutri_cancel_plan: "Cancel plan",
+                prof_premium_sub: "Unlimited routines, advanced stats and more.",
+                hr_pct_max: "% max",
+                food_type2: "Type at least 2 letters to search.",
+                food_off_fail: "Couldn’t connect to OpenFoodFacts.",
+                food_create_manual: "✏️ Create manually",
+                food_no_results: "No results for \"{q}\"",
+                food_mine_empty1: "You haven’t created custom foods yet.",
+                food_mine_empty2: "When you create one in the Manual tab, it will be saved here for next time.",
+                food_create_first: "✏️ Create the first one",
+                food_del_confirm: "Delete \"{name}\"?",
+                food_manual_hint: "Enter the values per 100g. It’s saved under \"Mine\" so you can reuse it.",
+                food_lbl_protein: "PROTEIN (g)",
+                food_lbl_carbs: "CARBS (g)",
+                food_lbl_fat: "FAT (g)",
+                food_name_missing: "Name is missing",
+                food_save_add: "💾 Save and add to today",
+                food_bad_portion: "Invalid portion",
+                food_add_title2: "Add food",
+                food_tab_healthy: "Healthy",
+                food_tab_search: "Search",
+                food_tab_mine: "Mine",
+                food_tab_manual: "Manual",
+                portion_lbl: "PORTION",
+                macro_prot_s: "Prot",
+                macro_carbs_s: "Carbs",
+                macro_fat_s: "Fat",
+                btn_add_check: "✓ Add",
+                btn_add_plus: "+ Add",
+                btn_done_check: "✓ Done",
+                scan_manual: "✏️ Enter manually",
+                scan_load_fail: "Couldn’t load the scanner. Check your connection.",
+                scan_https_title: "⚠️ Requires HTTPS",
+                scan_https_hint: "iOS Safari only allows the camera over HTTPS or localhost.",
+                scan_loading: "⏳ Loading scanner...",
+                scan_no_perm: "⚠️ No camera permission",
+                scan_perm_hint: "Settings → Safari → Camera → Allow",
+                scan_no_cam: "⚠️ Camera not available",
+                rest_sound: "Sound",
+                hr_hide_aria: "Hide HR",
+                picker_strength: "💪 Strength",
+                picker_custom_ph: "Or add your own...",
+                oracle_no_insights: "No insights available.",
+                oracle_ai_tag: "AI",
+                oracle_analyzing: "Analyzing your last 4 weeks...",
+                api_link_conn: "Couldn’t reach the server. Ask your coach for a new link if this keeps happening.",
+                api_link_bad: "Invalid or expired link.",
+                api_offline: "No connection. Try again.",
+                api_save_fail: "Couldn’t save the change.",
+                api_log_fail: "Couldn’t log it.",
+                sl_title: "SHARED ROUTINE",
+                sl_no_account: "Your student does NOT need an account.",
+                sl_just_open: "They just open the link.",
+                sl_unique: "UNIQUE LINK FOR YOUR STUDENT",
+                sl_change_base: "⚙️ Change base URL (for QR / phone)",
+                sl_copy_btn: "📋 Copy link",
+                sl_copy_link: "Copy link",
+                sl_dl_qr: "⬇ Download QR",
+                sl_bad_url: "The URL must start with http:// or https://",
+                sl_copy_fail: "Couldn’t copy. Select the link and copy it manually.",
+                sl_share_text: "💪 Your custom routine: ",
+                sl_share_title: "BERSERKERMOD routine",
+                sl_wa_copied: "📋 Message copied. Open WhatsApp Web and paste it.",
+                sl_wa_manual: "Copy the link manually and share it on WhatsApp.",
+                sl_mail_subject: "Your workout routine — ",
+                sl_mail_body1: "Hi!\n\nHere’s the routine I put together for you:\n\n",
+                sl_mail_body2: "\n\nNo account needed — just open the link, mark what you do and your updates reach me automatically.\n\n💪",
+                sl_mail_fail: "Couldn’t open your email app.",
+                sl_qr_newtab: "Open the QR in a new tab — save it with a right click.",
+                edit_duration_lbl: "changed duration on",
+                edit_distance_lbl: "changed distance on",
+                edit_intensity_lbl: "changed intensity on",
+                coach_back: "← Back",
+                coach_routine_lbl: "ROUTINE · ",
+                coach_view_link: "View link / QR",
+                coach_edit_history: "EDIT HISTORY",
+                coach_student_fallback: "Student",
+                al_loading: "Loading routine...",
+                al_bad_link: "Invalid link",
+                al_ask_new: "Ask your coach for a new link.",
+                al_empty: "Empty routine",
+                al_name_needed: "Enter your name above",
+                boot_fail_title: "Something went wrong on startup",
+                boot_fail_sub: "Your data is still saved on this device. Try reloading; if it keeps failing, download a backup of your data.",
+                boot_reload: "🔄 Reload",
+                boot_backup: "📦 Download backup",
+                eq_bodyweight: "bodyweight",
+                eq_barbell: "barbell",
+                eq_bench: "bench",
+                eq_dumbbell: "dumbbells",
+                eq_cable_machine: "cable machine",
+                eq_pullup_bar: "pull-up bar",
+                eq_rack: "rack",
+                eq_parallel_bars: "parallel bars",
+                eq_none: "no equipment",
+                eq_leg_press_machine: "leg press machine",
+                eq_jump_rope: "jump rope",
+                eq_heavy_bag_optional: "heavy bag (optional)",
+                eq_gloves: "gloves",
+                eq_dumbbell_optional: "dumbbell (optional)",
+                eq_cable: "cable",
+                eq_bike: "bike",
+                eq_ab_wheel: "ab wheel",
+                n_days: "{n} days",
                 coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
                 food_cat_all: "All", food_cat_protein: "Protein", food_cat_carb: "Carbs", food_cat_veg: "Veggies", food_cat_fruit: "Fruits", food_cat_fat: "Fats", food_cat_dairy: "Dairy",
                 food_search_ph: "Search food (apple, chicken, yogurt...)", food_manual_name_ph: "Food name", creator_name_ph: "E.g. Extreme Volume",
@@ -3077,6 +3406,170 @@
                 coach_chk_title: "CHECK-IN SEMANAL", coach_chk_none: "Ainda não enviou check-ins. O link pede um por semana.", coach_chk_new: "Check-in novo",
                 coach_chk_weight: "peso", coach_chk_energy: "energia", coach_chk_prev: "ANTERIORES", coach_sess_rpe: "Esforço: {x}",
                 coach_trend_up: "Melhorou em relação à vez anterior", coach_trend_down: "Caiu em relação à vez anterior", coach_trend_same: "Igual à vez anterior",
+                nutri_per100: " (por 100g)",
+                plan_updated_goals: "🔄 Rotina atualizada para seus novos objetivos",
+                plan_updated_goal: "🔄 Seu plano foi atualizado para o novo objetivo",
+                rat_goal_muscle: "Para hipertrofia priorizamos frequência (2x por grupo em planos de 4+ dias) e reps moderadas (8-12) com ritmo controlado.",
+                rat_goal_fat: "Na definição mantemos o volume, mas com mais reps e descansos curtos para sustentar o gasto calórico.",
+                rat_goal_strength: "Para força priorizamos compostos pesados, poucas reps (4-6) e descansos longos (3-5min).",
+                rat_goal_recomp: "A recomposição equilibra compostos pesados com acessórios — ganhar massa enquanto perde gordura.",
+                rat_goal_endurance: "Resistência com alto volume e pouco descanso — condicionamento físico geral.",
+                rat_days_3: "3 dias de Corpo Inteiro dão frequência 3x por grupo, ideal para iniciantes/intermediários.",
+                rat_days_4: "Superior/Inferior em 4 dias equilibra volume e recuperação: cada grupo 2x por semana.",
+                rat_days_5: "PPL+UL em 5 dias é o ponto ideal: alta frequência + volume alto.",
+                rat_days_6: "PPL x2 em 6 dias é para avançados que toleram alto volume e se recuperam rápido.",
+                prog_beg: "Suba 2,5kg quando completar todas as séries no topo da faixa (ex. 4×8). Troque a rotina a cada 12-16 semanas.",
+                prog_int: "Suba 1,25-2,5kg por semana. Se não conseguir subir a carga, faça 1 rep a mais. Considere um deload a cada 6 semanas.",
+                prog_adv: "Progressão ondulatória (intensidade/volume). Deloads programados a cada 4-5 semanas. Acompanhamento detalhado de PRs.",
+                prog_default: "Progrida subindo carga ou reps quando conseguir completar todas as séries com boa técnica.",
+                pdf_lib_fail: "Não foi possível carregar a biblioteca de PDF",
+                yt_link_copied: "🔗 Link copiado. Cole em uma nova aba.",
+                yt_copy_manual: "🔗 Copie o link manualmente e abra no YouTube",
+                lib_not_found: "Exercício não encontrado",
+                lib_video_by: "Vídeo por: ",
+                lib_card_sub: "{n} exercícios com técnica, dicas, erros comuns e variações",
+                pdf_no_routine: "Não há rotina para baixar",
+                pdf_generating: "⏳ Gerando PDF...",
+                pdf_days: "{n} dias",
+                pdf_day: "Dia",
+                pdf_rest: "desc.",
+                pdf_last: "último",
+                pdf_footer: "Gerado por BERSERKERMOD · ",
+                pdf_done: "⬇ PDF baixado",
+                pdf_error: "Erro ao gerar o PDF",
+                home_scanner_feat: "Leitor de código de barras + registro nutricional",
+                rt_my_version: "Minha versão — ",
+                nav_prev: "◀ Anterior",
+                nav_next: "Próximo ▶",
+                rt_prev_label: "Anterior: ",
+                share_t_done: "🔥 Treino concluído!",
+                share_t_pr: "🏆 Novo recorde pessoal!",
+                share_t_streak7: "⚡ {n} dias consecutivos!",
+                share_t_streak3: "🔥 {n} dias seguidos!",
+                share_generating: "Gerando seu card... ✨",
+                share_img_error: "Erro ao gerar a imagem",
+                share_mode_default: "🔥 Conquista",
+                share_mode_pr: "🏆 Recorde",
+                share_mode_streak: "⚡ Sequência",
+                share_mode_routine: "💪 Rotina",
+                share_btn_lbl: "Compartilhar",
+                share_btn_rocket: "Compartilhar 🚀",
+                share_text: "Terminei meu treino! 💪",
+                card_default_name: "GUERREIRO",
+                card_streak_days: "DIAS DE SEQUÊNCIA  🔥",
+                card_new_pr: "🏆  NOVO RECORDE PESSOAL",
+                card_training_day: "DIA DE TREINO",
+                card_done: "TREINO CONCLUÍDO  🔥",
+                card_exercises: "EXERCÍCIOS",
+                card_more: "+ {n} exercícios a mais",
+                card_streak_1: "🔥  {n} dia de sequência",
+                card_streak_n: "🔥  {n} dias de sequência",
+                unit_kcal_day: " kcal/dia",
+                nutri_disclaimer: "Valores estimados. Consulte um profissional para um plano personalizado.",
+                nutri_cancel_plan: "Cancelar plano",
+                prof_premium_sub: "Rotinas ilimitadas, estatísticas avançadas e mais.",
+                hr_pct_max: "% máx",
+                food_type2: "Digite pelo menos 2 letras para buscar.",
+                food_off_fail: "Não foi possível conectar ao OpenFoodFacts.",
+                food_create_manual: "✏️ Criar manualmente",
+                food_no_results: "Sem resultados para \"{q}\"",
+                food_mine_empty1: "Você ainda não criou alimentos personalizados.",
+                food_mine_empty2: "Quando criar um na aba Manual, ele fica salvo aqui para usar depois.",
+                food_create_first: "✏️ Criar o primeiro",
+                food_del_confirm: "Excluir \"{name}\"?",
+                food_manual_hint: "Digite os valores por 100g. Fica salvo em \"Meus\" para reutilizar.",
+                food_lbl_protein: "PROTEÍNA (g)",
+                food_lbl_carbs: "CARBOIDRATOS (g)",
+                food_lbl_fat: "GORDURAS (g)",
+                food_name_missing: "Falta o nome",
+                food_save_add: "💾 Salvar e adicionar ao dia",
+                food_bad_portion: "Porção inválida",
+                food_add_title2: "Adicionar alimento",
+                food_tab_healthy: "Saudáveis",
+                food_tab_search: "Buscar",
+                food_tab_mine: "Meus",
+                food_tab_manual: "Manual",
+                portion_lbl: "PORÇÃO",
+                macro_prot_s: "Prot",
+                macro_carbs_s: "Carb",
+                macro_fat_s: "Gord",
+                btn_add_check: "✓ Adicionar",
+                btn_add_plus: "+ Adicionar",
+                btn_done_check: "✓ Pronto",
+                scan_manual: "✏️ Digitar manualmente",
+                scan_load_fail: "Não foi possível carregar o leitor. Verifique sua conexão.",
+                scan_https_title: "⚠️ Requer HTTPS",
+                scan_https_hint: "O Safari do iOS só permite a câmera em HTTPS ou localhost.",
+                scan_loading: "⏳ Carregando leitor...",
+                scan_no_perm: "⚠️ Sem permissão de câmera",
+                scan_perm_hint: "Ajustes → Safari → Câmera → Permitir",
+                scan_no_cam: "⚠️ Câmera indisponível",
+                rest_sound: "Som",
+                hr_hide_aria: "Ocultar FC",
+                picker_strength: "💪 Força",
+                picker_custom_ph: "Ou adicione um seu...",
+                oracle_no_insights: "Sem insights disponíveis.",
+                oracle_ai_tag: "IA",
+                oracle_analyzing: "Analisando suas últimas 4 semanas...",
+                api_link_conn: "Não foi possível conectar ao servidor. Peça um novo link ao seu coach se continuar.",
+                api_link_bad: "Link inválido ou expirado.",
+                api_offline: "Sem conexão. Tente de novo.",
+                api_save_fail: "Não foi possível salvar a alteração.",
+                api_log_fail: "Não foi possível registrar.",
+                sl_title: "ROTINA COMPARTILHADA",
+                sl_no_account: "O aluno NÃO precisa criar conta.",
+                sl_just_open: "É só abrir o link.",
+                sl_unique: "LINK ÚNICO PARA SEU ALUNO",
+                sl_change_base: "⚙️ Mudar URL base (para QR / celular)",
+                sl_copy_btn: "📋 Copiar link",
+                sl_copy_link: "Copiar link",
+                sl_dl_qr: "⬇ Baixar QR",
+                sl_bad_url: "A URL deve começar com http:// ou https://",
+                sl_copy_fail: "Não foi possível copiar. Selecione o link e copie manualmente.",
+                sl_share_text: "💪 Sua rotina personalizada: ",
+                sl_share_title: "Rotina BERSERKERMOD",
+                sl_wa_copied: "📋 Mensagem copiada. Abra o WhatsApp Web e cole.",
+                sl_wa_manual: "Copie o link manualmente e compartilhe no WhatsApp.",
+                sl_mail_subject: "Sua rotina de treino — ",
+                sl_mail_body1: "Oi!\n\nAqui está a rotina que montei para você:\n\n",
+                sl_mail_body2: "\n\nNão precisa criar conta — é só abrir o link, marcar o que for fazendo e as alterações chegam para mim automaticamente.\n\n💪",
+                sl_mail_fail: "Não foi possível abrir o app de e-mail.",
+                sl_qr_newtab: "Abra o QR em uma nova aba — salve com o botão direito.",
+                edit_duration_lbl: "mudou a duração em",
+                edit_distance_lbl: "mudou a distância em",
+                edit_intensity_lbl: "mudou a intensidade em",
+                coach_back: "← Voltar",
+                coach_routine_lbl: "ROTINA · ",
+                coach_view_link: "Ver link / QR",
+                coach_edit_history: "HISTÓRICO DE EDIÇÕES",
+                coach_student_fallback: "Aluno",
+                al_loading: "Carregando rotina...",
+                al_bad_link: "Link inválido",
+                al_ask_new: "Peça um novo link ao seu coach.",
+                al_empty: "Rotina vazia",
+                al_name_needed: "Digite seu nome acima",
+                boot_fail_title: "Algo deu errado ao iniciar",
+                boot_fail_sub: "Seus dados continuam salvos no dispositivo. Tente recarregar; se continuar falhando, baixe um backup dos seus dados.",
+                boot_reload: "🔄 Recarregar",
+                boot_backup: "📦 Baixar backup",
+                eq_bodyweight: "peso corporal",
+                eq_barbell: "barra",
+                eq_bench: "banco",
+                eq_dumbbell: "halteres",
+                eq_cable_machine: "polia",
+                eq_pullup_bar: "barra fixa",
+                eq_rack: "rack",
+                eq_parallel_bars: "paralelas",
+                eq_none: "sem equipamento",
+                eq_leg_press_machine: "leg press",
+                eq_jump_rope: "corda",
+                eq_heavy_bag_optional: "saco (opcional)",
+                eq_gloves: "luvas",
+                eq_dumbbell_optional: "halter (opcional)",
+                eq_cable: "polia",
+                eq_bike: "bicicleta",
+                eq_ab_wheel: "roda abdominal",
+                n_days: "{n} dias",
                 coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetais", food_cat_fruit: "Frutas", food_cat_fat: "Gorduras", food_cat_dairy: "Laticínios",
                 food_search_ph: "Buscar alimento (maçã, frango, iogurte...)", food_manual_name_ph: "Nome do alimento", creator_name_ph: "Ex. Volume Extremo",
@@ -3128,6 +3621,41 @@
             if (I18N[lang] && I18N[lang][key]) return I18N[lang][key];
             if (I18N['es'] && I18N['es'][key]) return I18N['es'][key];
             return key;
+        }
+        // Textos de DATOS (ejercicios, biblioteca, notas de la rutina, deportes,
+        // frases): se guardan en español y se traducen al mostrarlos con la tabla
+        // de core/i18n-data.js. Lo que no está en la tabla vuelve tal cual.
+        function trD(s) { return state.lang === 'es' || typeof trData !== 'function' ? s : trData(s, state.lang); }
+        // Algunos textos del diccionario quedan guardados dentro de los datos (el
+        // método y la nota de progresión de la rutina generada en español): se suman
+        // a la tabla de datos para que también se traduzcan al mostrarlos.
+        (function registerStoredI18n() {
+            if (typeof addDataTr !== 'function') return;
+            const map = {}, en = I18N.en || {}, pt = I18N.pt || {};
+            for (const [k, es] of Object.entries(I18N.es || {})) {
+                if (typeof es !== 'string' || es.length < 4 || /[{<]/.test(es) || !en[k] || !pt[k]) continue;
+                map[es] = [en[k], pt[k]];
+                const se = es.split(' · '), sn = String(en[k]).split(' · '), sp = String(pt[k]).split(' · ');
+                if (se.length > 1 && se.length === sn.length && se.length === sp.length) se.forEach((x, i) => { if (x.length >= 4) map[x] = [sn[i], sp[i]]; });
+            }
+            addDataTr(map);
+        })();
+        // Locale para fechas y números según el idioma elegido.
+        function appLocale() { return state.lang === 'en' ? 'en-US' : state.lang === 'pt' ? 'pt-BR' : 'es-AR'; }
+        // Día de la semana corto en el idioma elegido (0 = lunes).
+        function weekdayShort(i) {
+            const s = new Date(2024, 0, 1 + i).toLocaleDateString(appLocale(), { weekday: 'short' }).replace('.', '');
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+        // Texto fijo del HTML (modales): data-i18n="clave" (texto), data-i18n-ph
+        // (placeholder) y data-i18n-aria (aria-label). Corre al arrancar y al cambiar de idioma.
+        function applyStaticI18n() {
+            try {
+                document.documentElement.lang = state.lang || 'es';
+                document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+                document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')); });
+                document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria'))); });
+            } catch { /* nunca bloquear el arranque */ }
         }
 
         // DATA
@@ -3820,7 +4348,7 @@
         function saveCustomVideos() { try { localStorage.setItem('bm-custom-yt-videos', JSON.stringify(state.customVideos || {})); } catch {} }
         function saveCustomGifs() { try { localStorage.setItem('bm-custom-gifs', JSON.stringify(state.customGifs || {})); } catch {} }
         function saveUser() { try { localStorage.setItem('bm-user', JSON.stringify(state.user)); } catch { } }
-        function saveLang() { try { localStorage.setItem('bm-lang', state.lang); } catch { } syncSWPrefs(); }
+        function saveLang() { try { localStorage.setItem('bm-lang', state.lang); } catch { } syncSWPrefs(); applyStaticI18n(); }
         // El SW no puede leer state/localStorage, así que el idioma para la
         // notificación push se guarda en el Cache API ('bm-prefs'), que el SW
         // sí puede leer cuando llega el push. Se escribe al cambiar idioma y
@@ -4472,7 +5000,7 @@
                 coach: t('upgrade_coach_sub'),
                 progress: t('pg_teaser')
             };
-            if (sub && subs[feature]) sub.textContent = subs[feature];
+            if (sub) sub.textContent = subs[feature] || t('upgrade_sub');
             modal.classList.add('show');
         }
         function closeUpgradeModal() { $('upgrade-modal').classList.remove('show'); }
@@ -4507,7 +5035,9 @@
                 else if (k === 'innerHTML') { el.innerHTML = v; }
                 else el.setAttribute(k, v);
             }
-            for (const c of ch) { if (c == null || c === false) continue; el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }
+            // Los textos sueltos pasan por trD: así un ejercicio, una nota o un deporte
+            // (guardados en español) salen en el idioma elegido en cualquier pantalla.
+            for (const c of ch) { if (c == null || c === false) continue; el.appendChild(typeof c === 'string' ? document.createTextNode(trD(c)) : (typeof c === 'number' ? document.createTextNode(String(c)) : c)); }
             return el;
         }
         // Íconos de trazo, del mismo estilo que los de la barra de navegación (dibujos
@@ -4845,7 +5375,7 @@
                 tabs.appendChild(h('button', {
                     className: 'nutri-day-tab' + ((state.nutriDayIdx || 0) === idx ? ' active' : ''),
                     onclick: () => { state.nutriDayIdx = idx; renderProfile(); }
-                }, day.name));
+                }, weekdayShort(day.idx != null ? day.idx : idx)));
             });
             container.appendChild(tabs);
 
@@ -4916,7 +5446,7 @@
                 const row = h('div', { className: 'swap-item', onclick: () => confirmSwapFood(food) });
                 const txt = h('div', {});
                 txt.appendChild(h('div', { className: 'swap-item-name' }, foodName(food)));
-                txt.appendChild(h('div', { className: 'swap-item-macros' }, food.kcal + ' kcal · P' + food.p + ' · C' + food.c + ' · G' + food.f + ' (por 100g)'));
+                txt.appendChild(h('div', { className: 'swap-item-macros' }, food.kcal + ' kcal · P' + food.p + ' · C' + food.c + ' · G' + food.f + t('nutri_per100')));
                 row.appendChild(txt);
                 row.appendChild(h('span', { style: { fontSize: '16px', color: 'var(--accent)' } }, '→'));
                 list.appendChild(row);
@@ -4993,32 +5523,17 @@
             u.routinePlan = sel.plan;
             u.routinePlanHash = currentHash;
             saveUser();
-            if (state.tab === 'routines' || state.tab === 'home') flash('🔄 Rutina actualizada según tus nuevos objetivos');
+            if (state.tab === 'routines' || state.tab === 'home') flash(t('plan_updated_goals'));
         }
 
         function getRoutineRationale(goal, days, level) {
-            const goalRat = {
-                muscle: 'Para hipertrofia priorizamos frecuencia (2x por grupo en planes 4+) y reps moderadas (8-12) con tempo controlado.',
-                fat_loss: 'En definición mantenemos el volumen pero con reps más altos y descansos cortos para sostener gasto calórico.',
-                strength: 'Para fuerza priorizamos compuestos pesados, reps bajas (4-6) y descansos largos (3-5min).',
-                recomp: 'Recomposición balancea compuestos pesados con accesorios — crecer mientras perdés grasa.',
-                endurance: 'Resistencia con alto volumen y bajo descanso — acondicionamiento físico general.'
-            }[goal] || '';
-            const daysRat = {
-                3: '3 días Full Body permite 3x de frecuencia por grupo, ideal para principiantes/intermedios.',
-                4: 'Upper/Lower con 4 días balancea volumen y recuperación: cada grupo 2x por semana.',
-                5: 'PPL+UL con 5 días es el sweet spot: alta frecuencia + volumen alto.',
-                6: 'PPL x2 con 6 días es para avanzados que toleran alto volumen y recuperan rápido.'
-            }[days] || '';
-            return goalRat + ' ' + daysRat;
+            const goalRat = { muscle: 'rat_goal_muscle', fat_loss: 'rat_goal_fat', strength: 'rat_goal_strength', recomp: 'rat_goal_recomp', endurance: 'rat_goal_endurance' }[goal];
+            const daysRat = { 3: 'rat_days_3', 4: 'rat_days_4', 5: 'rat_days_5', 6: 'rat_days_6' }[days];
+            return (goalRat ? t(goalRat) : '') + ' ' + (daysRat ? t(daysRat) : '');
         }
 
         function getRoutineProgression(level) {
-            return {
-                principiante: 'Subí 2.5kg cuando completes todas las series del tope del rango (ej. 4×8). Cambiá la rutina cada 12-16 semanas.',
-                intermedio: 'Subí 1.25-2.5kg por semana. Si no podés subir peso, agregá 1 rep. Considerá un deload cada 6 semanas.',
-                avanzado: 'Progresión ondulada (intensidad/volumen). Deloads programados cada 4-5 semanas. Tracking detallado de PRs.'
-            }[level] || 'Progresá subiendo peso o reps cuando puedas completar todas las series con buena técnica.';
+            return t({ principiante: 'prog_beg', intermedio: 'prog_int', avanzado: 'prog_adv' }[level] || 'prog_default');
         }
 
         function getMuscleGroupCoverage(plan) {
@@ -5080,7 +5595,7 @@
                 s.integrity = 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk';
                 s.crossOrigin = 'anonymous';
                 s.onload = () => resolve(window.jspdf);
-                s.onerror = () => reject(new Error('No se pudo cargar la librería PDF'));
+                s.onerror = () => reject(new Error(t('pdf_lib_fail')));
                 document.head.appendChild(s);
             });
             return window._jspdfLoading;
@@ -5134,8 +5649,8 @@
                 // Reveal the inline URL so the user can manually copy it
                 const inline = $('lib-yt-url-inline');
                 if (inline) inline.style.display = 'block';
-                if (copied) flash('🔗 Link copiado. Pegalo en una pestaña nueva.', 'var(--orange)');
-                else flash('🔗 Copiá el link manualmente y abrilo en YouTube', 'var(--orange)');
+                if (copied) flash(t('yt_link_copied'), 'var(--orange)');
+                else flash(t('yt_copy_manual'), 'var(--orange)');
             }
         }
 
@@ -5293,7 +5808,7 @@
                 if (!q) return true;
                 // Match against name (ES), target, English youtube_query, equipment, and variations (which include English names)
                 const haystack = (
-                    ex.name + ' ' +
+                    ex.name + ' ' + trD(ex.name) + ' ' +
                     ex.target + ' ' +
                     (ex.youtube_query || '') + ' ' +
                     (ex.equipment || []).join(' ') + ' ' +
@@ -5330,7 +5845,7 @@
             card.appendChild(nameRow);
             const meta = h('div', { className: 'lib-card-meta' });
             meta.appendChild(h('span', { className: 'lib-card-target' }, '🎯 ' + libraryTargetLabel(ex.target)));
-            (ex.equipment || []).slice(0, 2).forEach(eq => meta.appendChild(h('span', {}, '⚙ ' + eq)));
+            (ex.equipment || []).slice(0, 2).forEach(eq => meta.appendChild(h('span', {}, '⚙ ' + (t('eq_' + eq) !== 'eq_' + eq ? t('eq_' + eq) : eq))));
             meta.appendChild(h('span', {}, libraryDifficultyLabel(ex.difficulty)));
             card.appendChild(meta);
             return card;
@@ -5344,7 +5859,7 @@
             // abre a mitad de página, sin el nombre del ejercicio). Re-dibujar la misma
             // ficha (favorito, video propio) mantiene la posición.
             if (body.dataset.detailId !== String(state.libDetailId)) { body.scrollTop = 0; body.dataset.detailId = String(state.libDetailId); }
-            if (!ex) { body.appendChild(h('p', { className: 'lib-empty' }, 'Ejercicio no encontrado')); return; }
+            if (!ex) { body.appendChild(h('p', { className: 'lib-empty' }, t('lib_not_found'))); return; }
 
             const wrap = h('div', { className: 'lib-detail' });
 
@@ -5355,7 +5870,7 @@
             wrap.appendChild(h('h2', { className: 'lib-detail-title' }, ex.name));
             const meta = h('div', { className: 'lib-detail-meta' });
             meta.appendChild(h('span', { style: { color: 'var(--accent)' } }, '🎯 ' + libraryTargetLabel(ex.target)));
-            (ex.equipment || []).forEach(eq => meta.appendChild(h('span', {}, '⚙ ' + eq)));
+            (ex.equipment || []).forEach(eq => meta.appendChild(h('span', {}, '⚙ ' + (t('eq_' + eq) !== 'eq_' + eq ? t('eq_' + eq) : eq))));
             meta.appendChild(h('span', {}, libraryDifficultyLabel(ex.difficulty)));
             wrap.appendChild(meta);
 
@@ -5383,7 +5898,7 @@
                 embed.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${effectiveVideoId}?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
                 videoSec.appendChild(embed);
                 if (ex.youtube_creator && !isCustom) {
-                    videoSec.appendChild(h('p', { className: 'creator', style: { marginTop: '8px' } }, 'Video por: ', h('b', {}, ex.youtube_creator)));
+                    videoSec.appendChild(h('p', { className: 'creator', style: { marginTop: '8px' } }, t('lib_video_by'), h('b', {}, ex.youtube_creator)));
                 }
                 if (isCustom) {
                     videoSec.appendChild(h('button', {
@@ -5547,9 +6062,9 @@
 
         async function downloadRoutinePDF() {
             const plan = state.user?.routinePlan;
-            if (!plan || !plan.length) { flash('No hay rutina para descargar', 'var(--orange)'); return; }
+            if (!plan || !plan.length) { flash(t('pdf_no_routine'), 'var(--orange)'); return; }
             try {
-                flash('⏳ Generando PDF...');
+                flash(t('pdf_generating'));
                 const { jsPDF } = await loadJsPDF();
                 const doc = new jsPDF({ unit: 'mm', format: 'a4' });
                 const margin = 12;
@@ -5561,7 +6076,7 @@
                 doc.setFontSize(11); doc.setTextColor(120, 120, 120);
                 y += 6;
                 const u = state.user;
-                doc.text(u.name + ' · ' + plan.length + ' días · ' + (u.goal || '—'), margin, y);
+                doc.text(u.name + ' · ' + t('pdf_days').replace('{n}', plan.length) + ' · ' + ({ muscle: t('goal_muscle'), fat_loss: t('goal_fat'), strength: t('goal_str'), recomp: t('goal_recomp'), endurance: t('goal_endurance') }[u.goal] || u.goal || '—'), margin, y);
                 y += 4;
                 doc.setLineWidth(0.4); doc.setDrawColor(0, 200, 170);
                 doc.line(margin, y, 210 - margin, y);
@@ -5573,11 +6088,11 @@
                     const style = getDayStyle(day.name);
                     // Day title (color won't be vivid since RGB from CSS isn't usable, fallback to dark)
                     doc.setFontSize(13); doc.setTextColor(0, 150, 130);
-                    doc.text(dayLabel('Día', dIdx, day.name) + (day.focus ? '  (' + day.focus + ')' : ''), margin, y);
+                    doc.text(dayLabel(t('pdf_day'), dIdx, day.name) + (day.focus ? '  (' + trD(day.focus) + ')' : ''), margin, y);
                     y += 5;
                     if (day.method) {
                         doc.setFontSize(9); doc.setTextColor(140, 140, 140);
-                        doc.text(day.method, margin, y);
+                        doc.text(trD(day.method), margin, y);
                         y += 5;
                     }
                     doc.setTextColor(0, 0, 0);
@@ -5585,14 +6100,14 @@
                     (day.exercises || []).forEach(ex => {
                         if (y > 280) { doc.addPage(); y = margin + 4; }
                         doc.setFontSize(10.5);
-                        const restStr = ex.rest_s ? ` · ${ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's'} desc` : '';
+                        const restStr = ex.rest_s ? ` · ${ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's'} ${t('pdf_rest')}` : '';
                         const last = getLastWeightFor(ex.name);
-                        const lastStr = last ? `   [último: ${last.kg}${state.unit}]` : '';
-                        doc.text('• ' + ex.name + '   ' + ex.sets + '×' + ex.reps + restStr + lastStr, margin + 2, y);
+                        const lastStr = last ? `   [${t('pdf_last')}: ${last.kg}${state.unit}]` : '';
+                        doc.text('• ' + trD(ex.name) + '   ' + ex.sets + '×' + ex.reps + restStr + lastStr, margin + 2, y);
                         y += 5;
                         if (ex.notes) {
                             doc.setFontSize(8); doc.setTextColor(80, 110, 180);
-                            const lines = doc.splitTextToSize('   💡 ' + ex.notes, 190 - margin * 2);
+                            const lines = doc.splitTextToSize('   💡 ' + trD(ex.notes), 190 - margin * 2);
                             doc.text(lines, margin + 4, y);
                             y += lines.length * 4;
                             doc.setTextColor(0, 0, 0);
@@ -5604,13 +6119,13 @@
                 // Footer
                 if (y > 270) { doc.addPage(); y = margin + 4; }
                 doc.setFontSize(9); doc.setTextColor(150, 150, 150);
-                doc.text('Generado por BERSERKERMOD · ' + new Date().toLocaleDateString(), margin, 287);
+                doc.text(t('pdf_footer') + new Date().toLocaleDateString(appLocale()), margin, 287);
 
                 doc.save('BERSERKERMOD_rutina_' + (u.goal || 'plan') + '_' + plan.length + 'd.pdf');
-                flash('⬇ PDF descargado');
+                flash(t('pdf_done'));
             } catch (e) {
                 console.error('[Routine PDF]', e);
-                flash('⚠️ ' + (e.message || 'Error generando PDF'), 'var(--red)');
+                flash('⚠️ ' + (e.message || t('pdf_error')), 'var(--red)');
             }
         }
 
@@ -5632,7 +6147,7 @@
             const plan = generateNutritionPlan(u, macros);
             state.nutritionPlan = plan;
             saveNutritionPlan();
-            if (existing) flash('🔄 Tu plan se actualizó por el nuevo objetivo');
+            if (existing) flash(t('plan_updated_goal'));
             return plan;
         }
 
@@ -5835,7 +6350,7 @@
             });
 
             const cSel = h('select', { className: 'onb-input', onchange: e => { onbData.country = e.target.value; checkNext(); } });
-            cSel.appendChild(h('option', { value: '', disabled: true, selected: !onbData.country }, t('onb_country_ph') || 'Seleccionar país...'));
+            cSel.appendChild(h('option', { value: '', disabled: true, selected: !onbData.country }, t('onb_country_ph')));
             COUNTRIES.forEach(region => {
                 const grp = h('optgroup', { label: region.r });
                 region.c.forEach(country => {
@@ -6512,7 +7027,7 @@
                 fl.appendChild(h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                     h('p', { className: 'label', style: { marginBottom: 0 } }, t('food_title')),
                     h('span', { className: 'lock-badge' }, ico('lock'), 'Premium')));
-                fl.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '6px' } }, 'Escáner de código de barras + registro nutricional'));
+                fl.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '6px' } }, t('home_scanner_feat')));
                 fl.addEventListener('click', () => showUpgradeModal('scanner'));
                 v.appendChild(fl);
             }
@@ -6807,7 +7322,7 @@
                 actions.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1, fontSize: '12px' }, onclick: downloadRoutinePDF }, t('rt_download_pdf')));
                 if (isPremium()) {
                     actions.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1, fontSize: '12px' }, onclick: () => {
-                        routineCreator = { open: true, step: 0, name: 'Mi versión — ' + activePlanObj.name, days: u.days, plan: JSON.parse(JSON.stringify(activePlanObj.plan)) };
+                        routineCreator = { open: true, step: 0, name: t('rt_my_version') + activePlanObj.name, days: u.days, plan: JSON.parse(JSON.stringify(activePlanObj.plan)) };
                         renderRoutines();
                     } }, t('rt_customize_btn')));
                 } else {
@@ -6832,9 +7347,9 @@
 
             // Nav (prev/next day)
             const navCard = h('div', { className: 'card fade-in', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px' } });
-            navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx = Math.max(0, state.activeRoutineIdx - 1); renderRoutines(); } }, '◀ Anterior'));
+            navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx = Math.max(0, state.activeRoutineIdx - 1); renderRoutines(); } }, t('nav_prev')));
             navCard.appendChild(h('span', { className: 'label', style: { marginBottom: 0, flex: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' } }, activePlanObj.name));
-            navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx++; renderRoutines(); } }, 'Siguiente ▶'));
+            navCard.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { padding: '8px 12px' }, onclick: () => { state.activeRoutineIdx++; renderRoutines(); } }, t('nav_next')));
             v.appendChild(navCard);
 
             // Plan Switcher
@@ -7161,9 +7676,11 @@
             const list = $('ex-picker-list'); list.innerHTML = '';
             const filtered = EX_CATALOG.filter(e => {
                 if (_exPicker.filter !== 'all' && e.kind !== _exPicker.filter) return false;
-                if (_exPicker.query && !e.name.toLowerCase().includes(_exPicker.query)) return false;
+                // Busca por el nombre guardado (español) y por el del idioma elegido.
+                if (_exPicker.query && !(e.name + ' ' + trD(e.name)).toLowerCase().includes(_exPicker.query)) return false;
                 return true;
             });
+            if (state.lang !== 'es') filtered.sort((a, b) => trD(a.name).localeCompare(trD(b.name), appLocale()));
             if (filtered.length === 0) {
                 list.appendChild(h('div', { className: 'ex-picker-empty' }, t('ex_picker_empty')));
                 return;
@@ -7367,7 +7884,7 @@
         // de PDF, días con nombre por defecto) no se repite: nada de "DÍA 2 — Día 2 — …".
         function dayLabel(prefix, idx, name) {
             const n = String(name || '').replace(/^\s*(d[ií]a|day)\s*\d+\s*[—–\-:.·]?\s*/i, '').trim();
-            return prefix + ' ' + (idx + 1) + (n ? ' — ' + n : '');
+            return prefix + ' ' + (idx + 1) + (n ? ' — ' + trD(n) : '');
         }
 
         function importedRoutineToPlan(routine) {
@@ -7550,7 +8067,7 @@
                 c.appendChild(h('p', { className: 'label' }, t('routines_creator_days')));
                 const di = h('div', { className: 'pills', style: { marginBottom: '20px' } });
                 [1, 2, 3, 4, 5, 6].forEach(d => {
-                    di.appendChild(h('button', { className: 'pill' + (routineCreator.days === d ? ' active' : ''), onclick: () => { routineCreator.days = d; renderRoutines(); } }, d + ' días'));
+                    di.appendChild(h('button', { className: 'pill' + (routineCreator.days === d ? ' active' : ''), onclick: () => { routineCreator.days = d; renderRoutines(); } }, t('n_days').replace('{n}', d)));
                 });
                 c.appendChild(di);
 
@@ -7726,7 +8243,7 @@
                 const prev = getPrevSets(state.selEx);
                 if (prev.length) {
                     const ph = h('div', { style: { background: 'var(--sf2)', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px', fontSize: '13px', color: 'var(--text3)' } });
-                    ph.appendChild(h('span', { style: { fontWeight: 700 } }, 'Anterior: '));
+                    ph.appendChild(h('span', { style: { fontWeight: 700 } }, t('rt_prev_label')));
                     ph.appendChild(h('span', {}, prev.map(s => s.kg + state.unit + '×' + s.reps).join(' / ')));
 
                     const rec = checkProgression(state.selEx);
@@ -7852,7 +8369,7 @@
                     const pe = s.exercises.find(e => e.exercise === ex.exercise);
                     if (pe) return Math.max(m, ...pe.sets.map(st => st.kg)); return m;
                 }, 0);
-                if (maxKg > prevMax && prevMax > 0) prs.push(ex.exercise + ' ' + maxKg + 'kg');
+                if (maxKg > prevMax && prevMax > 0) prs.push(trD(ex.exercise) + ' ' + maxKg + 'kg');
             });
             return prs;
         }
@@ -7980,10 +8497,10 @@
             const prs = checkPRs(sess);
             const streak = calcStreak();
 
-            let title = '🔥 ¡Entrenamiento completado!';
-            if (prs.length > 0) title = '🏆 ¡Nuevo récord personal!';
-            else if (streak >= 7) title = `⚡ ¡${streak} días consecutivos!`;
-            else if (streak >= 3) title = `🔥 ¡${streak} días seguidos!`;
+            let title = t('share_t_done');
+            if (prs.length > 0) title = t('share_t_pr');
+            else if (streak >= 7) title = t('share_t_streak7').replace('{n}', streak);
+            else if (streak >= 3) title = t('share_t_streak3').replace('{n}', streak);
             $('share-title').textContent = title;
 
             // Resumen con números concretos: volumen, series, duración, vs sesión anterior + PRs.
@@ -8008,12 +8525,12 @@
             sum.appendChild(chips);
             if (prs.length) {
                 const prRow = h('div', { style: { background: 'rgba(253,203,110,.1)', border: '1px solid rgba(253,203,110,.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--orange)' } });
-                prRow.textContent = '🏆 ' + prs.slice(0, 3).join(' · ');
+                prRow.textContent = '🏆 ' + prs.slice(0, 3).map(trD).join(' · ');
                 sum.appendChild(prRow);
             }
 
             $('share-modal').style.display = 'flex';
-            $('share-preview').innerHTML = '<p style="color:var(--text3);text-align:center;padding:3rem 1rem">Generando tu card... ✨</p>';
+            $('share-preview').innerHTML = '<p style="color:var(--text3);text-align:center;padding:3rem 1rem">' + t('share_generating') + '</p>';
 
             shareModes = ['DEFAULT'];
             if (sess.day) shareModes.push('ROUTINE');
@@ -8040,7 +8557,7 @@
                 preview.appendChild(img);
 
                 if (shareModes.length > 1) {
-                    const modeLabels = { DEFAULT: '🔥 Logro', PR: '🏆 Récord', STREAK: '⚡ Racha', ROUTINE: '💪 Rutina' };
+                    const modeLabels = { DEFAULT: t('share_mode_default'), PR: t('share_mode_pr'), STREAK: t('share_mode_streak'), ROUTINE: t('share_mode_routine') };
                     const pills = document.createElement('div');
                     pills.style.cssText = 'display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap;flex-shrink:0';
                     shareModes.forEach((m, i) => {
@@ -8058,17 +8575,17 @@
                 }
 
                 const btn = $('share-btn-action');
-                btn.innerHTML = '<span class="ico">' + icoSvg('share') + '</span> Compartir';
+                btn.innerHTML = '<span class="ico">' + icoSvg('share') + '</span> ' + t('share_btn_lbl');
                 btn.onclick = async () => {
                     if (navigator.share) {
                         try {
                             const file = new File([blob], 'berserkermod_workout.png', { type: 'image/png' });
-                            await navigator.share({ title: 'BERSERKERMOD', text: '¡Terminé mi entrenamiento! 💪', files: [file] });
+                            await navigator.share({ title: 'BERSERKERMOD', text: t('share_text'), files: [file] });
                         } catch { downloadBlob(blob); }
                     } else { downloadBlob(blob); }
                 };
             } catch {
-                $('share-preview').innerHTML = '<p style="color:var(--red);text-align:center;padding:2rem">Error generando imagen</p>';
+                $('share-preview').innerHTML = '<p style="color:var(--red);text-align:center;padding:2rem">' + t('share_img_error') + '</p>';
             }
         }
 
@@ -8118,11 +8635,11 @@
             ctx.fillStyle = '#00D4AA'; ctx.fillText('MOD', PAD + ctx.measureText('BERSERKER').width, 135);
             ctx.textAlign = 'right'; ctx.font = '500 28px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
             const dateObj = new Date(session.date + 'T12:00:00');
-            ctx.fillText(dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(), W - PAD, 135);
+            ctx.fillText(dateObj.toLocaleDateString(appLocale(), { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(), W - PAD, 135);
             hline(162, '#00D4AA44', 2);
 
             // Name — ego moment
-            const name = (state.user?.name || 'GUERRERO').toUpperCase();
+            const name = (state.user?.name || t('card_default_name')).toUpperCase();
             ctx.textAlign = 'center';
             let nSize = 108;
             ctx.font = `900 ${nSize}px Inter, system-ui, sans-serif`;
@@ -8138,7 +8655,7 @@
                 ctx.font = '900 210px Inter, system-ui, sans-serif'; ctx.fillStyle = '#00D4AA'; ctx.textAlign = 'center';
                 ctx.fillText(String(streak), W / 2, 548);
                 ctx.font = '700 42px Inter, system-ui, sans-serif'; ctx.fillStyle = '#A1A1A6';
-                ctx.fillText('DÍAS DE RACHA  🔥', W / 2, 614);
+                ctx.fillText(t('card_streak_days'), W / 2, 614);
                 heroBottom = 662;
             } else if (mode === 'PR' && prsDetailed.length) {
                 const pr = prsDetailed[0];
@@ -8148,21 +8665,21 @@
                 ctx.strokeStyle = 'rgba(253,203,110,0.28)'; ctx.lineWidth = 2; ctx.stroke();
                 ctx.textAlign = 'center';
                 ctx.font = '700 36px Inter, system-ui, sans-serif'; ctx.fillStyle = '#FDCB6E';
-                ctx.fillText('🏆  NUEVO RÉCORD PERSONAL', W / 2, by + 56);
+                ctx.fillText(t('card_new_pr'), W / 2, by + 56);
                 ctx.font = '600 34px Inter, system-ui, sans-serif'; ctx.fillStyle = '#F5F5F7';
-                ctx.fillText(clip(pr.exercise, bw - 80, '600 34px Inter, system-ui, sans-serif'), W / 2, by + 103);
+                ctx.fillText(clip(trD(pr.exercise), bw - 80, '600 34px Inter, system-ui, sans-serif'), W / 2, by + 103);
                 ctx.font = '800 46px Inter, system-ui, sans-serif'; ctx.fillStyle = '#FDCB6E';
                 ctx.fillText(`${pr.prevKg} kg  →  ${pr.newKg} kg`, W / 2, by + 162);
                 heroBottom = by + bh + 36;
             } else if (mode === 'ROUTINE' && session.day) {
                 ctx.font = '600 28px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E'; ctx.textAlign = 'center';
-                ctx.fillText('DÍA DE ENTRENAMIENTO', W / 2, 378);
+                ctx.fillText(t('card_training_day'), W / 2, 378);
                 ctx.font = '800 64px Inter, system-ui, sans-serif'; ctx.fillStyle = '#74B9FF';
-                ctx.fillText(clip(session.day.toUpperCase(), W - PAD * 2, '800 64px Inter, system-ui, sans-serif'), W / 2, 462);
+                ctx.fillText(clip(trD(session.day).toUpperCase(), W - PAD * 2, '800 64px Inter, system-ui, sans-serif'), W / 2, 462);
                 heroBottom = 510;
             } else {
                 ctx.font = '700 44px Inter, system-ui, sans-serif'; ctx.fillStyle = '#00D4AA'; ctx.textAlign = 'center';
-                ctx.fillText('ENTRENAMIENTO COMPLETADO  🔥', W / 2, 378);
+                ctx.fillText(t('card_done'), W / 2, 378);
                 heroBottom = 424;
             }
 
@@ -8172,9 +8689,9 @@
             const totalVol = session.exercises.reduce((a, ex) => a + ex.sets.reduce((b, s) => b + (parseFloat(s.kg) || 0) * (parseInt(s.reps) || 0), 0), 0);
             const cW = Math.floor((W - PAD * 2 - 20) / 3), cH = 230, cGap = 10;
             [
-                { l: 'VOLUMEN', v: fmt(Math.round(totalVol)) + ' kg' },
-                { l: 'SERIES', v: String(totalSets) },
-                { l: 'DURACIÓN', v: session.duration + ' min' }
+                { l: t('share_sum_volume'), v: fmt(Math.round(totalVol)) + ' kg' },
+                { l: t('share_sum_sets'), v: String(totalSets) },
+                { l: t('share_sum_duration'), v: session.duration + ' min' }
             ].forEach((s, i) => {
                 const cx = PAD + i * (cW + cGap);
                 rr(cx, statsTop, cW, cH, 20);
@@ -8192,7 +8709,7 @@
             // Exercise list
             const exTop = statsTop + cH + 52;
             ctx.textAlign = 'left'; ctx.font = '700 24px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
-            ctx.fillText('EJERCICIOS', PAD, exTop);
+            ctx.fillText(t('card_exercises'), PAD, exTop);
             hline(exTop + 16);
             const rowH = 84;
             session.exercises.slice(0, 5).forEach((ex, i) => {
@@ -8200,7 +8717,7 @@
                 const maxKg = ex.sets.length ? Math.max(...ex.sets.map(s => parseFloat(s.kg) || 0)) : 0;
                 const best = ex.sets.find(s => (parseFloat(s.kg) || 0) === maxKg) || ex.sets[0];
                 ctx.textAlign = 'left'; ctx.font = '600 30px Inter, system-ui, sans-serif'; ctx.fillStyle = '#A1A1A6';
-                ctx.fillText(clip(ex.exercise, 430, '600 30px Inter, system-ui, sans-serif'), PAD, ry + 34);
+                ctx.fillText(clip(trD(ex.exercise), 430, '600 30px Inter, system-ui, sans-serif'), PAD, ry + 34);
                 ctx.textAlign = 'center'; ctx.font = '500 26px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
                 ctx.fillText(`${ex.sets.length} × ${parseInt(best?.reps) || 0} reps`, W / 2, ry + 34);
                 ctx.textAlign = 'right'; ctx.font = '800 36px Inter, system-ui, sans-serif'; ctx.fillStyle = '#00D4AA';
@@ -8210,7 +8727,7 @@
             if (session.exercises.length > 5) {
                 const mY = exTop + 36 + 5 * rowH + 16;
                 ctx.textAlign = 'center'; ctx.font = '500 26px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
-                ctx.fillText(`+ ${session.exercises.length - 5} ejercicios más`, W / 2, mY);
+                ctx.fillText(t('card_more').replace('{n}', session.exercises.length - 5), W / 2, mY);
             }
 
             // Footer
@@ -8218,11 +8735,11 @@
             ctx.textAlign = 'center';
             if (streak > 0) {
                 ctx.font = '600 32px Inter, system-ui, sans-serif'; ctx.fillStyle = '#A1A1A6';
-                ctx.fillText(`🔥  ${streak} ${streak === 1 ? 'día' : 'días'} de racha`, W / 2, H - 144);
+                ctx.fillText(t(streak === 1 ? 'card_streak_1' : 'card_streak_n').replace('{n}', streak), W / 2, H - 144);
             }
             if (session.day) {
                 ctx.font = '500 28px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
-                ctx.fillText(session.day.toUpperCase(), W / 2, H - 104);
+                ctx.fillText(trD(session.day).toUpperCase(), W / 2, H - 104);
             }
             ctx.font = '700 30px Inter, system-ui, sans-serif'; ctx.fillStyle = '#242426';
             ctx.fillText('BERSERKERMOD', W / 2, H - 52);
@@ -9300,7 +9817,7 @@
 
                 const nc = h('div', { className: 'card card-accent fade-in' });
                 nc.appendChild(h('p', { className: 'label' }, t('prof_nutri_plan')));
-                nc.appendChild(h('p', { style: { fontSize: '24px', fontWeight: 900, marginBottom: '4px' } }, targetCals + ' kcal/día'));
+                nc.appendChild(h('p', { style: { fontSize: '24px', fontWeight: 900, marginBottom: '4px' } }, targetCals + t('unit_kcal_day')));
                 nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: u.tdeeAdaptive ? '4px' : '16px' } }, 'TDEE: ' + tdee + ' kcal' + (u.tdeeAdaptive ? ' (' + t('ci_from_data') + ')' : '') + ' · Ajuste: ' + (adj > 0 ? '+' : '') + adj));
                 if (u.tdeeAdaptive) {
                     nc.appendChild(h('button', { style: { fontSize: '11px', color: 'var(--text3)', background: 'none', border: 'none', textDecoration: 'underline', padding: 0, marginBottom: '14px', cursor: 'pointer' }, onclick: () => {
@@ -9345,8 +9862,8 @@
                     nc.appendChild(cta);
                 }
 
-                nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '12px', display: 'flex', gap: '6px', alignItems: 'flex-start' } }, ico('alert'), h('span', {}, 'Valores estimados. Consultá un profesional para un plan personalizado.')));
-                nc.appendChild(h('button', { className: 'btn btn-danger btn-sm', style: { marginTop: '10px' }, onclick: () => { state.user.wantsNutrition = false; saveUser(); renderProfile(); } }, t('btn_cancel') + ' plan'));
+                nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '12px', display: 'flex', gap: '6px', alignItems: 'flex-start' } }, ico('alert'), h('span', {}, t('nutri_disclaimer'))));
+                nc.appendChild(h('button', { className: 'btn btn-danger btn-sm', style: { marginTop: '10px' }, onclick: () => { state.user.wantsNutrition = false; saveUser(); renderProfile(); } }, t('nutri_cancel_plan')));
                 v.appendChild(nc);
             } else {
                 const nc = h('div', { className: 'card fade-in' });
@@ -9371,7 +9888,7 @@
             if (!isPremium()) {
                 const uc = h('div', { className: 'card fade-in', style: { border: '1.5px solid rgba(253,203,110,.3)', background: 'linear-gradient(135deg,rgba(253,203,110,.08),rgba(225,112,85,.05))' } });
                 uc.appendChild(h('p', { className: 'label', style: { color: 'var(--orange)' } }, t('prof_tier_label') + ' · FREE'));
-                uc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px', marginTop: '4px' } }, 'Rutinas ilimitadas, stats avanzadas y más.'));
+                uc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px', marginTop: '4px' } }, t('prof_premium_sub')));
                 uc.appendChild(h('button', { className: 'upgrade-cta', onclick: () => showUpgradeModal('routine') }, t('prof_upgrade')));
                 v.appendChild(uc);
             } else {
@@ -9415,7 +9932,7 @@
             // Exercise Library card (replaces old "scanner" placeholder — Library is free for everyone)
             const libCard = h('div', { className: 'card fade-in' });
             libCard.appendChild(h('p', { className: 'label' }, t('lib_open_btn').replace('📚 ', '').toUpperCase()));
-            libCard.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '10px', marginTop: '4px' } }, EXERCISE_LIBRARY.length + ' ejercicios con técnica, tips, errores comunes y variaciones'));
+            libCard.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '10px', marginTop: '4px' } }, t('lib_card_sub').replace('{n}', EXERCISE_LIBRARY.length)));
             libCard.appendChild(h('button', {
                 className: 'btn btn-primary btn-full',
                 onclick: () => openLibrary()
@@ -9845,7 +10362,7 @@
                 if (bpm == null) { pctEl.textContent = '--%'; }
                 else {
                     const max = hrMaxValue();
-                    pctEl.textContent = Math.round((bpm / max) * 100) + '% máx';
+                    pctEl.textContent = Math.round((bpm / max) * 100) + t('hr_pct_max');
                 }
             }
             const batEl = $('hr-widget-bat');
@@ -13016,7 +13533,7 @@
             results.innerHTML = '';
 
             if (_foodModal.searchState === 'idle' && !_foodModal.searchQuery) {
-                status.textContent = 'Tipeá al menos 2 letras para buscar.';
+                status.textContent = t('food_type2');
                 return;
             }
             if (_foodModal.searchState === 'loading') {
@@ -13027,16 +13544,16 @@
                 status.textContent = '';
                 results.appendChild(h('div', { className: 'food-empty-state' },
                     h('div', { className: 'food-empty-state-icon' }, '⚠️'),
-                    h('div', { className: 'food-empty-state-text' }, 'No se pudo conectar con OpenFoodFacts.'),
-                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, '✏️ Crear manualmente')));
+                    h('div', { className: 'food-empty-state-text' }, t('food_off_fail')),
+                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, t('food_create_manual'))));
                 return;
             }
             if (_foodModal.searchResults.length === 0) {
                 status.textContent = '';
                 results.appendChild(h('div', { className: 'food-empty-state' },
                     h('div', { className: 'food-empty-state-icon' }, '🔎'),
-                    h('div', { className: 'food-empty-state-text' }, 'Sin resultados para "' + _foodModal.searchQuery + '"'),
-                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, '✏️ Crear manualmente')));
+                    h('div', { className: 'food-empty-state-text' }, t('food_no_results').replace('{q}', _foodModal.searchQuery)),
+                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, t('food_create_manual'))));
                 return;
             }
 
@@ -13060,8 +13577,8 @@
             if (state.customFoods.length === 0) {
                 c.appendChild(h('div', { className: 'food-empty-state' },
                     h('div', { className: 'food-empty-state-icon' }, '⭐'),
-                    h('div', { className: 'food-empty-state-text' }, 'Aún no creaste alimentos personalizados.<br>Cuando crees uno en la pestaña Manual, va a quedar acá para futuros usos.'),
-                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, '✏️ Crear el primero')));
+                    h('div', { className: 'food-empty-state-text' }, t('food_mine_empty1'), h('br'), t('food_mine_empty2')),
+                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, t('food_create_first'))));
                 return;
             }
             const grid = h('div', { className: 'food-grid' });
@@ -13076,7 +13593,7 @@
                 // Delete on long press (touchend) — for desktop, add a small ✕
                 const del = h('button', { style: { position: 'absolute', top: '4px', right: '4px', fontSize: '12px', color: 'var(--text3)', background: 'rgba(0,0,0,.3)', borderRadius: '50%', width: '20px', height: '20px', border: 'none', cursor: 'pointer', display: 'none' }, onclick: (e) => {
                     e.stopPropagation();
-                    if (!confirm('¿Eliminar "' + f.name + '"?')) return;
+                    if (!confirm(t('food_del_confirm').replace('{name}', f.name))) return;
                     state.customFoods = state.customFoods.filter(x => x.id !== f.id);
                     saveCustomFoods();
                     setFoodTab('mine');
@@ -13092,14 +13609,14 @@
 
         // ── MANUAL TAB ──
         function renderManualFoodTab(c) {
-            c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '10px' } }, 'Ingresá los valores por <b>100g</b>. Se guarda en "Míos" para reutilizarlo.'));
+            c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '10px' } }, t('food_manual_hint')));
 
             const nameInp = h('input', { id: 'manual-food-name', className: 'food-search-input', placeholder: t('food_manual_name_ph') });
             c.appendChild(nameInp);
 
             const grid = h('div', { className: 'food-manual-grid' });
             ['kcal','protein','carbs','fat'].forEach(k => {
-                const labels = { kcal: 'KCAL', protein: 'PROTEÍNA (g)', carbs: 'CARBOS (g)', fat: 'GRASAS (g)' };
+                const labels = { kcal: 'KCAL', protein: t('food_lbl_protein'), carbs: t('food_lbl_carbs'), fat: t('food_lbl_fat') };
                 const field = h('div', { className: 'food-manual-field' });
                 field.appendChild(h('label', {}, labels[k]));
                 field.appendChild(h('input', { id: 'manual-food-' + k, className: 'input', type: 'number', step: '0.1', placeholder: '0' }));
@@ -13125,7 +13642,7 @@
 
             const btn = h('button', { className: 'btn btn-primary btn-full', onclick: () => {
                 const name = $('manual-food-name').value.trim();
-                if (!name) { flash('Falta el nombre', 'var(--orange)'); return; }
+                if (!name) { flash(t('food_name_missing'), 'var(--orange)'); return; }
                 const kcal = parseFloat($('manual-food-kcal').value) || 0;
                 const protein = parseFloat($('manual-food-protein').value) || 0;
                 const carbs = parseFloat($('manual-food-carbs').value) || 0;
@@ -13137,7 +13654,7 @@
                 saveCustomFoods();
                 // Open portion modal to add to today
                 openPortionModal({ name, kcal_100g: kcal, protein_100g: protein, carbs_100g: carbs, fat_100g: fat, icon, source: 'Personalizado', id: food.id });
-            } }, '💾 Guardar y agregar al día');
+            } }, t('food_save_add'));
             c.appendChild(btn);
         }
 
@@ -13223,7 +13740,7 @@
         function confirmPortionAdd() {
             if (!_portionFood) return;
             const val = parseFloat($('portion-grams').value) || 0;
-            if (val <= 0) { flash('Porción inválida', 'var(--red)'); return; }
+            if (val <= 0) { flash(t('food_bad_portion'), 'var(--red)'); return; }
             const g = _portionToGrams(val);
             const m = g / 100;
             const foodName = _portionFood.name; // capture before closePortionModal nulls it
@@ -13266,7 +13783,7 @@
                 s.integrity = 'sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
                 s.crossOrigin = 'anonymous';
                 s.onload = () => resolve(window.ZXing);
-                s.onerror = () => reject(new Error('No se pudo cargar el escáner. Revisá tu conexión.'));
+                s.onerror = () => reject(new Error(t('scan_load_fail')));
                 document.head.appendChild(s);
             });
             return window._zxingLoading;
@@ -13286,7 +13803,7 @@
 
             // Pre-flight: iOS Safari over HTTP blocks getUserMedia silently
             if (!isSecureCameraContext()) {
-                $('scanner-hint').innerHTML = '⚠️ Necesita HTTPS<br><small style="font-size:10px;opacity:.75;display:block;margin-top:6px;max-width:280px;line-height:1.4">iOS Safari solo permite cámara en HTTPS o localhost. Usá ngrok para un túnel HTTPS rápido.</small>';
+                $('scanner-hint').innerHTML = t('scan_https_title') + '<br><small style="font-size:10px;opacity:.75;display:block;margin-top:6px;max-width:280px;line-height:1.4">' + t('scan_https_hint') + '</small>';
                 return;
             }
 
@@ -13314,7 +13831,7 @@
                 }
 
                 // ZXing fallback (iOS Safari, Firefox, older browsers)
-                $('scanner-hint').textContent = '⏳ Cargando escáner...';
+                $('scanner-hint').textContent = t('scan_loading');
                 const ZXing = await loadZxing();
                 $('scanner-hint').textContent = t('food_scanner_hint');
                 _zxingReader = new ZXing.BrowserMultiFormatReader();
@@ -13335,9 +13852,9 @@
             } catch (e) {
                 const msg = e && e.message ? e.message : String(e);
                 if (e && (e.name === 'NotAllowedError' || /denied|permission/i.test(msg))) {
-                    $('scanner-hint').innerHTML = '⚠️ Sin permiso de cámara<br><small style="font-size:10px;opacity:.75;display:block;margin-top:6px">Ajustes → Safari → Cámara → Permitir</small>';
+                    $('scanner-hint').innerHTML = t('scan_no_perm') + '<br><small style="font-size:10px;opacity:.75;display:block;margin-top:6px">' + t('scan_perm_hint') + '</small>';
                 } else if (e && (e.name === 'NotFoundError' || /found|notreadable/i.test(msg))) {
-                    $('scanner-hint').textContent = '⚠️ Cámara no disponible';
+                    $('scanner-hint').textContent = t('scan_no_cam');
                 } else {
                     $('scanner-hint').textContent = '⚠️ ' + msg;
                 }
@@ -13433,7 +13950,7 @@
                     body: JSON.stringify({ token: localStorage.getItem('bm-license') || '', kind, image })
                 });
                 const j = await resp.json().catch(() => ({}));
-                if (!resp.ok) throw new Error(j.error || ('Error ' + resp.status));
+                if (!resp.ok) throw new Error(j.error || ('HTTP ' + resp.status));
                 busy.remove();
                 closeFoodAddModal();
                 if (kind === 'meal') { openMealEstimate(j.items || []); return; }
@@ -13632,7 +14149,7 @@
                 const banner = h('div', { className: 'prog-banner' });
                 const txt = h('div', { className: 'prog-banner-text' });
                 txt.appendChild(h('div', { className: 'prog-banner-ex' }, exercise));
-                txt.appendChild(h('div', {}, rec.currentKg + state.unit + ' → ' + rec.newKg + state.unit + ' (+' + rec.pct + '%) · ' + rec.diffDays + ' días'));
+                txt.appendChild(h('div', {}, rec.currentKg + state.unit + ' → ' + rec.newKg + state.unit + ' (+' + rec.pct + '%) · ' + t('n_days').replace('{n}', rec.diffDays)));
                 const btn = h('button', {
                     className: 'prog-banner-dismiss',
                     onclick: () => dismissProgBanner(exercise, rec.newKg)
@@ -13790,7 +14307,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                     body: JSON.stringify(payload)
                 });
                 const result = await resp.json().catch(() => ({}));
-                if (!resp.ok) throw new Error(result.error || ('API error ' + resp.status));
+                if (!resp.ok) throw new Error(result.error || ('HTTP ' + resp.status));
                 let insights;
                 if (Array.isArray(result.insights)) {
                     insights = result.insights;              // camino Workers AI ({ok, insights})
@@ -13823,7 +14340,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         function renderOracleInsights(insights, cacheDate) {
             const body = $('oracle-body'); body.innerHTML = '';
             if (!insights.length) {
-                body.appendChild(h('p', { style: { color: 'var(--text2)', textAlign: 'center', padding: '20px', fontSize: '13px' } }, 'Sin insights disponibles.'));
+                body.appendChild(h('p', { style: { color: 'var(--text2)', textAlign: 'center', padding: '20px', fontSize: '13px' } }, t('oracle_no_insights')));
                 return;
             }
             const sec = h('div', { className: 'oracle-section' });
@@ -13953,8 +14470,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         async function apiGetShareByToken(token) {
             let resp;
             try { resp = await fetch(getApiBase() + '/api/shares/' + token); }
-            catch { throw new Error('No se pudo conectar al servidor. Pedile a tu coach un link nuevo si esto persiste.'); }
-            if (!resp.ok) throw new Error('Link inválido o expirado.');
+            catch { throw new Error(t('api_link_conn')); }
+            if (!resp.ok) throw new Error(t('api_link_bad'));
             return resp.json();
         }
         async function apiPostEdit(token, change, editorName) {
@@ -13965,8 +14482,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ changes_json: change, edited_by: 'alumno', editor_name: editorName })
                 });
-            } catch { throw new Error('Sin conexión. Intentá de nuevo.'); }
-            if (!resp.ok) throw new Error('No se pudo guardar el cambio.');
+            } catch { throw new Error(t('api_offline')); }
+            if (!resp.ok) throw new Error(t('api_save_fail'));
             return resp.json();
         }
         // Adherencia + resultados: el alumno registra que entrenó hoy y, si quiere,
@@ -13980,8 +14497,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(Object.assign({ date: todayStr() }, payload))
                 });
-            } catch { throw new Error('Sin conexión. Intentá de nuevo.'); }
-            if (!resp.ok) throw new Error('No se pudo registrar.');
+            } catch { throw new Error(t('api_offline')); }
+            if (!resp.ok) throw new Error(t('api_log_fail'));
             return resp.json();
         }
         function apiPostShareSession(token, payload) { return apiPostShare(token, 'sessions', payload); }
@@ -14146,7 +14663,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
 
             // Reset copy button to initial state
             const cb = $('share-btn-copy');
-            cb.classList.remove('copied'); cb.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> Copiar link';
+            cb.classList.remove('copied'); cb.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> ' + t('sl_copy_link');
             $('share-link-modal').classList.add('show');
         }
 
@@ -14164,7 +14681,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             const inp = $('share-base-input');
             const raw = inp.value.trim();
             if (raw && !/^https?:\/\//i.test(raw)) {
-                flash('La URL debe empezar con http:// o https://', 'var(--red)');
+                flash(t('sl_bad_url'), 'var(--red)');
                 return;
             }
             setShareBaseUrl(raw);
@@ -14207,7 +14724,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 flash(t('share_modal_copy_ok'));
                 setTimeout(() => {
                     btn.classList.remove('copied');
-                    btn.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> Copiar link';
+                    btn.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> ' + t('sl_copy_link');
                 }, 2000);
             } else {
                 // Last resort: ask user to copy manually by selecting the URL box
@@ -14216,7 +14733,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 range.selectNodeContents(box);
                 const sel = window.getSelection();
                 sel.removeAllRanges(); sel.addRange(range);
-                flash('No se pudo copiar. Seleccioná el link y copialo manualmente.', 'var(--orange)');
+                flash(t('sl_copy_fail'), 'var(--orange)');
             }
         }
 
@@ -14226,12 +14743,12 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         }
         async function shareViaWhatsApp() {
             const url = $('share-link-url').textContent;
-            const text = '💪 Tu rutina personalizada: ' + url;
+            const text = t('sl_share_text') + url;
             const encoded = encodeURIComponent(text);
 
             if (navigator.share) {
                 try {
-                    await navigator.share({ title: 'Rutina BERSERKERMOD', text });
+                    await navigator.share({ title: t('sl_share_title'), text });
                     return;
                 } catch (e) { /* user cancelled or share unavailable */ }
             }
@@ -14245,25 +14762,25 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             // Desktop fallback: copy the message and show instructions
             try {
                 await navigator.clipboard.writeText(text);
-                flash('📋 Mensaje copiado. Abrí WhatsApp Web y pegalo.', 'var(--accent)');
+                flash(t('sl_wa_copied'), 'var(--accent)');
             } catch {
-                flash('Copiá el link manualmente y compartilo por WhatsApp.', 'var(--orange)');
+                flash(t('sl_wa_manual'), 'var(--orange)');
             }
         }
 
         async function shareViaEmail() {
             const url = $('share-link-url').textContent;
             const routineName = $('share-link-routine-name').textContent;
-            const subject = encodeURIComponent('Tu rutina de entrenamiento — ' + routineName);
+            const subject = encodeURIComponent(t('sl_mail_subject') + routineName);
             const body = encodeURIComponent(
-                'Hola!\n\nAcá te dejo la rutina que armé para vos:\n\n' + url +
-                '\n\nNo necesitás crear cuenta — solo abrí el link, marcá lo que vas haciendo y los cambios me llegan automáticamente.\n\n💪'
+                t('sl_mail_body1') + url +
+                t('sl_mail_body2')
             );
             try {
                 window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
             } catch (e) {
                 console.error('[Coach] Email share error:', e);
-                flash('No se pudo abrir el cliente de email.', 'var(--red)');
+                flash(t('sl_mail_fail'), 'var(--red)');
             }
         }
 
@@ -14288,7 +14805,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 console.error('[Coach] QR download error:', e);
                 // Fallback: open the QR image in a new tab so the user can long-press / right-click save
                 window.open(qrUrl, '_blank');
-                flash('Abrí el QR en una pestaña nueva — guardalo con click derecho.', 'var(--orange)');
+                flash(t('sl_qr_newtab'), 'var(--orange)');
             }
         }
 
@@ -14317,24 +14834,24 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             if (c.type === 'remove_set') return h('span', {}, ...head(t('edit_remove_set')), ' (set #' + (p.setIdx + 1) + ')');
             if (c.type === 'edit_kg') return h('span', {}, ...head(t('edit_edit_kg')), ...diff(p.from, p.to + state.unit));
             if (c.type === 'edit_reps') return h('span', {}, ...head(t('edit_edit_reps')), ...diff(p.from, p.to));
-            if (c.type === 'edit_duration') return h('span', {}, ...head('cambió duración en'), ...diff(p.from, p.to + ' min'));
-            if (c.type === 'edit_distance') return h('span', {}, ...head('cambió distancia en'), ...diff(p.from || '—', p.to + ' km'));
-            if (c.type === 'edit_intensity') return h('span', {}, ...head('cambió intensidad en'), ': ', h('span', { className: 'diff-new' }, String(p.to)));
+            if (c.type === 'edit_duration') return h('span', {}, ...head(t('edit_duration_lbl')), ...diff(p.from, p.to + ' min'));
+            if (c.type === 'edit_distance') return h('span', {}, ...head(t('edit_distance_lbl')), ...diff(p.from || '—', p.to + ' km'));
+            if (c.type === 'edit_intensity') return h('span', {}, ...head(t('edit_intensity_lbl')), ': ', h('span', { className: 'diff-new' }, String(p.to)));
             return h('span', {}, JSON.stringify(c));
         }
 
         function renderStudentDetail(routine, edits, sessions, checkins) {
             const v = $('view-routines'); v.innerHTML = '';
-            const back = h('button', { className: 'btn btn-secondary btn-sm', style: { marginBottom: '12px' }, onclick: () => { state.coachActiveRoutineId = null; renderRoutines(); } }, '← Volver');
+            const back = h('button', { className: 'btn btn-secondary btn-sm', style: { marginBottom: '12px' }, onclick: () => { state.coachActiveRoutineId = null; renderRoutines(); } }, t('coach_back'));
             v.appendChild(back);
 
             const head = h('div', { className: 'card fade-in' });
-            head.appendChild(h('p', { className: 'label' }, 'RUTINA · ' + (routine.alumno_name || '—')));
+            head.appendChild(h('p', { className: 'label' }, t('coach_routine_lbl') + (routine.alumno_name || '—')));
             head.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '4px' } }, routine.name));
             head.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, 'Token: ' + routine.share_token + ' · ' + new Date(routine.created_at).toLocaleDateString()));
 
             const linkRow = h('div', { style: { display: 'flex', gap: '8px', marginTop: '10px' } });
-            linkRow.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1 }, onclick: () => openShareLinkModal(routine) }, ico('link'), ' Ver link / QR'));
+            linkRow.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1 }, onclick: () => openShareLinkModal(routine) }, ico('link'), ' ' + t('coach_view_link')));
             linkRow.appendChild(h('button', { className: 'btn btn-danger btn-sm', onclick: async () => {
                 if (!confirm(t('coach_confirm_delete'))) return;
                 try { await apiDeleteRoutine(routine.id); await loadMyStudents(); state.coachActiveRoutineId = null; renderRoutines(); flash('✓ Eliminado'); }
@@ -14437,7 +14954,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
 
             // Edits history
             const editsCard = h('div', { className: 'card fade-in' });
-            editsCard.appendChild(h('p', { className: 'label' }, 'HISTORIAL DE EDICIONES'));
+            editsCard.appendChild(h('p', { className: 'label' }, t('coach_edit_history')));
             const alumnoEdits = edits.filter(e => e.edited_by === 'alumno');
             if (alumnoEdits.length === 0) {
                 editsCard.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', textAlign: 'center', padding: '12px 0' } }, t('coach_no_edits')));
@@ -14451,7 +14968,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 }
                 alumnoEdits.forEach(ed => {
                     const item = h('div', { className: 'edit-item' + (ed.reviewed_by_coach ? '' : ' unreviewed') });
-                    item.appendChild(h('div', { className: 'edit-meta' }, (ed.editor_name || 'Alumno') + ' · ' + relativeTime(ed.edited_at)));
+                    item.appendChild(h('div', { className: 'edit-meta' }, (ed.editor_name || t('coach_student_fallback')) + ' · ' + relativeTime(ed.edited_at)));
                     const summary = h('div', { className: 'edit-summary' }, describeChange(ed.changes_json));
                     item.appendChild(summary);
                     editsCard.appendChild(item);
@@ -14501,7 +15018,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             });
             const v = $('view-home'); v.style.display = 'block';
 
-            v.innerHTML = '<div class="oracle-loading" style="padding:60px 20px"><div class="oracle-spinner"></div>Cargando rutina...</div>';
+            v.innerHTML = '<div class="oracle-loading" style="padding:60px 20px"><div class="oracle-spinner"></div>' + t('al_loading') + '</div>';
 
             try {
                 const { routine, edits, sessions, checkins } = await apiGetShareByToken(state.alumnoToken);
@@ -14516,8 +15033,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 v.innerHTML = '';
                 v.appendChild(h('div', { className: 'empty', style: { padding: '60px 20px' } },
                     h('p', { className: 'empty-icon' }, '🔗'),
-                    h('p', { style: { fontSize: '14px', color: 'var(--red)' } }, '⚠️ ' + (e.message || 'Link inválido')),
-                    h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginTop: '8px' } }, 'Pedile a tu coach un link nuevo.')));
+                    h('p', { style: { fontSize: '14px', color: 'var(--red)' } }, '⚠️ ' + (e.message || t('al_bad_link'))),
+                    h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginTop: '8px' } }, t('al_ask_new'))));
             }
         }
 
@@ -14559,11 +15076,11 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             // Plan
             const plan = state.alumnoLocalPlan;
             if (!Array.isArray(plan) || plan.length === 0) {
-                card.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '24px' } }, 'Rutina vacía'));
+                card.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '24px' } }, t('al_empty')));
             } else {
                 plan.forEach((day, dIdx) => {
                     const block = h('div', { className: 'alumno-day-block' });
-                    block.appendChild(h('div', { className: 'alumno-day-title' }, day.name || ('Día ' + (dIdx + 1))));
+                    block.appendChild(h('div', { className: 'alumno-day-title' }, day.name || (t('pdf_day') + ' ' + (dIdx + 1))));
                     const exs = day.exercises || [];
                     exs.forEach((ex, exIdx) => {
                         normalizeExercise(ex);
@@ -14661,7 +15178,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         async function flushAlumnoEdits() {
             const queue = state.alumnoPendingEdits || [];
             if (queue.length === 0) return;
-            if (!state.alumnoName) { flash('Ingresá tu nombre arriba', 'var(--orange)'); return; }
+            if (!state.alumnoName) { flash(t('al_name_needed'), 'var(--orange)'); return; }
             try {
                 for (const ch of queue) {
                     await apiPostEdit(state.alumnoToken, ch, state.alumnoName);
@@ -14859,6 +15376,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         }
 
         load();
+        applyStaticI18n();
         getCoachId();
 
         // Ask the browser not to evict our storage under disk pressure —
@@ -14960,18 +15478,20 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         // the thing that broke. Priority #1 here is letting the user save
         // their data before anything else.
         function showBootRecovery(err) {
+            // Si el arranque falló antes de tener idioma, vale el texto en español.
+            const bootT = (k, d) => { try { const v = t(k); return v && v !== k ? v : d; } catch { return d; } };
             try {
                 const d = document.createElement('div');
                 d.style.cssText = 'position:fixed;inset:0;background:#0A0A0B;color:#EDEDED;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,sans-serif';
                 const box = document.createElement('div');
                 box.style.cssText = 'max-width:360px;width:100%;text-align:center';
                 box.innerHTML = '<div style="font-size:40px;margin-bottom:12px">⚠️</div>' +
-                    '<div style="font-size:18px;font-weight:900;margin-bottom:8px">Algo salió mal al iniciar</div>' +
-                    '<div style="font-size:13px;color:#999;line-height:1.5;margin-bottom:20px">Tus datos siguen guardados en el dispositivo. Probá recargar; si sigue fallando, descargá un backup de tus datos.</div>';
+                    '<div style="font-size:18px;font-weight:900;margin-bottom:8px">' + bootT('boot_fail_title', 'Algo salió mal al iniciar') + '</div>' +
+                    '<div style="font-size:13px;color:#999;line-height:1.5;margin-bottom:20px">' + bootT('boot_fail_sub', 'Tus datos siguen guardados en el dispositivo. Probá recargar; si sigue fallando, descargá un backup de tus datos.') + '</div>';
                 const mk = (label, css) => { const b = document.createElement('button'); b.textContent = label; b.style.cssText = 'display:block;width:100%;padding:13px;border-radius:12px;border:0;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer;' + css; return b; };
-                const reloadBtn = mk('🔄 Recargar', 'background:#00D4AA;color:#0A0A0B');
+                const reloadBtn = mk(bootT('boot_reload', '🔄 Recargar'), 'background:#00D4AA;color:#0A0A0B');
                 reloadBtn.onclick = () => location.reload();
-                const backupBtn = mk('📦 Descargar backup', 'background:#1d1d20;color:#EDEDED;border:1px solid #333');
+                const backupBtn = mk(bootT('boot_backup', '📦 Descargar backup'), 'background:#1d1d20;color:#EDEDED;border:1px solid #333');
                 backupBtn.onclick = () => {
                     try {
                         const data = {};
