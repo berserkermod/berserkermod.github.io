@@ -4,7 +4,7 @@
   "private": true,
   "description": "BERSERKERMOD — quality platform: business-logic tests, i18n parity, lint",
   "scripts": {
-    "test": "node test/calc.test.mjs && node test/i18n-parity.test.mjs && node worker/test/worker.test.mjs",
+    "test": "node test/calc.test.mjs && node test/i18n-parity.test.mjs && node test/release.test.mjs && node worker/test/worker.test.mjs",
     "test:calc": "node test/calc.test.mjs",
     "test:i18n": "node test/i18n-parity.test.mjs",
     "test:worker": "node worker/test/worker.test.mjs",
