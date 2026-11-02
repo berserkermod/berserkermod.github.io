@@ -1629,6 +1629,52 @@
         .rt-day-banner-name { font-size: 14px; font-weight: 800; color: var(--day-color, var(--text)); }
         .rt-day-banner-focus { font-size: 11px; color: var(--text3); margin-top: 2px; }
         .rt-last-weight { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+        /* Mapa del cuerpo */
+        .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
+        .bm-base { fill: #232326; }
+        .bm-m { stroke: var(--sf1); stroke-width: 1.5; cursor: pointer; }
+        .bm-m.bm-sel { stroke: var(--text); stroke-width: 2; }
+        .bm-l0 { fill: #3A3A3F; } .bm-l1 { fill: rgba(0,212,170,.32); } .bm-l2 { fill: rgba(0,212,170,.62); } .bm-l3 { fill: var(--accent); } .bm-l4 { fill: var(--orange); }
+        i.bm-sw.bm-l0 { background: #3A3A3F; } i.bm-sw.bm-l1 { background: rgba(0,212,170,.32); } i.bm-sw.bm-l2 { background: rgba(0,212,170,.62); } i.bm-sw.bm-l3 { background: var(--accent); } i.bm-sw.bm-l4 { background: var(--orange); }
+        .bm-view { fill: var(--text3); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-anchor: middle; }
+        .bm-caption { text-align: center; font-size: 13px; font-weight: 700; color: var(--text2); min-height: 18px; margin: 6px 0 8px; }
+        .bm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: center; font-size: 11px; color: var(--text3); margin-bottom: 10px; }
+        .bm-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .bm-sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+        .bm-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+        .bm-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .bm-name { flex: 1; color: var(--text2); }
+        .bm-row b { font-weight: 800; }
+        .bm-note { font-size: 12px; color: var(--text3); margin-top: 8px; line-height: 1.45; }
+        /* Constancia */
+        .cal-wrap { overflow: hidden; }
+        .cal-months { display: grid; grid-template-columns: repeat(26, 1fr); gap: 2px; font-size: 9px; color: var(--text3); height: 14px; }
+        .cal-months span { white-space: nowrap; overflow: visible; }
+        .cal-grid { display: grid; grid-auto-flow: column; grid-template-columns: repeat(26, 1fr); grid-template-rows: repeat(7, auto); gap: 2px; }
+        .cal-c { aspect-ratio: 1; border-radius: 2px; background: #26262A; display: inline-block; }
+        i.cal-c { width: 10px; height: 10px; }
+        .cal-c.gym { background: var(--accent); } .cal-c.car { background: var(--blue); } .cal-c.both { background: linear-gradient(135deg, var(--accent) 50%, var(--blue) 50%); } .cal-c.fut { background: transparent; }
+        .cal-sum { font-size: 13px; color: var(--text2); font-weight: 700; margin: 10px 0 8px; }
+        /* Medidas y fotos de progreso */
+        .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+        .ms-cell { display: flex; flex-direction: column; gap: 4px; }
+        .ms-lbl { font-size: 11px; font-weight: 800; color: var(--text3); letter-spacing: .04em; text-transform: uppercase; }
+        .ms-inp { padding: 10px 6px; text-align: center; font-size: 16px; font-weight: 800; }
+        /* Sin verde ni naranja: bajar cintura y subir brazo pueden ser buenos los dos */
+        .ms-delta { font-size: 11px; font-weight: 800; color: var(--text2); text-align: center; }
+        .pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .pg-th { position: relative; padding: 0; border: none; border-radius: 10px; overflow: hidden; background: var(--sf2); aspect-ratio: 3 / 4; }
+        .pg-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pg-th span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; font-weight: 800; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.7)); padding: 10px 4px 3px; }
+        .pg-card { max-width: 520px; }
+        .pg-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .pg-pair figure { margin: 0; }
+        .pg-pair img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; display: block; background: var(--sf2); }
+        .pg-pair figcaption { font-size: 11px; font-weight: 800; color: var(--text2); text-align: center; margin-top: 4px; }
+        .pg-pick { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 6px; }
+        .pg-mini { flex-shrink: 0; width: 44px; height: 58px; padding: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; background: var(--sf2); }
+        .pg-mini.on { border-color: var(--accent); }
+        .pg-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
         /* Series de la rutina: kg · reps · ✓ (botones de 48px: se usan con la mano transpirada) */
         .rt-set-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; border-radius: 12px; transition: background .2s; }
         .rt-set-num { width: 22px; font-size: 14px; color: var(--text3); font-weight: 800; text-align: center; flex-shrink: 0; }
@@ -2192,6 +2238,7 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
+                bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Mucho (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
                 fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
                 rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
@@ -2458,6 +2505,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
+                bm_title: "BODY MAP", bm_this_week: "SETS THIS WEEK", bm_per_week: "SETS PER WEEK (AVERAGE)", bm_tap: "Tap a muscle to see its sets", bm_sets: "sets", bm_lvl0: "Not trained", bm_lvl1: "Low (1-4)", bm_lvl2: "Medium (5-9)", bm_lvl3: "Ideal for growth (10-20)", bm_lvl4: "High (20+)", bm_front: "FRONT", bm_back: "BACK", bm_unknown: "{n} sets of exercises we do not recognize are not on the map.", mus_chest: "Chest", mus_shoulders: "Shoulders", mus_biceps: "Biceps", mus_forearms: "Forearms", mus_abs: "Abs", mus_quads: "Quads", mus_traps: "Traps", mus_lats: "Lats", mus_triceps: "Triceps", mus_lowback: "Lower back", mus_glutes: "Glutes", mus_hamstrings: "Hamstrings", mus_calves: "Calves", cal_title: "CONSISTENCY · LAST 6 MONTHS", cal_gym: "Weights", cal_cardio: "Cardio", cal_both: "Both", cal_summary: "{n} training days · {w} per week on average", pg_title: "PROGRESS PHOTOS", pg_teaser: "Compare your body month by month with photos and measurements. Everything stays on your phone.", pg_add: "+ Add photo", pg_private: "Photos stay only on this phone: they are not uploaded anywhere and are not included in the backup.", pg_unavailable: "Photos could not be saved in this browser.", pg_empty: "Take a photo today (same light and same pose every time) and in a few weeks you will see the change.", pg_compare: "Compare before and after", pg_saved: "✓ Photo saved", pg_before: "Before", pg_after: "After", pg_delete: "Delete \"After\"", pg_del_confirm: "Delete this photo? This cannot be undone.", pg_close: "Close", ms_title: "MEASUREMENTS (CM)", ms_waist: "Waist", ms_hips: "Hips", ms_chest: "Chest", ms_arm: "Arm", ms_thigh: "Thigh", ms_since: "Change since {date}.", ms_save: "Save measurements", ms_saved: "✓ Measurements saved",
                 fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "This is an estimate: check the grams. Photos tend to miss oil and sauces.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
                 rest_go: "Next set! 💪", set_done: "Set done", rt_need_values: "Enter kg and reps (0 kg for bodyweight)", rt_draft_old: "You have an unfinished workout from {date}", ss_badge: "SUPERSET", ss_link: "🔗 Make superset", ss_linked: "🔗 Superset · tap to split", ss_next: "Superset → {ex}", wu_btn: "🔥 Warm-up & plates", wu_bar_only: "Empty bar", wu_per_side: "per side", wu_work: "Working", wu_note: "Not logged as sets.", wu_note_bar: "Not logged as sets. Plates per side on a {bar} bar.",
                 session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
@@ -2723,6 +2771,7 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
+                bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Muito (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
                 fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
                 rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
@@ -4111,7 +4160,8 @@
                 routine: t('upgrade_locked_routine'),
                 scanner: t('upgrade_feat_scanner_d'),
                 pt: t('upgrade_locked_lang'),
-                coach: t('upgrade_coach_sub')
+                coach: t('upgrade_coach_sub'),
+                progress: t('pg_teaser')
             };
             if (sub && subs[feature]) sub.textContent = subs[feature];
             modal.classList.add('show');
@@ -8111,6 +8161,305 @@
             return 'Brazos';
         }
 
+        // ─────────────────────────────────────────
+        // MAPA DEL CUERPO — series por músculo (frente y espalda), con la escala de
+        // volumen semanal: 10-20 series por semana es el rango para crecer.
+        // ─────────────────────────────────────────
+        const BODY_SVG_NS = 'http://www.w3.org/2000/svg';
+        // Silueta base (neutra) y zonas por músculo, en un lienzo de 120×262 por vista.
+        const BODY_BASE = [
+            ['circle', { cx: 60, cy: 18, r: 13 }], ['rect', { x: 54, y: 29, width: 12, height: 10, rx: 3 }],
+            ['path', { d: 'M34,44 Q60,36 86,44 L90,60 Q92,96 84,132 L80,140 L40,140 L36,132 Q28,96 30,60 Z' }],
+            ['rect', { x: 20, y: 48, width: 14, height: 44, rx: 7 }], ['rect', { x: 86, y: 48, width: 14, height: 44, rx: 7 }],
+            ['rect', { x: 15, y: 90, width: 13, height: 44, rx: 6 }], ['rect', { x: 92, y: 90, width: 13, height: 44, rx: 6 }],
+            ['circle', { cx: 21, cy: 140, r: 6 }], ['circle', { cx: 99, cy: 140, r: 6 }],
+            ['path', { d: 'M38,130 L82,130 L86,154 L34,154 Z' }],
+            ['rect', { x: 36, y: 150, width: 22, height: 64, rx: 10 }], ['rect', { x: 62, y: 150, width: 22, height: 64, rx: 10 }],
+            ['rect', { x: 39, y: 212, width: 17, height: 40, rx: 8 }], ['rect', { x: 64, y: 212, width: 17, height: 40, rx: 8 }],
+            ['ellipse', { cx: 47, cy: 256, rx: 9, ry: 4 }], ['ellipse', { cx: 73, cy: 256, rx: 9, ry: 4 }]
+        ];
+        const BODY_FRONT = [
+            ['shoulders', 'ellipse', { cx: 30, cy: 53, rx: 11, ry: 10 }], ['shoulders', 'ellipse', { cx: 90, cy: 53, rx: 11, ry: 10 }],
+            ['chest', 'path', { d: 'M38,59 Q48,52 59,56 L59,77 Q46,81 38,71 Z' }], ['chest', 'path', { d: 'M82,59 Q72,52 61,56 L61,77 Q74,81 82,71 Z' }],
+            ['biceps', 'ellipse', { cx: 27, cy: 75, rx: 6, ry: 14 }], ['biceps', 'ellipse', { cx: 93, cy: 75, rx: 6, ry: 14 }],
+            ['forearms', 'ellipse', { cx: 21, cy: 112, rx: 6, ry: 17 }], ['forearms', 'ellipse', { cx: 99, cy: 112, rx: 6, ry: 17 }],
+            ['abs', 'rect', { x: 48, y: 81, width: 24, height: 47, rx: 7 }],
+            ['quads', 'ellipse', { cx: 47, cy: 182, rx: 10, ry: 29 }], ['quads', 'ellipse', { cx: 73, cy: 182, rx: 10, ry: 29 }],
+            ['calves', 'ellipse', { cx: 47.5, cy: 230, rx: 6, ry: 14 }], ['calves', 'ellipse', { cx: 72.5, cy: 230, rx: 6, ry: 14 }]
+        ];
+        const BODY_BACK = [
+            ['traps', 'path', { d: 'M43,47 Q60,36 77,47 L70,64 Q60,69 50,64 Z' }],
+            ['shoulders', 'ellipse', { cx: 30, cy: 53, rx: 11, ry: 10 }], ['shoulders', 'ellipse', { cx: 90, cy: 53, rx: 11, ry: 10 }],
+            ['lats', 'path', { d: 'M36,63 Q45,61 57,68 L57,105 Q46,108 38,93 Z' }], ['lats', 'path', { d: 'M84,63 Q75,61 63,68 L63,105 Q74,108 82,93 Z' }],
+            ['triceps', 'ellipse', { cx: 27, cy: 75, rx: 6, ry: 14 }], ['triceps', 'ellipse', { cx: 93, cy: 75, rx: 6, ry: 14 }],
+            ['forearms', 'ellipse', { cx: 21, cy: 112, rx: 6, ry: 17 }], ['forearms', 'ellipse', { cx: 99, cy: 112, rx: 6, ry: 17 }],
+            ['lowback', 'rect', { x: 50, y: 107, width: 20, height: 24, rx: 6 }],
+            ['glutes', 'ellipse', { cx: 49, cy: 145, rx: 11, ry: 10 }], ['glutes', 'ellipse', { cx: 71, cy: 145, rx: 11, ry: 10 }],
+            ['hamstrings', 'ellipse', { cx: 47, cy: 185, rx: 10, ry: 24 }], ['hamstrings', 'ellipse', { cx: 73, cy: 185, rx: 10, ry: 24 }],
+            ['calves', 'ellipse', { cx: 47.5, cy: 230, rx: 8, ry: 16 }], ['calves', 'ellipse', { cx: 72.5, cy: 230, rx: 8, ry: 16 }]
+        ];
+        // Nivel por series semanales: 0 · 1-4 · 5-9 · 10-20 (ideal) · más de 20.
+        function muscleLevel(s) { return s <= 0 ? 0 : s < 5 ? 1 : s < 10 ? 2 : s <= 20 ? 3 : 4; }
+        function svgEl(tag, attrs) {
+            const el = document.createElementNS(BODY_SVG_NS, tag);
+            Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
+            return el;
+        }
+        function renderBodyMap(container, sessions, weeks) {
+            const ms = muscleSets(sessions);
+            const perWeek = (m) => Math.round(ms[m] / Math.max(1, weeks) * 10) / 10;
+            const card = h('div', { className: 'card fade-in' });
+            card.appendChild(h('p', { className: 'label' }, t('bm_title') + ' · ' + (weeks <= 1 ? t('bm_this_week') : t('bm_per_week'))));
+            const svg = svgEl('svg', { viewBox: '0 0 262 270', class: 'body-map', role: 'img', 'aria-label': t('bm_title') });
+            const caption = h('p', { className: 'bm-caption' }, t('bm_tap'));
+            const draw = (shapes, dx, label) => {
+                const g = svgEl('g', { transform: 'translate(' + dx + ',0)' });
+                BODY_BASE.forEach(([tag, a]) => g.appendChild(svgEl(tag, Object.assign({ class: 'bm-base' }, a))));
+                shapes.forEach(([m, tag, a]) => {
+                    const el = svgEl(tag, Object.assign({ class: 'bm-m bm-l' + muscleLevel(perWeek(m)) }, a));
+                    el.addEventListener('click', () => {
+                        svg.querySelectorAll('.bm-sel').forEach(x => x.classList.remove('bm-sel'));
+                        svg.querySelectorAll('[data-m="' + m + '"]').forEach(x => x.classList.add('bm-sel'));
+                        caption.textContent = t('mus_' + m) + ': ' + perWeek(m) + ' ' + t('bm_sets') + ' · ' + t('bm_lvl' + muscleLevel(perWeek(m)));
+                    });
+                    el.setAttribute('data-m', m);
+                    g.appendChild(el);
+                });
+                const tx = svgEl('text', { x: 60, y: 268, class: 'bm-view' }); tx.textContent = label; g.appendChild(tx);
+                svg.appendChild(g);
+            };
+            draw(BODY_FRONT, 0, t('bm_front'));
+            draw(BODY_BACK, 142, t('bm_back'));
+            card.appendChild(svg);
+            card.appendChild(caption);
+            // Leyenda de colores
+            const lg = h('div', { className: 'bm-legend' });
+            [0, 1, 2, 3, 4].forEach(l => lg.appendChild(h('span', {}, h('i', { className: 'bm-sw bm-l' + l }), t('bm_lvl' + l))));
+            card.appendChild(lg);
+            // Lista: de más a menos trabajado
+            const list = h('div', { className: 'bm-list' });
+            MUSCLES.slice().sort((a, b) => perWeek(b) - perWeek(a)).forEach(m => {
+                const row = h('div', { className: 'bm-row' });
+                row.appendChild(h('i', { className: 'bm-sw bm-l' + muscleLevel(perWeek(m)) }));
+                row.appendChild(h('span', { className: 'bm-name' }, t('mus_' + m)));
+                row.appendChild(h('b', {}, String(perWeek(m))));
+                list.appendChild(row);
+            });
+            card.appendChild(list);
+            if (ms.unknown > 0) card.appendChild(h('p', { className: 'bm-note' }, t('bm_unknown').replace('{n}', Math.round(ms.unknown))));
+            container.appendChild(card);
+        }
+
+        // ─────────────────────────────────────────
+        // CONSTANCIA — calendario de los últimos 6 meses (una columna por semana).
+        // ─────────────────────────────────────────
+        function renderTrainingCalendar(container) {
+            const WEEKS = 26;
+            const iso = (d) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+            const gym = new Set((state.sessions || []).map(s => s.date)), cardio = new Set((state.cardioSessions || []).map(s => s.date));
+            const today = new Date(); today.setHours(12, 0, 0, 0);
+            const start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7);
+            const card = h('div', { className: 'card fade-in' });
+            card.appendChild(h('p', { className: 'label' }, t('cal_title')));
+            const loc = state.lang === 'en' ? 'en-US' : state.lang === 'pt' ? 'pt-BR' : 'es-AR';
+            const months = h('div', { className: 'cal-months' });
+            const grid = h('div', { className: 'cal-grid' });
+            let days = 0, lastMonth = -1;
+            for (let w = 0; w < WEEKS; w++) {
+                const wk = new Date(start); wk.setDate(start.getDate() + w * 7);
+                const m = wk.getMonth();
+                months.appendChild(h('span', {}, m !== lastMonth ? wk.toLocaleDateString(loc, { month: 'short' }).replace('.', '') : ''));
+                lastMonth = m;
+                for (let d = 0; d < 7; d++) {
+                    const day = new Date(wk); day.setDate(wk.getDate() + d);
+                    const key = iso(day), g = gym.has(key), c = cardio.has(key);
+                    if (g || c) days++;
+                    const cls = 'cal-c' + (day > today ? ' fut' : g && c ? ' both' : g ? ' gym' : c ? ' car' : '');
+                    grid.appendChild(h('div', { className: cls, title: key + (g ? ' · ' + t('cal_gym') : '') + (c ? ' · ' + t('cal_cardio') : '') }));
+                }
+            }
+            const wrap = h('div', { className: 'cal-wrap' });
+            wrap.appendChild(months); wrap.appendChild(grid);
+            card.appendChild(wrap);
+            const perWeek = Math.round(days / WEEKS * 10) / 10;
+            card.appendChild(h('p', { className: 'cal-sum' }, t('cal_summary').replace('{n}', days).replace('{w}', perWeek)));
+            const lg = h('div', { className: 'bm-legend' });
+            [['gym', t('cal_gym')], ['car', t('cal_cardio')], ['both', t('cal_both')]].forEach(([c, l]) => lg.appendChild(h('span', {}, h('i', { className: 'cal-c ' + c }), l)));
+            card.appendChild(lg);
+            container.appendChild(card);
+        }
+
+        // ─────────────────────────────────────────
+        // FOTOS DE PROGRESO Y MEDIDAS (Premium) — todo queda en el teléfono.
+        // Las fotos van a IndexedDB (localStorage no alcanza); no entran en el backup.
+        // ─────────────────────────────────────────
+        const ProgressPhotos = {
+            _db: null,
+            open() {
+                if (this._db) return Promise.resolve(this._db);
+                return new Promise((res, rej) => {
+                    const r = indexedDB.open('bm-progress', 1);
+                    r.onupgradeneeded = () => r.result.createObjectStore('photos', { keyPath: 'id' });
+                    r.onsuccess = () => { this._db = r.result; res(r.result); };
+                    r.onerror = () => rej(r.error);
+                });
+            },
+            async tx(mode, fn) {
+                const db = await this.open();
+                return new Promise((res, rej) => {
+                    const st = db.transaction('photos', mode).objectStore('photos');
+                    const q = fn(st);
+                    q.onsuccess = () => res(q.result);
+                    q.onerror = () => rej(q.error);
+                });
+            },
+            all() { return this.tx('readonly', st => st.getAll()).then(l => (l || []).sort((a, b) => a.id - b.id)); },
+            put(rec) { return this.tx('readwrite', st => st.put(rec)); },
+            del(id) { return this.tx('readwrite', st => st.delete(id)); }
+        };
+        const MEASURES = ['waist', 'hips', 'chest', 'arm', 'thigh'];
+        function loadMeasures() { try { return JSON.parse(localStorage.getItem('bm-measures') || '[]'); } catch { return []; } }
+        function renderProgressSection(container) {
+            if (!isPremium()) {
+                const tz = h('div', { className: 'card fade-in', style: { border: '1.5px dashed var(--sf3)', cursor: 'pointer' }, onclick: () => showUpgradeModal('progress') });
+                tz.appendChild(h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                    h('p', { className: 'label', style: { marginBottom: 0 } }, '📸 ' + t('pg_title')), h('span', { className: 'lock-badge' }, '🔒 Premium')));
+                tz.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text3)', marginTop: '8px', lineHeight: 1.45 } }, t('pg_teaser')));
+                container.appendChild(tz);
+                return;
+            }
+            renderMeasuresCard(container);
+            renderPhotosCard(container);
+        }
+        function renderMeasuresCard(container) {
+            const list = loadMeasures(), first = list[0];
+            // Por medida: el primer y el último valor anotados (no todas se anotan cada vez).
+            const withK = (k) => list.filter(x => x[k] > 0);
+            const card = h('div', { className: 'card fade-in' });
+            card.appendChild(h('p', { className: 'label' }, '📏 ' + t('ms_title')));
+            const inputs = {};
+            const grid = h('div', { className: 'ms-grid' });
+            MEASURES.forEach(k => {
+                const cell = h('div', { className: 'ms-cell' });
+                cell.appendChild(h('span', { className: 'ms-lbl' }, t('ms_' + k)));
+                const hist = withK(k), lk = hist[hist.length - 1], fk = hist[0];
+                const inp = h('input', { type: 'number', inputmode: 'decimal', step: '0.1', className: 'input ms-inp', placeholder: lk ? String(lk[k]) : 'cm' });
+                inputs[k] = inp; cell.appendChild(inp);
+                if (hist.length >= 2) {
+                    const d = Math.round((lk[k] - fk[k]) * 10) / 10;
+                    cell.appendChild(h('span', { className: 'ms-delta' + (d < 0 ? ' down' : d > 0 ? ' up' : '') }, (d > 0 ? '+' : '') + d + ' cm'));
+                }
+                grid.appendChild(cell);
+            });
+            card.appendChild(grid);
+            if (list.length >= 2) card.appendChild(h('p', { className: 'bm-note' }, t('ms_since').replace('{date}', first.date.split('-').reverse().join('/'))));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '10px', minHeight: '46px' }, onclick: () => {
+                const rec = { date: todayStr() };
+                MEASURES.forEach(k => { const v = parseFloat(String(inputs[k].value).replace(',', '.')); if (v >= 10 && v <= 300) rec[k] = Math.round(v * 10) / 10; });
+                if (Object.keys(rec).length === 1) { inputs.waist.focus(); return; }
+                // Mismo día: completa lo que ya había.
+                const prev = list.find(x => x.date === rec.date) || {};
+                const next = list.filter(x => x.date !== rec.date).concat([Object.assign({}, prev, rec)]).sort((a, b) => (a.date < b.date ? -1 : 1));
+                try { localStorage.setItem('bm-measures', JSON.stringify(next)); } catch { }
+                flash(t('ms_saved')); renderStats();
+            } }, t('ms_save')));
+            container.appendChild(card);
+        }
+        function renderPhotosCard(container) {
+            const card = h('div', { className: 'card fade-in' });
+            const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' } });
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '📸 ' + t('pg_title')));
+            const addBtn = h('button', { className: 'btn btn-primary btn-sm' }, t('pg_add'));
+            head.appendChild(addBtn);
+            card.appendChild(head);
+            const strip = h('div', { className: 'pg-grid' }, h('p', { className: 'bm-note' }, '…'));
+            card.appendChild(strip);
+            card.appendChild(h('p', { className: 'bm-note' }, t('pg_private')));
+            container.appendChild(card);
+            const urls = [];
+            const fill = async () => {
+                urls.splice(0).forEach(u => URL.revokeObjectURL(u));
+                let photos = [];
+                try { photos = await ProgressPhotos.all(); } catch { strip.innerHTML = ''; strip.appendChild(h('p', { className: 'bm-note' }, t('pg_unavailable'))); return; }
+                strip.innerHTML = '';
+                if (!photos.length) { strip.appendChild(h('p', { className: 'bm-note', style: { gridColumn: '1 / -1' } }, t('pg_empty'))); return; }
+                photos.slice().reverse().slice(0, 9).forEach(p => {
+                    const u = URL.createObjectURL(p.blob); urls.push(u);
+                    const th = h('button', { className: 'pg-th', onclick: () => openPhotoCompare(photos, p.id, fill) });
+                    th.appendChild(h('img', { src: u, alt: p.date }));
+                    th.appendChild(h('span', {}, p.date.slice(5).split('-').reverse().join('/')));
+                    strip.appendChild(th);
+                });
+                if (photos.length >= 2) {
+                    const cmp = h('button', { className: 'btn btn-secondary btn-full', style: { gridColumn: '1 / -1', marginTop: '4px' }, onclick: () => openPhotoCompare(photos, photos[photos.length - 1].id, fill) }, t('pg_compare'));
+                    strip.appendChild(cmp);
+                }
+            };
+            addBtn.onclick = () => {
+                const inp = h('input', { type: 'file', accept: 'image/*', style: { display: 'none' } });
+                document.body.appendChild(inp);
+                inp.onchange = async () => {
+                    const f = inp.files && inp.files[0]; inp.remove();
+                    if (!f) return;
+                    try {
+                        const dataUrl = await photoToJpeg(f, 1080);
+                        const blob = await (await fetch(dataUrl)).blob();
+                        await ProgressPhotos.put({ id: Date.now(), date: todayStr(), blob });
+                        flash(t('pg_saved')); fill();
+                    } catch { flash(t('pg_unavailable'), 'var(--orange)'); }
+                };
+                inp.click();
+            };
+            fill();
+        }
+        // Antes y después lado a lado: a la izquierda la más vieja, a la derecha la elegida.
+        function openPhotoCompare(photos, selId, onChange) {
+            let leftId = photos[0].id, rightId = selId === leftId && photos.length > 1 ? photos[photos.length - 1].id : selId;
+            const urls = {}; photos.forEach(p => { urls[p.id] = URL.createObjectURL(p.blob); });
+            const ov = h('div', { className: 'fv-modal' });
+            const card = h('div', { className: 'fv-card pg-card' });
+            const close = () => { Object.values(urls).forEach(u => URL.revokeObjectURL(u)); ov.remove(); };
+            const view = h('div', { className: 'pg-pair' });
+            const pick = (side) => {
+                const row = h('div', { className: 'pg-pick' });
+                photos.forEach(p => row.appendChild(h('button', {
+                    className: 'pg-mini' + ((side === 'L' ? leftId : rightId) === p.id ? ' on' : ''),
+                    onclick: () => { if (side === 'L') leftId = p.id; else rightId = p.id; render(); }
+                }, h('img', { src: urls[p.id], alt: p.date }))));
+                return row;
+            };
+            const fig = (id, lbl) => {
+                const p = photos.find(x => x.id === id) || photos[0];
+                const f = h('figure', {});
+                f.appendChild(h('img', { src: urls[p.id], alt: p.date }));
+                f.appendChild(h('figcaption', {}, lbl + ' · ' + p.date.split('-').reverse().join('/')));
+                return f;
+            };
+            const body = h('div', {});
+            const render = () => {
+                body.innerHTML = '';
+                view.innerHTML = '';
+                view.appendChild(fig(leftId, t('pg_before'))); view.appendChild(fig(rightId, t('pg_after')));
+                body.appendChild(view);
+                body.appendChild(h('p', { className: 'fv-label' }, t('pg_before'))); body.appendChild(pick('L'));
+                body.appendChild(h('p', { className: 'fv-label' }, t('pg_after'))); body.appendChild(pick('R'));
+            };
+            card.appendChild(h('p', { className: 'fv-title' }, '📸 ' + t('pg_title')));
+            card.appendChild(body);
+            const btns = h('div', { style: { display: 'flex', gap: '8px', marginTop: '12px' } });
+            btns.appendChild(h('button', { className: 'btn btn-danger', style: { flex: 1 }, onclick: async () => {
+                if (!confirm(t('pg_del_confirm'))) return;
+                try { await ProgressPhotos.del(rightId); } catch { }
+                close(); onChange && onChange();
+            } }, t('pg_delete')));
+            btns.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 2 }, onclick: close }, t('pg_close')));
+            card.appendChild(btns);
+            ov.appendChild(card);
+            ov.addEventListener('click', e => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+            render();
+        }
+
         // STATS
         function renderStats() {
             const v = $('view-stats'); v.innerHTML = '';
@@ -8176,28 +8525,10 @@
             });
             v.appendChild(sg);
 
-            // SERIES POR GRUPO
-            const setsByGroup = { Pecho: 0, Espalda: 0, Piernas: 0, Brazos: 0, Core: 0 };
-            periodSessions.forEach(s => {
-                s.exercises.forEach(e => {
-                    const group = getMuscleGroup(e.exercise);
-                    if (setsByGroup[group] !== undefined) setsByGroup[group] += e.sets.length;
-                });
-            });
-
-            const vc = h('div', { className: 'card fade-in', style: { marginBottom: '20px' } });
-            vc.appendChild(h('p', { className: 'label' }, t('stats_series_group')));
-            const vGrid = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' } });
-            const groupColors = { Pecho: 'var(--orange)', Espalda: 'var(--blue)', Piernas: 'var(--purple)', Brazos: 'var(--accent)', Core: 'var(--red)' };
-
-            Object.keys(setsByGroup).forEach(g => {
-                const item = h('div', { style: { background: 'var(--sf2)', padding: '12px', borderRadius: '12px', textAlign: 'center' } });
-                item.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text2)', fontWeight: 800, marginBottom: '4px' } }, g.toUpperCase()));
-                item.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, color: groupColors[g] } }, setsByGroup[g] + ' series'));
-                vGrid.appendChild(item);
-            });
-            vc.appendChild(vGrid);
-            v.appendChild(vc);
+            // Mapa del cuerpo (series por músculo; fuera de la semana, promedio semanal) y constancia
+            const periodDays = state.statsPeriod === 'monthly' ? 30.4 : state.statsPeriod === 'quarterly' ? 91.3 : state.statsPeriod === 'yearly' ? 365 : 7;
+            renderBodyMap(v, periodSessions, periodDays / 7);
+            renderTrainingCalendar(v);
 
             // Progreso por ejercicio, agrupado por GRUPO MUSCULAR sobre TODAS las
             // sesiones. Antes filtraba por la categoría del modo Libre
@@ -8296,6 +8627,9 @@
                     v.appendChild(rc);
                 }
             }
+
+            // Fotos de progreso y medidas (Premium; quedan en el teléfono)
+            renderProgressSection(v);
 
             // HISTORY — acordeón: solo la sesión más reciente abierta por defecto; el
             // resto se despliega al tocar (histSlide). Header: día de la semana +

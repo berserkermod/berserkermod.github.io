@@ -184,7 +184,62 @@
         };
     }
 
+    // ── Músculos que trabaja cada ejercicio (para el mapa del cuerpo) ──────
+    // 13 zonas. Cada serie suma 1 al músculo principal y 0,5 a los secundarios
+    // (la convención de conteo de volumen semanal). Reglas por nombre, en orden:
+    // la primera que coincide gana. Nombres en español (los de la app) e inglés.
+    var MUSCLES = ['chest', 'shoulders', 'biceps', 'forearms', 'abs', 'quads', 'traps', 'lats', 'triceps', 'lowback', 'glutes', 'hamstrings', 'calves'];
+    var MUSCLE_RULES = [
+        [/plancha|crunch|abdominal|ab wheel|rueda|russian|dead bug|dragon|pallof|oblicuo|elevaci[oó]n de (piernas|rodillas)|leg raise|plank|sit-?up/, [['abs', 1]]],
+        [/gemelo|pantorrilla|calf|calves/, [['calves', 1]]],
+        [/curl femoral|femoral|leg curl|nordic/, [['hamstrings', 1]]],
+        [/rumano|romanian|piernas r[ií]gidas|stiff|buenos d[ií]as|good morning/, [['hamstrings', 1], ['glutes', 0.5], ['lowback', 0.5]]],
+        [/peso muerto|deadlift/, [['glutes', 1], ['hamstrings', 1], ['lowback', 0.5], ['quads', 0.5], ['traps', 0.5]]],
+        [/hip thrust|puente de gl[uú]teo|glute bridge|patada de gl[uú]teo|abductor|gl[uú]teo|glute/, [['glutes', 1], ['hamstrings', 0.5]]],
+        [/hiperextensi|lumbar|back extension/, [['lowback', 1], ['glutes', 0.5], ['hamstrings', 0.5]]],
+        [/extensi[oó]n(es)? (de )?(cu[aá]driceps|piernas)|leg extension|sill[oó]n de cu[aá]driceps/, [['quads', 1]]],
+        [/sentadilla|squat|prensa|leg press|hack|zancada|estocada|lunge|b[uú]lgara|step.?up|aductor/, [['quads', 1], ['glutes', 0.5]]],
+        [/encogimiento|shrug/, [['traps', 1]]],
+        [/face pull|p[aá]jaro|posterior|reverse fly|rear delt/, [['shoulders', 1], ['traps', 0.5]]],
+        [/laterales|lateral raise|elevaci[oó]n lateral|elevaciones frontales|frontal/, [['shoulders', 1]]],
+        [/press militar|press de hombro|press hombro|arnold|overhead press|shoulder press|military/, [['shoulders', 1], ['triceps', 0.5]]],
+        [/franc[eé]s|skull|pushdown|tr[ií]ceps|triceps|patada de tr|extensi[oó]n de codo|extensi[oó]n overhead|overhead extension|press cerrado|close.?grip/, [['triceps', 1]]],
+        [/fondos|dips?\b/, [['triceps', 1], ['chest', 0.5], ['shoulders', 0.5]]],
+        [/antebrazo|mu[nñ]eca|wrist|farmer|forearm/, [['forearms', 1]]],
+        [/martillo|hammer/, [['biceps', 1], ['forearms', 0.5]]],
+        [/curl|b[ií]ceps|biceps/, [['biceps', 1]]],
+        [/dominada|pull.?up|chin.?up|jal[oó]n|pulldown|pullover/, [['lats', 1], ['biceps', 0.5]]],
+        [/remo|row/, [['lats', 1], ['traps', 0.5], ['biceps', 0.5]]],
+        [/apertura|cruce|pec deck|fly|crossover/, [['chest', 1]]],
+        [/press inclinado|incline/, [['chest', 1], ['shoulders', 0.5], ['triceps', 0.5]]],
+        [/press banca|press plano|press de banca|bench|pecho|chest|flexion|push.?up|press declinado/, [['chest', 1], ['triceps', 0.5], ['shoulders', 0.5]]]
+    ];
+    function muscleTargets(name) {
+        var n = String(name || '').toLowerCase();
+        for (var i = 0; i < MUSCLE_RULES.length; i++) if (MUSCLE_RULES[i][0].test(n)) return MUSCLE_RULES[i][1];
+        return [];
+    }
+    // Series por músculo de una lista de sesiones [{exercises:[{exercise, sets:[…]}]}].
+    // Ejercicios que no se reconocen van a `unknown` (para no inventar músculos).
+    function muscleSets(sessions) {
+        var out = { unknown: 0 };
+        MUSCLES.forEach(function (m) { out[m] = 0; });
+        (sessions || []).forEach(function (s) {
+            (s && s.exercises || []).forEach(function (e) {
+                var n = (e && e.sets || []).length;
+                if (!n) return;
+                var t = muscleTargets(e.exercise);
+                if (!t.length) { out.unknown += n; return; }
+                t.forEach(function (mw) { out[mw[0]] += n * mw[1]; });
+            });
+        });
+        return out;
+    }
+
     return {
+        MUSCLES: MUSCLES,
+        muscleTargets: muscleTargets,
+        muscleSets: muscleSets,
         maintenanceOf: maintenanceOf,
         weightTrend: weightTrend,
         adaptiveTDEE: adaptiveTDEE,

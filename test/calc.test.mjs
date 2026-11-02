@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -121,6 +121,35 @@ console.log('weightTrend / adaptiveTDEE / maintenanceOf (peso y gasto real)');
     ok('maintenanceOf con ajuste aceptado', maintenanceOf({ ...u, tdeeAdaptive: 3000 }) === 3000);
     ok('calcMacros usa el gasto ajustado (+400 por ganar músculo)', calcMacros({ ...u, tdeeAdaptive: 3000 }).targetCals === 3400);
     ok('el balance del día compara contra el gasto ajustado', calcDailyBalance({ ...u, tdeeAdaptive: 3000 }, 3000, 0).status === 'maintenance');
+}
+
+console.log('muscleTargets / muscleSets (mapa del cuerpo)');
+{
+    const main = (n) => (muscleTargets(n)[0] || [])[0];
+    const cases = {
+        'Press Banca Plano': 'chest', 'Press Inclinado con mancuernas': 'chest', 'Aperturas Pec Deck': 'chest', 'Flexiones': 'chest',
+        'Press Militar': 'shoulders', 'Elevaciones laterales': 'shoulders', 'Face Pull': 'shoulders',
+        'Jalón al pecho': 'lats', 'Dominadas': 'lats', 'Remo con barra': 'lats',
+        'Curl con barra': 'biceps', 'Curl martillo': 'biceps', 'Curl de muñeca': 'forearms',
+        'Press francés': 'triceps', 'Fondos en paralelas': 'triceps', 'Patada de tríceps': 'triceps',
+        'Sentadilla': 'quads', 'Sentadilla Búlgara': 'quads', 'Prensa': 'quads', 'Extensión de cuádriceps': 'quads',
+        'Peso muerto rumano': 'hamstrings', 'Curl femoral': 'hamstrings', 'Peso muerto': 'glutes', 'Hip Thrust': 'glutes',
+        'Elevación de Piernas Colgado': 'abs', 'Plancha': 'abs', 'Russian Twist': 'abs',
+        'Gemelos de pie': 'calves', 'Encogimientos': 'traps', 'Hiperextensiones': 'lowback',
+        'Extensión Cuádriceps': 'quads', 'Extensión Overhead': 'triceps'
+    };
+    const wrong = Object.entries(cases).filter(([n, m]) => main(n) !== m).map(([n, m]) => n + ' → ' + main(n) + ' (esperaba ' + m + ')');
+    ok('cada ejercicio cae en su músculo principal (' + Object.keys(cases).length + ' casos)', wrong.length === 0, wrong);
+    ok('"Jalón al pecho" es espalda aunque diga pecho', main('Jalón al pecho') === 'lats');
+    ok('"Elevación de piernas" es abdomen, no piernas', main('Elevación de Piernas Tumbado') === 'abs');
+    ok('ejercicio desconocido → sin músculos', muscleTargets('Bicicleta fija').length === 0);
+    const ms = muscleSets([{ exercises: [
+        { exercise: 'Press Banca Plano', sets: [{}, {}, {}, {}] },
+        { exercise: 'Press Militar', sets: [{}, {}, {}] },
+        { exercise: 'Bicicleta fija', sets: [{}] }
+    ] }]);
+    ok('principal 1 serie, secundarios 0,5 (pecho 4, hombros 3+2, tríceps 2+1,5)', ms.chest === 4 && ms.shoulders === 5 && ms.triceps === 3.5 && ms.unknown === 1, ms);
+    ok('las 13 zonas siempre presentes', calc.MUSCLES.length === 13 && calc.MUSCLES.every(m => typeof ms[m] === 'number'));
 }
 
 console.log('platesPerSide (discos por lado)');
