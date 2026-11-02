@@ -29,7 +29,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-    <title>BERSERKERMOD 2.0</title>
+    <title>BERSERKERMOD</title>
     <style>
         /* Inter self-hosted (variable font, wght 400-900). No CDN: works fully
            offline and no user IP ever reaches Google Fonts. Relative paths so
@@ -1065,8 +1065,9 @@
         .rest-timer.over { border-top-color: var(--orange) }
         .rest-timer-tools { display: flex; gap: 8px; align-items: center }
         .rest-timer-sound {
-            font-size: 16px; background: var(--sf2); border: 1px solid var(--border);
-            border-radius: 20px; width: 44px; height: 36px
+            display: inline-flex; align-items: center; justify-content: center; color: var(--text2);
+            background: var(--sf2); border: 1px solid var(--border);
+            border-radius: 20px; width: 44px; height: 36px; padding: 9px
         }
         .rest-timer-main { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100% }
         .rest-timer-adj {
@@ -1302,9 +1303,25 @@
             }
         }
 
-        .fade-in {
+        /* La entrada suave solo al cambiar de pestaña: si se animaba en cada redibujo,
+           al tildar una serie o agregar una comida la pantalla parpadeaba en blanco. */
+        .view.anim .fade-in {
             animation: fadeIn .3s ease
         }
+
+        /* Íconos de trazo (ver ICONS) */
+        .ico { display: inline-flex; width: 1.15em; height: 1.15em; vertical-align: -0.22em; flex-shrink: 0; }
+        .ico svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .label .ico { width: 1.45em; height: 1.45em; vertical-align: -0.38em; margin-right: 5px; }
+        .lock-badge .ico { width: 1.15em; height: 1.15em; }
+        .ico-orange { color: var(--orange); } .ico-accent { color: var(--accent); } .ico-blue { color: var(--blue); }
+        .rt-lib-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 15px; cursor: pointer; flex-shrink: 0; }
+        .rt-rest-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text2); background: var(--sf2); border: 1px solid var(--border); padding: 4px 9px; border-radius: 10px; }
+        .rt-note { display: flex; gap: 7px; align-items: flex-start; font-size: 13px; color: var(--text2); margin: 6px 0 10px; line-height: 1.45; }
+        .rt-note .ico { color: var(--text3); margin-top: 2px; }
+        .rt-sug { display: flex; gap: 8px; align-items: flex-start; width: 100%; text-align: left; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; cursor: pointer; background: var(--sf2); color: var(--text); border: 1px dashed var(--border); }
+        .rt-sug.up { background: rgba(0,212,170,.08); color: var(--accent); border-color: rgba(0,212,170,.35); }
+        .rt-sug .ico { margin-top: 1px; }
 
         .pulse {
             animation: pulse 1.5s infinite
@@ -1628,7 +1645,7 @@
         .rt-day-banner-text { flex: 1; }
         .rt-day-banner-name { font-size: 14px; font-weight: 800; color: var(--day-color, var(--text)); }
         .rt-day-banner-focus { font-size: 11px; color: var(--text3); margin-top: 2px; }
-        .rt-last-weight { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+        .rt-last-weight { font-size: 12px; color: var(--text3); font-weight: 600; margin-top: 4px; }
         /* Mapa del cuerpo */
         .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
         .bm-base { fill: #232326; }
@@ -1687,11 +1704,12 @@
         /* Superseries */
         .rt-ex-card.rt-ss { border-left: 3px solid var(--purple); }
         .rt-ss-badge { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--purple); background: rgba(162,155,254,.12); border-radius: 8px; padding: 3px 8px; margin-bottom: 8px; }
-        .rt-ss-link { display: block; margin: -6px auto 10px; font-size: 12px; font-weight: 700; color: var(--text3); background: none; border: 1px dashed var(--border); border-radius: 14px; padding: 8px 14px; min-height: 36px; }
+        .rt-ss-link { display: flex; align-items: center; gap: 6px; margin: -6px auto 10px; font-size: 12px; font-weight: 700; color: var(--text3); background: none; border: 1px dashed var(--border); border-radius: 14px; padding: 8px 14px; min-height: 36px; }
         .rt-ss-link.on { color: var(--purple); border-color: rgba(162,155,254,.5); border-style: solid; background: rgba(162,155,254,.08); }
         /* Calentamiento y discos */
         .rt-warm { margin-bottom: 10px; }
-        .rt-warm-toggle { width: 100%; text-align: left; font-size: 13px; font-weight: 700; color: var(--orange); background: rgba(253,203,110,.07); border: 1px solid rgba(253,203,110,.25); border-radius: 10px; padding: 10px 12px; }
+        .rt-warm-toggle { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font-size: 13px; font-weight: 700; color: var(--text); background: var(--sf2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+        .rt-warm-toggle .rt-warm-arrow { margin-left: auto; color: var(--text3); font-size: 11px; }
         .rt-warm-body { display: none; padding: 8px 4px 2px; }
         .rt-warm.open .rt-warm-body { display: block; }
         .rt-warm-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 8px; font-size: 14px; border-bottom: 1px solid var(--border); }
@@ -1777,8 +1795,9 @@
         /* Atajos con cámara del modal de alimentos */
         .food-quick { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 6px; margin-bottom: 12px; }
         .food-quick button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 6px; background: var(--sf2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 13px; font-weight: 700; }
-        .food-quick .fq-ico { font-size: 16px; }
-        .food-quick .fq-lock { font-size: 10px; display: none; }
+        .food-quick .fq-ico { display: inline-flex; width: 18px; height: 18px; color: var(--accent); }
+        .food-quick .fq-ico svg, .food-quick .fq-lock svg, .rest-timer-sound svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .food-quick .fq-lock { width: 12px; height: 12px; color: var(--orange); display: none; }
         .food-hint { display: none; background: rgba(253,203,110,.08); border: 1px solid rgba(253,203,110,.3); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
         .food-hint.show { display: block; }
         .food-hint p { font-size: 13px; color: var(--orange); font-weight: 700; margin-bottom: 8px; }
@@ -1915,7 +1934,7 @@
         <div class="rest-timer-row">
             <span class="rest-timer-label" id="rest-timer-label">Descanso</span>
             <div class="rest-timer-tools">
-                <button class="rest-timer-sound" id="rest-timer-sound" onclick="toggleRestSound()" aria-label="Sonido">🔔</button>
+                <button class="rest-timer-sound" id="rest-timer-sound" onclick="toggleRestSound()" aria-label="Sonido"></button>
                 <button class="rest-timer-skip" onclick="stopRestTimer()">SKIP ✕</button>
             </div>
         </div>
@@ -1967,16 +1986,16 @@
                 </div>
                 <!-- Atajos con cámara (Premium): código de barras, tabla nutricional, foto del plato -->
                 <div class="food-quick">
-                    <button id="food-scan-btn" onclick="scanFromFoodModal()"><span class="fq-ico">📷</span><span id="fq-scan-lbl">Código</span><span class="fq-lock" id="food-scan-btn-lock">🔒</span></button>
-                    <button id="food-label-btn" onclick="foodPhoto('label')"><span class="fq-ico">🏷️</span><span id="fq-label-lbl">Tabla</span><span class="fq-lock">🔒</span></button>
-                    <button id="food-meal-btn" onclick="foodPhoto('meal')"><span class="fq-ico">🍽️</span><span id="fq-meal-lbl">Foto del plato</span><span class="fq-lock">🔒</span></button>
+                    <button id="food-scan-btn" onclick="scanFromFoodModal()"><span class="fq-ico" data-ico="scan"></span><span id="fq-scan-lbl">Código</span><span class="fq-lock" id="food-scan-btn-lock" data-ico="lock"></span></button>
+                    <button id="food-label-btn" onclick="foodPhoto('label')"><span class="fq-ico" data-ico="tag"></span><span id="fq-label-lbl">Tabla</span><span class="fq-lock" data-ico="lock"></span></button>
+                    <button id="food-meal-btn" onclick="foodPhoto('meal')"><span class="fq-ico" data-ico="utensils"></span><span id="fq-meal-lbl">Foto del plato</span><span class="fq-lock" data-ico="lock"></span></button>
                 </div>
                 <div class="food-hint" id="food-hint"></div>
                 <div class="food-tabs">
-                    <button class="food-tab active" id="food-tab-healthy" onclick="setFoodTab('healthy')">🌿 Saludables</button>
-                    <button class="food-tab" id="food-tab-search" onclick="setFoodTab('search')">🔎 Buscar</button>
-                    <button class="food-tab" id="food-tab-mine" onclick="setFoodTab('mine')">⭐ Míos</button>
-                    <button class="food-tab" id="food-tab-manual" onclick="setFoodTab('manual')">✏️ Manual</button>
+                    <button class="food-tab active" id="food-tab-healthy" onclick="setFoodTab('healthy')">Saludables</button>
+                    <button class="food-tab" id="food-tab-search" onclick="setFoodTab('search')">Buscar</button>
+                    <button class="food-tab" id="food-tab-mine" onclick="setFoodTab('mine')">Míos</button>
+                    <button class="food-tab" id="food-tab-manual" onclick="setFoodTab('manual')">Manual</button>
                 </div>
             </div>
             <div class="food-tab-content" id="food-tab-content"></div>
@@ -4201,6 +4220,32 @@
             for (const c of ch) { if (c == null || c === false) continue; el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }
             return el;
         }
+        // Íconos de trazo, del mismo estilo que los de la barra de navegación (dibujos
+        // basados en Lucide, licencia ISC). Van en botones y títulos en lugar de emojis,
+        // que cada teléfono dibuja distinto. Los emojis quedan para festejos y comida.
+        const ICONS = {
+            droplet: '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+            scale: '<circle cx="12" cy="5" r="3"/><path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z"/>',
+            chart: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+            book: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+            timer: '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+            bulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+            target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+            flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+            link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+            bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+            bellOff: '<path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
+            scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 7v10"/><path d="M12 7v10"/><path d="M16 7v10"/>',
+            tag: '<path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/>',
+            utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+            lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+            ruler: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
+            camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>'
+        };
+        function icoSvg(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; }
+        function ico(name, cls) { const s = document.createElement('span'); s.className = 'ico' + (cls ? ' ' + cls : ''); s.innerHTML = icoSvg(name); return s; }
+        // Saca el emoji del comienzo de un texto (algunas traducciones lo traen).
+        function noEmoji(str) { return String(str).replace(/^[\s\p{Extended_Pictographic}️‍]+/u, ''); }
         function fmt(n) { return Math.round(n).toLocaleString('es-AR') }
         function flash(msg, color) {
             const f = $('flash'); f.textContent = msg; f.style.borderColor = color || 'var(--accent)'; f.style.color = color || 'var(--accent)';
@@ -5079,7 +5124,7 @@
                     }
                 } else {
                     const cta = h('div', { className: 'lib-custom-cta-locked', onclick: () => showUpgradeModal('custom_video') });
-                    cta.appendChild(h('span', { style: { fontSize: '18px' } }, '🔒'));
+                    cta.appendChild(h('span', { style: { fontSize: '18px', color: 'var(--orange)' } }, ico('lock')));
                     const txt = h('div', { style: { flex: 1, textAlign: 'left' } });
                     txt.appendChild(h('div', { style: { fontSize: '11px', fontWeight: 800, color: 'var(--orange)' } }, t('lib_custom_video_locked_title')));
                     txt.appendChild(h('div', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '2px' } }, t('lib_custom_video_locked_sub')));
@@ -5123,7 +5168,7 @@
                 }
             } else {
                 const cta = h('div', { className: 'lib-custom-cta-locked', onclick: () => showUpgradeModal('custom_gif') });
-                cta.appendChild(h('span', { style: { fontSize: '18px' } }, '🔒'));
+                cta.appendChild(h('span', { style: { fontSize: '18px', color: 'var(--orange)' } }, ico('lock')));
                 const txt = h('div', { style: { flex: 1, textAlign: 'left' } });
                 txt.appendChild(h('div', { style: { fontSize: '11px', fontWeight: 800, color: 'var(--orange)' } }, t('lib_gif_locked_title')));
                 txt.appendChild(h('div', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '2px' } }, t('lib_gif_locked_sub')));
@@ -5414,7 +5459,7 @@
 
                 // Checkmark or lock
                 if (isLocked) {
-                    card.appendChild(h('span', { className: 'lock-badge' }, '🔒'));
+                    card.appendChild(h('span', { className: 'lock-badge' }, ico('lock')));
                 } else {
                     const check = h('div', { style: { width: '24px', height: '24px', borderRadius: '50%', border: isSelected ? 'none' : '1.5px solid var(--border)', background: isSelected ? color : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .25s', fontSize: '12px', fontWeight: 900, color: '#0A0A0B' } }, isSelected ? '✓' : '');
                     card.appendChild(check);
@@ -6035,8 +6080,12 @@
 
         function switchTab(tab) {
             // Otra pestaña abre arriba, no a la altura de scroll de la anterior.
-            if (state.tab !== tab) { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; }
+            const changed = state.tab !== tab;
+            if (changed) { document.body.scrollTop = 0; document.documentElement.scrollTop = 0; }
             state.tab = tab;
+            // Entrada suave solo al llegar a la pestaña (ver .view.anim en el CSS).
+            const vw0 = $('view-' + tab);
+            if (vw0) { vw0.classList.add('anim'); clearTimeout(vw0._animT); vw0._animT = setTimeout(() => vw0.classList.remove('anim'), 450); }
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             const vw = $('view-' + tab); if (vw) vw.classList.add('active');
             renderNav();
@@ -6153,7 +6202,7 @@
                 const fl = h('div', { className: 'card fade-in', style: { border: '1.5px dashed var(--sf3)', opacity: '.7' } });
                 fl.appendChild(h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' } },
                     h('p', { className: 'label', style: { marginBottom: 0 } }, t('food_title')),
-                    h('span', { className: 'lock-badge' }, '🔒 Premium')));
+                    h('span', { className: 'lock-badge' }, ico('lock'), 'Premium')));
                 fl.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '6px' } }, 'Escáner de código de barras + registro nutricional'));
                 fl.addEventListener('click', () => showUpgradeModal('scanner'));
                 v.appendChild(fl);
@@ -6296,7 +6345,8 @@
             };
             const open = !!state.warmOpen[key];
             const panel = h('div', { className: 'rt-warm' + (open ? ' open' : '') });
-            const toggle = h('button', { className: 'rt-warm-toggle' }, t('wu_btn') + (open ? ' ▲' : ' ▼'));
+            const arrow = h('span', { className: 'rt-warm-arrow' }, open ? '▲' : '▼');
+            const toggle = h('button', { className: 'rt-warm-toggle' }, ico('flame', 'ico-orange'), h('span', {}, noEmoji(t('wu_btn'))), arrow);
             const body = h('div', { className: 'rt-warm-body' });
             const row = (label, reps, extra, strong) => {
                 const r = h('div', { className: 'rt-warm-row' + (strong ? ' work' : '') });
@@ -6311,7 +6361,7 @@
             toggle.onclick = () => {
                 state.warmOpen[key] = !state.warmOpen[key];
                 panel.classList.toggle('open', state.warmOpen[key]);
-                toggle.textContent = t('wu_btn') + (state.warmOpen[key] ? ' ▲' : ' ▼');
+                arrow.textContent = state.warmOpen[key] ? '▲' : '▼';
             };
             panel.appendChild(toggle); panel.appendChild(body);
             container.appendChild(panel);
@@ -6354,7 +6404,7 @@
                 }
             }, t('routines_create'));
             createRow.appendChild(createBtn);
-            if (!isPremium()) createRow.appendChild(h('span', { className: 'lock-badge' }, '🔒 Premium'));
+            if (!isPremium()) createRow.appendChild(h('span', { className: 'lock-badge' }, ico('lock'), 'Premium'));
             header.appendChild(createRow);
             v.appendChild(header);
 
@@ -6367,7 +6417,7 @@
                 }
             }, '📄 ' + t('routine_import_pdf'));
             importRow.appendChild(importBtn);
-            if (!isPremium()) importRow.appendChild(h('span', { className: 'lock-badge' }, '🔒 Premium'));
+            if (!isPremium()) importRow.appendChild(h('span', { className: 'lock-badge' }, ico('lock'), 'Premium'));
             v.appendChild(importRow);
 
             // Coach section — solo el producto Coach (Premium no incluye alumnos)
@@ -6536,9 +6586,9 @@
                 const libMatch = EXERCISE_LIBRARY.find(le => le.name.toLowerCase() === ex.name.toLowerCase() || ex.name.toLowerCase().includes(le.name.toLowerCase().split(' ')[0].toLowerCase()));
                 if (libMatch) {
                     nameWrap.appendChild(h('button', {
-                        style: { background: 'rgba(116,185,255,.1)', border: '1px solid rgba(116,185,255,.25)', color: 'var(--blue)', fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '10px', cursor: 'pointer' },
+                        className: 'rt-lib-btn', 'aria-label': t('lib_title') || 'Biblioteca',
                         onclick: (e) => { e.stopPropagation(); openLibrary(libMatch.id); }
-                    }, '📚'));
+                    }, ico('book')));
                 }
                 headRow.appendChild(nameWrap);
                 const badges = h('div', { style: { display: 'flex', gap: '4px', alignItems: 'center' } });
@@ -6548,7 +6598,7 @@
                 badges.appendChild(h('span', { className: 'session-badge', style: { background: 'var(--sf2)', border: '1px solid var(--border)', color: 'var(--text3)' } }, badgeTxt));
                 if (ex.rest_s) {
                     const restStr = ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's';
-                    badges.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--accent)', background: 'rgba(0,212,170,.08)', border: '1px solid rgba(0,212,170,.2)', padding: '4px 9px', borderRadius: '10px' } }, '⏱ ' + restStr));
+                    badges.appendChild(h('span', { className: 'rt-rest-badge' }, ico('timer'), restStr));
                 }
                 headRow.appendChild(badges);
                 ec.appendChild(headRow);
@@ -6561,7 +6611,7 @@
 
                 // Coach notes (from plan generator)
                 if (ex.notes) {
-                    ec.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--blue)', fontStyle: 'italic', marginTop: '4px', marginBottom: '8px', lineHeight: 1.45 } }, '💡 ' + ex.notes));
+                    ec.appendChild(h('p', { className: 'rt-note' }, ico('bulb'), h('span', {}, ex.notes)));
                 }
 
                 const rec = checkProgression(ex.name);
@@ -6572,8 +6622,8 @@
                         .replace('{currentKg}', rec.currentKg)
                         .replace('{pct}', rec.pct)
                         .replace('{days}', rec.diffDays);
-                    const recDiv = h('div', { style: { background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent)', borderLeft: '3px solid var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '13px', fontWeight: '700', marginBottom: '12px', lineHeight: '1.4' } });
-                    recDiv.textContent = recMsg;
+                    const recDiv = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent)', borderLeft: '3px solid var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '13px', fontWeight: '700', marginBottom: '12px', lineHeight: '1.4' } },
+                        ico('target'), h('span', {}, noEmoji(recMsg)));
                     ec.appendChild(recDiv);
                 }
 
@@ -6589,14 +6639,14 @@
                         : t('rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
                     ).replaceAll('{unit}', state.unit);
                     const sugBtn = h('button', {
-                        style: { display: 'block', width: '100%', textAlign: 'left', background: sug.up ? 'rgba(0,212,170,.08)' : 'rgba(116,185,255,.08)', color: sug.up ? 'var(--accent)' : 'var(--blue)', border: '1px dashed ' + (sug.up ? 'rgba(0,212,170,.35)' : 'rgba(116,185,255,.35)'), borderRadius: '8px', padding: '10px 12px', fontSize: '13px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4, cursor: 'pointer' },
+                        className: 'rt-sug' + (sug.up ? ' up' : ''),
                         onclick: () => {
                             setsArr.forEach(st => { if (!st.kg) st.kg = sug.kg; });
                             saveRoutineDraft();
                             renderRoutines();
                             flash('✅ ' + sug.kg + state.unit + ' → ' + t('rt_suggest_loaded'));
                         }
-                    }, sugMsg + ' · ' + t('rt_suggest_tap'));
+                    }, ico('target'), h('span', {}, noEmoji(sugMsg) + ' · ' + t('rt_suggest_tap')));
                     ec.appendChild(sugBtn);
                 }
 
@@ -6676,7 +6726,7 @@
                     v.appendChild(h('button', {
                         className: 'rt-ss-link' + (linkedNext ? ' on' : ''),
                         onclick: () => { toggleSuperset(activePlanObj.name, dayIdx, ex.name); renderRoutines(); }
-                    }, linkedNext ? t('ss_linked') : t('ss_link')));
+                    }, ico('link'), noEmoji(linkedNext ? t('ss_linked') : t('ss_link'))));
                 }
             });
 
@@ -7880,7 +7930,7 @@
         function toggleRestSound() {
             const on = !restSoundOn();
             try { localStorage.setItem('bm-rest-sound', on ? '1' : '0'); } catch { }
-            const b = $('rest-timer-sound'); if (b) b.textContent = on ? '🔔' : '🔕';
+            const b = $('rest-timer-sound'); if (b) b.innerHTML = icoSvg(on ? 'bell' : 'bellOff');
             if (on) restAudio(); // el toque habilita el audio
         }
         // El navegador solo deja sonar audio creado/reanudado desde un toque: se
@@ -7933,7 +7983,7 @@
             state.restEnd = Date.now() + state.restTotal * 1000;
             state.restAlerted = false;
             if (restSoundOn()) restAudio();
-            const b = $('rest-timer-sound'); if (b) b.textContent = restSoundOn() ? '🔔' : '🔕';
+            const b = $('rest-timer-sound'); if (b) b.innerHTML = icoSvg(restSoundOn() ? 'bell' : 'bellOff');
             $('rest-timer').classList.add('show');
             document.body.classList.add('rest-on');
             renderRestTimer(); // sin flash del valor anterior
@@ -8323,7 +8373,7 @@
             if (!isPremium()) {
                 const tz = h('div', { className: 'card fade-in', style: { border: '1.5px dashed var(--sf3)', cursor: 'pointer' }, onclick: () => showUpgradeModal('progress') });
                 tz.appendChild(h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                    h('p', { className: 'label', style: { marginBottom: 0 } }, '📸 ' + t('pg_title')), h('span', { className: 'lock-badge' }, '🔒 Premium')));
+                    h('p', { className: 'label', style: { marginBottom: 0 } }, ico('camera'), t('pg_title')), h('span', { className: 'lock-badge' }, ico('lock'), 'Premium')));
                 tz.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text3)', marginTop: '8px', lineHeight: 1.45 } }, t('pg_teaser')));
                 container.appendChild(tz);
                 return;
@@ -8336,7 +8386,7 @@
             // Por medida: el primer y el último valor anotados (no todas se anotan cada vez).
             const withK = (k) => list.filter(x => x[k] > 0);
             const card = h('div', { className: 'card fade-in' });
-            card.appendChild(h('p', { className: 'label' }, '📏 ' + t('ms_title')));
+            card.appendChild(h('p', { className: 'label' }, ico('ruler'), t('ms_title')));
             const inputs = {};
             const grid = h('div', { className: 'ms-grid' });
             MEASURES.forEach(k => {
@@ -8368,7 +8418,7 @@
         function renderPhotosCard(container) {
             const card = h('div', { className: 'card fade-in' });
             const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' } });
-            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '📸 ' + t('pg_title')));
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, ico('camera'), t('pg_title')));
             const addBtn = h('button', { className: 'btn btn-primary btn-sm' }, t('pg_add'));
             head.appendChild(addBtn);
             card.appendChild(head);
@@ -8444,7 +8494,7 @@
                 body.appendChild(h('p', { className: 'fv-label' }, t('pg_before'))); body.appendChild(pick('L'));
                 body.appendChild(h('p', { className: 'fv-label' }, t('pg_after'))); body.appendChild(pick('R'));
             };
-            card.appendChild(h('p', { className: 'fv-title' }, '📸 ' + t('pg_title')));
+            card.appendChild(h('p', { className: 'fv-title' }, ico('camera', 'ico-accent'), ' ' + t('pg_title')));
             card.appendChild(body);
             const btns = h('div', { style: { display: 'flex', gap: '8px', marginTop: '12px' } });
             btns.appendChild(h('button', { className: 'btn btn-danger', style: { flex: 1 }, onclick: async () => {
@@ -8490,7 +8540,7 @@
                         if (locked) { showUpgradeModal('stats'); return; }
                         state.statsPeriod = key; renderStats();
                     }
-                }, locked ? '🔒 ' + label : label);
+                }, ...(locked ? [ico('lock'), ' ' + label] : [label]));
                 pillsWrap.appendChild(pill);
             });
             v.appendChild(pillsWrap);
@@ -8944,10 +8994,10 @@
                     const cta = h('div', { className: 'nutri-locked-cta', onclick: () => showUpgradeModal('meals') });
                     cta.appendChild(h('div', { style: { fontSize: '24px' } }, '🍽️'));
                     const txt = h('div', { className: 'nutri-locked-cta-text' });
-                    txt.appendChild(h('div', { className: 'nutri-locked-cta-title' }, t('nutri_meals_locked_title')));
+                    txt.appendChild(h('div', { className: 'nutri-locked-cta-title' }, noEmoji(t('nutri_meals_locked_title'))));
                     txt.appendChild(h('div', { className: 'nutri-locked-cta-sub' }, t('nutri_meals_locked_sub')));
                     cta.appendChild(txt);
-                    cta.appendChild(h('div', { className: 'lock-badge' }, '🔒'));
+                    cta.appendChild(h('div', { className: 'lock-badge' }, ico('lock')));
                     nc.appendChild(cta);
                 }
 
@@ -8998,7 +9048,7 @@
                         if (locked) { showUpgradeModal('pt'); return; }
                         state.lang = k; saveLang(); location.reload();
                     }
-                }, locked ? '🔒 ' + label : label));
+                }, ...(locked ? [ico('lock'), ' ' + label] : [label])));
             });
             lc.appendChild(langGrid);
             v.appendChild(lc);
@@ -12297,7 +12347,7 @@
             const card = h('div', { className: 'card fade-in' });
 
             const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' } });
-            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '💧 ' + t('water_title')));
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, ico('droplet'), t('water_title')));
             head.appendChild(h('span', { style: { fontSize: '13px', fontWeight: 800, color: 'var(--blue)' } }, total + ' / ' + goal + ' ml'));
             card.appendChild(head);
 
@@ -12307,7 +12357,7 @@
 
             const row = h('div', { style: { display: 'flex', gap: '8px' } });
             [{ icon: '🥤', label: t('water_glass'), ml: 250 }, { icon: '🍶', label: t('water_bottle'), ml: 500 }].forEach(b => {
-                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1, fontSize: '12px' }, onclick: () => addWater(b.ml) }, b.icon + ' ' + b.label + ' +' + b.ml));
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1, fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }, onclick: () => addWater(b.ml) }, ico('droplet', 'ico-blue'), b.label + ' +' + b.ml));
             });
             card.appendChild(row);
 
@@ -12478,7 +12528,8 @@
             $('food-add-modal-v2').classList.add('show');
             // Atajos con cámara: textos en el idioma del usuario y candado si no es Premium
             $('fq-scan-lbl').textContent = t('fv_code'); $('fq-label-lbl').textContent = t('fv_label'); $('fq-meal-lbl').textContent = t('fv_meal');
-            document.querySelectorAll('.food-quick .fq-lock').forEach(l => { l.style.display = isPremium() ? 'none' : 'inline'; });
+            document.querySelectorAll('.food-quick [data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = icoSvg(el.dataset.ico); });
+            document.querySelectorAll('.food-quick .fq-lock').forEach(l => { l.style.display = isPremium() ? 'none' : 'inline-flex'; });
             $('food-hint').classList.remove('show');
             setFoodTab('healthy');
         }
@@ -13045,7 +13096,7 @@
             const card = h('div', { className: 'fv-card' });
             const close = () => ov.remove();
             const k = (r) => (r.g0 ? r.grams / r.g0 : 0);
-            card.appendChild(h('p', { className: 'fv-title' }, '🍽️ ' + t('fv_meal_title')));
+            card.appendChild(h('p', { className: 'fv-title' }, ico('utensils', 'ico-accent'), ' ' + t('fv_meal_title')));
             card.appendChild(h('p', { className: 'fv-note' }, t('fv_meal_note')));
             const total = h('p', { className: 'fv-total' });
             const renderTotal = () => {
@@ -13113,7 +13164,7 @@
             const last = tr[tr.length - 1], today = todayStr();
             const card = h('div', { className: 'card fade-in' });
             const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' } });
-            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '⚖️ ' + t('bw_title')));
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, ico('scale'), t('bw_title')));
             if (last) head.appendChild(h('span', { style: { fontSize: '18px', fontWeight: 900, color: 'var(--text)' } }, last.trend.toFixed(1) + ' kg'));
             card.appendChild(head);
             if (last) {
@@ -13175,7 +13226,7 @@
             if (!a || Math.abs(a.tdee - cur) < 50) return;
             const oldT = calcMacros(u).targetCals, newT = calcMacros(Object.assign({}, u, { tdeeAdaptive: a.tdee })).targetCals;
             const card = h('div', { className: 'card fade-in', style: { borderColor: 'rgba(0,212,170,.35)' } });
-            card.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '8px' } }, '📊 ' + t('ci_title')));
+            card.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' } }, ico('chart', 'ico-accent'), t('ci_title')));
             card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '6px' } }, t('ci_text').replace('{tdee}', a.tdee).replace('{cur}', cur)));
             card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '8px' } }, t('ci_detail').replace('{avg}', a.avgIntake).replace('{chg}', (a.change > 0 ? '+' : '') + a.change).replace('{days}', a.days)));
             card.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--accent)', marginBottom: '12px' } }, t('ci_target').replace('{old}', oldT).replace('{new}', newT)));
