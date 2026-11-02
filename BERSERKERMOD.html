@@ -9,6 +9,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="BERSERKERMOD" />
     <meta name="theme-color" content="#0A0A0B" />
+    <script>
+        // Tema antes de pintar (sin destello oscuro→claro): 'dark' | 'light' | 'auto'.
+        (function () {
+            try {
+                var pref = localStorage.getItem('bm-theme') || 'dark';
+                var th = pref === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : pref;
+                document.documentElement.setAttribute('data-theme', th);
+                var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'light' ? '#F3F4F6' : '#0A0A0B';
+            } catch (e) { }
+        })();
+    </script>
     <!-- CSP: defense-in-depth against XSS/exfiltration. script-src keeps
          'unsafe-inline' while the app is a single inline script (hash-based
          planned when JS moves to module files); unpkg is allowed only for the
@@ -78,6 +89,42 @@
             --text3: #636366;
             --border: #2C2C2E;
             --radius: 14px;
+            /* Superficies que antes eran colores fijos */
+            --rest-bg: rgba(10, 10, 11, .97);
+            --bm-base: #232326;
+            --bm-l0: #3A3A3F;
+            --cal-empty: #26262A;
+            --nav-bg: rgba(14, 14, 15, .92);
+            --glass-bg: rgba(20, 20, 22, .7);
+            --glass-bg-strong: rgba(20, 20, 22, .92);
+        }
+
+        /* Tema claro (Perfil → Tema). El verde y los demás acentos se oscurecen para
+           que el texto de color se lea sobre blanco. */
+        :root[data-theme="light"] {
+            --bg: #F3F4F6;
+            --sf1: #FFFFFF;
+            --sf2: #F0F1F4;
+            --sf3: #E2E4E9;
+            --accent: #00A383;
+            --accent2: #008F73;
+            --accent-glow: #00A38333;
+            --red: #D9443F;
+            --orange: #B9740B;
+            --blue: #2A74D8;
+            --purple: #6352D9;
+            --text: #15161A;
+            --text2: #4A4D55;
+            --text3: #7B7F88;
+            --border: #E1E3E8;
+            --rest-bg: #FFFFFF;
+            --bm-base: #E3E5EA;
+            --bm-l0: #C6CAD2;
+            --cal-empty: #E4E6EA;
+            --nav-bg: rgba(255, 255, 255, .92);
+            --glass-bg: rgba(255, 255, 255, .75);
+            --glass-bg-strong: rgba(255, 255, 255, .94);
+            color-scheme: light;
         }
 
         html,
@@ -282,7 +329,7 @@
             background: var(--accent);
             color: #0A0A0B;
             font-size: 15px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: .03em;
             transition: all .15s;
             width: 100%
@@ -393,10 +440,10 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(14, 14, 15, .92);
+            background: var(--nav-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, .06);
+            border-top: 1px solid var(--border);
             display: flex;
             padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
             z-index: 200
@@ -463,7 +510,7 @@
         }
 
         .card-glass {
-            background: rgba(20, 20, 22, .7);
+            background: var(--glass-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px)
         }
@@ -485,7 +532,7 @@
 
         .section-title {
             font-size: 16px;
-            font-weight: 800;
+            font-weight: 700;
             margin-bottom: 12px
         }
 
@@ -998,7 +1045,7 @@
             bottom: calc(72px + env(safe-area-inset-bottom));
             left: 0;
             right: 0;
-            background: rgba(10, 10, 11, .97);
+            background: var(--rest-bg);
             border-top: 2px solid var(--accent);
             border-radius: 24px 24px 0 0;
             padding: 18px 24px 20px;
@@ -1037,7 +1084,7 @@
 
         .rest-timer-skip {
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: .06em;
             color: var(--red);
             background: rgba(255,107,107,.1);
@@ -1094,7 +1141,7 @@
             top: calc(12px + env(safe-area-inset-top));
             right: 12px;
             min-width: 132px;
-            background: rgba(20, 20, 22, .92);
+            background: var(--glass-bg-strong);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
             border: 1.5px solid var(--zone-0);
@@ -1210,7 +1257,7 @@
             z-index: 999;
             font-size: 18px;
             color: var(--accent);
-            font-weight: 900;
+            font-weight: 800;
             pointer-events: none;
             opacity: 0;
             transition: all .3s
@@ -1314,6 +1361,7 @@
         .ico svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .label .ico { width: 1.45em; height: 1.45em; vertical-align: -0.38em; margin-right: 5px; }
         .lock-badge .ico { width: 1.15em; height: 1.15em; }
+        .btn .ico { width: 1.2em; height: 1.2em; }
         .ico-orange { color: var(--orange); } .ico-accent { color: var(--accent); } .ico-blue { color: var(--blue); }
         .rt-lib-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 15px; cursor: pointer; flex-shrink: 0; }
         .rt-rest-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text2); background: var(--sf2); border: 1px solid var(--border); padding: 4px 9px; border-radius: 10px; }
@@ -1399,7 +1447,7 @@
         .upgrade-feature-text { flex: 1; }
         .upgrade-feature-text b { display: block; font-weight: 700; color: var(--text); font-size: 13px; }
         .upgrade-feature-text span { font-size: 11px; color: var(--text2); }
-        .upgrade-cta { margin-top: 20px; width: 100%; padding: 16px; border-radius: 16px; background: linear-gradient(135deg,var(--orange),#e17055); color: #0A0A0B; font-size: 15px; font-weight: 900; letter-spacing: .02em; border: none; cursor: pointer; box-shadow: 0 4px 24px #FDCB6E44; }
+        .upgrade-cta { margin-top: 20px; width: 100%; padding: 16px; border-radius: 16px; background: linear-gradient(135deg,var(--orange),#e17055); color: #0A0A0B; font-size: 15px; font-weight: 800; letter-spacing: .02em; border: none; cursor: pointer; box-shadow: 0 4px 24px #FDCB6E44; }
         .upgrade-cancel { display: block; margin: 12px auto 0; font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 4px 12px; }
 
         /* LOCKED FEATURE INDICATOR */
@@ -1450,7 +1498,7 @@
         /* PROG BANNER */
         .prog-banner { background: linear-gradient(135deg,rgba(0,212,170,.1),rgba(0,212,170,.04)); border: 1.5px solid rgba(0,212,170,.25); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .prog-banner-text { flex: 1; font-size: 12px; line-height: 1.5; }
-        .prog-banner-ex { font-size: 13px; font-weight: 800; color: var(--accent); margin-bottom: 2px; }
+        .prog-banner-ex { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
         .prog-banner-dismiss { font-size: 18px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 6px; }
 
         /* ORACLE MODAL */
@@ -1465,7 +1513,7 @@
         .oracle-title { font-size: 18px; font-weight: 900; letter-spacing: .04em; }
         .oracle-body { flex: 1; overflow-y: auto; width: 100%; max-width: 480px; background: var(--sf1); border-radius: 20px; border: 1.5px solid var(--border); padding: 20px; }
         .oracle-section { margin-bottom: 18px; }
-        .oracle-section-title { font-size: 11px; font-weight: 800; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+        .oracle-section-title { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
         .oracle-insight { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
         .oracle-insight:last-child { border-bottom: none; padding-bottom: 0; }
         .oracle-insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
@@ -1481,7 +1529,7 @@
         .student-info { flex: 1; min-width: 0; }
         .student-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
         .student-meta { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 6px; }
-        .student-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; min-width: 22px; text-align: center; }
+        .student-badge { background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; min-width: 22px; text-align: center; }
         .student-badge.idle { background: var(--sf3); color: var(--text3); }
 
         /* SHARE MODAL */
@@ -1516,14 +1564,14 @@
         .alumno-banner { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
         .alumno-banner-icon { font-size: 24px; flex-shrink: 0; }
         .alumno-banner-text { flex: 1; }
-        .alumno-banner-title { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+        .alumno-banner-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
         .alumno-banner-sub { font-size: 11px; opacity: .9; }
         .alumno-name-input { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; width: 110px; }
         .alumno-name-input::placeholder { color: rgba(255,255,255,.6); }
 
         .alumno-routine-card { background: var(--sf1); border-radius: 16px; padding: 20px; margin: 16px; border: 1.5px solid var(--border); }
         .alumno-day-block { background: var(--sf2); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
-        .alumno-day-title { font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: .04em; margin-bottom: 10px; text-transform: uppercase; }
+        .alumno-day-title { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: .04em; margin-bottom: 10px; text-transform: uppercase; }
         .alumno-ex-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
         .alumno-ex-row:last-child { border-bottom: none; }
         .alumno-ex-name { flex: 1; font-size: 13px; font-weight: 600; }
@@ -1556,7 +1604,7 @@
         .ex-picker-handle { width: 40px; height: 4px; background: var(--sf3); border-radius: 2px; margin: 12px auto 8px; flex-shrink: 0; }
         .ex-picker-header { padding: 4px 20px 12px; flex-shrink: 0; }
         .ex-picker-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
-        .ex-picker-tab { flex: 1; padding: 9px 6px; border-radius: 12px; font-size: 12px; font-weight: 800; border: 1.5px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; transition: all .2s; }
+        .ex-picker-tab { flex: 1; padding: 9px 6px; border-radius: 12px; font-size: 12px; font-weight: 700; border: 1.5px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; transition: all .2s; }
         .ex-picker-tab.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
         .ex-picker-search { width: 100%; padding: 11px 14px; border-radius: 12px; background: var(--sf2); border: 1.5px solid var(--border); color: var(--text); font-size: 13px; }
         .ex-picker-list { flex: 1; overflow-y: auto; padding: 4px 20px 24px; min-height: 200px; }
@@ -1570,19 +1618,19 @@
         .ex-picker-empty { text-align: center; padding: 24px 12px; color: var(--text3); font-size: 12px; }
         .ex-picker-custom-row { display: flex; gap: 6px; padding: 10px 8px; border-top: 1px dashed var(--border); margin-top: 8px; }
         .ex-picker-custom-row input { flex: 1; padding: 8px 12px; border-radius: 10px; background: var(--sf2); border: 1px solid var(--border); color: var(--text); font-size: 12px; }
-        .ex-picker-custom-row button { padding: 8px 16px; border-radius: 10px; background: var(--sf3); color: var(--text); font-size: 11px; font-weight: 800; border: none; cursor: pointer; }
+        .ex-picker-custom-row button { padding: 8px 16px; border-radius: 10px; background: var(--sf3); color: var(--text); font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
 
         /* Exercise row in creator (strength vs cardio) */
         .ex-row-block { background: var(--sf2); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
         .ex-row-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .ex-row-name { flex: 1; font-size: 12px; font-weight: 700; color: var(--text); }
-        .ex-row-kind { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 10px; letter-spacing: .06em; text-transform: uppercase; }
+        .ex-row-kind { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; letter-spacing: .06em; text-transform: uppercase; }
         .ex-row-kind.strength { background: rgba(0,212,170,.12); color: var(--accent); }
         .ex-row-kind.cardio { background: rgba(116,185,255,.12); color: var(--blue); }
         .ex-row-del { color: var(--red); background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; }
         .ex-row-fields { display: flex; flex-wrap: wrap; gap: 6px; }
         .ex-field { background: var(--sf3); border-radius: 8px; padding: 5px 8px; display: flex; align-items: center; gap: 4px; }
-        .ex-field label { font-size: 9px; color: var(--text3); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+        .ex-field label { font-size: 9px; color: var(--text3); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
         .ex-field input { background: transparent; border: none; color: var(--text); font-size: 12px; font-weight: 700; width: 44px; text-align: center; padding: 0; }
         .ex-field input.wide { width: 64px; }
         .ex-field select { background: transparent; border: none; color: var(--text); font-size: 11px; font-weight: 700; padding: 0; }
@@ -1591,12 +1639,12 @@
 
         /* NUTRITION: advice + meal distribution */
         .nutri-advice { background: rgba(116,185,255,.06); border: 1px solid rgba(116,185,255,.18); border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
-        .nutri-advice-title { font-size: 10px; font-weight: 800; color: var(--blue); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+        .nutri-advice-title { font-size: 10px; font-weight: 700; color: var(--blue); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
         .nutri-advice-text { font-size: 12px; color: var(--text2); line-height: 1.55; }
         .meal-card { background: var(--sf2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; border-left: 3px solid var(--accent); }
         .meal-card.locked { opacity: .55; filter: grayscale(.4); }
         .meal-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; gap: 8px; }
-        .meal-name { font-size: 13px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .meal-name { font-size: 13px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
         .meal-kcal { font-size: 13px; font-weight: 800; color: var(--orange); white-space: nowrap; }
         .meal-macros { display: flex; gap: 10px; font-size: 10px; color: var(--text3); letter-spacing: .04em; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
         .meal-macros span b { color: var(--text2); font-weight: 800; }
@@ -1604,12 +1652,12 @@
         .nutri-locked-cta { display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(253,203,110,.06); border: 1px dashed rgba(253,203,110,.3); border-radius: 12px; margin-top: 12px; cursor: pointer; }
         .nutri-locked-cta:hover { background: rgba(253,203,110,.1); }
         .nutri-locked-cta-text { flex: 1; }
-        .nutri-locked-cta-title { font-size: 12px; font-weight: 800; color: var(--orange); margin-bottom: 2px; }
+        .nutri-locked-cta-title { font-size: 12px; font-weight: 700; color: var(--orange); margin-bottom: 2px; }
         .nutri-locked-cta-sub { font-size: 11px; color: var(--text3); }
 
         /* 7-day nutrition plan UI */
         .nutri-day-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; margin-bottom: 12px; }
-        .nutri-day-tab { flex-shrink: 0; padding: 6px 12px; border-radius: 16px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; font-weight: 800; cursor: pointer; }
+        .nutri-day-tab { flex-shrink: 0; padding: 6px 12px; border-radius: 16px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 11px; font-weight: 700; cursor: pointer; }
         .nutri-day-tab.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
         .meal-item-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--sf3); cursor: pointer; }
         .meal-item-row:last-child { border-bottom: none; }
@@ -1632,7 +1680,7 @@
         .rt-edu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
         .rt-edu-card { background: var(--sf2); border-radius: 12px; padding: 10px 12px; }
         .rt-edu-card.wide { grid-column: 1 / -1; }
-        .rt-edu-title { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; margin-bottom: 5px; }
+        .rt-edu-title { font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; margin-bottom: 5px; }
         .rt-edu-body { font-size: 12px; color: var(--text); line-height: 1.5; }
         .rt-edu-num { font-size: 18px; font-weight: 900; color: var(--accent); }
         .rt-muscle-row { display: flex; align-items: center; gap: 8px; font-size: 11px; padding: 3px 0; }
@@ -1648,12 +1696,12 @@
         .rt-last-weight { font-size: 12px; color: var(--text3); font-weight: 600; margin-top: 4px; }
         /* Mapa del cuerpo */
         .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
-        .bm-base { fill: #232326; }
+        .bm-base { fill: var(--bm-base); }
         .bm-m { stroke: var(--sf1); stroke-width: 1.5; cursor: pointer; }
         .bm-m.bm-sel { stroke: var(--text); stroke-width: 2; }
-        .bm-l0 { fill: #3A3A3F; } .bm-l1 { fill: rgba(0,212,170,.32); } .bm-l2 { fill: rgba(0,212,170,.62); } .bm-l3 { fill: var(--accent); } .bm-l4 { fill: var(--orange); }
-        i.bm-sw.bm-l0 { background: #3A3A3F; } i.bm-sw.bm-l1 { background: rgba(0,212,170,.32); } i.bm-sw.bm-l2 { background: rgba(0,212,170,.62); } i.bm-sw.bm-l3 { background: var(--accent); } i.bm-sw.bm-l4 { background: var(--orange); }
-        .bm-view { fill: var(--text3); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-anchor: middle; }
+        .bm-l0 { fill: var(--bm-l0); } .bm-l1 { fill: rgba(0,212,170,.32); } .bm-l2 { fill: rgba(0,212,170,.62); } .bm-l3 { fill: var(--accent); } .bm-l4 { fill: var(--orange); }
+        i.bm-sw.bm-l0 { background: var(--bm-l0); } i.bm-sw.bm-l1 { background: rgba(0,212,170,.32); } i.bm-sw.bm-l2 { background: rgba(0,212,170,.62); } i.bm-sw.bm-l3 { background: var(--accent); } i.bm-sw.bm-l4 { background: var(--orange); }
+        .bm-view { fill: var(--text3); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-anchor: middle; }
         .bm-caption { text-align: center; font-size: 13px; font-weight: 700; color: var(--text2); min-height: 18px; margin: 6px 0 8px; }
         .bm-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: center; font-size: 11px; color: var(--text3); margin-bottom: 10px; }
         .bm-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -1668,26 +1716,26 @@
         .cal-months { display: grid; grid-template-columns: repeat(26, 1fr); gap: 2px; font-size: 9px; color: var(--text3); height: 14px; }
         .cal-months span { white-space: nowrap; overflow: visible; }
         .cal-grid { display: grid; grid-auto-flow: column; grid-template-columns: repeat(26, 1fr); grid-template-rows: repeat(7, auto); gap: 2px; }
-        .cal-c { aspect-ratio: 1; border-radius: 2px; background: #26262A; display: inline-block; }
+        .cal-c { aspect-ratio: 1; border-radius: 2px; background: var(--cal-empty); display: inline-block; }
         i.cal-c { width: 10px; height: 10px; }
         .cal-c.gym { background: var(--accent); } .cal-c.car { background: var(--blue); } .cal-c.both { background: linear-gradient(135deg, var(--accent) 50%, var(--blue) 50%); } .cal-c.fut { background: transparent; }
         .cal-sum { font-size: 13px; color: var(--text2); font-weight: 700; margin: 10px 0 8px; }
         /* Medidas y fotos de progreso */
         .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
         .ms-cell { display: flex; flex-direction: column; gap: 4px; }
-        .ms-lbl { font-size: 11px; font-weight: 800; color: var(--text3); letter-spacing: .04em; text-transform: uppercase; }
+        .ms-lbl { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .04em; text-transform: uppercase; }
         .ms-inp { padding: 10px 6px; text-align: center; font-size: 16px; font-weight: 800; }
         /* Sin verde ni naranja: bajar cintura y subir brazo pueden ser buenos los dos */
         .ms-delta { font-size: 11px; font-weight: 800; color: var(--text2); text-align: center; }
         .pg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .pg-th { position: relative; padding: 0; border: none; border-radius: 10px; overflow: hidden; background: var(--sf2); aspect-ratio: 3 / 4; }
         .pg-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .pg-th span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; font-weight: 800; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.7)); padding: 10px 4px 3px; }
+        .pg-th span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; font-weight: 700; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.7)); padding: 10px 4px 3px; }
         .pg-card { max-width: 520px; }
         .pg-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
         .pg-pair figure { margin: 0; }
         .pg-pair img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 10px; display: block; background: var(--sf2); }
-        .pg-pair figcaption { font-size: 11px; font-weight: 800; color: var(--text2); text-align: center; margin-top: 4px; }
+        .pg-pair figcaption { font-size: 11px; font-weight: 700; color: var(--text2); text-align: center; margin-top: 4px; }
         .pg-pick { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 6px; }
         .pg-mini { flex-shrink: 0; width: 44px; height: 58px; padding: 0; border-radius: 8px; overflow: hidden; border: 2px solid transparent; background: var(--sf2); }
         .pg-mini.on { border-color: var(--accent); }
@@ -1703,7 +1751,7 @@
         .rt-set-row.done .rt-set-check { background: var(--accent); border-color: var(--accent); color: var(--bg); }
         /* Superseries */
         .rt-ex-card.rt-ss { border-left: 3px solid var(--purple); }
-        .rt-ss-badge { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--purple); background: rgba(162,155,254,.12); border-radius: 8px; padding: 3px 8px; margin-bottom: 8px; }
+        .rt-ss-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--purple); background: rgba(162,155,254,.12); border-radius: 8px; padding: 3px 8px; margin-bottom: 8px; }
         .rt-ss-link { display: flex; align-items: center; gap: 6px; margin: -6px auto 10px; font-size: 12px; font-weight: 700; color: var(--text3); background: none; border: 1px dashed var(--border); border-radius: 14px; padding: 8px 14px; min-height: 36px; }
         .rt-ss-link.on { color: var(--purple); border-color: rgba(162,155,254,.5); border-style: solid; background: rgba(162,155,254,.08); }
         /* Calentamiento y discos */
@@ -1724,19 +1772,19 @@
         #lib-modal.show { display: flex; }
         .lib-header { padding: calc(16px + env(safe-area-inset-top)) 18px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .lib-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .lib-title { font-size: 14px; font-weight: 900; letter-spacing: .08em; }
+        .lib-title { font-size: 14px; font-weight: 800; letter-spacing: .08em; }
         .lib-close-btn { font-size: 20px; color: var(--text2); background: none; border: none; padding: 4px 10px; cursor: pointer; }
         .lib-search { width: 100%; padding: 10px 14px; border-radius: 12px; background: var(--sf2); border: 1.5px solid var(--border); color: var(--text); font-size: 13px; }
         .lib-filters { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; }
         .lib-pill { flex-shrink: 0; padding: 6px 12px; border-radius: 16px; font-size: 11px; font-weight: 700; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); cursor: pointer; }
         .lib-pill.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
         .lib-body { flex: 1; overflow-y: auto; padding: 14px 18px calc(20px + env(safe-area-inset-bottom)); }
-        .lib-section-title { font-size: 10px; font-weight: 800; color: var(--text3); letter-spacing: .1em; margin: 14px 0 8px; }
+        .lib-section-title { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: .1em; margin: 14px 0 8px; }
         .lib-section-title:first-child { margin-top: 0; }
         .lib-empty { padding: 30px 12px; text-align: center; color: var(--text3); font-size: 12px; }
         .lib-card { background: var(--sf1); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
         .lib-card:hover { background: var(--sf2); }
-        .lib-card-name { font-size: 14px; font-weight: 800; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .lib-card-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
         .lib-card-fav { color: var(--red); }
         .lib-card-meta { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; color: var(--text3); }
         .lib-card-meta span { background: var(--sf2); padding: 3px 8px; border-radius: 10px; font-weight: 700; }
@@ -1752,7 +1800,7 @@
         .lib-video-section .label { margin-bottom: 8px; }
         .lib-video-section .creator { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
         .lib-video-section .creator b { color: var(--accent); }
-        .lib-yt-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px; border-radius: 14px; background: #FF0000; color: #fff; font-weight: 800; font-size: 13px; text-decoration: none; cursor: pointer; border: none; }
+        .lib-yt-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px; border-radius: 14px; background: #FF0000; color: #fff; font-weight: 700; font-size: 13px; text-decoration: none; cursor: pointer; border: none; }
         .lib-desc { font-size: 13px; color: var(--text2); line-height: 1.55; margin-bottom: 18px; padding: 12px 14px; background: var(--sf1); border-radius: 12px; border-left: 3px solid var(--accent); }
         .lib-section { margin-bottom: 16px; }
         .lib-section .label { margin-bottom: 8px; }
@@ -1767,13 +1815,13 @@
         /* Custom video embed (Premium) */
         .lib-video-embed { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 10px 0 6px; background: #000; }
         .lib-video-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-        .lib-custom-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(0,212,170,.12); color: var(--accent); border: 1px solid rgba(0,212,170,.25); padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 800; letter-spacing: .04em; margin-bottom: 8px; }
+        .lib-custom-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(0,212,170,.12); color: var(--accent); border: 1px solid rgba(0,212,170,.25); padding: 4px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: .04em; margin-bottom: 8px; }
         .lib-custom-toggle { font-size: 11px; color: var(--text3); margin-top: 14px; cursor: pointer; display: inline-block; padding: 4px 0; }
         .lib-custom-toggle:hover { color: var(--accent); }
         .lib-custom-input-area { margin-top: 10px; padding: 10px; background: var(--sf2); border-radius: 10px; }
         .lib-custom-input-row { display: flex; gap: 6px; }
         .lib-custom-input-row input { flex: 1; padding: 9px 12px; background: var(--sf1); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 12px; font-family: ui-monospace, monospace; }
-        .lib-custom-input-row button { padding: 9px 16px; background: var(--accent); color: #0A0A0B; border: none; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; }
+        .lib-custom-input-row button { padding: 9px 16px; background: var(--accent); color: #0A0A0B; border: none; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; }
         .lib-custom-input-hint { font-size: 10px; color: var(--text3); margin-top: 6px; line-height: 1.4; }
         .lib-custom-cta-locked { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(253,203,110,.06); border: 1px dashed rgba(253,203,110,.25); border-radius: 10px; margin-top: 14px; cursor: pointer; }
         .lib-custom-cta-locked:hover { background: rgba(253,203,110,.1); }
@@ -1809,7 +1857,7 @@
         /* Estimación del plato */
         .fv-modal { position: fixed; inset: 0; z-index: 16500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
         .fv-card { background: var(--sf1); border: 1.5px solid var(--border); border-radius: 22px; padding: 20px 16px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
-        .fv-title { font-size: 17px; font-weight: 900; margin-bottom: 6px; }
+        .fv-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
         .fv-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-bottom: 12px; }
         .fv-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
         .fv-row.off { opacity: .45; }
@@ -1819,7 +1867,7 @@
         .fv-unit { font-size: 12px; color: var(--text3); }
         .fv-kcal { width: 64px; flex-shrink: 0; text-align: right; font-size: 13px; font-weight: 800; color: var(--orange); }
         .fv-total { font-size: 14px; font-weight: 800; color: var(--accent); margin: 12px 0 10px; text-align: center; }
-        .fv-label { font-size: 10px; color: var(--text3); font-weight: 800; letter-spacing: .06em; margin-bottom: 6px; }
+        .fv-label { font-size: 10px; color: var(--text3); font-weight: 700; letter-spacing: .06em; margin-bottom: 6px; }
         /* Peso corporal */
         .bw-spark { width: 100%; height: 56px; margin: 2px 0 10px; display: block; }
         .bw-dot { fill: var(--text3); opacity: .55; }
@@ -1833,9 +1881,9 @@
         }
         .food-add-handle { width: 40px; height: 4px; background: var(--sf3); border-radius: 2px; margin: 12px auto 8px; flex-shrink: 0; }
         .food-add-header { padding: 4px 16px 12px; flex-shrink: 0; }
-        .food-add-title { font-size: 16px; font-weight: 900; margin-bottom: 12px; letter-spacing: -.01em; }
+        .food-add-title { font-size: 16px; font-weight: 800; margin-bottom: 12px; letter-spacing: -.01em; }
         .food-tabs { display: flex; gap: 4px; background: var(--sf2); padding: 4px; border-radius: 14px; }
-        .food-tab { flex: 1; padding: 8px 4px; border-radius: 10px; font-size: 11px; font-weight: 800; border: none; background: transparent; color: var(--text2); cursor: pointer; transition: all .2s; min-width: 0; }
+        .food-tab { flex: 1; padding: 8px 4px; border-radius: 10px; font-size: 11px; font-weight: 700; border: none; background: transparent; color: var(--text2); cursor: pointer; transition: all .2s; min-width: 0; }
         .food-tab.active { background: var(--accent); color: #0A0A0B; box-shadow: 0 2px 6px rgba(0,212,170,.25); }
         .food-tab-content { flex: 1; overflow-y: auto; padding: 4px 16px 16px; min-height: 280px; }
 
@@ -1885,7 +1933,7 @@
         }
         .portion-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
         .portion-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--sf2); display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
-        .portion-name { font-size: 16px; font-weight: 800; line-height: 1.2; }
+        .portion-name { font-size: 16px; font-weight: 700; line-height: 1.2; }
         .portion-name small { color: var(--text3); font-size: 10px; font-weight: 600; display: block; margin-top: 2px; }
         .portion-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: var(--sf2); border-radius: 14px; padding: 8px; }
         .portion-btn { width: 34px; height: 34px; border-radius: 8px; background: var(--sf3); color: var(--text); font-size: 18px; font-weight: 900; border: none; cursor: pointer; flex-shrink: 0; }
@@ -1903,7 +1951,7 @@
         .portion-macros-chip .l { font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; margin-top: 2px; }
 
         .food-manual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-        .food-manual-field label { display: block; font-size: 10px; color: var(--text3); font-weight: 800; letter-spacing: .04em; margin-bottom: 4px; }
+        .food-manual-field label { display: block; font-size: 10px; color: var(--text3); font-weight: 700; letter-spacing: .04em; margin-bottom: 4px; }
     </style>
 </head>
 
@@ -2257,6 +2305,7 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
+                theme_dark: "Oscuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Mucho (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
                 fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
                 rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
@@ -2524,6 +2573,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
+                theme_dark: "Dark", theme_light: "Light", theme_auto: "Automatic",
                 bm_title: "BODY MAP", bm_this_week: "SETS THIS WEEK", bm_per_week: "SETS PER WEEK (AVERAGE)", bm_tap: "Tap a muscle to see its sets", bm_sets: "sets", bm_lvl0: "Not trained", bm_lvl1: "Low (1-4)", bm_lvl2: "Medium (5-9)", bm_lvl3: "Ideal for growth (10-20)", bm_lvl4: "High (20+)", bm_front: "FRONT", bm_back: "BACK", bm_unknown: "{n} sets of exercises we do not recognize are not on the map.", mus_chest: "Chest", mus_shoulders: "Shoulders", mus_biceps: "Biceps", mus_forearms: "Forearms", mus_abs: "Abs", mus_quads: "Quads", mus_traps: "Traps", mus_lats: "Lats", mus_triceps: "Triceps", mus_lowback: "Lower back", mus_glutes: "Glutes", mus_hamstrings: "Hamstrings", mus_calves: "Calves", cal_title: "CONSISTENCY · LAST 6 MONTHS", cal_gym: "Weights", cal_cardio: "Cardio", cal_both: "Both", cal_summary: "{n} training days · {w} per week on average", pg_title: "PROGRESS PHOTOS", pg_teaser: "Compare your body month by month with photos and measurements. Everything stays on your phone.", pg_add: "+ Add photo", pg_private: "Photos stay only on this phone: they are not uploaded anywhere and are not included in the backup.", pg_unavailable: "Photos could not be saved in this browser.", pg_empty: "Take a photo today (same light and same pose every time) and in a few weeks you will see the change.", pg_compare: "Compare before and after", pg_saved: "✓ Photo saved", pg_before: "Before", pg_after: "After", pg_delete: "Delete \"After\"", pg_del_confirm: "Delete this photo? This cannot be undone.", pg_close: "Close", ms_title: "MEASUREMENTS (CM)", ms_waist: "Waist", ms_hips: "Hips", ms_chest: "Chest", ms_arm: "Arm", ms_thigh: "Thigh", ms_since: "Change since {date}.", ms_save: "Save measurements", ms_saved: "✓ Measurements saved",
                 fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "This is an estimate: check the grams. Photos tend to miss oil and sauces.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
                 rest_go: "Next set! 💪", set_done: "Set done", rt_need_values: "Enter kg and reps (0 kg for bodyweight)", rt_draft_old: "You have an unfinished workout from {date}", ss_badge: "SUPERSET", ss_link: "🔗 Make superset", ss_linked: "🔗 Superset · tap to split", ss_next: "Superset → {ex}", wu_btn: "🔥 Warm-up & plates", wu_bar_only: "Empty bar", wu_per_side: "per side", wu_work: "Working", wu_note: "Not logged as sets.", wu_note_bar: "Not logged as sets. Plates per side on a {bar} bar.",
@@ -2790,6 +2840,7 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
+                theme_dark: "Escuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Muito (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
                 fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
                 rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
@@ -4240,7 +4291,25 @@
             utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
             lock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
             ruler: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
-            camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>'
+            camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+            watch: '<circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/>',
+            battery: '<rect width="16" height="10" x="2" y="7" rx="2"/><line x1="22" x2="22" y1="11" y2="13"/>',
+            crown: '<path d="M11.56 3.27a.5.5 0 0 1 .88 0l2.95 5.6a1 1 0 0 0 1.52.29l4.27-3.66a.5.5 0 0 1 .8.52l-2.83 10.25a1 1 0 0 1-.96.73H5.81a1 1 0 0 1-.96-.73L2.02 6.02a.5.5 0 0 1 .8-.52l4.27 3.66a1 1 0 0 0 1.52-.29z"/><path d="M5 21h14"/>',
+            refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+            unlock: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>',
+            star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+            phone: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
+            download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+            upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+            trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+            alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+            copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+            check: '<path d="M20 6 9 17l-5-5"/>',
+            share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+            pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+            sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+            moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+            contrast: '<circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/>'
         };
         function icoSvg(name) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; }
         function ico(name, cls) { const s = document.createElement('span'); s.className = 'ico' + (cls ? ' ' + cls : ''); s.innerHTML = icoSvg(name); return s; }
@@ -7748,7 +7817,7 @@
                 }
 
                 const btn = $('share-btn-action');
-                btn.textContent = '📤 Compartir';
+                btn.innerHTML = '<span class="ico">' + icoSvg('share') + '</span> Compartir';
                 btn.onclick = async () => {
                     if (navigator.share) {
                         try {
@@ -8860,18 +8929,29 @@
                     if (last && !far && lblEl) lblEl.remove(); // el último manda
                     const t = document.createElementNS(ns, 'text');
                     t.setAttribute('x', p.x); t.setAttribute('y', p.y - 8); t.setAttribute('text-anchor', 'middle');
-                    t.setAttribute('fill', '#F5F5F7'); t.setAttribute('font-size', '8'); t.setAttribute('font-weight', '700');
+                    t.setAttribute('style', 'fill: var(--text)'); t.setAttribute('font-size', '8'); t.setAttribute('font-weight', '700');
                     t.textContent = v; svg.appendChild(t);
                     lblX = p.x; lblV = v; lblEl = t;
                 }
                 if (data.length <= 8 || i % Math.ceil(data.length / 6) === 0) {
                     const xl = document.createElementNS(ns, 'text');
                     xl.setAttribute('x', p.x); xl.setAttribute('y', H - 4); xl.setAttribute('text-anchor', 'middle');
-                    xl.setAttribute('fill', '#636366'); xl.setAttribute('font-size', '7'); xl.textContent = p.d.date; svg.appendChild(xl);
+                    xl.setAttribute('style', 'fill: var(--text3)'); xl.setAttribute('font-size', '7'); xl.textContent = p.d.date; svg.appendChild(xl);
                 }
             });
             return svg;
         }
+
+        // ── Tema (oscuro / claro / del sistema) ─────────────────────────
+        function themePref() { try { return localStorage.getItem('bm-theme') || 'dark'; } catch { return 'dark'; } }
+        function applyTheme() {
+            const pref = themePref();
+            const th = pref === 'auto' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : pref;
+            document.documentElement.setAttribute('data-theme', th);
+            const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = th === 'light' ? '#F3F4F6' : '#0A0A0B';
+        }
+        function setThemePref(pref) { try { localStorage.setItem('bm-theme', pref); } catch { } applyTheme(); }
+        try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (themePref() === 'auto') applyTheme(); }); } catch { }
 
         // PROFILE
         // ── Push: recordatorio diario de entrenamiento ─────────────────
@@ -9001,7 +9081,7 @@
                     nc.appendChild(cta);
                 }
 
-                nc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '12px', fontStyle: 'italic' } }, '⚠️ Valores estimados. Consultá un profesional para un plan personalizado.'));
+                nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '12px', display: 'flex', gap: '6px', alignItems: 'flex-start' } }, ico('alert'), h('span', {}, 'Valores estimados. Consultá un profesional para un plan personalizado.')));
                 nc.appendChild(h('button', { className: 'btn btn-danger btn-sm', style: { marginTop: '10px' }, onclick: () => { state.user.wantsNutrition = false; saveUser(); renderProfile(); } }, t('btn_cancel') + ' plan'));
                 v.appendChild(nc);
             } else {
@@ -9032,7 +9112,7 @@
                 v.appendChild(uc);
             } else {
                 const uc = h('div', { className: 'card fade-in', style: { border: '1.5px solid rgba(0,212,170,.2)', background: 'linear-gradient(135deg,rgba(0,212,170,.08),rgba(0,212,170,.02))' } });
-                uc.appendChild(h('p', { className: 'label', style: { color: 'var(--accent)' } }, t('prof_tier_label') + ' · 👑 PREMIUM'));
+                uc.appendChild(h('p', { className: 'label', style: { color: 'var(--accent)' } }, ico('crown'), t('prof_tier_label') + ' · PREMIUM'));
                 v.appendChild(uc);
             }
 
@@ -9053,6 +9133,21 @@
             lc.appendChild(langGrid);
             v.appendChild(lc);
 
+            // Tema: oscuro (el de siempre), claro o el del sistema
+            const thc = h('div', { className: 'card fade-in' });
+            thc.appendChild(h('p', { className: 'label' }, t('prof_theme').toUpperCase()));
+            const thGrid = h('div', { style: { display: 'flex', gap: '8px', marginTop: '8px' } });
+            const curTheme = themePref();
+            [['dark', 'moon', t('theme_dark')], ['light', 'sun', t('theme_light')], ['auto', 'contrast', t('theme_auto')]].forEach(([k, ic, label]) => {
+                thGrid.appendChild(h('button', {
+                    className: 'btn btn-sm' + (curTheme === k ? ' btn-primary' : ' btn-secondary'),
+                    style: { flex: 1, fontSize: '12px', padding: '9px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' },
+                    onclick: () => { setThemePref(k); renderProfile(); }
+                }, ico(ic), label));
+            });
+            thc.appendChild(thGrid);
+            v.appendChild(thc);
+
             // Exercise Library card (replaces old "scanner" placeholder — Library is free for everyone)
             const libCard = h('div', { className: 'card fade-in' });
             libCard.appendChild(h('p', { className: 'label' }, t('lib_open_btn').replace('📚 ', '').toUpperCase()));
@@ -9060,7 +9155,7 @@
             libCard.appendChild(h('button', {
                 className: 'btn btn-primary btn-full',
                 onclick: () => openLibrary()
-            }, t('lib_open_btn')));
+            }, ico('book'), ' ' + noEmoji(t('lib_open_btn'))));
             v.appendChild(libCard);
 
             // Smartwatch
@@ -9071,7 +9166,7 @@
                 wc.appendChild(h('p', { className: 'label', style: { color: 'var(--text3)' } }, t('prof_devices')));
                 wc.appendChild(h('p', {
                     style: { fontSize: '13px', fontWeight: '700', color: 'var(--text2)', marginTop: '6px', marginBottom: '6px' }
-                }, '⌚ ' + t('prof_watch').replace('⌚ ', '')));
+                }, ico('watch'), ' ' + noEmoji(t('prof_watch'))));
                 wc.appendChild(h('p', {
                     style: { fontSize: '12px', color: 'var(--text3)', lineHeight: '1.5' }
                 }, sup.ios ? t('watch_ios_hint') : t('watch_no_support')));
@@ -9092,7 +9187,7 @@
                             color: state.watch.batteryPct < 20 ? 'var(--red)' : 'var(--accent)',
                             whiteSpace: 'nowrap'
                         }
-                    }, '🔋 ' + state.watch.batteryPct + '%'));
+                    }, ico('battery'), ' ' + state.watch.batteryPct + '%'));
                 }
                 wc.appendChild(headRow);
 
@@ -9124,7 +9219,7 @@
                     className: 'btn btn-primary btn-full',
                     disabled: state.watch.connecting,
                     onclick: connectWatch
-                }, state.watch.connecting ? '⏳ ' + t('watch_connecting') : t('prof_watch')));
+                }, ico('watch'), ' ' + (state.watch.connecting ? t('watch_connecting') : noEmoji(t('prof_watch')))));
                 wc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '8px' } }, t('prof_watch_sub')));
                 if (state.watch.deviceName) {
                     wc.appendChild(h('p', {
@@ -9154,7 +9249,7 @@
                 };
                 const lc = h('div', { className: 'card fade-in', style: { border: '1.5px solid ' + (lic ? 'var(--accent)' : 'var(--border)') } });
                 if (lic) {
-                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 900, marginBottom: '4px' } }, '👑 ' + t('lic_active')));
+                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' } }, ico('crown', 'ico-orange'), t('lic_active')));
                     if (lic.trial && lic.exp) {
                         const days = Math.max(0, Math.ceil((lic.exp - Date.now()) / 86400000));
                         lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px' } }, t('lic_trial_left').replace('{n}', days)));
@@ -9164,7 +9259,7 @@
                         const days = Math.max(0, Math.ceil((lic.exp - Date.now()) / 86400000));
                         lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' } },
                             t('lic_expires').replace('{date}', new Date(lic.exp).toLocaleDateString()).replace('{n}', days)));
-                        lc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--accent)', marginBottom: '10px' } }, '🔄 ' + t('play_active')));
+                        lc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--accent)', marginBottom: '10px' } }, ico('refresh'), ' ' + t('play_active')));
                         lc.appendChild(h('button', {
                             className: 'btn btn-secondary btn-full btn-sm',
                             onclick: () => { try { window.open(playManageUrl(), '_blank', 'noopener'); } catch { } }
@@ -9180,7 +9275,7 @@
                         lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)' } }, t('lic_active_sub')));
                     }
                 } else {
-                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 900, marginBottom: '4px' } }, '🔓 ' + t('lic_unlock_title')));
+                    lc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' } }, ico('unlock', 'ico-orange'), t('lic_unlock_title')));
                     lc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '12px' } }, t('lic_unlock_sub')));
                     if (playAvailable()) {
                         // Dentro de la TWA: suscripción interna por Google Play.
@@ -9192,7 +9287,7 @@
                                 className: 'btn btn-secondary btn-sm',
                                 style: { display: 'flex', flexDirection: 'column', gap: '2px', padding: '10px 6px' },
                                 onclick: (e) => playBuy(p.sku, e.currentTarget)
-                            }, h('span', { style: { fontWeight: 800, fontSize: '13px' } }, '⭐ ' + label));
+                            }, h('span', { style: { fontWeight: 700, fontSize: '13px' } }, ico('star'), ' ' + label));
                             if (price) b.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)' } }, price));
                             grid.appendChild(b);
                         });
@@ -9221,17 +9316,17 @@
                 const pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
                 if (pushOK || isIOS) {
                     const pc = h('div', { className: 'card fade-in' });
-                    pc.appendChild(h('p', { className: 'label' }, '🔔 ' + t('push_title')));
+                    pc.appendChild(h('p', { className: 'label' }, ico('bell'), t('push_title')));
                     pc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '10px' } }, t('push_sub')));
                     if (pushOK) {
                         const on = localStorage.getItem('bm-push-on') === '1';
                         const pbtn = h('button', {
                             className: 'btn btn-full btn-sm ' + (on ? 'btn-secondary' : 'btn-primary'),
                             onclick: async (e) => { e.target.disabled = true; await togglePushReminder(!on); renderProfile(); }
-                        }, on ? '🔕 ' + t('push_off_btn') : '🔔 ' + t('push_on_btn'));
+                        }, ico(on ? 'bellOff' : 'bell'), ' ' + (on ? t('push_off_btn') : t('push_on_btn')));
                         pc.appendChild(pbtn);
                     } else {
-                        pc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--orange)', lineHeight: 1.5 } }, '📲 ' + t('push_ios_hint')));
+                        pc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--orange)', lineHeight: 1.5 } }, ico('phone'), ' ' + t('push_ios_hint')));
                     }
                     v.appendChild(pc);
                 }
@@ -9251,7 +9346,7 @@
                 devRow.appendChild(h('button', {
                     className: 'btn btn-sm' + (state.tier === 'premium' ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, fontSize: '11px' },
                     onclick: () => { state.tier = 'premium'; saveTier(); renderProfile(); }
-                }, '👑 PREMIUM'));
+                }, ico('crown'), ' PREMIUM'));
                 dv.appendChild(devRow);
                 v.appendChild(dv);
             }
@@ -9264,7 +9359,7 @@
                 const bc = h('div', { className: 'card fade-in', style: { border: '1.5px solid var(--orange)' } });
                 bc.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, marginBottom: '6px' } }, t('backup_remind_title')));
                 bc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '12px' } }, t('backup_remind_msg')));
-                bc.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { exportBackup(); renderProfile(); } }, '📦 ' + t('prof_export')));
+                bc.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { exportBackup(); renderProfile(); } }, ico('download'), ' ' + t('prof_export')));
                 v.appendChild(bc);
             }
 
@@ -9274,7 +9369,7 @@
                 ac.appendChild(h('button', {
                     className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
                     onclick: () => { exportBackup(); renderProfile(); }
-                }, '📦 ' + t('prof_export')));
+                }, ico('download'), ' ' + t('prof_export')));
             }
             ac.appendChild(h('button', {
                 className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' },
@@ -9284,14 +9379,14 @@
                     document.body.appendChild(inp);
                     inp.click();
                 }
-            }, '📥 ' + t('prof_import')));
+            }, ico('upload'), ' ' + t('prof_import')));
             ac.appendChild(h('button', {
                 className: 'btn btn-danger btn-full', onclick: () => {
                     if (confirm(t('prof_reset_msg'))) {
                         localStorage.clear(); location.reload();
                     }
                 }
-            }, '🗑 ' + t('prof_reset')));
+            }, ico('trash'), ' ' + t('prof_reset')));
             v.appendChild(ac);
         }
 
@@ -13636,7 +13731,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             const wrap = h('div', { className: 'card fade-in' });
             const hdr = h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' } });
             hdr.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, t('coach_section')));
-            hdr.appendChild(h('span', { className: 'premium-badge' }, '👑 COACH'));
+            hdr.appendChild(h('span', { className: 'premium-badge' }, ico('crown'), ' COACH'));
             wrap.appendChild(hdr);
 
             wrap.appendChild(h('button', {
@@ -13776,7 +13871,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
 
             // Reset copy button to initial state
             const cb = $('share-btn-copy');
-            cb.classList.remove('copied'); cb.textContent = '📋 Copiar link';
+            cb.classList.remove('copied'); cb.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> Copiar link';
             $('share-link-modal').classList.add('show');
         }
 
@@ -13837,7 +13932,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 flash(t('share_modal_copy_ok'));
                 setTimeout(() => {
                     btn.classList.remove('copied');
-                    btn.textContent = '📋 Copiar link';
+                    btn.innerHTML = '<span class="ico">' + icoSvg('copy') + '</span> Copiar link';
                 }, 2000);
             } else {
                 // Last resort: ask user to copy manually by selecting the URL box
@@ -13961,7 +14056,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             head.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, 'Token: ' + routine.share_token + ' · ' + new Date(routine.created_at).toLocaleDateString()));
 
             const linkRow = h('div', { style: { display: 'flex', gap: '8px', marginTop: '10px' } });
-            linkRow.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1 }, onclick: () => openShareLinkModal(routine) }, '🔗 Ver link / QR'));
+            linkRow.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { flex: 1 }, onclick: () => openShareLinkModal(routine) }, ico('link'), ' Ver link / QR'));
             linkRow.appendChild(h('button', { className: 'btn btn-danger btn-sm', onclick: async () => {
                 if (!confirm(t('coach_confirm_delete'))) return;
                 try { await apiDeleteRoutine(routine.id); await loadMyStudents(); state.coachActiveRoutineId = null; renderRoutines(); flash('✓ Eliminado'); }
@@ -13989,7 +14084,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                     let when = d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'short' });
                     when = when.charAt(0).toUpperCase() + when.slice(1);
                     const row = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', padding: '7px 0', borderBottom: '1px solid var(--border)' } });
-                    const left = h('div', {}, h('span', { style: { fontSize: '13px', fontWeight: 700 } }, '✅ ' + when));
+                    const left = h('div', {}, h('span', { style: { fontSize: '13px', fontWeight: 700 } }, ico('check', 'ico-accent'), ' ' + when));
                     if (s.day_name) left.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)' } }, ' · ' + s.day_name));
                     row.appendChild(left);
                     row.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)', whiteSpace: 'nowrap' } }, relativeTime(s.date + 'T12:00:00')));
@@ -14139,7 +14234,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                         nameBlk.appendChild(h('span', { className: 'alumno-ex-name', style: { display: 'block' } }, icon + ex.name));
                         nameBlk.appendChild(h('span', { style: { fontSize: '10px', color: 'var(--text3)', display: 'block', marginTop: '2px' } }, target));
                         if (ex.notes) {
-                            nameBlk.appendChild(h('span', { style: { fontSize: '10px', color: 'var(--blue)', fontStyle: 'italic', display: 'block', marginTop: '2px' } }, '✎ ' + ex.notes));
+                            nameBlk.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text2)', display: 'block', marginTop: '2px' } }, ico('pencil'), ' ' + ex.notes));
                         }
                         row.appendChild(nameBlk);
 
@@ -14203,7 +14298,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                                 renderAlumnoView();
                             } catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
                         }
-                    }, doneToday ? '✓ ' + t('alumno_trained_done') : '✅ ' + t('alumno_trained_btn')));
+                    }, ico('check'), ' ' + noEmoji(doneToday ? t('alumno_trained_done') : t('alumno_trained_btn'))));
 
                     card.appendChild(block);
                 });
