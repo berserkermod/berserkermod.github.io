@@ -307,6 +307,65 @@ let code, licToken;
     delete env.AI;
 }
 
+// ── Comida por foto (tabla nutricional / plato) ──
+{
+    console.log('\nComida por foto (Workers AI, visión)');
+    const IMG = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==';
+    const noAI = await call('POST', '/api/food-vision', { kind: 'label', image: IMG });
+    ok('sin binding AI → 503', noAI.status === 503, noAI.status);
+
+    let lastReq = null, reply = '';
+    env.AI = { async run(model, opts) { lastReq = { model, opts }; return { response: reply }; } };
+    const noLic = await call('POST', '/api/food-vision', { kind: 'label', image: IMG });
+    ok('sin licencia → 403', noLic.status === 403, noLic.status);
+
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+    const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'food-dev' });
+    const token = act.body.token;
+
+    reply = 'Acá está:\n{"name":"Galletitas de avena","basis_g":30,"kcal":120,"kj":null,"protein":3,"carbs":20,"fat":3,"portion_g":30}';
+    const lab = await call('POST', '/api/food-vision', { token, kind: 'label', image: IMG });
+    ok('tabla por porción (30 g) → valores por 100 g', lab.status === 200 && lab.body.per100.kcal === 400 && lab.body.per100.protein === 10 && lab.body.per100.carbs === 66.7 && lab.body.per100.fat === 10 && lab.body.portion_g === 30 && lab.body.name === 'Galletitas de avena', lab.body);
+    ok('manda la foto al modelo de visión con el pedido de la tabla', /scout|vision/.test(lastReq.model) && lastReq.opts.messages[0].content[1].image_url.url.startsWith('data:image/jpeg;base64,/9j/') && /TABLA NUTRICIONAL/.test(lastReq.opts.messages[0].content[0].text), lastReq && lastReq.model);
+
+    reply = { name: null, basis_g: 100, kcal: null, kj: 1674, protein: '12,5', carbs: 60, fat: 10 };
+    const kj = await call('POST', '/api/food-vision', { token, kind: 'label', image: IMG });
+    ok('solo kJ (y coma decimal) → convierte a kcal', kj.status === 200 && kj.body.per100.kcal === 400 && kj.body.per100.protein === 12.5 && kj.body.name === null, kj.body);
+
+    reply = '{"name":"X","basis_g":100,"kcal":2000,"protein":10,"carbs":10,"fat":10}';
+    const crazy = await call('POST', '/api/food-vision', { token, kind: 'label', image: IMG });
+    ok('valores imposibles para 100 g → 422', crazy.status === 422, crazy.body);
+    reply = '{"error":"no_label"}';
+    const none = await call('POST', '/api/food-vision', { token, kind: 'label', image: IMG });
+    ok('foto sin tabla → 422 con explicación', none.status === 422 && /tabla/.test(none.body.error), none.body);
+
+    reply = JSON.stringify({ items: [
+        { name: 'Milanesa de carne', grams: 180, kcal: 430, protein: 38, carbs: 18, fat: 22 },
+        { name: 'Puré de papa', grams: '200', kcal: 220, protein: 4, carbs: 32, fat: 8 },
+        { name: '', grams: 50, kcal: 10 },
+        { name: 'Algo', grams: 0, kcal: 10 }
+    ].concat(Array.from({ length: 10 }, (_, i) => ({ name: 'Extra ' + i, grams: 10, kcal: 5, protein: 0, carbs: 1, fat: 0 }))) });
+    const meal = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    ok('plato → items saneados (sin nombre o sin gramos afuera, máx 8)', meal.status === 200 && meal.body.kind === 'meal' && meal.body.items.length === 6 && meal.body.items[0].name === 'Milanesa de carne' && meal.body.items[1].grams === 200, meal.body);
+    ok('el plato usa el pedido de estimación', /nutricionista/.test(lastReq.opts.messages[0].content[0].text));
+    reply = '{"items":[]}';
+    const empty = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    ok('foto sin comida → 422', empty.status === 422, empty.status);
+
+    const bad = await call('POST', '/api/food-vision', { token, kind: 'label', image: 'data:image/jpeg;base64,<script>' });
+    ok('imagen que no es base64 → 400', bad.status === 400, bad.status);
+    const missing = await call('POST', '/api/food-vision', { token, kind: 'label' });
+    ok('sin imagen → 400', missing.status === 400, missing.status);
+
+    // Cuota diaria: 15 por licencia (6 ya se usaron arriba; los 400 no cuentan).
+    reply = '{"items":[{"name":"Banana","grams":120,"kcal":105,"protein":1,"carbs":27,"fat":0}]}';
+    const codes = [];
+    for (let i = 0; i < 10; i++) codes.push((await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG })).status);
+    ok('cuota: hasta 15 por día, la 16 → 429', codes.slice(0, 9).every(c => c === 200) && codes[9] === 429, codes);
+
+    delete env.AI;
+}
+
 // ── Errores: ingest + admin ──
 {
     console.log('\nObservabilidad');

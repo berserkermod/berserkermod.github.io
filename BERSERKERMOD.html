@@ -1728,6 +1728,37 @@
             flex-direction: column; align-items: center; justify-content: flex-end;
         }
         #food-add-modal-v2.show { display: flex; }
+        /* Atajos con cámara del modal de alimentos */
+        .food-quick { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 6px; margin-bottom: 12px; }
+        .food-quick button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 6px; background: var(--sf2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 13px; font-weight: 700; }
+        .food-quick .fq-ico { font-size: 16px; }
+        .food-quick .fq-lock { font-size: 10px; display: none; }
+        .food-hint { display: none; background: rgba(253,203,110,.08); border: 1px solid rgba(253,203,110,.3); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
+        .food-hint.show { display: block; }
+        .food-hint p { font-size: 13px; color: var(--orange); font-weight: 700; margin-bottom: 8px; }
+        /* Analizando la foto */
+        .fv-busy { position: fixed; inset: 0; z-index: 17000; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; }
+        .fv-busy-card { background: var(--sf1); border: 1px solid var(--border); border-radius: 18px; padding: 24px 28px; text-align: center; max-width: 300px; }
+        .fv-busy-card p { font-size: 14px; font-weight: 700; color: var(--text2); margin-top: 12px; }
+        .fv-spinner { width: 36px; height: 36px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--sf3); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+        /* Estimación del plato */
+        .fv-modal { position: fixed; inset: 0; z-index: 16500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .fv-card { background: var(--sf1); border: 1.5px solid var(--border); border-radius: 22px; padding: 20px 16px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+        .fv-title { font-size: 17px; font-weight: 900; margin-bottom: 6px; }
+        .fv-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-bottom: 12px; }
+        .fv-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .fv-row.off { opacity: .45; }
+        .fv-chk { width: 22px; height: 22px; flex-shrink: 0; accent-color: var(--accent); appearance: auto; -webkit-appearance: checkbox; }
+        .fv-name { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; }
+        .fv-g { width: 64px; flex-shrink: 0; padding: 8px 4px; text-align: center; font-size: 15px; font-weight: 800; }
+        .fv-unit { font-size: 12px; color: var(--text3); }
+        .fv-kcal { width: 64px; flex-shrink: 0; text-align: right; font-size: 13px; font-weight: 800; color: var(--orange); }
+        .fv-total { font-size: 14px; font-weight: 800; color: var(--accent); margin: 12px 0 10px; text-align: center; }
+        .fv-label { font-size: 10px; color: var(--text3); font-weight: 800; letter-spacing: .06em; margin-bottom: 6px; }
+        /* Peso corporal */
+        .bw-spark { width: 100%; height: 56px; margin: 2px 0 10px; display: block; }
+        .bw-dot { fill: var(--text3); opacity: .55; }
+        .bw-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
         .food-add-sheet {
             background: var(--sf1); border-radius: 24px 24px 0 0;
             width: 100%; max-width: 540px; max-height: 92vh;
@@ -1886,13 +1917,15 @@
             <div class="food-add-header">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
                     <div class="food-add-title">Agregar Alimento</div>
-                    <div style="display:flex;gap:6px;align-items:center">
-                        <button id="food-scan-btn" onclick="scanFromFoodModal()" title="Escanear código de barras" style="background:var(--sf2);border:1px solid var(--border);border-radius:10px;padding:7px 12px;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:700">
-                            📷 <span id="food-scan-btn-lock" style="font-size:9px;color:var(--orange);font-weight:800;display:none">🔒</span>
-                        </button>
-                        <button onclick="closeFoodAddModal()" style="color:var(--text2);font-size:20px;padding:2px 8px;background:none;border:none;cursor:pointer">✕</button>
-                    </div>
+                    <button onclick="closeFoodAddModal()" style="color:var(--text2);font-size:20px;padding:2px 8px;background:none;border:none;cursor:pointer">✕</button>
                 </div>
+                <!-- Atajos con cámara (Premium): código de barras, tabla nutricional, foto del plato -->
+                <div class="food-quick">
+                    <button id="food-scan-btn" onclick="scanFromFoodModal()"><span class="fq-ico">📷</span><span id="fq-scan-lbl">Código</span><span class="fq-lock" id="food-scan-btn-lock">🔒</span></button>
+                    <button id="food-label-btn" onclick="foodPhoto('label')"><span class="fq-ico">🏷️</span><span id="fq-label-lbl">Tabla</span><span class="fq-lock">🔒</span></button>
+                    <button id="food-meal-btn" onclick="foodPhoto('meal')"><span class="fq-ico">🍽️</span><span id="fq-meal-lbl">Foto del plato</span><span class="fq-lock">🔒</span></button>
+                </div>
+                <div class="food-hint" id="food-hint"></div>
                 <div class="food-tabs">
                     <button class="food-tab active" id="food-tab-healthy" onclick="setFoodTab('healthy')">🌿 Saludables</button>
                     <button class="food-tab" id="food-tab-search" onclick="setFoodTab('search')">🔎 Buscar</button>
@@ -2159,6 +2192,7 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
+                fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
                 rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
                 draft_title: "Sesión sin guardar", draft_msg: "Quedó una sesión de entrenamiento libre sin guardar ({ex} ejercicios · {sets} series). ¿Qué querés hacer?", draft_save: "💾 Guardar sesión", draft_continue: "▶ Seguir entrenando", draft_discard: "🗑 Eliminar", draft_discarded: "Sesión descartada",
@@ -2424,6 +2458,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
+                fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "This is an estimate: check the grams. Photos tend to miss oil and sauces.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
                 rest_go: "Next set! 💪", set_done: "Set done", rt_need_values: "Enter kg and reps (0 kg for bodyweight)", rt_draft_old: "You have an unfinished workout from {date}", ss_badge: "SUPERSET", ss_link: "🔗 Make superset", ss_linked: "🔗 Superset · tap to split", ss_next: "Superset → {ex}", wu_btn: "🔥 Warm-up & plates", wu_bar_only: "Empty bar", wu_per_side: "per side", wu_work: "Working", wu_note: "Not logged as sets.", wu_note_bar: "Not logged as sets. Plates per side on a {bar} bar.",
                 session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
@@ -2688,6 +2723,7 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
+                fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
                 rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
                 draft_title: "Sessão não salva", draft_msg: "Ficou um treino livre não salvo ({ex} exercícios · {sets} séries). O que deseja fazer?", draft_save: "💾 Salvar sessão", draft_continue: "▶ Continuar treinando", draft_discard: "🗑 Descartar", draft_discarded: "Sessão descartada",
@@ -4382,7 +4418,8 @@
         // Hash of inputs that affect macro calculation. Used to detect when plan must regenerate.
         function nutriInputHash(u) {
             if (!u) return 0;
-            const s = [u.weight, u.height, u.age, u.sex, u.goal, u.days].join('|');
+            // El gasto ajustado entra al hash solo si existe: los planes de quien no lo usa no se rehacen.
+            const s = [u.weight, u.height, u.age, u.sex, u.goal, u.days].join('|') + (u.tdeeAdaptive ? '|' + u.tdeeAdaptive : '');
             let h = 5381;
             for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
             return h;
@@ -6056,6 +6093,9 @@
             // Progression banners
             renderProgBanners(v);
 
+            // Ajuste semanal de calorías con el gasto real (Premium, si hay datos)
+            renderCalorieCheckin(v);
+
             // Food log (premium only, or show teaser)
             if (isPremium()) {
                 renderFoodLog(v);
@@ -6070,6 +6110,7 @@
             }
 
             // Water / hydration tracker (free for everyone)
+            renderWeightCard(v);
             renderWaterCard(v);
 
             // Oracle button (premium only)
@@ -8525,7 +8566,12 @@
                 const nc = h('div', { className: 'card card-accent fade-in' });
                 nc.appendChild(h('p', { className: 'label' }, t('prof_nutri_plan')));
                 nc.appendChild(h('p', { style: { fontSize: '24px', fontWeight: 900, marginBottom: '4px' } }, targetCals + ' kcal/día'));
-                nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: '16px' } }, 'TDEE: ' + tdee + ' kcal · Ajuste: ' + (adj > 0 ? '+' : '') + adj));
+                nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: u.tdeeAdaptive ? '4px' : '16px' } }, 'TDEE: ' + tdee + ' kcal' + (u.tdeeAdaptive ? ' (' + t('ci_from_data') + ')' : '') + ' · Ajuste: ' + (adj > 0 ? '+' : '') + adj));
+                if (u.tdeeAdaptive) {
+                    nc.appendChild(h('button', { style: { fontSize: '11px', color: 'var(--text3)', background: 'none', border: 'none', textDecoration: 'underline', padding: 0, marginBottom: '14px', cursor: 'pointer' }, onclick: () => {
+                        delete u.tdeeAdaptive; u.tdeeCheckin = todayStr(); saveUser(); renderProfile();
+                    } }, t('ci_reset')));
+                }
 
                 const macroBars = h('div', { className: 'macro-bars' });
                 [{ l: t('prof_protein'), v: protein, u: 'g', c: 'var(--accent)', pct: Math.round(protein * 4 / targetCals * 100) },
@@ -12089,9 +12135,10 @@
                 return;
             }
             $('food-add-modal-v2').classList.add('show');
-            // Show/hide premium lock on scan button based on tier
-            const lockEl = $('food-scan-btn-lock');
-            if (lockEl) lockEl.style.display = isPremium() ? 'none' : 'inline';
+            // Atajos con cámara: textos en el idioma del usuario y candado si no es Premium
+            $('fq-scan-lbl').textContent = t('fv_code'); $('fq-label-lbl').textContent = t('fv_label'); $('fq-meal-lbl').textContent = t('fv_meal');
+            document.querySelectorAll('.food-quick .fq-lock').forEach(l => { l.style.display = isPremium() ? 'none' : 'inline'; });
+            $('food-hint').classList.remove('show');
             setFoodTab('healthy');
         }
         function closeFoodAddModal() { $('food-add-modal-v2').classList.remove('show'); }
@@ -12576,14 +12623,226 @@
                     openAddFoodModal(prefill);
                 } else {
                     closeBarcodeScanner();
-                    flash(t('food_not_found'), 'var(--orange)');
-                    openAddFoodModal();
+                    openAddFoodModal(); showLabelHint();
                 }
             } catch {
                 closeBarcodeScanner();
-                flash(t('food_not_found'), 'var(--orange)');
-                openAddFoodModal();
+                openAddFoodModal(); showLabelHint();
             }
+        }
+
+        // ─────────────────────────────────────────
+        // COMIDA POR FOTO (Premium) — tabla nutricional o plato, con la IA del servidor.
+        // La foto se achica en el teléfono, se analiza y el servidor no la guarda.
+        // ─────────────────────────────────────────
+        function showLabelHint() {
+            const box = $('food-hint'); box.innerHTML = '';
+            box.appendChild(h('p', {}, t('fv_not_found')));
+            box.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', onclick: () => foodPhoto('label') }, t('fv_not_found_btn')));
+            box.classList.add('show');
+        }
+        let _foodPhotoInput = null;
+        function foodPhoto(kind) {
+            if (!isPremium()) { showUpgradeModal('scanner'); return; }
+            if (noBackendInProd()) { flash(t('lic_no_server'), 'var(--orange)'); return; }
+            if (!_foodPhotoInput) {
+                _foodPhotoInput = h('input', { type: 'file', accept: 'image/*', capture: 'environment', style: { display: 'none' } });
+                document.body.appendChild(_foodPhotoInput);
+            }
+            _foodPhotoInput.value = '';
+            _foodPhotoInput.onchange = () => { const f = _foodPhotoInput.files && _foodPhotoInput.files[0]; if (f) analyzeFoodPhoto(kind, f); };
+            _foodPhotoInput.click();
+        }
+        // JPEG chico (lado mayor `max` px): la tabla necesita más resolución que el plato.
+        async function photoToJpeg(file, max) {
+            const url = URL.createObjectURL(file);
+            try {
+                const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+                const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+                const c = document.createElement('canvas');
+                c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                return c.toDataURL('image/jpeg', 0.82);
+            } finally { URL.revokeObjectURL(url); }
+        }
+        function showBusy(msg) {
+            const ov = h('div', { className: 'fv-busy' }, h('div', { className: 'fv-busy-card' }, h('div', { className: 'fv-spinner' }), h('p', {}, msg)));
+            document.body.appendChild(ov);
+            return ov;
+        }
+        async function analyzeFoodPhoto(kind, file) {
+            const busy = showBusy(t(kind === 'meal' ? 'fv_busy_meal' : 'fv_busy_label'));
+            try {
+                const image = await photoToJpeg(file, kind === 'meal' ? 1024 : 1280);
+                const resp = await fetch(getApiBase() + '/api/food-vision', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: localStorage.getItem('bm-license') || '', kind, image })
+                });
+                const j = await resp.json().catch(() => ({}));
+                if (!resp.ok) throw new Error(j.error || ('Error ' + resp.status));
+                busy.remove();
+                closeFoodAddModal();
+                if (kind === 'meal') { openMealEstimate(j.items || []); return; }
+                // Tabla leída: queda guardada en "Míos" para la próxima y se elige la porción.
+                // Sin nombre legible en la foto: se distingue por la fecha en "Míos".
+                const name = j.name || (t('fv_label_default') + ' ' + todayStr().slice(5).split('-').reverse().join('/'));
+                const food = { id: 'cf_' + Date.now(), name, kcal: j.per100.kcal, protein: j.per100.protein, carbs: j.per100.carbs, fat: j.per100.fat, icon: '🏷️', created_at: Date.now() };
+                state.customFoods.unshift(food); saveCustomFoods();
+                openPortionModal({ name, kcal_100g: food.kcal, protein_100g: food.protein, carbs_100g: food.carbs, fat_100g: food.fat, icon: '🏷️', source: t('fv_label_source'), id: food.id });
+                if (j.portion_g) { $('portion-grams').value = j.portion_g; recalcPortionMacros(); }
+            } catch (e) {
+                busy.remove();
+                flash(String((e && e.message) || e).slice(0, 140), 'var(--orange)');
+            }
+        }
+        // Estimación del plato: cada alimento con sus gramos editables (los macros
+        // escalan) y se puede destildar lo que no corresponde antes de agregar.
+        function openMealEstimate(items) {
+            let meal = _foodModal.meal || 1;
+            const rows = items.map(it => Object.assign({}, it, { g0: it.grams, on: true }));
+            const ov = h('div', { className: 'fv-modal' });
+            const card = h('div', { className: 'fv-card' });
+            const close = () => ov.remove();
+            const k = (r) => (r.g0 ? r.grams / r.g0 : 0);
+            card.appendChild(h('p', { className: 'fv-title' }, '🍽️ ' + t('fv_meal_title')));
+            card.appendChild(h('p', { className: 'fv-note' }, t('fv_meal_note')));
+            const total = h('p', { className: 'fv-total' });
+            const renderTotal = () => {
+                const on = rows.filter(r => r.on && r.grams > 0);
+                const sum = (f) => on.reduce((a, r) => a + r[f] * k(r), 0);
+                total.textContent = Math.round(sum('kcal')) + ' kcal · ' + Math.round(sum('protein')) + 'g P · ' + Math.round(sum('carbs')) + 'g C · ' + Math.round(sum('fat')) + 'g G';
+            };
+            rows.forEach(r => {
+                const row = h('div', { className: 'fv-row' });
+                const chk = h('input', { type: 'checkbox', className: 'fv-chk' }); chk.checked = true;
+                const kc = h('span', { className: 'fv-kcal' }, r.kcal + ' kcal');
+                const g = h('input', { type: 'number', inputmode: 'numeric', className: 'input fv-g', value: String(r.grams) });
+                chk.onchange = () => { r.on = chk.checked; row.classList.toggle('off', !r.on); renderTotal(); };
+                g.oninput = () => { r.grams = Math.max(0, parseFloat(g.value) || 0); kc.textContent = Math.round(r.kcal * k(r)) + ' kcal'; renderTotal(); };
+                row.appendChild(chk); row.appendChild(h('span', { className: 'fv-name' }, r.name));
+                row.appendChild(g); row.appendChild(h('span', { className: 'fv-unit' }, 'g')); row.appendChild(kc);
+                card.appendChild(row);
+            });
+            card.appendChild(total);
+            card.appendChild(h('p', { className: 'fv-label' }, t('food_which_meal')));
+            const mealSel = h('div', { className: 'portion-presets' });
+            [1, 2, 3, 4].forEach(n => {
+                const b = h('button', { className: 'portion-preset' + (n === meal ? ' active' : ''), onclick: () => { meal = n; [...mealSel.children].forEach(x => x.classList.remove('active')); b.classList.add('active'); } }, t('food_meal') + ' ' + n);
+                mealSel.appendChild(b);
+            });
+            card.appendChild(mealSel);
+            const btns = h('div', { style: { display: 'flex', gap: '8px', marginTop: '6px' } });
+            btns.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: close }, t('fv_cancel')));
+            btns.appendChild(h('button', { className: 'btn btn-primary', style: { flex: 2 }, onclick: () => {
+                const add = rows.filter(r => r.on && r.grams > 0);
+                if (!add.length) { close(); return; }
+                const d = todayStr(), base = Date.now();
+                add.forEach((r, i) => {
+                    const f = k(r);
+                    state.foodLog.unshift({ id: base + '-' + i, date: d, name: r.name + ' · ' + Math.round(r.grams) + ' g', meal,
+                        kcal: Math.round(r.kcal * f), protein: +(r.protein * f).toFixed(1), carbs: +(r.carbs * f).toFixed(1), fat: +(r.fat * f).toFixed(1) });
+                });
+                saveFoodLog(); close();
+                if (state.tab === 'home') renderHome();
+                flash('✓ ' + t('fv_meal_added').replace('{n}', add.length));
+            } }, t('fv_add')));
+            card.appendChild(btns);
+            ov.appendChild(card);
+            ov.addEventListener('click', e => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+            renderTotal();
+        }
+
+        // ─────────────────────────────────────────
+        // PESO CORPORAL (gratis, queda en el teléfono) + AJUSTE SEMANAL DE CALORÍAS (Premium)
+        // ─────────────────────────────────────────
+        function loadBodyweight() { try { return JSON.parse(localStorage.getItem('bm-bodyweight') || '[]'); } catch { return []; } }
+        function logBodyweight(kg) {
+            const d = todayStr();
+            const list = loadBodyweight().filter(e => e.date !== d).concat([{ date: d, kg }]).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-400);
+            try { localStorage.setItem('bm-bodyweight', JSON.stringify(list)); } catch { }
+            // El perfil sigue a la tendencia (cambia proteína y calorías), pero solo si se
+            // movió 1 kg o más: así el plan de comidas no se rehace todos los días.
+            const tr = weightTrend(list), cur = tr.length ? tr[tr.length - 1].trend : kg;
+            if (state.user && Math.abs(cur - (Number(state.user.weight) || 0)) >= 1) { state.user.weight = Math.round(cur * 10) / 10; saveUser(); }
+        }
+        function renderWeightCard(container) {
+            const u = state.user;
+            const tr = weightTrend(loadBodyweight());
+            const last = tr[tr.length - 1], today = todayStr();
+            const card = h('div', { className: 'card fade-in' });
+            const head = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' } });
+            head.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, '⚖️ ' + t('bw_title')));
+            if (last) head.appendChild(h('span', { style: { fontSize: '18px', fontWeight: 900, color: 'var(--text)' } }, last.trend.toFixed(1) + ' kg'));
+            card.appendChild(head);
+            if (last) {
+                // Cambio de la tendencia en 7 días (contra el último dato de hace 7 días o más).
+                const ref = [...tr].reverse().find(x => daysSince(x.date) >= 7);
+                if (ref) {
+                    const dlt = Math.round((last.trend - ref.trend) * 10) / 10;
+                    card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '8px' } }, t('bw_trend') + ' · ' + t('bw_week').replace('{d}', (dlt > 0 ? '+' : '') + dlt)));
+                }
+                const pts = tr.filter(x => daysSince(x.date) <= 60);
+                if (pts.length >= 2) card.appendChild(weightSparkline(pts));
+            }
+            const row = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } });
+            const todayRec = last && last.date === today ? last : null;
+            const inp = h('input', { type: 'number', inputmode: 'decimal', step: '0.1', className: 'input', placeholder: String((last && last.kg) || (u && u.weight) || ''), style: { flex: 1, fontSize: '18px', fontWeight: 800, textAlign: 'center', padding: '12px' } });
+            if (todayRec) inp.value = String(todayRec.kg);
+            row.appendChild(inp);
+            row.appendChild(h('button', { className: 'btn btn-primary', style: { flex: 1, minHeight: '48px' }, onclick: () => {
+                const kg = parseFloat(String(inp.value).replace(',', '.'));
+                if (!(kg >= 25 && kg <= 350)) { inp.focus(); return; }
+                logBodyweight(Math.round(kg * 10) / 10);
+                flash(t('bw_saved'));
+                renderHome();
+            } }, todayRec ? t('bw_update') : t('bw_save')));
+            card.appendChild(row);
+            const premiumNutri = u && u.wantsNutrition && isPremium();
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginTop: '8px', lineHeight: 1.45 } }, premiumNutri ? t('bw_hint_adaptive') : t('bw_hint')));
+            container.appendChild(card);
+        }
+        function weightSparkline(pts) {
+            const W = 300, H = 56, P = 4;
+            const vals = pts.map(p => p.kg).concat(pts.map(p => p.trend));
+            const min = Math.min(...vals), max = Math.max(...vals), span = Math.max(0.5, max - min);
+            const t0 = daysSince(pts[0].date), x = (p) => P + (t0 - daysSince(p.date)) / Math.max(1, t0) * (W - 2 * P);
+            const y = (v) => P + (1 - (v - min) / span) * (H - 2 * P);
+            const ns = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(ns, 'svg');
+            svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('class', 'bw-spark');
+            pts.forEach(p => { const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', x(p)); c.setAttribute('cy', y(p.kg)); c.setAttribute('r', '2.2'); c.setAttribute('class', 'bw-dot'); svg.appendChild(c); });
+            const line = document.createElementNS(ns, 'polyline');
+            line.setAttribute('points', pts.map(p => x(p).toFixed(1) + ',' + y(p.trend).toFixed(1)).join(' '));
+            line.setAttribute('class', 'bw-line'); svg.appendChild(line);
+            return svg;
+        }
+        // Kcal registradas por día (para estimar el gasto real).
+        function dailyIntakes() {
+            const m = {};
+            (state.foodLog || []).forEach(e => { m[e.date] = (m[e.date] || 0) + (e.kcal || 0); });
+            return Object.keys(m).map(date => ({ date, kcal: m[date] }));
+        }
+        // Una vez por semana, si los datos alcanzan y el gasto real se aleja 50 kcal o
+        // más de lo que se usa hoy, propone ajustar. Nunca cambia nada solo.
+        function renderCalorieCheckin(container) {
+            const u = state.user;
+            if (!u || !u.wantsNutrition || !isPremium()) return;
+            if (u.tdeeCheckin && daysSince(u.tdeeCheckin) < 7) return;
+            const a = adaptiveTDEE({ weights: loadBodyweight(), intakes: dailyIntakes(), formula: calcTDEE(u), today: todayStr() });
+            const cur = maintenanceOf(u);
+            if (!a || Math.abs(a.tdee - cur) < 50) return;
+            const oldT = calcMacros(u).targetCals, newT = calcMacros(Object.assign({}, u, { tdeeAdaptive: a.tdee })).targetCals;
+            const card = h('div', { className: 'card fade-in', style: { borderColor: 'rgba(0,212,170,.35)' } });
+            card.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '8px' } }, '📊 ' + t('ci_title')));
+            card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '6px' } }, t('ci_text').replace('{tdee}', a.tdee).replace('{cur}', cur)));
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '8px' } }, t('ci_detail').replace('{avg}', a.avgIntake).replace('{chg}', (a.change > 0 ? '+' : '') + a.change).replace('{days}', a.days)));
+            card.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--accent)', marginBottom: '12px' } }, t('ci_target').replace('{old}', oldT).replace('{new}', newT)));
+            const btns = h('div', { style: { display: 'flex', gap: '8px' } });
+            btns.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: () => { u.tdeeCheckin = todayStr(); saveUser(); renderHome(); } }, t('ci_skip')));
+            btns.appendChild(h('button', { className: 'btn btn-primary', style: { flex: 2 }, onclick: () => { u.tdeeAdaptive = a.tdee; u.tdeeCheckin = todayStr(); saveUser(); flash(t('ci_applied')); renderHome(); } }, t('ci_apply')));
+            card.appendChild(btns);
+            container.appendChild(card);
         }
 
         // ─────────────────────────────────────────

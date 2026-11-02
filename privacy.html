@@ -159,7 +159,7 @@
     <main>
         <p class="kicker">Privacidad</p>
         <h1>Política de privacidad</h1>
-        <p class="updated">Última actualización: 19 de octubre de 2026</p>
+        <p class="updated">Última actualización: 2 de noviembre de 2026</p>
 
         <div class="callout">
             <strong>Resumen rápido:</strong> BERSERKERMOD guarda tus entrenamientos, comidas y stats en tu propio teléfono (localStorage del navegador). No hay cuentas ni contraseñas. A nuestro servidor solo llegan los datos técnicos mínimos de las funciones que usás (licencias, compras, modo Coach, recordatorios, IA) y un conteo anónimo de visitas a la web, sin cookies ni identificadores. No usamos Google Analytics, Facebook Pixel ni trackers publicitarios. Vendemos cero datos. Tu información es tuya.
@@ -192,6 +192,8 @@
         <h2>3. Servicios de terceros</h2>
         <p>La app usa los siguientes servicios externos, todos opt-in u opcionales:</p>
         <ul>
+            <li><strong>Fotos de comida (Premium)</strong>: cuando escaneás la tabla nutricional de un envase o sacás una foto de tu plato, la imagen (achicada en tu teléfono) se envía a nuestro servidor para que la analice la IA de Cloudflare Workers AI. Se procesa en el momento y se descarta: no la guardamos ni la usamos para otra cosa. Lo que vuelve (calorías y macros) queda solo en tu teléfono.</li>
+            <li><strong>Peso corporal</strong>: las pesadas que anotás y el ajuste semanal de calorías se calculan y se guardan solo en tu teléfono.</li>
             <li><strong>Oracle IA (análisis de entrenamiento, Premium)</strong>: al pedir un análisis, se envían estadísticas agregadas de tus últimas 4 semanas (cantidad de sesiones, volumen, series por grupo muscular, evolución de pesos, promedios de calorías/proteína y tu objetivo/nivel/peso) a nuestro servidor (Cloudflare Workers AI), que genera los insights y no almacena esos datos. No se envían nombres, emails ni identificadores personales. Opcionalmente, si preferís que el análisis lo haga Claude con <em>tu propia</em> API key de Anthropic, la key se guarda solo en tu teléfono y las consultas van a <code>api.anthropic.com</code> bajo tu cuenta — BERSERKERMOD nunca recibe ni almacena tu key.</li>
             <li><strong>OpenFoodFacts</strong>: usado para búsqueda de productos por nombre o código de barras (Premium). Las consultas se hacen anónimamente a su API pública (<code>world.openfoodfacts.org</code>).</li>
             <li><strong>Mercado Pago</strong>: si comprás desde la web, el pago se hace en Mercado Pago bajo sus propios términos. Nunca vemos ni guardamos los datos de tu tarjeta.</li>

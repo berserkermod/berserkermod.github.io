@@ -19,6 +19,7 @@
 //   Mercado Pago:     POST                /api/webhook/mercadopago
 //   Oracle (IA):      POST                /api/oracle
 //   Importar rutina:  POST                /api/parse-routine    (premium, lee PDF con Workers AI)
+//   Comida por foto:  POST                /api/food-vision      (premium, tabla nutricional o plato; la foto no se guarda)
 //   Observabilidad:   POST                /api/errors
 //                     GET                 /api/admin/errors     (ADMIN_SECRET)
 //   Salud / varios:   POST                /api/health-data      (off por defecto)
@@ -51,6 +52,7 @@ const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 // tope de tamaño y rate limit. Detalle en SEGURIDAD-THREAT-MODEL.md (privado).
 const MAX_BODY = 256 * 1024;            // body JSON por defecto
 const MAX_BODY_PDF = 16 * 1024 * 1024;  // /api/parse-routine (PDF en base64)
+const MAX_BODY_IMG = 1536 * 1024;        // /api/food-vision (una foto JPEG chica en base64)
 const MAX_PLAN_JSON = 100 * 1024;       // plan de una rutina serializado
 const MAX_EDIT_JSON = 4 * 1024;         // changes_json de un edit del alumno
 const EDITS_MAX = 50;                   // edits guardados por rutina (los viejos se pisan)
@@ -69,14 +71,14 @@ const TRIAL_IP_MAX = 5;
 const TRIAL_IP_TTL = 30 * 24 * 3600;
 // IA: cuota diaria por licencia (Workers AI da 10.000 neuronas/día para TODOS;
 // sin esto una sola licencia —o un trial— puede dejar sin Oracle a los que pagan).
-const AI_QUOTA = { oracle: 20, parse: 5 };
+const AI_QUOTA = { oracle: 20, parse: 5, food: 15 };
 // Ticket de retiro del código tras pagar: vive hasta 7 días sin retirar (pagos
 // en efectivo) y 15 minutos después del primer retiro (refrescar la página no
 // lo pierde; enumerar payment_ids ajenos ya no sirve).
 const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
 const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
-const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/push/subscribe'];
+const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe'];
 
 // ── Utilidades ───────────────────────────────────────────────────────
 const enc = new TextEncoder();
@@ -931,6 +933,96 @@ async function parseRoutine(req, env) {
     }
 }
 
+// ── Comida por foto (Workers AI, visión) ─────────────────────────────
+// Premium. 'label' lee la tabla nutricional de un envase (para los productos que
+// no están en Open Food Facts) y 'meal' estima un plato. La foto se analiza y se
+// descarta: no se guarda en ningún lado.
+const LABEL_PROMPT = [
+    'Leé la TABLA NUTRICIONAL (información nutricional) del envase de alimento de esta foto.',
+    'Devolvé SOLO un objeto JSON, sin texto extra:',
+    '{"name": string|null, "basis_g": number, "kcal": number|null, "kj": number|null, "protein": number, "carbs": number, "fat": number, "portion_g": number|null}',
+    'Reglas:',
+    '- Si la tabla tiene una columna "por 100 g" (o 100 ml), copiá esos valores y poné basis_g = 100.',
+    '- Si solo tiene valores por porción, copiá los de la porción y poné basis_g = gramos de esa porción.',
+    '- kcal = valor energético en kcal; si solo figura en kJ, poné kcal null y el número en kj.',
+    '- carbs = carbohidratos totales; fat = grasas totales; protein = proteínas. Números, sin unidades.',
+    '- portion_g = gramos (o ml) de la porción que indica la tabla, o null.',
+    '- name = nombre del producto si se lee en la foto, si no null.',
+    '- Copiá los números tal como están escritos. No inventes: si un dato no se lee, poné null.',
+    '- Si en la foto no hay una tabla nutricional, devolvé {"error":"no_label"}.'
+].join('\n');
+const MEAL_PROMPT = [
+    'Sos nutricionista. Mirá la foto del plato y estimá qué comida hay y en qué cantidad.',
+    'Devolvé SOLO un objeto JSON, sin texto extra:',
+    '{"items": [{"name": string, "grams": number, "kcal": number, "protein": number, "carbs": number, "fat": number}]}',
+    'Reglas:',
+    '- Nombres cortos en español rioplatense (ej. "Milanesa de carne", "Puré de papa", "Ensalada de lechuga y tomate").',
+    '- grams = cantidad estimada de esa porción en el plato; kcal y macros son de ESA cantidad (no por 100 g).',
+    '- Contá el aceite, la manteca y las salsas que se vean: son las calorías que más se escapan.',
+    '- Como máximo 8 items. Si en la foto no hay comida, devolvé {"items": []}.'
+].join('\n');
+
+function sanitizeFoodVision(kind, p) {
+    const num = (v, max) => { const n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= 0 && n <= max ? n : null; };
+    const r1 = (n) => Math.round(n * 10) / 10;
+    const str = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+    if (!p || typeof p !== 'object') return null;
+    if (kind === 'meal') {
+        const items = (Array.isArray(p.items) ? p.items : []).slice(0, 8).map((i) => {
+            const name = str(i && i.name, 60), grams = num(i && i.grams, 2000), kcal = num(i && i.kcal, 3000);
+            if (!name || !grams || kcal == null) return null;
+            return { name, grams: Math.round(grams), kcal: Math.round(kcal), protein: r1(num(i.protein, 300) || 0), carbs: r1(num(i.carbs, 500) || 0), fat: r1(num(i.fat, 300) || 0) };
+        }).filter(Boolean);
+        return items.length ? { items } : null;
+    }
+    if (p.error) return null;
+    const basis = num(p.basis_g, 1000) || 100;
+    let kcal = num(p.kcal, 5000);
+    if (kcal == null && num(p.kj, 20000) != null) kcal = num(p.kj, 20000) / 4.184;
+    const protein = num(p.protein, 1000), carbs = num(p.carbs, 1000), fat = num(p.fat, 1000);
+    if (kcal == null || protein == null || carbs == null || fat == null) return null;
+    const k = 100 / basis;
+    const per100 = { kcal: Math.round(kcal * k), protein: r1(protein * k), carbs: r1(carbs * k), fat: r1(fat * k) };
+    // Plausible para 100 g: hasta 900 kcal y macros que no suman más que el peso.
+    if (per100.kcal > 900 || per100.protein + per100.carbs + per100.fat > 105) return null;
+    const portion = num(p.portion_g, 2000);
+    return { name: str(p.name, 60), per100, portion_g: portion ? Math.round(portion) : null };
+}
+
+async function foodVision(req, env) {
+    if (!env.AI) return err('Fotos de comida no configuradas (falta el binding AI)', 503);
+    const body = await readBody(req, MAX_BODY_IMG);
+    const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
+    if (!payload) return err('Función premium: activá tu código para analizar fotos de comida', 403);
+    const kind = body && body.kind === 'meal' ? 'meal' : 'label';
+    const img = body && typeof body.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
+    if (!img || img.length > 1400000 || !/^[A-Za-z0-9+/]+=*$/.test(img)) return err('Falta la foto o no es válida', 400);
+    if (!(await aiQuotaOk(env, payload, 'food'))) return err('Llegaste al límite diario de fotos (' + AI_QUOTA.food + '). Mañana se renueva.', 429);
+    try {
+        const r = await env.AI.run(VISION_MODEL, {
+            messages: [{ role: 'user', content: [
+                { type: 'text', text: kind === 'meal' ? MEAL_PROMPT : LABEL_PROMPT },
+                { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + img } }
+            ] }],
+            max_tokens: 800,
+            temperature: 0.1
+        });
+        const raw = r ? (r.response != null ? r.response : r.text) : null;
+        let parsed = null;
+        if (raw && typeof raw === 'object') parsed = raw;
+        else {
+            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+            const m = txt.match(/\{[\s\S]*\}/);
+            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+        }
+        const clean = sanitizeFoodVision(kind, parsed);
+        if (!clean) return err(kind === 'meal' ? 'No pude reconocer comida en la foto. Probá con el plato entero y buena luz.' : 'No pude leer la tabla nutricional. Probá con la tabla entera, derecha y con buena luz.', 422);
+        return json(Object.assign({ ok: true, kind }, clean));
+    } catch (e) {
+        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
+    }
+}
+
 // ── Observabilidad ───────────────────────────────────────────────────
 // Ring buffer en UNA key (errors:ring): 1 get + 1 put por request, sin importar
 // cuántos errores traiga. Antes era una key por error (20 escrituras por
@@ -1322,7 +1414,7 @@ export default {
 
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
-        if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : MAX_BODY)) return err('Payload too large', 413);
+        if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
         const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/');
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
@@ -1363,6 +1455,7 @@ export default {
             // Oracle
             if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req, env);
             if (p === '/api/parse-routine' && m === 'POST') return await parseRoutine(req, env);
+            if (p === '/api/food-vision' && m === 'POST') return await foodVision(req, env);
 
             // Push (recordatorio diario)
             if (p === '/api/push/subscribe' && m === 'POST') return await pushSubscribe(req, env);

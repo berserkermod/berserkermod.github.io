@@ -26,11 +26,17 @@
         return Math.round(bmr * (factors[u.days] || 1.55));
     }
 
+    // Mantenimiento que usa la app: el gasto ajustado con los datos reales del
+    // usuario (ver adaptiveTDEE) si ya lo aceptó; si no, la fórmula.
+    function maintenanceOf(u) {
+        return u && u.tdeeAdaptive > 0 ? Math.round(u.tdeeAdaptive) : calcTDEE(u);
+    }
+
     // TDEE + ajuste calórico por objetivo + split proteína/grasa/carbo.
     // Devuelve { tdee, adj, targetCals, protein, carbs, fat }.
     function calcMacros(u) {
         if (!u) return { tdee: 2000, adj: 0, targetCals: 2000, protein: 150, carbs: 200, fat: 70 };
-        var tdee = calcTDEE(u);
+        var tdee = maintenanceOf(u);
         var adj = { muscle: 400, fat_loss: -400, strength: 300, recomp: 0, endurance: 200 }[u.goal] || 0;
         var targetCals = Math.max(1200, tdee + adj);
 
@@ -70,7 +76,7 @@
     // contra el mantenimiento (TDEE) y contra lo que pide el objetivo. BAND evita
     // el parpadeo cerca de la línea de mantenimiento.
     function calcDailyBalance(u, consumed, burned) {
-        var maintenance = calcTDEE(u);
+        var maintenance = maintenanceOf(u);
         var net = Math.round(consumed - burned);
         var diff = net - maintenance;
         var BAND = 100;
@@ -125,7 +131,63 @@
         return out;
     }
 
+    // ── Peso corporal y gasto real ──────────────────────────────────────
+    var DAY_MS = 86400000;
+    function dayNum(iso) { return Math.round(Date.parse(iso + 'T12:00:00Z') / DAY_MS); }
+
+    // Peso de tendencia: media móvil exponencial del 10 % por día (la del Hacker's
+    // Diet). Filtra el ruido de agua y sal; si faltan días, se acerca al dato nuevo
+    // como si esos días hubieran pasado. Entrada [{date, kg}] en cualquier orden.
+    function weightTrend(entries) {
+        var list = (entries || []).filter(function (e) { return e && e.date && e.kg > 0; })
+            .slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+        var out = [], trend = null, prev = null;
+        list.forEach(function (e) {
+            if (trend === null) trend = e.kg;
+            else {
+                var gap = Math.max(1, dayNum(e.date) - dayNum(prev));
+                trend = trend + (1 - Math.pow(0.9, gap)) * (e.kg - trend);
+            }
+            prev = e.date;
+            out.push({ date: e.date, kg: e.kg, trend: Math.round(trend * 100) / 100 });
+        });
+        return out;
+    }
+
+    // Gasto real estimado a partir de lo que comiste y cómo se movió tu peso:
+    // gasto = ingesta media − cambio de peso × 7700 kcal/kg ÷ días (como MacroFactor).
+    // Usa los últimos `window` días sin contar hoy (que todavía no terminó).
+    // Pide datos suficientes; con pocos días registrados confía más en la fórmula,
+    // y nunca se aleja más de ±25 % de ella (un registro incompleto no lo dispara).
+    // opts: { weights:[{date,kg}], intakes:[{date,kcal}], formula, today:'YYYY-MM-DD', window }
+    // Devuelve null si faltan datos, o { tdee, raw, avgIntake, change, days, loggedDays }.
+    function adaptiveTDEE(opts) {
+        var o = opts || {}, win = o.window || 21, formula = o.formula || 0;
+        if (!o.today || !(formula > 0)) return null;
+        var end = dayNum(o.today), start = end - win;
+        var inWin = function (d) { var n = dayNum(d); return n >= start && n < end; };
+        // Días con comida registrada en serio (con menos de 800 kcal seguro faltó anotar).
+        var logged = (o.intakes || []).filter(function (x) { return x && x.date && inWin(x.date) && x.kcal >= 800; });
+        var trend = weightTrend(o.weights).filter(function (t) { return inWin(t.date); });
+        if (logged.length < 10 || trend.length < 4) return null;
+        var days = dayNum(trend[trend.length - 1].date) - dayNum(trend[0].date);
+        if (days < 10) return null;
+        var avgIntake = logged.reduce(function (a, x) { return a + x.kcal; }, 0) / logged.length;
+        var change = trend[trend.length - 1].trend - trend[0].trend;
+        var raw = avgIntake - change * 7700 / days;
+        var confidence = Math.min(1, logged.length / win);
+        var est = formula + (raw - formula) * confidence;
+        est = Math.max(formula * 0.75, Math.min(formula * 1.25, est));
+        return {
+            tdee: Math.round(est / 10) * 10, raw: Math.round(raw), avgIntake: Math.round(avgIntake),
+            change: Math.round(change * 100) / 100, days: days, loggedDays: logged.length
+        };
+    }
+
     return {
+        maintenanceOf: maintenanceOf,
+        weightTrend: weightTrend,
+        adaptiveTDEE: adaptiveTDEE,
         platesPerSide: platesPerSide,
         warmupSets: warmupSets,
         calcTDEE: calcTDEE,

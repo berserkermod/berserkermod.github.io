@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -88,6 +88,39 @@ console.log('\nformatPortion (unidad natural)');
     ok('es explícito → "2 huevos"', formatPortion(100, eggUnit, 'es') === '2 huevos');
     ok('sin lang → español (retrocompat)', formatPortion(100, eggUnit) === '2 huevos');
     ok('en sin traducción → cae al label base', formatPortion(100, { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' }, 'en') === '2 huevos');
+}
+
+console.log('weightTrend / adaptiveTDEE / maintenanceOf (peso y gasto real)');
+{
+    const iso = (base, n) => new Date(Date.parse(base + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+    const tr = weightTrend([{ date: '2026-10-02', kg: 81 }, { date: '2026-10-01', kg: 80 }]);
+    ok('ordena por fecha y suaviza 10 %/día (80 → 80,1)', tr.length === 2 && tr[0].trend === 80 && tr[1].trend === 80.1, tr);
+    const gap = weightTrend([{ date: '2026-10-01', kg: 80 }, { date: '2026-10-04', kg: 81 }]);
+    ok('con 3 días sin pesarse se acerca más (80,27)', gap[1].trend === 80.27, gap);
+    ok('ignora entradas inválidas', weightTrend([{ date: '2026-10-01', kg: 0 }, null, { kg: 80 }]).length === 0);
+
+    const today = '2026-11-01';
+    const days = (n, f) => Array.from({ length: n }, (_, i) => f(iso(today, -n + i), i));
+    const weights = days(21, (d) => ({ date: d, kg: 80 }));
+    const eat = (kcal) => days(21, (d) => ({ date: d, kcal }));
+    const a = adaptiveTDEE({ weights, intakes: eat(2600), formula: 2700, today });
+    ok('peso estable comiendo 2600 → gasto 2600', a && a.tdee === 2600 && a.change === 0 && a.loggedDays === 21, a);
+    const down = adaptiveTDEE({ weights: days(21, (d, i) => ({ date: d, kg: 80 - i * 0.07 })), intakes: eat(2400), formula: 2700, today });
+    ok('bajando de peso → gasta más de lo que come', down && down.raw > 2400 && down.tdee > 2400, down);
+    ok('pocos días con comida → null', adaptiveTDEE({ weights, intakes: eat(2600).slice(0, 9), formula: 2700, today }) === null);
+    ok('días con menos de 800 kcal no cuentan', adaptiveTDEE({ weights, intakes: eat(500), formula: 2700, today }) === null);
+    ok('pocas pesadas → null', adaptiveTDEE({ weights: weights.slice(0, 3), intakes: eat(2600), formula: 2700, today }) === null);
+    const capped = adaptiveTDEE({ weights, intakes: eat(5000), formula: 2700, today });
+    ok('nunca más de +25 % de la fórmula', capped && capped.tdee <= 3380 && capped.raw === 5000, capped);
+    const half = adaptiveTDEE({ weights, intakes: eat(2600).filter((_, i) => i % 2 === 0), formula: 2800, today });
+    ok('con la mitad de los días registrados confía a medias en el dato', half && half.tdee > 2600 && half.tdee < 2800, half);
+    ok('hoy no cuenta (día sin terminar)', adaptiveTDEE({ weights, intakes: eat(2600).concat([{ date: today, kcal: 9000 }]), formula: 2700, today }).tdee === 2600);
+
+    const u = { sex: 'M', weight: 80, height: 180, age: 30, days: 4, goal: 'muscle' };
+    ok('maintenanceOf sin ajuste = fórmula', maintenanceOf(u) === calcTDEE(u));
+    ok('maintenanceOf con ajuste aceptado', maintenanceOf({ ...u, tdeeAdaptive: 3000 }) === 3000);
+    ok('calcMacros usa el gasto ajustado (+400 por ganar músculo)', calcMacros({ ...u, tdeeAdaptive: 3000 }).targetCals === 3400);
+    ok('el balance del día compara contra el gasto ajustado', calcDailyBalance({ ...u, tdeeAdaptive: 3000 }, 3000, 0).status === 'maintenance');
 }
 
 console.log('platesPerSide (discos por lado)');
