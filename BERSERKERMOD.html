@@ -1049,14 +1049,35 @@
         }
 
         .rest-timer-time {
-            font-size: 88px;
+            font-size: 72px;
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             letter-spacing: -.03em;
             line-height: 1;
             color: var(--accent);
-            text-shadow: 0 0 40px rgba(0,212,170,.35)
+            text-shadow: 0 0 40px rgba(0,212,170,.35);
+            min-width: 4.2ch;
+            text-align: center
         }
+        /* Descanso cumplido: pasa a naranja y cuenta el tiempo extra (+0:12) */
+        .rest-timer.over .rest-timer-time { color: var(--orange); text-shadow: 0 0 40px rgba(253,203,110,.35) }
+        .rest-timer.over .rest-timer-label { color: var(--orange) }
+        .rest-timer.over { border-top-color: var(--orange) }
+        .rest-timer-tools { display: flex; gap: 8px; align-items: center }
+        .rest-timer-sound {
+            font-size: 16px; background: var(--sf2); border: 1px solid var(--border);
+            border-radius: 20px; width: 44px; height: 36px
+        }
+        .rest-timer-main { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100% }
+        .rest-timer-adj {
+            font-size: 15px; font-weight: 800; color: var(--text2); background: var(--sf2);
+            border: 1px solid var(--border); border-radius: 14px; min-width: 56px; height: 48px
+        }
+        .rest-timer-bar { width: 100%; height: 4px; background: var(--sf3); border-radius: 2px; overflow: hidden; margin-top: 10px }
+        .rest-timer-bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 2px; transition: width 1s linear }
+        .rest-timer.over .rest-timer-bar > div { background: var(--orange) }
+        /* Con el descanso abierto, espacio extra al final para poder llegar a las últimas series */
+        body.rest-on .view.active { padding-bottom: 240px }
 
         /* HR WIDGET (top-right, live during gym sessions) */
         :root {
@@ -1607,7 +1628,31 @@
         .rt-day-banner-text { flex: 1; }
         .rt-day-banner-name { font-size: 14px; font-weight: 800; color: var(--day-color, var(--text)); }
         .rt-day-banner-focus { font-size: 11px; color: var(--text3); margin-top: 2px; }
-        .rt-last-weight { font-size: 10px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+        .rt-last-weight { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 4px; }
+        /* Series de la rutina: kg · reps · ✓ (botones de 48px: se usan con la mano transpirada) */
+        .rt-set-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; border-radius: 12px; transition: background .2s; }
+        .rt-set-num { width: 22px; font-size: 14px; color: var(--text3); font-weight: 800; text-align: center; flex-shrink: 0; }
+        .rt-set-inp { padding: 12px 6px; flex: 1; min-width: 0; text-align: center; font-size: 18px; font-weight: 800; }
+        .rt-set-inp::placeholder { color: var(--text3); opacity: .55; font-weight: 700; }
+        .rt-set-check { width: 48px; height: 48px; flex-shrink: 0; border-radius: 12px; background: var(--sf2); border: 1.5px solid var(--border); color: var(--text3); font-size: 20px; font-weight: 900; }
+        .rt-set-row.done { background: rgba(0,212,170,.07); }
+        .rt-set-row.done .rt-set-inp { border-color: rgba(0,212,170,.45); color: var(--accent); }
+        .rt-set-row.done .rt-set-check { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+        /* Superseries */
+        .rt-ex-card.rt-ss { border-left: 3px solid var(--purple); }
+        .rt-ss-badge { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--purple); background: rgba(162,155,254,.12); border-radius: 8px; padding: 3px 8px; margin-bottom: 8px; }
+        .rt-ss-link { display: block; margin: -6px auto 10px; font-size: 12px; font-weight: 700; color: var(--text3); background: none; border: 1px dashed var(--border); border-radius: 14px; padding: 8px 14px; min-height: 36px; }
+        .rt-ss-link.on { color: var(--purple); border-color: rgba(162,155,254,.5); border-style: solid; background: rgba(162,155,254,.08); }
+        /* Calentamiento y discos */
+        .rt-warm { margin-bottom: 10px; }
+        .rt-warm-toggle { width: 100%; text-align: left; font-size: 13px; font-weight: 700; color: var(--orange); background: rgba(253,203,110,.07); border: 1px solid rgba(253,203,110,.25); border-radius: 10px; padding: 10px 12px; }
+        .rt-warm-body { display: none; padding: 8px 4px 2px; }
+        .rt-warm.open .rt-warm-body { display: block; }
+        .rt-warm-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 8px; font-size: 14px; border-bottom: 1px solid var(--border); }
+        .rt-warm-row.work { font-weight: 800; color: var(--accent); border-bottom: none; }
+        .rt-warm-kg { font-weight: 700; white-space: nowrap; }
+        .rt-warm-plates { color: var(--text2); text-align: right; }
+        .rt-warm-note { font-size: 12px; color: var(--text3); margin-top: 6px; padding: 0 8px; }
         .rt-pdf-btn { margin-top: 14px; }
 
         /* EXERCISE LIBRARY */
@@ -1791,10 +1836,18 @@
     <!-- REST TIMER -->
     <div class="rest-timer" id="rest-timer">
         <div class="rest-timer-row">
-            <span class="rest-timer-label">Descanso</span>
-            <button class="rest-timer-skip" onclick="stopRestTimer()">SKIP ✕</button>
+            <span class="rest-timer-label" id="rest-timer-label">Descanso</span>
+            <div class="rest-timer-tools">
+                <button class="rest-timer-sound" id="rest-timer-sound" onclick="toggleRestSound()" aria-label="Sonido">🔔</button>
+                <button class="rest-timer-skip" onclick="stopRestTimer()">SKIP ✕</button>
+            </div>
         </div>
-        <span class="rest-timer-time" id="rest-timer-time">0:00</span>
+        <div class="rest-timer-main">
+            <button class="rest-timer-adj" onclick="adjustRest(-15)">−15</button>
+            <span class="rest-timer-time" id="rest-timer-time">0:00</span>
+            <button class="rest-timer-adj" onclick="adjustRest(15)">+15</button>
+        </div>
+        <div class="rest-timer-bar"><div id="rest-timer-fill"></div></div>
     </div>
 
     <!-- HR WIDGET (live BPM during gym sessions when smartwatch is connected) -->
@@ -2106,6 +2159,7 @@
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
+                rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
                 draft_title: "Sesión sin guardar", draft_msg: "Quedó una sesión de entrenamiento libre sin guardar ({ex} ejercicios · {sets} series). ¿Qué querés hacer?", draft_save: "💾 Guardar sesión", draft_continue: "▶ Seguir entrenando", draft_discard: "🗑 Eliminar", draft_discarded: "Sesión descartada",
                 cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD", cardio_cals_burned: "kcal quemadas",
@@ -2370,6 +2424,7 @@
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
                 train_sets: "COMPLETED SETS", train_finish: "FINISH TRAINING 🔥", train_err_ex: "Select an exercise", train_rest: "Rest", train_pr: "🏆 NEW PR!", train_sess_saved: "✓ Session saved",
+                rest_go: "Next set! 💪", set_done: "Set done", rt_need_values: "Enter kg and reps (0 kg for bodyweight)", rt_draft_old: "You have an unfinished workout from {date}", ss_badge: "SUPERSET", ss_link: "🔗 Make superset", ss_linked: "🔗 Superset · tap to split", ss_next: "Superset → {ex}", wu_btn: "🔥 Warm-up & plates", wu_bar_only: "Empty bar", wu_per_side: "per side", wu_work: "Working", wu_note: "Not logged as sets.", wu_note_bar: "Not logged as sets. Plates per side on a {bar} bar.",
                 session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
                 cardio_manual_title: "ADD MANUALLY", cardio_manual_min: "Minutes", cardio_manual_add: "Add", cardio_manual_hint: "Forgot to start the timer? Enter the minutes and we'll calc the kcal.", cardio_manual_invalid: "Enter the minutes", cardio_other_name: "Sport name",
@@ -2633,6 +2688,7 @@
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
+                rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
                 draft_title: "Sessão não salva", draft_msg: "Ficou um treino livre não salvo ({ex} exercícios · {sets} séries). O que deseja fazer?", draft_save: "💾 Salvar sessão", draft_continue: "▶ Continuar treinando", draft_discard: "🗑 Descartar", draft_discarded: "Sessão descartada",
                 cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE", cardio_cals_burned: "kcal queimadas",
@@ -3446,7 +3502,7 @@
             histFilter: 'TODOS', histExpanded: null,
             statsGroup: '', statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
             cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioIntensity: 1, cardioOtherName: '',
-            restTimer: 0, restInterval: null,
+            restInterval: null, restEnd: null, restTotal: 90, restAlerted: false,
             editSessId: null, editData: null,
             activeRoutineIdx: 0, routineSession: {},
             watch: {
@@ -3491,6 +3547,17 @@
                     if (draft.selDay) state.selDay = draft.selDay;
                 }
             } catch { }
+            // Lo mismo para la rutina del día: vuelve al plan y al día que se estaba haciendo.
+            try {
+                const rd = JSON.parse(localStorage.getItem('bm-routine-draft') || 'null');
+                if (rd && rd.date && rd.exercises && routineHasData(rd)) {
+                    state.activeRoutinePlanIdx = rd.planIdx || 0;
+                    state.activeRoutineIdx = rd.routineIdx != null ? rd.routineIdx : (rd.dayIdx || 0);
+                    delete rd.planIdx; delete rd.routineIdx;
+                    state.routineSession = rd;
+                    state.routineDayPicked = true;
+                }
+            } catch { }
             // License is the source of truth for the tier in production.
             try { applyLicense(); } catch { }
         }
@@ -3531,7 +3598,7 @@
             card.appendChild(h('p', { style: { fontSize: '14px', color: 'var(--text2)', lineHeight: '1.5', marginBottom: '20px' } }, t('draft_msg').replace('{ex}', exCount).replace('{sets}', setCount)));
             card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: () => finish(() => { finishSession(); }) }, t('draft_save')));
             card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginBottom: '8px' }, onclick: () => finish(() => { switchTab('train'); }) }, t('draft_continue')));
-            card.appendChild(h('button', { className: 'btn btn-danger btn-full', onclick: () => finish(() => { state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; clearTrainDraft(); flash(t('draft_discarded'), 'var(--text3)'); if (state.tab === 'train') renderTrain(); }) }, t('draft_discard')));
+            card.appendChild(h('button', { className: 'btn btn-danger btn-full', onclick: () => finish(() => { state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; clearTrainDraft(); setWorkoutAwake(false); flash(t('draft_discarded'), 'var(--text3)'); if (state.tab === 'train') renderTrain(); }) }, t('draft_discard')));
             ov.appendChild(card);
             document.body.appendChild(ov);
         }
@@ -3874,7 +3941,7 @@
         // format so backups exported before this existed still restore.
         const BACKUP_EXCLUDE = [
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
-            'bm-errors', 'bm-share-base', 'bm-train-draft',
+            'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
             'bm-last-backup', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
@@ -6077,10 +6144,99 @@
             return DAYS[0];
         }
 
+        // ── Rutina del día: borrador, día que toca, superseries, calentamiento ──
+        function routineHasData(rs) {
+            return !!(rs && rs.exercises && Object.values(rs.exercises).some(arr => (arr || []).some(s => s.kg !== '' || s.reps !== '' || s.done)));
+        }
+        // Lo que se va anotando queda guardado: sobrevive a recargas y a que el sistema cierre la app.
+        function saveRoutineDraft() {
+            try {
+                const rs = state.routineSession;
+                if (rs && rs.date && routineHasData(rs)) {
+                    localStorage.setItem('bm-routine-draft', JSON.stringify(Object.assign({}, rs, { planIdx: state.activeRoutinePlanIdx || 0, routineIdx: state.activeRoutineIdx })));
+                } else localStorage.removeItem('bm-routine-draft');
+            } catch { }
+        }
+        function clearRoutineDraft() { try { localStorage.removeItem('bm-routine-draft'); } catch { } }
+        // Día que toca: el siguiente al último que hiciste de este plan (por nombre del día).
+        function nextRoutineDayIdx(plan) {
+            const names = (plan || []).map(d => d.name);
+            for (const s of state.sessions || []) {
+                const i = names.indexOf(s.day);
+                if (i >= 0) return (i + 1) % names.length;
+            }
+            return 0;
+        }
+        // Superseries: lista de ejercicios unidos con el siguiente, por plan y día.
+        function supersetLinks(planName, dayIdx) {
+            try { return (JSON.parse(localStorage.getItem('bm-supersets') || '{}')[planName + '|' + dayIdx]) || []; } catch { return []; }
+        }
+        function toggleSuperset(planName, dayIdx, exName) {
+            try {
+                const all = JSON.parse(localStorage.getItem('bm-supersets') || '{}');
+                const key = planName + '|' + dayIdx, list = all[key] || [];
+                all[key] = list.includes(exName) ? list.filter(n => n !== exName) : list.concat(exName);
+                if (!all[key].length) delete all[key];
+                localStorage.setItem('bm-supersets', JSON.stringify(all));
+            } catch { }
+        }
+        // Básicos (los que piden calentamiento) y los que van con barra olímpica (los que llevan discos).
+        function isCompoundLift(name) {
+            return /sentadilla|peso muerto|press banca|press inclinado|press militar|dominada|remo|hip thrust|prensa|hack|fondos|squat|deadlift|bench|overhead press|row/i.test(String(name || ''));
+        }
+        function isBarbellLift(name) {
+            const n = String(name || '').toLowerCase();
+            if (/mancuerna|dumbbell|máquina|maquina|machine|smith|polea|cable|prensa|búlgara|bulgara|goblet|kettlebell|dominada|fondos|pull-?up|dip/.test(n)) return false;
+            return /barra|barbell|sentadilla|squat|peso muerto|deadlift|press banca|press plano|bench|press militar|overhead press|hip thrust/.test(n);
+        }
+        const BAR_WEIGHT = { kg: 20, lbs: 45 };
+        const PLATES_AVAILABLE = { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] };
+        // Panel desplegable "Calentamiento y discos" para el peso de trabajo `work`.
+        function renderWarmup(container, key, exName, work) {
+            state.warmOpen = state.warmOpen || {};
+            const unit = state.unit === 'lbs' ? 'lbs' : 'kg';
+            const barbell = isBarbellLift(exName);
+            const bar = barbell ? BAR_WEIGHT[unit] : 0;
+            const plates = (kg) => {
+                if (!barbell) return '';
+                const p = platesPerSide(kg, bar, PLATES_AVAILABLE[unit]);
+                if (!p.perSide.length) return p.rest ? '' : t('wu_bar_only');
+                return p.perSide.join(' + ') + ' ' + t('wu_per_side') + (p.rest ? ' ≈' : '');
+            };
+            const open = !!state.warmOpen[key];
+            const panel = h('div', { className: 'rt-warm' + (open ? ' open' : '') });
+            const toggle = h('button', { className: 'rt-warm-toggle' }, t('wu_btn') + (open ? ' ▲' : ' ▼'));
+            const body = h('div', { className: 'rt-warm-body' });
+            const row = (label, reps, extra, strong) => {
+                const r = h('div', { className: 'rt-warm-row' + (strong ? ' work' : '') });
+                r.appendChild(h('span', { className: 'rt-warm-kg' }, label + (reps ? ' × ' + reps : '')));
+                r.appendChild(h('span', { className: 'rt-warm-plates' }, extra || ''));
+                return r;
+            };
+            const sets = warmupSets(work, { bar, step: unit === 'lbs' ? 5 : 2.5 });
+            sets.forEach(s => body.appendChild(row((s.kg === bar && barbell ? t('wu_bar_only') + ' · ' : '') + s.kg + unit, s.reps, s.kg === bar && barbell ? '' : plates(s.kg))));
+            body.appendChild(row(t('wu_work') + ' ' + work + unit, '', plates(work), true));
+            body.appendChild(h('p', { className: 'rt-warm-note' }, barbell ? t('wu_note_bar').replace('{bar}', bar + unit) : t('wu_note')));
+            toggle.onclick = () => {
+                state.warmOpen[key] = !state.warmOpen[key];
+                panel.classList.toggle('open', state.warmOpen[key]);
+                toggle.textContent = t('wu_btn') + (state.warmOpen[key] ? ' ▲' : ' ▼');
+            };
+            panel.appendChild(toggle); panel.appendChild(body);
+            container.appendChild(panel);
+        }
+
         // ROUTINES
         let routineCreator = { open: false, step: 0, name: '', days: 3, plan: [] };
 
+        // Redibujar la rutina no te manda arriba de todo (unir superserie, cargar la
+        // sugerencia, guardar…): al vaciar la vista el scroll se iba a 0.
         function renderRoutines() {
+            const y = document.body.scrollTop;
+            renderRoutinesView();
+            if (state.tab === 'routines') document.body.scrollTop = y;
+        }
+        function renderRoutinesView() {
             const v = $('view-routines'); v.innerHTML = '';
 
             // If coach has selected a student's routine, show detail view
@@ -6143,6 +6299,8 @@
             // Simple plan selector
             let activePlanObj = allPlans[state.activeRoutinePlanIdx || 0];
             if (!activePlanObj) { state.activeRoutinePlanIdx = 0; activePlanObj = allPlans[0]; }
+            // Al abrir la app, la rutina muestra el día que toca (no siempre el Día 1).
+            if (!state.routineDayPicked) { state.activeRoutineIdx = nextRoutineDayIdx(activePlanObj.plan); state.routineDayPicked = true; }
 
             const dayIdx = state.activeRoutineIdx % activePlanObj.plan.length;
             const today = activePlanObj.plan[dayIdx];
@@ -6234,8 +6392,9 @@
                 const ps = h('select', {
                     className: 'input', style: { marginBottom: '16px', padding: '8px', fontSize: '12px', background: 'var(--sf1)' }, onchange: e => {
                         state.activeRoutinePlanIdx = parseInt(e.target.value);
-                        state.activeRoutineIdx = 0;
+                        state.activeRoutineIdx = nextRoutineDayIdx((allPlans[state.activeRoutinePlanIdx] || activePlanObj).plan);
                         state.routineSession = {};
+                        saveRoutineDraft();
                         renderRoutines();
                     }
                 });
@@ -6247,24 +6406,41 @@
                 v.appendChild(ps);
             }
 
+            // Entreno de otro día que quedó sin terminar: primero guardarlo o descartarlo.
+            const pending = state.routineSession;
+            if (pending.date && pending.date !== todayStr() && routineHasData(pending)) {
+                const dc = h('div', { className: 'card fade-in', style: { borderColor: 'rgba(253,203,110,.35)' } });
+                dc.appendChild(h('p', { style: { fontSize: '15px', fontWeight: 800, marginBottom: '6px' } }, '💪 ' + t('rt_draft_old').replace('{date}', pending.date.split('-').reverse().join('/'))));
+                dc.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '14px' } }, pending.plan + ' · ' + (pending.dayName || '')));
+                dc.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginBottom: '8px' }, onclick: finishRoutineSession }, t('draft_save')));
+                dc.appendChild(h('button', { className: 'btn btn-danger btn-full', onclick: () => { state.routineSession = {}; clearRoutineDraft(); setWorkoutAwake(false); renderRoutines(); } }, t('draft_discard')));
+                v.appendChild(dc);
+                return;
+            }
+
             // Exercises
             if (!state.routineSession.date || state.routineSession.date !== todayStr() || state.routineSession.dayIdx !== dayIdx || state.routineSession.plan !== activePlanObj.name) {
                 state.routineSession = { date: todayStr(), dayIdx: dayIdx, plan: activePlanObj.name, dayName: today.name, exercises: {} };
                 today.exercises.forEach(ex => {
                     state.routineSession.exercises[ex.name] = Array.from({ length: ex.sets }, () => ({ kg: '', reps: '' }));
                 });
+                saveRoutineDraft();
             }
 
             const rs = state.routineSession;
+            const ssLinks = supersetLinks(activePlanObj.name, dayIdx);
 
             today.exercises.forEach((ex, exIdx) => {
-                const ec = h('div', { className: 'card fade-in' });
                 normalizeExercise(ex);  // ensures rest_s, notes, kind defaults
+                const linkedNext = ssLinks.includes(ex.name) && exIdx < today.exercises.length - 1;
+                const linkedPrev = exIdx > 0 && ssLinks.includes(today.exercises[exIdx - 1].name);
+                const ec = h('div', { className: 'card fade-in rt-ex-card' + (linkedNext || linkedPrev ? ' rt-ss' : '') });
+                if (linkedNext || linkedPrev) ec.appendChild(h('div', { className: 'rt-ss-badge' }, t('ss_badge')));
 
                 // Header: name + 📚 library link + sets×reps + rest badge
                 const headRow = h('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center', gap: '8px' } });
                 const nameWrap = h('div', { style: { flex: 1, display: 'flex', alignItems: 'center', gap: '6px' } });
-                nameWrap.appendChild(h('p', { style: { fontWeight: 800, fontSize: '14px', color: 'var(--text)' } }, ex.name));
+                nameWrap.appendChild(h('p', { style: { fontWeight: 800, fontSize: '16px', color: 'var(--text)' } }, ex.name));
                 // Find matching library entry by name (fuzzy match)
                 const libMatch = EXERCISE_LIBRARY.find(le => le.name.toLowerCase() === ex.name.toLowerCase() || ex.name.toLowerCase().includes(le.name.toLowerCase().split(' ')[0].toLowerCase()));
                 if (libMatch) {
@@ -6281,7 +6457,7 @@
                 badges.appendChild(h('span', { className: 'session-badge', style: { background: 'var(--sf2)', border: '1px solid var(--border)', color: 'var(--text3)' } }, badgeTxt));
                 if (ex.rest_s) {
                     const restStr = ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's';
-                    badges.appendChild(h('span', { style: { fontSize: '10px', fontWeight: 700, color: 'var(--accent)', background: 'rgba(0,212,170,.08)', border: '1px solid rgba(0,212,170,.2)', padding: '3px 8px', borderRadius: '10px' } }, '⏱ ' + restStr));
+                    badges.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--accent)', background: 'rgba(0,212,170,.08)', border: '1px solid rgba(0,212,170,.2)', padding: '4px 9px', borderRadius: '10px' } }, '⏱ ' + restStr));
                 }
                 headRow.appendChild(badges);
                 ec.appendChild(headRow);
@@ -6294,7 +6470,7 @@
 
                 // Coach notes (from plan generator)
                 if (ex.notes) {
-                    ec.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--blue)', fontStyle: 'italic', marginTop: '4px', marginBottom: '8px', lineHeight: 1.45 } }, '💡 ' + ex.notes));
+                    ec.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--blue)', fontStyle: 'italic', marginTop: '4px', marginBottom: '8px', lineHeight: 1.45 } }, '💡 ' + ex.notes));
                 }
 
                 const rec = checkProgression(ex.name);
@@ -6305,11 +6481,12 @@
                         .replace('{currentKg}', rec.currentKg)
                         .replace('{pct}', rec.pct)
                         .replace('{days}', rec.diffDays);
-                    const recDiv = h('div', { style: { background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent)', borderLeft: '3px solid var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: '700', marginBottom: '12px', lineHeight: '1.4' } });
+                    const recDiv = h('div', { style: { background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent)', borderLeft: '3px solid var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '13px', fontWeight: '700', marginBottom: '12px', lineHeight: '1.4' } });
                     recDiv.textContent = recMsg;
                     ec.appendChild(recDiv);
                 }
 
+                if (!rs.exercises[ex.name]) rs.exercises[ex.name] = Array.from({ length: ex.sets || 0 }, () => ({ kg: '', reps: '' }));
                 const setsArr = rs.exercises[ex.name];
 
                 // Sugerencia de doble progresión (si el banner de estancamiento no saltó).
@@ -6321,9 +6498,10 @@
                         : t('rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
                     ).replaceAll('{unit}', state.unit);
                     const sugBtn = h('button', {
-                        style: { display: 'block', width: '100%', textAlign: 'left', background: sug.up ? 'rgba(0,212,170,.08)' : 'rgba(116,185,255,.08)', color: sug.up ? 'var(--accent)' : 'var(--blue)', border: '1px dashed ' + (sug.up ? 'rgba(0,212,170,.35)' : 'rgba(116,185,255,.35)'), borderRadius: '8px', padding: '8px 12px', fontSize: '11px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4, cursor: 'pointer' },
+                        style: { display: 'block', width: '100%', textAlign: 'left', background: sug.up ? 'rgba(0,212,170,.08)' : 'rgba(116,185,255,.08)', color: sug.up ? 'var(--accent)' : 'var(--blue)', border: '1px dashed ' + (sug.up ? 'rgba(0,212,170,.35)' : 'rgba(116,185,255,.35)'), borderRadius: '8px', padding: '10px 12px', fontSize: '13px', fontWeight: 700, marginBottom: '10px', lineHeight: 1.4, cursor: 'pointer' },
                         onclick: () => {
                             setsArr.forEach(st => { if (!st.kg) st.kg = sug.kg; });
+                            saveRoutineDraft();
                             renderRoutines();
                             flash('✅ ' + sug.kg + state.unit + ' → ' + t('rt_suggest_loaded'));
                         }
@@ -6331,22 +6509,84 @@
                     ec.appendChild(sugBtn);
                 }
 
+                // Calentamiento y discos (básicos con peso de trabajo conocido). No se registran.
+                if (ex.kind !== 'cardio' && isCompoundLift(ex.name)) {
+                    const typed = setsArr.map(st => parseFloat(st.kg) || 0).find(k => k > 0);
+                    const work = typed || (sug && sug.kg) || (last && last.kg) || 0;
+                    if (work > 0) renderWarmup(ec, 'rt:' + ex.name, ex.name, work);
+                }
+
+                // Referencia de cada serie: la anterior de hoy o la misma serie del último entreno.
+                const prevSets = getPrevSets(ex.name);
+                const refFor = (i) => ({
+                    kg: (i > 0 && setsArr[i - 1].kg) || (prevSets[i] && prevSets[i].kg) || (prevSets[0] && prevSets[0].kg) || '',
+                    reps: (i > 0 && setsArr[i - 1].reps) || (prevSets[i] && prevSets[i].reps) || ''
+                });
+                const rowEls = [];
+                const refreshPlaceholders = () => rowEls.forEach(({ kgInp, repsInp }, i) => {
+                    const r = refFor(i);
+                    kgInp.placeholder = r.kg !== '' ? String(r.kg) : state.unit;
+                    repsInp.placeholder = r.reps !== '' ? String(r.reps) : (String(ex.reps || '') || 'reps');
+                });
+
                 setsArr.forEach((set, sIdx) => {
-                    const row = h('div', { style: { display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' } });
-                    row.appendChild(h('span', { style: { width: '20px', fontSize: '12px', color: 'var(--text3)', fontWeight: 700, textAlign: 'center' } }, (sIdx + 1) + ''));
+                    const row = h('div', { className: 'rt-set-row' + (set.done ? ' done' : '') });
+                    row.appendChild(h('span', { className: 'rt-set-num' }, (sIdx + 1) + ''));
 
-                    const kgInp = h('input', { type: 'number', className: 'input', placeholder: 'kg', value: set.kg, style: { padding: '8px', flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: 700 } });
-                    kgInp.oninput = (e) => { set.kg = e.target.value; };
+                    const kgInp = h('input', { type: 'number', inputmode: 'decimal', className: 'input rt-set-inp', value: set.kg });
+                    kgInp.oninput = (e) => { set.kg = e.target.value; refreshPlaceholders(); saveRoutineDraft(); };
 
-                    const repsInp = h('input', { type: 'number', className: 'input', placeholder: 'reps', value: set.reps, style: { padding: '8px', flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: 700 } });
-                    repsInp.oninput = (e) => { set.reps = e.target.value; };
+                    const repsInp = h('input', { type: 'number', inputmode: 'numeric', className: 'input rt-set-inp', value: set.reps });
+                    repsInp.oninput = (e) => { set.reps = e.target.value; refreshPlaceholders(); saveRoutineDraft(); };
+
+                    // ✓ = serie hecha: completa lo vacío con la referencia y arranca el descanso.
+                    const doneBtn = h('button', { className: 'rt-set-check', 'aria-label': t('set_done') }, '✓');
+                    doneBtn.onclick = () => {
+                        if (!set.done) {
+                            const r = refFor(sIdx);
+                            if (set.kg === '' && r.kg !== '') { set.kg = String(r.kg); kgInp.value = set.kg; }
+                            if (set.reps === '' && r.reps !== '') { set.reps = String(r.reps); repsInp.value = set.reps; }
+                            if (set.kg === '' || set.reps === '') {
+                                (set.kg === '' ? kgInp : repsInp).focus();
+                                flash(t('rt_need_values'), 'var(--orange)');
+                                return;
+                            }
+                        }
+                        set.done = !set.done;
+                        row.classList.toggle('done', set.done);
+                        refreshPlaceholders();
+                        if (set.done) {
+                            if (!rs.startedAt) rs.startedAt = Date.now();
+                            if (linkedNext) {
+                                // Superserie: sin descanso, directo al ejercicio siguiente.
+                                stopRestTimer(); setWorkoutAwake(true);
+                                const nextCard = v.querySelectorAll('.rt-ex-card')[exIdx + 1];
+                                if (nextCard) nextCard.scrollIntoView({ block: 'start', behavior: 'smooth' });
+                                flash(t('ss_next').replace('{ex}', today.exercises[exIdx + 1].name), 'var(--accent)');
+                            } else {
+                                startRestTimer(ex.rest_s || REST_DEFAULT_S);
+                            }
+                        } else stopRestTimer();
+                        saveRoutineDraft();
+                    };
 
                     row.appendChild(kgInp);
                     row.appendChild(repsInp);
+                    row.appendChild(doneBtn);
+                    rowEls.push({ kgInp, repsInp });
                     ec.appendChild(row);
                 });
+                refreshPlaceholders();
 
                 v.appendChild(ec);
+
+                // Unir con el ejercicio siguiente en superserie (se guarda por plan y día).
+                if (exIdx < today.exercises.length - 1 && ex.kind !== 'cardio' && today.exercises[exIdx + 1].kind !== 'cardio') {
+                    v.appendChild(h('button', {
+                        className: 'rt-ss-link' + (linkedNext ? ' on' : ''),
+                        onclick: () => { toggleSuperset(activePlanObj.name, dayIdx, ex.name); renderRoutines(); }
+                    }, linkedNext ? t('ss_linked') : t('ss_link')));
+                }
             });
 
             // Finish button
@@ -6422,14 +6662,17 @@
                 return;
             }
 
+            // Duración real si se fue tildando en vivo; si se cargó todo al final, 60 min como antes.
+            const mins = rs.startedAt ? Math.round((Date.now() - rs.startedAt) / 60000) : 0;
             const sess = {
                 id: Date.now(),
                 date: rs.date,
                 day: rs.dayName || DAYS[0],
                 exercises: exData,
-                duration: 60
+                duration: mins >= 1 ? Math.min(mins, 240) : 60
             };
             state.routineSession = {};
+            clearRoutineDraft(); stopRestTimer(); setWorkoutAwake(false);
             state.activeRoutineIdx++;
             saveWorkoutSession(sess, (saved, merged) => {
                 flash(merged ? t('session_merged') : t('routines_saved_ok'));
@@ -7031,7 +7274,7 @@
             if (state.selEx) {
                 const prev = getPrevSets(state.selEx);
                 if (prev.length) {
-                    const ph = h('div', { style: { background: 'var(--sf2)', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', fontSize: '11px', color: 'var(--text3)' } });
+                    const ph = h('div', { style: { background: 'var(--sf2)', borderRadius: '10px', padding: '10px 12px', marginBottom: '12px', fontSize: '13px', color: 'var(--text3)' } });
                     ph.appendChild(h('span', { style: { fontWeight: 700 } }, 'Anterior: '));
                     ph.appendChild(h('span', {}, prev.map(s => s.kg + state.unit + '×' + s.reps).join(' / ')));
 
@@ -7048,6 +7291,9 @@
                     }
                     lc.appendChild(ph);
                 }
+                // Calentamiento y discos para el peso máximo de la vez anterior
+                const prevMax = Math.max(0, ...getPrevSets(state.selEx).map(st => parseFloat(st.kg) || 0));
+                if (prevMax > 0 && isCompoundLift(state.selEx)) renderWarmup(lc, 'tr:' + state.selEx, state.selEx, prevMax);
             }
 
             const grid = h('div', { className: 'input-grid' });
@@ -7126,7 +7372,7 @@
             if (!state.sessionSets.length) return;
             const dur = state.sessionStart ? Math.round((Date.now() - state.sessionStart) / 60000) : 0;
             const sess = { id: Date.now(), date: state.sessionDate || todayStr(), day: state.selDay, duration: dur, exercises: JSON.parse(JSON.stringify(state.sessionSets)) };
-            state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; stopRestTimer(); clearTrainDraft();
+            state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; stopRestTimer(); setWorkoutAwake(false); clearTrainDraft();
             saveWorkoutSession(sess, (saved, merged) => {
                 if (merged) {
                     flash(t('session_merged'), 'var(--accent)');
@@ -7533,26 +7779,115 @@
             return new Promise(r => c.toBlob(b => r({ blob: b, url: URL.createObjectURL(b) }), 'image/png', 0.95));
         }
 
-        // REST TIMER — cronómetro de descanso (cuenta desde 0 al terminar una serie).
-        // Se reinicia al iniciar una nueva serie o al cerrarlo (SKIP); no tiene pausa.
-        function startRestTimer() {
-            stopRestTimer(); state.restTimer = 0;
-            state.restStartTime = Date.now();
+        // REST TIMER — cuenta regresiva con el descanso del ejercicio (rest_s del plan;
+        // 90 s por defecto). Al llegar a 0 vibra, suena (si el sonido está activo) y
+        // sigue contando el tiempo extra en naranja (+0:12). ±15 s y SKIP.
+        // Se calcula contra la hora de fin, así no se atrasa si el navegador frena
+        // el intervalo con la app en segundo plano.
+        const REST_DEFAULT_S = 90;
+        function restSoundOn() { try { return localStorage.getItem('bm-rest-sound') !== '0'; } catch { return true; } }
+        function toggleRestSound() {
+            const on = !restSoundOn();
+            try { localStorage.setItem('bm-rest-sound', on ? '1' : '0'); } catch { }
+            const b = $('rest-timer-sound'); if (b) b.textContent = on ? '🔔' : '🔕';
+            if (on) restAudio(); // el toque habilita el audio
+        }
+        // El navegador solo deja sonar audio creado/reanudado desde un toque: se
+        // prepara al arrancar el descanso (que siempre viene de un toque).
+        let _restAudioCtx = null;
+        function restAudio() {
+            try {
+                if (!_restAudioCtx) _restAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (_restAudioCtx.state === 'suspended') _restAudioCtx.resume();
+            } catch { _restAudioCtx = null; }
+            return _restAudioCtx;
+        }
+        function restBeep() {
+            const ctx = _restAudioCtx; if (!ctx) return;
+            try {
+                [0, 0.22, 0.44].forEach((t0, i) => {
+                    const o = ctx.createOscillator(), g = ctx.createGain(), at = ctx.currentTime + t0;
+                    o.type = 'sine'; o.frequency.value = i === 2 ? 1320 : 880;
+                    g.gain.setValueAtTime(0.0001, at);
+                    g.gain.exponentialRampToValueAtTime(0.4, at + 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+                    o.connect(g); g.connect(ctx.destination); o.start(at); o.stop(at + 0.2);
+                });
+            } catch { }
+        }
+        function restAlert() {
+            try { if ('vibrate' in navigator) navigator.vibrate([220, 120, 220]); } catch { }
+            if (restSoundOn()) restBeep();
+            // Con la app en segundo plano, aviso del sistema (si ya dio permiso de notificaciones).
+            try {
+                if (document.hidden && 'Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker) {
+                    navigator.serviceWorker.ready.then(r => r.showNotification('BERSERKERMOD', { body: t('rest_go'), tag: 'bm-rest', renotify: true, silent: false })).catch(() => { });
+                }
+            } catch { }
+        }
+        function renderRestTimer() {
+            const left = Math.round((state.restEnd - Date.now()) / 1000);
+            const over = left <= 0;
+            if (over && !state.restAlerted) { state.restAlerted = true; restAlert(); }
+            const n = Math.abs(left), m = Math.floor(n / 60), s = n % 60;
+            const box = $('rest-timer'); box.classList.toggle('over', over);
+            $('rest-timer-time').textContent = (over && n ? '+' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+            $('rest-timer-label').textContent = over ? t('rest_go') : t('train_rest');
+            const fill = $('rest-timer-fill');
+            if (fill) fill.style.width = (over ? 100 : Math.round((1 - left / state.restTotal) * 100)) + '%';
+        }
+        function startRestTimer(seconds) {
+            stopRestTimer();
+            state.restTotal = Math.max(15, Math.round(seconds || REST_DEFAULT_S));
+            state.restEnd = Date.now() + state.restTotal * 1000;
+            state.restAlerted = false;
+            if (restSoundOn()) restAudio();
+            const b = $('rest-timer-sound'); if (b) b.textContent = restSoundOn() ? '🔔' : '🔕';
             $('rest-timer').classList.add('show');
-            $('rest-timer-time').textContent = '0:00'; // reset inmediato (sin flash del valor viejo)
-            state.restInterval = setInterval(() => {
-                state.restTimer = Math.floor((Date.now() - state.restStartTime) / 1000);
-                const m = Math.floor(state.restTimer / 60), s = state.restTimer % 60;
-                $('rest-timer-time').textContent = m + ':' + (s < 10 ? '0' : '') + s;
-            }, 1000);
+            document.body.classList.add('rest-on');
+            renderRestTimer(); // sin flash del valor anterior
+            state.restInterval = setInterval(renderRestTimer, 250);
+            setWorkoutAwake(true);
+        }
+        function adjustRest(delta) {
+            if (!state.restInterval) return;
+            const now = Date.now();
+            if (state.restEnd <= now && delta < 0) return; // en tiempo extra no hay qué restar
+            // En tiempo extra, +15 arranca una cuenta nueva desde ahora.
+            state.restEnd = Math.max(now + 5000, Math.max(state.restEnd, now) + delta * 1000);
+            state.restTotal = Math.max(15, state.restTotal + delta);
+            state.restAlerted = state.restEnd <= now;
+            renderRestTimer();
         }
         function stopRestTimer() {
             if (state.restInterval) clearInterval(state.restInterval);
-            state.restInterval = null;
-            state.restTimer = 0; state.restStartTime = null; // reset real al cerrar
-            $('rest-timer').classList.remove('show');
+            state.restInterval = null; state.restEnd = null; state.restAlerted = false;
+            $('rest-timer').classList.remove('show', 'over');
+            document.body.classList.remove('rest-on');
             const el = $('rest-timer-time'); if (el) el.textContent = '0:00';
+            const fill = $('rest-timer-fill'); if (fill) fill.style.width = '0';
         }
+
+        // Pantalla encendida mientras hay un entreno en curso (Screen Wake Lock API).
+        // El sistema la suelta al pasar a segundo plano: se vuelve a pedir al volver.
+        let _wakeLock = null, _wakeWanted = false;
+        async function setWorkoutAwake(on) {
+            _wakeWanted = !!on;
+            try {
+                if (on) {
+                    if (_wakeLock || !('wakeLock' in navigator) || document.visibilityState !== 'visible') return;
+                    _wakeLock = await navigator.wakeLock.request('screen');
+                    _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+                } else if (_wakeLock) {
+                    const l = _wakeLock; _wakeLock = null; await l.release();
+                }
+            } catch { _wakeLock = null; }
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (_wakeWanted) setWorkoutAwake(true);
+            if (state.restInterval) renderRestTimer();
+        });
 
         // CARDIO
         function renderCardio() {

@@ -93,7 +93,41 @@
         return Math.round((met || 0) * (intensity || 1) * (weightKg || 0) * ((seconds || 0) / 3600));
     }
 
+    // Discos por lado para armar `total` con una barra de `bar`, usando los discos
+    // disponibles de mayor a menor. Devuelve { perSide: [25, 10, 2.5], rest } donde
+    // rest es lo que no se pudo armar con esos discos (0 si cierra justo).
+    function platesPerSide(total, bar, plates) {
+        var r = function (x) { return Math.round(x * 1000) / 1000; };
+        var left = r((total - bar) / 2);
+        if (!(left > 0)) return { perSide: [], rest: 0 };
+        var out = [];
+        plates.slice().sort(function (a, b) { return b - a; }).forEach(function (p) {
+            while (left + 1e-9 >= p) { out.push(p); left = r(left - p); }
+        });
+        return { perSide: out, rest: r(left * 2) };
+    }
+
+    // Series de aproximación hasta el peso de trabajo: barra sola (si hay barra) y
+    // escalones al 40/60/80 % redondeados a `step`, sin repetir pesos ni llegar al
+    // de trabajo. Con poco peso quedan menos escalones (o ninguno).
+    function warmupSets(work, opts) {
+        opts = opts || {};
+        var bar = opts.bar || 0, step = opts.step || 2.5;
+        var out = [];
+        if (!(work > 0)) return out;
+        if (bar > 0 && work > bar) out.push({ kg: bar, reps: 10 });
+        [[0.4, 8], [0.6, 5], [0.8, 3]].forEach(function (s) {
+            var kg = Math.round(work * s[0] / step) * step;
+            var prev = out.length ? out[out.length - 1].kg : 0;
+            if (kg <= Math.max(prev, bar) || kg >= work) return;
+            out.push({ kg: kg, reps: s[1] });
+        });
+        return out;
+    }
+
     return {
+        platesPerSide: platesPerSide,
+        warmupSets: warmupSets,
         calcTDEE: calcTDEE,
         calcMacros: calcMacros,
         formatPortion: formatPortion,

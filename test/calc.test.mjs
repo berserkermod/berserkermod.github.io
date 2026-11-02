@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -88,6 +88,31 @@ console.log('\nformatPortion (unidad natural)');
     ok('es explícito → "2 huevos"', formatPortion(100, eggUnit, 'es') === '2 huevos');
     ok('sin lang → español (retrocompat)', formatPortion(100, eggUnit) === '2 huevos');
     ok('en sin traducción → cae al label base', formatPortion(100, { kind: 'count', g: 50, label: 'huevo', labelP: 'huevos' }, 'en') === '2 huevos');
+}
+
+console.log('platesPerSide (discos por lado)');
+{
+    const KG = [25, 20, 15, 10, 5, 2.5, 1.25];
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    ok('100 kg, barra 20 → 25 + 15 por lado', eq(platesPerSide(100, 20, KG), { perSide: [25, 15], rest: 0 }), platesPerSide(100, 20, KG));
+    ok('82,5 kg → 25 + 5 + 1,25', eq(platesPerSide(82.5, 20, KG), { perSide: [25, 5, 1.25], rest: 0 }), platesPerSide(82.5, 20, KG));
+    ok('barra sola o menos → sin discos', eq(platesPerSide(20, 20, KG), { perSide: [], rest: 0 }) && eq(platesPerSide(15, 20, KG), { perSide: [], rest: 0 }));
+    ok('peso que no cierra → informa el resto', eq(platesPerSide(21, 20, KG), { perSide: [], rest: 1 }), platesPerSide(21, 20, KG));
+    ok('repite discos si hace falta (180 kg → 25×3 + 5)', eq(platesPerSide(180, 20, KG).perSide, [25, 25, 25, 5]), platesPerSide(180, 20, KG));
+    ok('libras (barra 45): 225 → 45 + 45', eq(platesPerSide(225, 45, [45, 35, 25, 10, 5, 2.5]).perSide, [45, 45]));
+    ok('no modifica la lista de discos', (() => { const l = [5, 25, 10]; platesPerSide(100, 20, l); return eq(l, [5, 25, 10]); })());
+}
+
+console.log('warmupSets (series de aproximación)');
+{
+    const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    ok('100 kg con barra: barra×10, 40×8, 60×5, 80×3', eq(warmupSets(100, { bar: 20 }), [{ kg: 20, reps: 10 }, { kg: 40, reps: 8 }, { kg: 60, reps: 5 }, { kg: 80, reps: 3 }]), warmupSets(100, { bar: 20 }));
+    ok('redondea al escalón (82,5 → 32,5 / 50 / 65)', eq(warmupSets(82.5, { bar: 20 }).map(s => s.kg), [20, 32.5, 50, 65]), warmupSets(82.5, { bar: 20 }));
+    ok('poco peso: salta escalones por debajo de la barra', eq(warmupSets(30, { bar: 20 }), [{ kg: 20, reps: 10 }, { kg: 25, reps: 3 }]), warmupSets(30, { bar: 20 }));
+    ok('trabajo = barra → sin aproximación', eq(warmupSets(20, { bar: 20 }), []));
+    ok('sin barra (mancuernas): solo porcentajes', eq(warmupSets(30, { step: 2 }).map(s => s.kg), [12, 18, 24]), warmupSets(30, { step: 2 }));
+    ok('sin peso → nada', eq(warmupSets(0, { bar: 20 }), []) && eq(warmupSets(NaN), []));
+    ok('nunca llega al peso de trabajo ni repite', warmupSets(22.5, { bar: 20 }).every((s, i, a) => s.kg < 22.5 && (!i || s.kg > a[i - 1].kg)), warmupSets(22.5, { bar: 20 }));
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
