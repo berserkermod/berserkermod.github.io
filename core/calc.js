@@ -236,6 +236,18 @@
         return out;
     }
 
+    // Fecha 'YYYY-MM-DD' del día LOCAL, según la zona horaria del teléfono (que
+    // ya sabe país y región: Madrid y Canarias, Nueva York y Los Ángeles).
+    // toISOString() da el día en UTC: en España la medianoche local cae el día
+    // anterior y en Argentina, después de las 21 h, ya es "mañana". Toda fecha
+    // de calendario de la app sale de acá.
+    function localDateStr(d) {
+        var x = d instanceof Date ? d : new Date(d === undefined ? Date.now() : d);
+        if (isNaN(x)) return '';
+        var m = x.getMonth() + 1, day = x.getDate();
+        return x.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+    }
+
     // ── Modo Coach: resultados que registra el alumno desde su link ──
     // Semana ISO (lunes a domingo) de 'YYYY-MM-DD' → 'YYYY-Www'. Misma cuenta que el Worker.
     function isoWeek(dateStr) {
@@ -309,6 +321,7 @@
     }
 
     return {
+        localDateStr: localDateStr,
         isoWeek: isoWeek,
         topSet: topSet,
         exerciseTrend: exerciseTrend,

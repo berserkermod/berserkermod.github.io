@@ -2272,18 +2272,13 @@
         const COUNTRIES = [
             { r: "América del Norte", c: ["Canadá", "Estados Unidos", "México"] },
             { r: "América Central", c: ["Belice", "Costa Rica", "El Salvador", "Guatemala", "Honduras", "Nicaragua", "Panamá"] },
-            { r: "América del Sur", c: ["Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecuador", "Guyana", "Paraguay", "Perú", "Uruguay", "Venezuela"] }
+            { r: "América del Sur", c: ["Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecuador", "Guyana", "Paraguay", "Perú", "Uruguay", "Venezuela"] },
+            { r: "Caribe", c: ["Cuba", "Puerto Rico", "República Dominicana"] },
+            { r: "Europa", c: ["Alemania", "España", "Francia", "Italia", "Portugal", "Reino Unido"] },
+            { r: "Otros", c: ["Otro país"] }
         ];
-
-        const TIMEZONES = {
-            "Canadá": "America/Toronto", "Estados Unidos": "America/New_York", "México": "America/Mexico_City",
-            "Belice": "America/Belize", "Costa Rica": "America/Costa_Rica", "El Salvador": "America/El_Salvador",
-            "Guatemala": "America/Guatemala", "Honduras": "America/Tegucigalpa", "Nicaragua": "America/Managua", "Panamá": "America/Panama",
-            "Argentina": "America/Argentina/Buenos_Aires", "Bolivia": "America/La_Paz", "Brasil": "America/Sao_Paulo",
-            "Chile": "America/Santiago", "Colombia": "America/Bogota", "Ecuador": "America/Guayaquil",
-            "Guyana": "America/Guyana", "Paraguay": "America/Asuncion", "Perú": "America/Lima",
-            "Uruguay": "America/Montevideo", "Venezuela": "America/Caracas"
-        };
+        // El país es solo un dato del perfil: la hora y el "hoy" salen de la zona
+        // horaria del teléfono (ver todayStr), que distingue regiones de un mismo país.
 
         // I18N DICTIONARY
         const I18N = {
@@ -2352,7 +2347,7 @@
                 play_active: "Se renueva automáticamente con Google Play",
                 play_manage: "Administrar suscripción",
                 tester_title: "🎁 Sos tester de BERSERKERMOD", tester_msg: "Gracias por probar la app desde Google Play. Tu recompensa: Premium vitalicio, gratis, atado a este teléfono.", tester_btn: "Reclamar Premium vitalicio", tester_ok: "¡Premium vitalicio activado! Gracias por testear.", tester_err: "No se pudo reclamar. Probá de nuevo más tarde.", tester_closed: "La prueba cerrada ya terminó — el reclamo está cerrado.", tester_full: "Se completó el cupo de testers. Escribinos y lo vemos.", tester_code_label: "Tu código de tester", tester_code_hint: "Guardalo: si cambiás de teléfono, lo activás en Perfil → Activar código.",
-                push_title: "Recordatorio diario", push_sub: "Una notificación por día (18hs) para que no se te escape el entrenamiento. Sin spam.", push_on_btn: "Activar recordatorio", push_off_btn: "Desactivar recordatorio", push_enabled: "¡Listo! Te avisamos todos los días a las 18hs.", push_disabled: "Recordatorio desactivado.", push_denied: "Bloqueaste las notificaciones — habilitalas en los ajustes del navegador.", push_fail: "No se pudo activar. Probá de nuevo.", push_ios_hint: "En iPhone: instalá la app (Compartir → Agregar a inicio) para poder recibir recordatorios.",
+                push_title: "Recordatorio diario", push_sub: "Una notificación a las 18 h de tu hora local, solo los días que todavía no entrenaste. Sin spam.", push_on_btn: "Activar recordatorio", push_off_btn: "Desactivar recordatorio", push_enabled: "¡Listo! Te avisamos a las 18 h si ese día todavía no entrenaste.", push_disabled: "Recordatorio desactivado.", push_denied: "Bloqueaste las notificaciones — habilitalas en los ajustes del navegador.", push_fail: "No se pudo activar. Probá de nuevo.", push_ios_hint: "En iPhone: instalá la app (Compartir → Agregar a inicio) para poder recibir recordatorios.",
                 prof_import: "Importar Datos", imp_invalid: "El archivo no es un backup válido de BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sesiones de entrenamiento", imp_foods: "{n} comidas registradas", imp_exported: "exportado el {date}", imp_warning: "Al restaurar se reemplazan todos los datos actuales de este dispositivo.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Protegé tus datos", backup_remind_msg: "Tu historial vive solo en este dispositivo. Descargá un backup cada tanto para no perderlo si cambiás o perdés el teléfono.",
                 prof_male: "Masculino", prof_female: "Femenino", prof_export: "Exportar Datos", prof_backup: "📦 Backup descargado", prof_no_nutri: "No tenés un plan nutricional activo.", prof_act_nutri: "🥗 Activar Plan Nutricional",
@@ -2630,7 +2625,7 @@
                 play_active: "Renews automatically via Google Play",
                 play_manage: "Manage subscription",
                 tester_title: "🎁 You're a BERSERKERMOD tester", tester_msg: "Thanks for testing the app from Google Play. Your reward: lifetime Premium, free, tied to this phone.", tester_btn: "Claim lifetime Premium", tester_ok: "Lifetime Premium activated! Thanks for testing.", tester_err: "Couldn't claim. Try again later.", tester_closed: "The closed test is over — claims are closed.", tester_full: "The tester quota is full. Message us and we'll sort it out.", tester_code_label: "Your tester code", tester_code_hint: "Keep it: if you switch phones, activate it in Profile → Activate code.",
-                push_title: "Daily reminder", push_sub: "One notification a day (6pm) so you never miss a workout. No spam.", push_on_btn: "Enable reminder", push_off_btn: "Disable reminder", push_enabled: "Done! We'll ping you every day at 6pm.", push_disabled: "Reminder disabled.", push_denied: "Notifications are blocked — enable them in your browser settings.", push_fail: "Couldn't enable. Try again.", push_ios_hint: "On iPhone: install the app (Share → Add to Home Screen) to receive reminders.",
+                push_title: "Daily reminder", push_sub: "One notification at 6pm your local time, only on days you haven't trained yet. No spam.", push_on_btn: "Enable reminder", push_off_btn: "Disable reminder", push_enabled: "Done! We'll ping you at 6pm if you haven't trained that day.", push_disabled: "Reminder disabled.", push_denied: "Notifications are blocked — enable them in your browser settings.", push_fail: "Couldn't enable. Try again.", push_ios_hint: "On iPhone: install the app (Share → Add to Home Screen) to receive reminders.",
                 prof_import: "Import Data", imp_invalid: "The file is not a valid BERSERKERMOD backup", imp_title: "Restore backup", imp_sessions: "{n} workout sessions", imp_foods: "{n} logged meals", imp_exported: "exported {date}", imp_warning: "Restoring replaces all current data on this device.", imp_confirm: "Restore", imp_done: "Backup restored",
                 backup_remind_title: "💾 Protect your data", backup_remind_msg: "Your history lives only on this device. Download a backup every so often so you don't lose it if you switch or lose your phone.",
                 prof_male: "Male", prof_female: "Female", prof_export: "Export Data", prof_backup: "📦 Backup downloaded", prof_no_nutri: "You have no active nutrition plan.", prof_act_nutri: "🥗 Activate Nutrition Plan",
@@ -2909,7 +2904,7 @@
                 play_active: "Renova automaticamente pelo Google Play",
                 play_manage: "Gerenciar assinatura",
                 tester_title: "🎁 Você é tester do BERSERKERMOD", tester_msg: "Obrigado por testar o app pelo Google Play. Sua recompensa: Premium vitalício, grátis, vinculado a este celular.", tester_btn: "Resgatar Premium vitalício", tester_ok: "Premium vitalício ativado! Obrigado por testar.", tester_err: "Não foi possível resgatar. Tente mais tarde.", tester_closed: "O teste fechado terminou — o resgate está encerrado.", tester_full: "A cota de testers está completa. Fale conosco e resolvemos.", tester_code_label: "Seu código de tester", tester_code_hint: "Guarde: se trocar de celular, ative em Perfil → Ativar código.",
-                push_title: "Lembrete diário", push_sub: "Uma notificação por dia (18h) para você não perder o treino. Sem spam.", push_on_btn: "Ativar lembrete", push_off_btn: "Desativar lembrete", push_enabled: "Pronto! Avisamos todo dia às 18h.", push_disabled: "Lembrete desativado.", push_denied: "As notificações estão bloqueadas — habilite nas configurações do navegador.", push_fail: "Não foi possível ativar. Tente de novo.", push_ios_hint: "No iPhone: instale o app (Compartilhar → Adicionar à Tela de Início) para receber lembretes.",
+                push_title: "Lembrete diário", push_sub: "Uma notificação às 18h do seu horário local, só nos dias em que você ainda não treinou. Sem spam.", push_on_btn: "Ativar lembrete", push_off_btn: "Desativar lembrete", push_enabled: "Pronto! Avisamos às 18h se você ainda não tiver treinado no dia.", push_disabled: "Lembrete desativado.", push_denied: "As notificações estão bloqueadas — habilite nas configurações do navegador.", push_fail: "Não foi possível ativar. Tente de novo.", push_ios_hint: "No iPhone: instale o app (Compartilhar → Adicionar à Tela de Início) para receber lembretes.",
                 prof_import: "Importar Dados", imp_invalid: "O arquivo não é um backup válido do BERSERKERMOD", imp_title: "Restaurar backup", imp_sessions: "{n} sessões de treino", imp_foods: "{n} refeições registradas", imp_exported: "exportado em {date}", imp_warning: "Ao restaurar, todos os dados atuais deste dispositivo serão substituídos.", imp_confirm: "Restaurar", imp_done: "Backup restaurado",
                 backup_remind_title: "💾 Proteja seus dados", backup_remind_msg: "Seu histórico vive apenas neste dispositivo. Baixe um backup de vez em quando para não perdê-lo se trocar ou perder o celular.",
                 prof_male: "Masculino", prof_female: "Feminino", prof_export: "Exportar Dados", prof_backup: "📦 Backup baixado", prof_no_nutri: "Você não tem um plano nutricional ativo.", prof_act_nutri: "🥗 Ativar Plano Nutricional",
@@ -4144,7 +4139,8 @@
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
             'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
-            'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code'
+            'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code',
+            'bm-push-on', 'bm-push-synced', 'bm-push-tz', 'bm-push-trained'
         ];
         function buildBackup() {
             const data = {};
@@ -5658,12 +5654,11 @@
             });
         }
         // calc1RM → core/calc.js
-        function todayStr() {
-            let tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            if (state.user && state.user.country && TIMEZONES[state.user.country]) tz = TIMEZONES[state.user.country];
-            const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
-            return `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
-        }
+        // "Hoy" según el reloj del teléfono (localDateStr en core/calc.js). Antes un
+        // país elegido en el perfil pisaba la zona horaria con una sola ciudad por
+        // país (Nueva York para todo EE. UU., San Pablo para todo Brasil) y los
+        // países fuera de América no estaban: el teléfono ya sabe la región exacta.
+        function todayStr() { return localDateStr(new Date()); }
         function daysSince(dateStr) { return Math.floor((Date.now() - new Date(dateStr + 'T12:00:00')) / 86400000) }
         function getInitials(name) { return (name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() }
 
@@ -6539,7 +6534,7 @@
             let streak = 0; const d = new Date();
             for (let i = 0; i < 90; i++) {
                 const ds = new Date(d); ds.setDate(d.getDate() - i);
-                const str = ds.toISOString().split('T')[0];
+                const str = localDateStr(ds);
                 if (state.sessions.some(s => s.date === str) || state.cardioSessions.some(s => s.date === str)) streak++;
                 else if (i > 0) break;
             }
@@ -6556,17 +6551,17 @@
                 if (!s.date) return;
                 const d = new Date(s.date + 'T12:00:00');
                 const monday = new Date(d); monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-                const wk = monday.toISOString().split('T')[0];
+                const wk = localDateStr(monday);
                 (daysByWeek[wk] = daysByWeek[wk] || new Set()).add(s.date);
             });
             const now = new Date();
             const curMonday = new Date(now); curMonday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-            const thisWk = curMonday.toISOString().split('T')[0];
+            const thisWk = localDateStr(curMonday);
             const thisCount = (daysByWeek[thisWk] || new Set()).size;
             let streak = thisCount >= goal ? 1 : 0;
             for (let i = 1; i <= 104; i++) {
                 const m = new Date(curMonday); m.setDate(curMonday.getDate() - 7 * i);
-                if ((daysByWeek[m.toISOString().split('T')[0]] || new Set()).size >= goal) streak++;
+                if ((daysByWeek[localDateStr(m)] || new Set()).size >= goal) streak++;
                 else break;
             }
             return { streak, goal, thisCount };
@@ -6576,7 +6571,7 @@
             const now = new Date(); const monday = new Date(now);
             monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
             const target = new Date(monday); target.setDate(monday.getDate() + dayOfWeekIdx);
-            const str = target.toISOString().split('T')[0];
+            const str = localDateStr(target);
             return state.sessions.some(s => s.date === str) || state.cardioSessions.some(s => s.date === str);
         }
         function getTodayRoutine() {
@@ -7078,6 +7073,7 @@
             const wasFirst = !state.sessions.length;
             const done = (saved, merged) => {
                 afterSave && afterSave(saved, merged);
+                if (saved && saved.date === todayStr()) pushTrainedToday();
                 // Primer entrenamiento como tester de Play → avisar que el regalo está en Inicio
                 if (wasFirst && testerEligible()) setTimeout(() => flash(t('tester_title'), 'var(--accent)'), 1500);
             };
@@ -8477,7 +8473,7 @@
                 };
                 if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
                 state.cardioSessions.unshift(sess);
-                saveCardio(); flashCardioResult(cals);
+                saveCardio(); flashCardioResult(cals); pushTrainedToday();
             }
             state.cardioTimer = 0; renderCardio();
         }
@@ -8497,7 +8493,7 @@
             };
             if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
             state.cardioSessions.unshift(sess);
-            saveCardio();
+            saveCardio(); pushTrainedToday();
             flashCardioResult(cals);
             renderCardio();
         }
@@ -8616,7 +8612,7 @@
         // ─────────────────────────────────────────
         function renderTrainingCalendar(container) {
             const WEEKS = 26;
-            const iso = (d) => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+            const iso = localDateStr;
             const gym = new Set((state.sessions || []).map(s => s.date)), cardio = new Set((state.cardioSessions || []).map(s => s.date));
             const today = new Date(); today.setHours(12, 0, 0, 0);
             const start = new Date(today); start.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7);
@@ -8863,12 +8859,13 @@
             else if (state.statsPeriod === 'quarterly') periodStart.setMonth(now.getMonth() - 3);
             else if (state.statsPeriod === 'yearly') periodStart.setFullYear(now.getFullYear() - 1);
             else periodStart.setDate(now.getDate() - 7);
+            const periodStr = localDateStr(periodStart);   // día local, comparado como texto
             const periodSessions = state.statsPeriod === 'yearly' && isPremium()
                 ? state.sessions
-                : state.sessions.filter(s => new Date(s.date) >= periodStart);
+                : state.sessions.filter(s => s.date >= periodStr);
             const periodCardio = state.statsPeriod === 'yearly' && isPremium()
                 ? state.cardioSessions
-                : state.cardioSessions.filter(s => new Date(s.date) >= periodStart);
+                : state.cardioSessions.filter(s => s.date >= periodStr);
 
             // Summary
             const sg = h('div', { className: 'stats-grid fade-in' });
@@ -9205,22 +9202,42 @@
             const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
             return Uint8Array.from(raw, (c) => c.charCodeAt(0));
         }
-        // Re-sincroniza la suscripción con el server una vez por semana: si el
-        // registro del server se perdió o se migró, se recompone solo en el
-        // próximo arranque (el subscribe del server es idempotente).
+        // El recordatorio sale a las 18 h de la zona horaria del teléfono: el
+        // server la guarda con la suscripción y la usa para saber cuándo avisar.
+        function pushTz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } }
+        function pushSubBody(sub) { return JSON.stringify({ subscription: sub.toJSON(), lang: state.lang, tz: pushTz() }); }
+        // Re-sincroniza la suscripción con el server una vez por semana, o antes si
+        // cambió la zona horaria (viaje, mudanza): si el registro del server se
+        // perdió o se migró, se recompone solo en el próximo arranque (el
+        // subscribe del server es idempotente).
         async function resyncPush() {
             try {
                 if (localStorage.getItem('bm-push-on') !== '1' || noBackendInProd()) return;
                 const last = Number(localStorage.getItem('bm-push-synced') || 0);
-                if (Date.now() - last < 7 * 86400000) return;
+                if (Date.now() - last < 7 * 86400000 && localStorage.getItem('bm-push-tz') === pushTz()) return;
                 const reg = await navigator.serviceWorker.ready;
                 const sub = await reg.pushManager.getSubscription();
                 if (!sub) return;
                 const resp = await fetch(getApiBase() + '/api/push/subscribe', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ subscription: sub.toJSON(), lang: state.lang })
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pushSubBody(sub)
                 });
-                if (resp.ok) localStorage.setItem('bm-push-synced', String(Date.now()));
+                if (resp.ok) { localStorage.setItem('bm-push-synced', String(Date.now())); localStorage.setItem('bm-push-tz', pushTz()); }
+            } catch { /* best-effort */ }
+        }
+        // Entrenó hoy → el server no le manda el recordatorio de hoy. Una vez por
+        // día como mucho; si falla (sin conexión), lo peor es un aviso de más.
+        async function pushTrainedToday() {
+            try {
+                const today = todayStr();
+                if (localStorage.getItem('bm-push-on') !== '1' || localStorage.getItem('bm-push-trained') === today || noBackendInProd()) return;
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (!sub) return;
+                const resp = await fetch(getApiBase() + '/api/push/trained', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: sub.endpoint, date: today }), keepalive: true
+                });
+                if (resp.ok) localStorage.setItem('bm-push-trained', today);
             } catch { /* best-effort */ }
         }
         async function togglePushReminder(enable) {
@@ -9232,12 +9249,14 @@
                     if (perm !== 'granted') { flash(t('push_denied'), 'var(--orange)'); return; }
                     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _b64uToU8(VAPID_PUBLIC_KEY) });
                     const resp = await fetch(getApiBase() + '/api/push/subscribe', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subscription: sub.toJSON(), lang: state.lang })
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: pushSubBody(sub)
                     });
                     if (!resp.ok) throw new Error('server');
                     localStorage.setItem('bm-push-on', '1');
                     localStorage.setItem('bm-push-synced', String(Date.now()));
+                    localStorage.setItem('bm-push-tz', pushTz());
+                    // Si ya entrenó hoy, que el server lo sepa desde ya.
+                    if ((state.sessions || []).some(s => s.date === todayStr()) || (state.cardioSessions || []).some(s => s.date === todayStr())) pushTrainedToday();
                     flash('🔔 ' + t('push_enabled'));
                 } else {
                     const sub = await reg.pushManager.getSubscription();
@@ -9984,7 +10003,7 @@
             // ── Date helpers ──
             function dateKey(d) {
                 const dt = (d instanceof Date) ? d : new Date(d);
-                return dt.toISOString().slice(0, 10);
+                return localDateStr(dt);
             }
             // YYYY-MM-DD strings should be interpreted as LOCAL midnight, not UTC.
             // (new Date('2026-05-23') would be UTC and silently shift the day on negative-offset TZs.)
@@ -10462,7 +10481,7 @@
                                 : null;
                             if (isSnapshotMeaningful(snap)) snapshots.push(snap);
                         } catch (e) {
-                            logErr('snapshot ' + d.toISOString().slice(0, 10), e);
+                            logErr('snapshot ' + localDateStr(d), e);
                         }
                     }
 
@@ -10631,7 +10650,7 @@
                 for (let i = 6; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
-                    const key = d.toISOString().slice(0, 10);
+                    const key = localDateStr(d);
                     if (sl.byDate[key]) weekly.push(sl.byDate[key]);
                 }
                 const lastTs = HealthSyncService.getLastSyncedAt();
@@ -10702,7 +10721,7 @@
                 for (let i = n - 1; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
-                    const key = d.toISOString().slice(0, 10);
+                    const key = localDateStr(d);
                     let snap = _slice().byDate[key];
                     if (!snap) {
                         snap = await HealthService.getDailySnapshot(d);
@@ -10802,7 +10821,7 @@
                 for (let i = 0; i < 7; i++) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
-                    const key = d.toISOString().slice(0, 10);
+                    const key = localDateStr(d);
                     const s = sl.byDate[key];
                     if (s && typeof s.steps === 'number') vals.push(s.steps);
                 }
@@ -10883,7 +10902,7 @@
                 for (let i = 0; i < 7; i++) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
-                    const key = d.toISOString().slice(0, 10);
+                    const key = localDateStr(d);
                     const snap = sl.byDate[key];
                     if (!snap || !Array.isArray(snap.workouts)) continue;
                     snap.workouts.forEach(w => {
@@ -11720,7 +11739,7 @@
             // ── Date helpers ──
             function dateKey(d) {
                 const dt = (d instanceof Date) ? d : new Date(d);
-                return dt.toISOString().slice(0, 10);
+                return localDateStr(dt);
             }
             function todayKey() { return dateKey(new Date()); }
             function daysAgo(n) {
@@ -12168,7 +12187,7 @@
 
                 for (let i = days - 1; i >= 0; i--) {
                     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
-                    const dateKey = d.toISOString().slice(0, 10);
+                    const dateKey = localDateStr(d);
                     const noise = () => (rand() - 0.5) * 2;        // -1..1
 
                     // Sinusoidal drift (recovery cycles) + jitter
@@ -12224,7 +12243,7 @@
 
             // Five canonical workouts for fixture use
             function buildWorkoutFixtures() {
-                const today = new Date().toISOString().slice(0, 10);
+                const today = localDateStr(new Date());
                 return [
                     { type: 'strength', name: 'Push A',     startDate: today + 'T17:00:00', durationMinutes: 55, calories: null, avgHeartRate: 132, source: 'mock' },
                     { type: 'strength', name: 'Pull A',     startDate: today + 'T18:30:00', durationMinutes: 50, calories: null, avgHeartRate: 128, source: 'mock' },
@@ -12250,7 +12269,7 @@
                 _originalGetDailySnapshot = HealthService.getDailySnapshot;
                 HealthService.getDailySnapshot = async (date) => {
                     const d = date instanceof Date ? date : new Date(date);
-                    const k = d.toISOString().slice(0, 10);
+                    const k = localDateStr(d);
                     if (byDate[k]) return byDate[k];
                     // Outside the mock window → empty snapshot (graceful)
                     return {
@@ -12478,7 +12497,7 @@
                     // mix types so same-zone doesn't fire either.
                     HealthService.getDailySnapshot = async (date) => {
                         const d = date instanceof Date ? date : new Date(date);
-                        const k = d.toISOString().slice(0,10);
+                        const k = localDateStr(d);
                         const idx = Math.round((Date.now() - d.getTime()) / 86400000);
                         return {
                             date: k,
@@ -12500,7 +12519,7 @@
                     HealthInsightsEngine._clearSeen();
                     const orig = HealthService.getDailySnapshot;
                     HealthService.getDailySnapshot = async (date) => ({
-                        date: (date instanceof Date ? date : new Date(date)).toISOString().slice(0,10),
+                        date: localDateStr(date instanceof Date ? date : new Date(date)),
                         heartRateVariability: 50,
                         steps:null, heartRate:null, activeCalories:null,
                         restingHeartRate:null, sleep:null, workouts:[], bodyMetrics:null,
@@ -12531,7 +12550,7 @@
                     HealthInsightsEngine._clearSeen();
                     HealthInsightsEngine.markAsRead('test_id_xyz');
                     // Re-load from storage
-                    const seenKey = 'bm-insights-seen-' + new Date().toISOString().slice(0,10);
+                    const seenKey = 'bm-insights-seen-' + localDateStr(new Date());
                     const raw = JSON.parse(localStorage.getItem(seenKey) || '[]');
                     assertTrue(raw.includes('test_id_xyz'));
                     return true;
@@ -12544,7 +12563,7 @@
                         const d = date instanceof Date ? date : new Date(date);
                         const i = Math.round((new Date().setHours(0,0,0,0) - d.getTime()) / 86400000);
                         return {
-                            date: d.toISOString().slice(0,10),
+                            date: localDateStr(d),
                             heartRateVariability: i < 3 ? 30 : 60,        // hrv_drop_streak
                             restingHeartRate: i < 3 ? 70 : 55,            // rhr_elevated
                             sleep: i === 0 ? { totalMinutes: 300, deepMinutes:60, remMinutes:90, lightMinutes:150 } : null,
@@ -13628,8 +13647,9 @@
         // ─────────────────────────────────────────
         function collectOracleData() {
             const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 28);
-            const recentSess = state.sessions.filter(s => new Date(s.date) >= cutoff);
-            const recentCardio = state.cardioSessions.filter(s => new Date(s.date) >= cutoff);
+            const cutoffStr = localDateStr(cutoff);   // las sesiones guardan el día local: se comparan como texto
+            const recentSess = state.sessions.filter(s => s.date >= cutoffStr);
+            const recentCardio = state.cardioSessions.filter(s => s.date >= cutoffStr);
 
             if (recentSess.length < 3) return null;
 
@@ -13667,7 +13687,7 @@
             let recentPRs = [];
             try {
                 // PRs de los últimos 28 días: máx kg del período > máx kg previo al período.
-                const before = state.sessions.filter(s => new Date(s.date) < cutoff);
+                const before = state.sessions.filter(s => s.date < cutoffStr);
                 const prevMax = {};
                 before.forEach(s => (s.exercises || []).forEach(e => {
                     const m = Math.max(0, ...(e.sets || []).map(st => parseFloat(st.kg) || 0));
@@ -14373,7 +14393,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 sessCard.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', textAlign: 'center', padding: '12px 0' } }, t('coach_no_sessions')));
             } else {
                 // Misma ventana de 7 días que usa el worker en listRoutines (week_sessions)
-                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+                const weekAgo = localDateStr(new Date(Date.now() - 7 * 86400000));
                 const weekN = sessList.filter(s => s.date >= weekAgo).length;
                 sessCard.appendChild(h('p', {
                     style: { fontSize: '12px', fontWeight: 700, color: weekN > 0 ? 'var(--accent)' : 'var(--orange)', marginBottom: '8px' }
@@ -14517,7 +14537,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             nameInp.value = state.alumnoName || '';
             banner.appendChild(nameInp);
             // Adherencia visible para el alumno (misma data que ve el coach)
-            const weekAgoISO = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+            const weekAgoISO = localDateStr(new Date(Date.now() - 7 * 86400000));
             const weekN = (state.alumnoSessions || []).filter(s => s.date >= weekAgoISO).length;
             if ((state.alumnoSessions || []).length) {
                 banner.appendChild(h('div', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--accent)', marginTop: '8px' } },

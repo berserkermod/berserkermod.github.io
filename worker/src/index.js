@@ -66,7 +66,10 @@ const CHECKINS_MAX = 26;                // controles semanales por rutina (~6 me
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
-const PUSH_BATCH = 40;                  // pushes por corrida del cron (5 corridas seguidas = 200/día)
+const PUSH_BATCH = 40;                  // pushes por corrida del cron (5 corridas por hora = 200 por zona horaria)
+const REMINDER_HOUR = 18;               // el recordatorio sale a las 18 de la hora LOCAL de cada usuario
+const DEFAULT_TZ = 'America/Argentina/Buenos_Aires'; // suscripciones previas a guardar la zona
+const TRAINED_TTL = 3 * 86400;          // marca "hoy ya entrenó" (pushtr:{id}); vence sola
 // Solo servicios de push reales: sin esto cualquiera registra una URL propia y
 // el cron le pega todos los días con nuestra firma VAPID.
 const PUSH_HOSTS = ['googleapis.com', 'push.services.mozilla.com', 'push.apple.com', 'notify.windows.com', 'samsungosp.com'];
@@ -84,7 +87,7 @@ const AI_QUOTA = { oracle: 20, parse: 5, food: 15 };
 const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
 const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
-const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe'];
+const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained'];
 
 // ── Utilidades ───────────────────────────────────────────────────────
 const enc = new TextEncoder();
@@ -1193,6 +1196,18 @@ function pushHostAllowed(endpoint) {
     return PUSH_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith('.' + h));
 }
 
+// Zona horaria IANA válida (la que da el teléfono: 'Europe/Madrid', 'Atlantic/Canary'…) o null.
+function validTz(tz) {
+    if (typeof tz !== 'string' || !tz || tz.length > 64) return null;
+    try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return tz; } catch { return null; }
+}
+// Día ('YYYY-MM-DD') y hora (0-23) locales de una zona en un instante dado.
+function localClock(tz, when) {
+    const p = {};
+    for (const x of new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23' }).formatToParts(when)) p[x.type] = x.value;
+    return { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) % 24 };
+}
+
 async function pushSubscribe(req, env) {
     const body = await readBody(req);
     const sub = body && body.subscription;
@@ -1201,12 +1216,29 @@ async function pushSubscribe(req, env) {
     const id = await sha256hex(sub.endpoint);
     const all = (await kvGet(env, 'push:all')) || { subs: {} };
     if (!all.subs[id] && Object.keys(all.subs).length >= PUSH_MAX) return err('Cupo de recordatorios completo', 409);
+    const prev = all.subs[id] || {};
     all.subs[id] = {
         endpoint: sub.endpoint,
         lang: (body.lang === 'en' || body.lang === 'pt') ? body.lang : 'es',
-        created_at: (all.subs[id] && all.subs[id].created_at) || nowISO()
+        tz: validTz(body.tz) || prev.tz || null,
+        sent: prev.sent || null,                        // re-suscribirse no repite el aviso del día
+        created_at: prev.created_at || nowISO()
     };
     await kvPut(env, 'push:all', all);
+    return json({ ok: true });
+}
+
+// POST /api/push/trained — la app avisa que hoy (día local) ya entrenó: ese día
+// no se le manda el recordatorio. Va en una key chica por suscripción que vence
+// sola (no toca push:all, así no compite con el cron); el cron las lee todas con
+// un solo list (la fecha viaja en la metadata).
+async function pushTrained(req, env) {
+    const body = await readBody(req);
+    const endpoint = body && body.endpoint;
+    if (!endpoint || typeof endpoint !== 'string' || endpoint.length > 1024 || !pushHostAllowed(endpoint)) return err('Missing endpoint', 400);
+    if (!validSessionDate(body.date)) return err('Fecha inválida', 400);
+    const id = await sha256hex(endpoint);
+    await env.BMOD_KV.put('pushtr:' + id, '1', { metadata: { d: body.date }, expirationTtl: TRAINED_TTL });
     return json({ ok: true });
 }
 
@@ -1390,40 +1422,53 @@ async function vapidJwt(env, audience) {
     return data + '.' + b64urlFromBytes(new Uint8Array(sig));
 }
 
-// Cron diario: un push vacío a cada suscripción. 404/410 = suscripción muerta → se borra.
-// El plan Free permite 50 subrequests por invocación, así que cada corrida
-// manda como mucho PUSH_BATCH y guarda por dónde va en push:cursor
-// ({ date, next }; next = -1 → hoy ya terminó). wrangler.toml dispara el cron
-// varias veces seguidas (21:00, :03, :06, :09, :12 UTC) para cubrir el resto.
-async function sendDailyReminders(env) {
+// Cron cada hora: a cada suscripción le toca el recordatorio cuando en SU zona
+// horaria son las REMINDER_HOUR (18), una vez por día local, y solo si ese día no
+// registró un entrenamiento (pushtr:{id}). Push vacío; 404/410 = suscripción
+// muerta → se borra. El plan Free permite 50 subrequests por invocación, así que
+// cada corrida manda como mucho PUSH_BATCH: wrangler.toml dispara el cron varias
+// veces por hora (:00, :03, :06, :09, :12) y lo resuelto queda en sent = día local.
+async function sendDueReminders(env, when = new Date()) {
     if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
-    const today = new Date().toISOString().slice(0, 10);
-    const cur = (await kvGet(env, 'push:cursor')) || {};
-    const start = cur.date === today ? cur.next : 0;
-    if (start < 0) return { sent: 0, note: 'hoy ya se mandó todo' };
     const all = (await kvGet(env, 'push:all')) || { subs: {} };
-    const ids = Object.keys(all.subs).sort();
-    const batch = ids.slice(start, start + PUSH_BATCH);
-    let sent = 0, removed = 0;
-    const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
-    for (const id of batch) {
+    const due = [];
+    for (const id of Object.keys(all.subs).sort()) {
         const s = all.subs[id];
         if (!s || !s.endpoint) continue;
+        const clock = localClock(validTz(s.tz) || DEFAULT_TZ, when);
+        if (clock.hour === REMINDER_HOUR && s.sent !== clock.date) due.push({ id, date: clock.date });
+    }
+    if (!due.length) return { sent: 0, due: 0 };
+
+    // Quién ya entrenó hoy: un solo list de las marcas (sin un get por suscripción).
+    const trained = {};
+    let cursor;
+    do {
+        const res = await env.BMOD_KV.list({ prefix: 'pushtr:', cursor });
+        for (const k of res.keys) if (k.metadata && k.metadata.d) trained[k.name.slice(7)] = k.metadata.d;
+        cursor = res.list_complete ? undefined : res.cursor;
+    } while (cursor);
+
+    let sent = 0, removed = 0, skipped = 0, tried = 0;
+    const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
+    for (const d of due) {
+        const s = all.subs[d.id];
+        if (trained[d.id] === d.date) { s.sent = d.date; skipped++; continue; }   // ya entrenó: hoy no
+        if (tried >= PUSH_BATCH) break;
+        tried++;
         try {
             const origin = new URL(s.endpoint).origin;
             if (!jwtByOrigin[origin]) jwtByOrigin[origin] = await vapidJwt(env, origin);
             const resp = await fetch(s.endpoint, {
                 method: 'POST',
-                headers: { TTL: '86400', Authorization: 'vapid t=' + jwtByOrigin[origin] + ', k=' + env.VAPID_PUBLIC_KEY }
+                headers: { TTL: '3600', Authorization: 'vapid t=' + jwtByOrigin[origin] + ', k=' + env.VAPID_PUBLIC_KEY }
             });
-            if (resp.status === 404 || resp.status === 410) { delete all.subs[id]; removed++; }
-            else if (resp.status < 400) sent++;
-        } catch { /* push service caído → probamos mañana */ }
+            if (resp.status === 404 || resp.status === 410) { delete all.subs[d.id]; removed++; }
+            else if (resp.status < 400) { s.sent = d.date; sent++; }
+        } catch { /* push service caído → la próxima corrida de esta hora reintenta */ }
     }
-    const next = start + PUSH_BATCH >= ids.length ? -1 : start + PUSH_BATCH;
-    await kvPut(env, 'push:cursor', { date: today, next });
-    if (removed) await kvPut(env, 'push:all', all);
-    return { sent, removed, total: ids.length, next };
+    if (sent || removed || skipped) await kvPut(env, 'push:all', all);
+    return { sent, removed, skipped, due: due.length };
 }
 
 // ─────────────────────────────────────────────
@@ -1500,7 +1545,7 @@ async function adminStats(req, env, url) {
 
 export default {
     async scheduled(controller, env, ctx) {
-        ctx.waitUntil(sendDailyReminders(env));
+        ctx.waitUntil(sendDueReminders(env, new Date((controller && controller.scheduledTime) || Date.now())));
     },
     async fetch(req, env) {
         if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
@@ -1558,6 +1603,7 @@ export default {
             // Push (recordatorio diario)
             if (p === '/api/push/subscribe' && m === 'POST') return await pushSubscribe(req, env);
             if (p === '/api/push/unsubscribe' && m === 'POST') return await pushUnsubscribe(req, env);
+            if (p === '/api/push/trained' && m === 'POST') return await pushTrained(req, env);
             if (p === '/api/play/verify' && m === 'POST') return await playVerify(req, env);
 
             // Observabilidad

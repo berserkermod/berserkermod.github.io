@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -175,6 +175,26 @@ console.log('warmupSets (series de aproximación)');
     ok('sin barra (mancuernas): solo porcentajes', eq(warmupSets(30, { step: 2 }).map(s => s.kg), [12, 18, 24]), warmupSets(30, { step: 2 }));
     ok('sin peso → nada', eq(warmupSets(0, { bar: 20 }), []) && eq(warmupSets(NaN), []));
     ok('nunca llega al peso de trabajo ni repite', warmupSets(22.5, { bar: 20 }).every((s, i, a) => s.kg < 22.5 && (!i || s.kg > a[i - 1].kg)), warmupSets(22.5, { bar: 20 }));
+}
+
+console.log('Fecha local (zona horaria del teléfono)');
+{
+    // Node cambia de zona al cambiar process.env.TZ: se prueba la app "en" varios países.
+    const prevTz = process.env.TZ;
+    const zones = ['America/Argentina/Buenos_Aires', 'Europe/Madrid', 'Atlantic/Canary', 'America/Los_Angeles', 'Asia/Kolkata', 'Pacific/Kiritimati', 'Pacific/Pago_Pago'];
+    const bad = [];
+    for (const tz of zones) {
+        process.env.TZ = tz;
+        const early = new Date(2026, 10, 2, 0, 30), late = new Date(2026, 10, 2, 23, 30);
+        if (localDateStr(early) !== '2026-11-02' || localDateStr(late) !== '2026-11-02') bad.push(tz);
+    }
+    ok('00:30 y 23:30 locales caen en el mismo día en ' + zones.length + ' zonas (incl. España, Canarias, UTC+14 y UTC-11)', bad.length === 0, bad);
+    process.env.TZ = 'Europe/Madrid';
+    ok('el error que corrige: en Madrid, 00:30 local con toISOString daba el día anterior', new Date(2026, 10, 2, 0, 30).toISOString().slice(0, 10) === '2026-11-01');
+    process.env.TZ = 'America/Argentina/Buenos_Aires';
+    ok('y en Argentina, 22:00 local con toISOString daba el día siguiente', new Date(2026, 10, 2, 22, 0).toISOString().slice(0, 10) === '2026-11-03' && localDateStr(new Date(2026, 10, 2, 22, 0)) === '2026-11-02');
+    ok('fecha inválida → vacío; sin argumento → hoy', localDateStr('nada') === '' && /^\d{4}-\d{2}-\d{2}$/.test(localDateStr()));
+    if (prevTz === undefined) delete process.env.TZ; else process.env.TZ = prevTz;
 }
 
 console.log('Modo Coach: semana ISO, mejor serie, progreso y precarga');

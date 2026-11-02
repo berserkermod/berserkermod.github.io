@@ -5,14 +5,14 @@ import worker from '../src/index.js';
 
 // ── KV mock (Map) con get/put/delete/list(prefix,cursor) ──
 function makeKV() {
-    const m = new Map();
+    const m = new Map(), meta = new Map();
     return {
         _m: m,
         async get(k) { return m.has(k) ? m.get(k) : null; },
-        async put(k, v) { m.set(k, v); },
-        async delete(k) { m.delete(k); },
+        async put(k, v, opts) { m.set(k, v); if (opts && opts.metadata) meta.set(k, opts.metadata); else meta.delete(k); },
+        async delete(k) { m.delete(k); meta.delete(k); },
         async list({ prefix = '', cursor, limit = 1000 } = {}) {
-            const keys = [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => ({ name })).slice(0, limit);
+            const keys = [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => (meta.has(name) ? { name, metadata: meta.get(name) } : { name })).slice(0, limit);
             return { keys, list_complete: true, cursor: null };
         }
     };
@@ -570,52 +570,65 @@ let code, licToken;
         // ep2 devuelve 410 (suscripción muerta) → debe borrarse
         return new Response('', { status: String(u).includes('ep2') ? 410 : 201 });
     };
-    const waits = [];
-    await worker.scheduled({}, env, { waitUntil: (p) => waits.push(p) });
-    await Promise.all(waits);
-    ok('cron manda push a las 2 suscripciones', pushed.length === 2, pushed.length);
-    ok('auth VAPID presente (vapid t=..., k=...)', pushed.every(p => /^vapid t=.+\.[^.]+\.[^.]+, k=.+/.test(p.auth || '')), pushed[0] && pushed[0].auth && pushed[0].auth.slice(0, 30));
-    ok('TTL presente', pushed.every(p => p.ttl === '86400'));
+    // Instante (UTC) en que en `tz` son las 18 del día `dayOffset` (relativo a hoy):
+    // así el test no depende de la fecha ni del horario de verano.
+    const at18 = (tz, dayOffset = 0, minute = 0) => {
+        const base = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + dayOffset);
+        for (let h = -14; h < 38; h++) {
+            const t = new Date(base + h * 3600000 + minute * 60000);
+            const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(t)) % 24;
+            const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(t);
+            if (hour === 18 && day === new Date(base).toISOString().slice(0, 10)) return t;
+        }
+        throw new Error('sin 18 h para ' + tz);
+    };
+    const localDay = (tz, t) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(t);
+    const runCron = async (when) => { pushed = []; const w = []; await worker.scheduled({ scheduledTime: when.getTime() }, env, { waitUntil: (p) => w.push(p) }); await Promise.all(w); return pushed.length; };
 
-    // misma fecha, otra corrida del cron (los triggers van seguidos) → no repite
-    pushed = [];
-    const waitsSame = [];
-    await worker.scheduled({}, env, { waitUntil: (p) => waitsSame.push(p) });
-    await Promise.all(waitsSame);
-    ok('segunda corrida del mismo día → 0 pushes (cursor)', pushed.length === 0, pushed.length);
+    // ep1 en Madrid, ep2 sin zona (suscripción vieja → Argentina)
+    await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1' }, lang: 'es', tz: 'Europe/Madrid' });
+    const subs0 = JSON.parse(await env.BMOD_KV.get('push:all')).subs;
+    ok('subscribe guarda la zona horaria del teléfono', Object.values(subs0).some(s => s.endpoint.endsWith('ep1') && s.tz === 'Europe/Madrid'), Object.values(subs0).map(s => s.tz));
+    const badTz = await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/eptz' }, tz: 'Marte/Olympus' });
+    const subsTz = JSON.parse(await env.BMOD_KV.get('push:all')).subs;
+    ok('zona inválida → se ignora (queda la de Argentina por defecto)', badTz.status === 200 && Object.values(subsTz).find(s => s.endpoint.endsWith('eptz')).tz === null);
+    await call('POST', '/api/push/unsubscribe', { endpoint: 'https://fcm.googleapis.com/fcm/send/eptz' });
 
-    // "mañana": ep2 (410) fue borrada → solo 1 push
-    await env.BMOD_KV.delete('push:cursor');
-    pushed = [];
-    const waits2 = [];
-    await worker.scheduled({}, env, { waitUntil: (p) => waits2.push(p) });
-    await Promise.all(waits2);
-    ok('la suscripción muerta (410) se limpió', pushed.length === 1 && pushed[0].url.includes('ep1'), pushed.map(p => p.url));
+    const madrid18 = at18('Europe/Madrid');
+    ok('a las 18 de Madrid solo le llega a Madrid', await runCron(madrid18) === 1 && pushed[0].url.endsWith('ep1'), pushed.map(p => p.url));
+    ok('auth VAPID presente (vapid t=..., k=...)', pushed.every(p => /^vapid t=.+\.[^.]+\.[^.]+, k=.+/.test(p.auth || '')));
+    ok('TTL de 1 h (un aviso de las 18 no sirve a la madrugada)', pushed.every(p => p.ttl === '3600'));
+    ok('otra corrida de la misma hora → no repite', await runCron(new Date(madrid18.getTime() + 3 * 60000)) === 0);
+    ok('una hora antes y una después → nada', await runCron(new Date(madrid18.getTime() - 3600000)) === 0 && await runCron(new Date(madrid18.getTime() + 3600000)) === 0);
+    await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1' }, lang: 'es', tz: 'Europe/Madrid' });
+    ok('re-suscribirse en la misma hora no repite el aviso', await runCron(new Date(madrid18.getTime() + 6 * 60000)) === 0);
+
+    const ar18 = at18('America/Argentina/Buenos_Aires');
+    ok('a las 18 de Argentina le toca a la suscripción sin zona (410 → se borra)', await runCron(ar18) === 1 && pushed[0].url.endsWith('ep2'));
+    ok('la suscripción muerta (410) se limpió', !Object.values(JSON.parse(await env.BMOD_KV.get('push:all')).subs).some(s => s.endpoint.endsWith('ep2')));
+
+    // Ya entrenó hoy → ese día no se le avisa; al día siguiente sí
+    const tomorrowMadrid = at18('Europe/Madrid', 1);
+    const badTr = await call('POST', '/api/push/trained', { endpoint: 'https://atacante.example/x', date: localDay('Europe/Madrid', tomorrowMadrid) });
+    const badDate = await call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', date: '2019-01-01' });
+    ok('trained: endpoint ajeno o fecha inválida → 400', badTr.status === 400 && badDate.status === 400);
+    const tr = await call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', date: localDay('Europe/Madrid', tomorrowMadrid) });
+    ok('trained 200 y marca chica aparte de push:all', tr.status === 200 && [...env.BMOD_KV._m.keys()].some(k => k.startsWith('pushtr:')));
+    ok('entrenó ese día → a las 18 no le llega nada', await runCron(tomorrowMadrid) === 0, pushed.map(p => p.url));
+    ok('el día siguiente sí le llega', await runCron(at18('Europe/Madrid', 2)) === 1);
 
     // unsubscribe explícito → 0 pushes
     const un = await call('POST', '/api/push/unsubscribe', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1' });
     ok('unsubscribe ok', un.body.ok === true);
-    await env.BMOD_KV.delete('push:cursor');
-    pushed = [];
-    const waits3 = [];
-    await worker.scheduled({}, env, { waitUntil: (p) => waits3.push(p) });
-    await Promise.all(waits3);
-    ok('sin suscripciones → 0 pushes', pushed.length === 0, pushed.length);
+    ok('sin suscripciones → 0 pushes', await runCron(at18('Europe/Madrid', 3)) === 0);
 
-    // Lotes: 45 suscripciones → corrida 1 manda 40, corrida 2 manda 5, corrida 3 nada
-    for (let i = 0; i < 45; i++) await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/lote' + i } });
-    await env.BMOD_KV.delete('push:cursor');
+    // Lotes: 45 suscripciones en Tokio → corrida 1 manda 40, corrida 2 manda 5, corrida 3 nada
+    for (let i = 0; i < 45; i++) await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/lote' + i }, tz: 'Asia/Tokyo' });
+    const tokyo = at18('Asia/Tokyo');
     const runs = [];
-    for (let r = 0; r < 3; r++) {
-        pushed = [];
-        const w = [];
-        await worker.scheduled({}, env, { waitUntil: (p) => w.push(p) });
-        await Promise.all(w);
-        runs.push(pushed.length);
-    }
+    for (let r = 0; r < 3; r++) runs.push(await runCron(new Date(tokyo.getTime() + r * 3 * 60000)));
     ok('cron en lotes de 40: 40 + 5 + 0', runs[0] === 40 && runs[1] === 5 && runs[2] === 0, runs);
-    const cursor = JSON.parse(await env.BMOD_KV.get('push:cursor'));
-    ok('cursor marca el día como terminado (next = -1)', cursor.next === -1, cursor);
+    ok('sin keys de cursor (lo resuelto queda en cada suscripción)', !env.BMOD_KV._m.has('push:cursor'));
 
     globalThis.fetch = realFetch;
     delete env.VAPID_PRIVATE_JWK; delete env.VAPID_PUBLIC_KEY; delete env.VAPID_SUBJECT;

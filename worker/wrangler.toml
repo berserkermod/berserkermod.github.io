@@ -101,12 +101,14 @@ preview_id = "032b05ee75684a44bd0cfaa036d2c7be"
 [ai]
 binding = "AI"
 
-# Cron del recordatorio push diario: 21:00 UTC = 18:00 Argentina (ART, UTC-3).
-# Son 5 disparos seguidos porque el plan Free permite 50 subrequests por
-# invocacion: cada corrida manda 40 pushes y guarda el cursor en KV; cuando
-# termina, las corridas siguientes del dia no hacen nada. (Free: max 5 crons.)
+# Cron del recordatorio push: corre cada hora y avisa a quienes en SU zona
+# horaria son las 18 (la app manda la zona del telefono al suscribirse) y no
+# entrenaron ese dia. Son 5 disparos por hora porque el plan Free permite 50
+# subrequests por invocacion: cada corrida manda hasta 40 y marca a quien ya
+# le toco; las siguientes siguen con el resto. Sin nadie a las 18 locales, la
+# corrida lee una sola key y termina. (Free: max 5 crons.)
 [triggers]
-crons = ["0 21 * * *", "3 21 * * *", "6 21 * * *", "9 21 * * *", "12 21 * * *"]
+crons = ["0 * * * *", "3 * * * *", "6 * * * *", "9 * * * *", "12 * * * *"]
 
 # Rate limiting nativo de Workers (no usa KV, gratis). Key = IP del cliente.
 #   RL_OPEN   → toda ruta publica: 60 req/min por IP (un gimnasio en un NAT entra).
