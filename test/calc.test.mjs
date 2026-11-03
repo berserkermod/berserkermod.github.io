@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { strengthKcal, proteinWeight, calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
+const { sessionPerf, performanceSignals, planMuscleSets, adjustMuscleVolume, strengthKcal, proteinWeight, calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -232,6 +232,41 @@ console.log('Modo Coach: semana ISO, mejor serie, progreso y precarga');
     ok('precarga: lo último que registró', eq(prefillSets('press', ses, { sets: 4, reps: '10', kg: 40 }), [{ kg: 60, reps: 6 }]));
     ok('precarga sin historial: el plan (8-12 → 8)', eq(prefillSets('Curl', ses, { sets: 3, reps: '8-12', kg: 12.5 }), [{ kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }]));
     ok('precarga sin plan: 3 series vacías; tope 12', prefillSets('X', [], null).length === 3 && prefillSets('X', [], { sets: 40 }).length === 12);
+}
+
+console.log('Ajuste por rendimiento (fatiga, progreso y volumen)');
+{
+    const today = '2026-11-20';
+    const day = (n) => { const d = new Date(Date.UTC(2026, 10, 20 - n)); return d.toISOString().slice(0, 10); };
+    const S = (n, exs) => ({ date: day(n), exercises: Object.entries(exs).map(([exercise, [kg, reps]]) => ({ exercise, sets: [{ kg, reps }, { kg, reps: reps - 1 }] })) });
+    const hist = [
+        S(1, { 'Press Banca Plano': [92.5, 5], 'Sentadilla': [105, 5], 'Remo Barra': [52.5, 10], 'Dominadas': [0, 8] }),
+        S(3, { 'Press Banca Plano': [92.5, 5], 'Remo Barra': [60, 10], 'Dominadas': [0, 8] }),
+        S(8, { 'Sentadilla': [102.5, 5] }),
+        S(10, { 'Sentadilla': [100, 5] }),
+        S(15, { 'Press Banca Plano': [100, 5], 'Remo Barra': [60, 10], 'Dominadas': [0, 10] }),
+        S(18, { 'Press Banca Plano': [100, 5], 'Remo Barra': [60, 10], 'Dominadas': [0, 10] }),
+        S(30, { 'Sentadilla': [100, 5] })
+    ];
+    const sig = performanceSignals(hist, today);
+    ok('registro constante (2+ sesiones en cada una de las 3 semanas) → hay señales', sig.dataOk === true);
+    ok('fatiga: 2 sesiones seguidas ≥5 % por debajo de la mejor marca (con kg y con peso corporal)', sig.fatigued.includes('Press Banca Plano') && sig.fatigued.includes('Dominadas'), sig);
+    ok('una sola sesión mala no es fatiga', !sig.fatigued.includes('Remo Barra'), sig);
+    ok('progreso: +5 % contra hace 3-5 semanas', sig.progressing.includes('Sentadilla') && !sig.fatigued.includes('Sentadilla'), sig);
+    const few = performanceSignals(hist.filter((s) => s.date !== day(8)), today);
+    ok('sin registro constante (1 sesión en una semana) → sin señales', few.dataOk === false && few.fatigued.length === 0 && few.progressing.length === 0);
+    ok('rendimiento: 1RM estimado de la mejor serie; con 0 kg, reps', Math.round(sessionPerf([{ kg: 100, reps: 5 }, { kg: 90, reps: 8 }]).value) === 117 && sessionPerf([{ kg: 0, reps: 12 }]).value === 12 && sessionPerf([]) === null);
+
+    const plan = () => [
+        { exercises: [{ name: 'Press Banca Plano', sets: 4 }, { name: 'Aperturas Pec Deck', sets: 3 }, { name: 'Press Francés', sets: 3 }] },
+        { exercises: [{ name: 'Press Inclinado', sets: 4 }, { name: 'Cruces Polea', sets: 3 }] }
+    ];
+    const p1 = plan();
+    ok('bajar 2 series de pecho: primero los accesorios', adjustMuscleVolume(p1, 'chest', -2) === 2 && p1[0].exercises[1].sets === 2 && p1[1].exercises[1].sets === 2 && p1[0].exercises[0].sets === 4, p1);
+    ok('nunca por debajo de 2 series por ejercicio', adjustMuscleVolume(p1, 'chest', -10) === 4 && p1.every((d) => d.exercises.every((e) => e.sets >= 2)));
+    ok('no toca ejercicios donde el músculo es secundario', p1[0].exercises[2].sets === 3);
+    const p2 = plan(), before = planMuscleSets(p2).chest;
+    ok('subir respeta el tope semanal', adjustMuscleVolume(p2, 'chest', 2, before + 1) === 1 && planMuscleSets(p2).chest === before + 1, planMuscleSets(p2).chest);
 }
 
 console.log('Meta semanal de cardio');

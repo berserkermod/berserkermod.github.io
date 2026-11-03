@@ -1717,6 +1717,15 @@
         .cw-msg { font-size: 13px; font-weight: 700; color: var(--text); margin: 10px 0 4px; }
         .cw-hint { font-size: 12px; color: var(--text3); line-height: 1.45; margin-bottom: 10px; }
         .cw-card .cw-hint:last-child { margin-bottom: 0; }
+        .perf-card .perf-body { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 8px; }
+        .perf-card.fatigue { border-color: rgba(253,203,110,.45); }
+        .perf-card.fatigue .label .ico { color: var(--orange); }
+        .perf-card.progress { border-color: rgba(0,212,170,.35); }
+        .perf-card.progress .label .ico { color: var(--accent); }
+        .perf-card.deload { border-color: rgba(116,185,255,.4); }
+        .perf-card.deload .label .ico { color: var(--blue); }
+        .perf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+        .perf-actions .btn { flex: 1 1 auto; }
         /* Mapa del cuerpo */
         .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
         .bm-base { fill: var(--bm-base); }
@@ -2223,8 +2232,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-28"></script>
-    <script src="core/i18n-data.js?v=2-28"></script>
+    <script src="core/calc.js?v=2-29"></script>
+    <script src="core/i18n-data.js?v=2-29"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2505,7 +2514,7 @@
                 nutri_history_title: "PLANES ANTERIORES",
                 nutri_history_empty: "Sin planes anteriores",
                 rt_why_title: "¿Por qué esta rutina?",
-                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici", cw_title: "CARDIO DE LA SEMANA", cw_of: "/ {target} min", cw_left: "Te faltan {min} min en {days} días.", cw_left_today: "Te faltan {min} min y hoy es el último día de la semana.", cw_done: "¡Meta cumplida! Lo que hagas de más también suma.", cw_hint_fat: "La grasa baja por el déficit y el cardio; caminar cuenta. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_hint_end: "Es la base del acondicionamiento: continuo o por intervalos rinden parecido. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado con tu peso y la duración (Compendio de Actividades Físicas): entre {low} y {high} kcal activas según la intensidad. No se suma a tu balance diario porque tu mantenimiento ya incluye el entrenamiento.", hist_kcal: "~{k} kcal",
+                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici", cw_title: "CARDIO DE LA SEMANA", cw_of: "/ {target} min", cw_left: "Te faltan {min} min en {days} días.", cw_left_today: "Te faltan {min} min y hoy es el último día de la semana.", cw_done: "¡Meta cumplida! Lo que hagas de más también suma.", cw_hint_fat: "La grasa baja por el déficit y el cardio; caminar cuenta. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_hint_end: "Es la base del acondicionamiento: continuo o por intervalos rinden parecido. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado con tu peso y la duración (Compendio de Actividades Físicas): entre {low} y {high} kcal activas según la intensidad. No se suma a tu balance diario porque tu mantenimiento ya incluye el entrenamiento.", hist_kcal: "~{k} kcal", perf_fat_title: "TU RENDIMIENTO BAJÓ", perf_fat_body: "En {list}, tu mejor serie quedó 5 % o más por debajo de tu mejor marca de las últimas 3 semanas, dos sesiones seguidas. Una sesión mala puede ser el sueño o la comida; dos seguidas suelen ser fatiga acumulada.", perf_fat_offer: "Te proponemos una semana de descarga: misma carga y la mitad de las series. Después volvés a tu volumen de siempre.", perf_fat_again: "Es la segunda vez en 6 semanas: además conviene bajar 2 series por semana en {muscles}.", perf_btn_deload: "Semana de descarga", perf_btn_deload_cut: "Descarga y bajar volumen", perf_btn_later: "Ahora no", perf_deload_title: "SEMANA DE DESCARGA", perf_deload_on: "Hasta el {date}: misma carga y la mitad de las series. Ya te las dejamos así en la rutina.", perf_deload_end: "Terminar la descarga", perf_deload_started: "Semana de descarga activada", perf_cut_done: "Descarga activada y volumen ajustado", perf_up_title: "VENÍS PROGRESANDO", perf_up_body: "En las últimas semanas mejoraste en {list}. Si te recuperás bien, podés sumar 2 series por semana de {muscle} (hoy hacés {sets}).", perf_btn_up: "Sumar 2 series", perf_btn_keep: "Mantener", perf_up_done: "+{n} series de {muscle} en tu rutina",
                 rt_muscles_title: "Distribución muscular",
                 rt_time_title: "Tiempo por sesión",
                 rt_time_avg: "min promedio",
@@ -2947,7 +2956,7 @@
                 nutri_history_title: "PREVIOUS PLANS",
                 nutri_history_empty: "No previous plans",
                 rt_why_title: "Why this routine?",
-                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance", cw_title: "THIS WEEK'S CARDIO", cw_of: "/ {target} min", cw_left: "{min} min to go, {days} days left.", cw_left_today: "{min} min to go, and today is the last day of the week.", cw_done: "Goal reached! Anything extra still counts.", cw_hint_fat: "Fat comes off through the deficit and cardio; walking counts. The goal starts at 150 min and rises gradually with your average.", cw_hint_end: "It's the foundation of conditioning: steady or interval cardio work about the same. The goal starts at 150 min and rises gradually with your average.", cw_log: "Log cardio", share_sum_kcal: "EST. CALORIES", share_kcal_note: "Estimated from your weight and the session length (Compendium of Physical Activities): between {low} and {high} active kcal depending on intensity. It isn't added to your daily balance because your maintenance already includes training.", hist_kcal: "~{k} kcal",
+                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance", cw_title: "THIS WEEK'S CARDIO", cw_of: "/ {target} min", cw_left: "{min} min to go, {days} days left.", cw_left_today: "{min} min to go, and today is the last day of the week.", cw_done: "Goal reached! Anything extra still counts.", cw_hint_fat: "Fat comes off through the deficit and cardio; walking counts. The goal starts at 150 min and rises gradually with your average.", cw_hint_end: "It's the foundation of conditioning: steady or interval cardio work about the same. The goal starts at 150 min and rises gradually with your average.", cw_log: "Log cardio", share_sum_kcal: "EST. CALORIES", share_kcal_note: "Estimated from your weight and the session length (Compendium of Physical Activities): between {low} and {high} active kcal depending on intensity. It isn't added to your daily balance because your maintenance already includes training.", hist_kcal: "~{k} kcal", perf_fat_title: "YOUR PERFORMANCE DROPPED", perf_fat_body: "In {list}, your best set came in 5% or more below your best of the last 3 weeks, two sessions in a row. One bad session can be sleep or food; two in a row usually means accumulated fatigue.", perf_fat_offer: "We suggest a deload week: same weight, half the sets. Then you go back to your usual volume.", perf_fat_again: "It's the second time in 6 weeks: it's also worth cutting 2 weekly sets for {muscles}.", perf_btn_deload: "Deload week", perf_btn_deload_cut: "Deload and cut volume", perf_btn_later: "Not now", perf_deload_title: "DELOAD WEEK", perf_deload_on: "Until {date}: same weight, half the sets. Your routine is already set up that way.", perf_deload_end: "End the deload", perf_deload_started: "Deload week on", perf_cut_done: "Deload on and volume adjusted", perf_up_title: "YOU'RE PROGRESSING", perf_up_body: "Over the last few weeks you improved in {list}. If you're recovering well, you can add 2 weekly sets for {muscle} (currently {sets}).", perf_btn_up: "Add 2 sets", perf_btn_keep: "Keep as is", perf_up_done: "+{n} {muscle} sets in your routine",
                 rt_muscles_title: "Muscle distribution",
                 rt_time_title: "Time per session",
                 rt_time_avg: "min average",
@@ -3390,7 +3399,7 @@
                 nutri_history_title: "PLANOS ANTERIORES",
                 nutri_history_empty: "Sem planos anteriores",
                 rt_why_title: "Por que esta rotina?",
-                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal", cw_title: "CARDIO DA SEMANA", cw_of: "/ {target} min", cw_left: "Faltam {min} min em {days} dias.", cw_left_today: "Faltam {min} min e hoje é o último dia da semana.", cw_done: "Meta cumprida! O que fizer a mais também conta.", cw_hint_fat: "A gordura cai pelo déficit e pelo cardio; caminhar conta. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_hint_end: "É a base do condicionamento: contínuo ou intervalado rendem parecido. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado com o seu peso e a duração (Compêndio de Atividades Físicas): entre {low} e {high} kcal ativas conforme a intensidade. Não entra no seu balanço diário porque a sua manutenção já inclui o treino.", hist_kcal: "~{k} kcal",
+                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal", cw_title: "CARDIO DA SEMANA", cw_of: "/ {target} min", cw_left: "Faltam {min} min em {days} dias.", cw_left_today: "Faltam {min} min e hoje é o último dia da semana.", cw_done: "Meta cumprida! O que fizer a mais também conta.", cw_hint_fat: "A gordura cai pelo déficit e pelo cardio; caminhar conta. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_hint_end: "É a base do condicionamento: contínuo ou intervalado rendem parecido. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado com o seu peso e a duração (Compêndio de Atividades Físicas): entre {low} e {high} kcal ativas conforme a intensidade. Não entra no seu balanço diário porque a sua manutenção já inclui o treino.", hist_kcal: "~{k} kcal", perf_fat_title: "SEU RENDIMENTO CAIU", perf_fat_body: "Em {list}, sua melhor série ficou 5% ou mais abaixo da sua melhor marca das últimas 3 semanas, duas sessões seguidas. Uma sessão ruim pode ser o sono ou a alimentação; duas seguidas costumam ser fadiga acumulada.", perf_fat_offer: "Sugerimos uma semana de deload: mesma carga e metade das séries. Depois você volta ao seu volume de sempre.", perf_fat_again: "É a segunda vez em 6 semanas: também vale reduzir 2 séries por semana em {muscles}.", perf_btn_deload: "Semana de deload", perf_btn_deload_cut: "Deload e reduzir volume", perf_btn_later: "Agora não", perf_deload_title: "SEMANA DE DELOAD", perf_deload_on: "Até {date}: mesma carga e metade das séries. Sua rotina já está ajustada assim.", perf_deload_end: "Encerrar o deload", perf_deload_started: "Semana de deload ativada", perf_cut_done: "Deload ativado e volume ajustado", perf_up_title: "VOCÊ ESTÁ PROGREDINDO", perf_up_body: "Nas últimas semanas você melhorou em {list}. Se estiver se recuperando bem, pode somar 2 séries por semana de {muscle} (hoje {sets}).", perf_btn_up: "Somar 2 séries", perf_btn_keep: "Manter", perf_up_done: "+{n} séries de {muscle} na sua rotina",
                 rt_muscles_title: "Distribuição muscular",
                 rt_time_title: "Tempo por sessão",
                 rt_time_avg: "min média",
@@ -7123,6 +7132,10 @@
             const cwHome = cardioWeekCard(true);
             if (cwHome) v.appendChild(cwHome);
 
+            // Ajuste por rendimiento: descarga en curso, fatiga o progreso
+            const pfHome = perfCard();
+            if (pfHome) v.appendChild(pfHome);
+
             // Today's Routine Suggestion
             const todayRoutine = getTodayRoutine();
             if (todayRoutine) {
@@ -7479,6 +7492,10 @@
             if (today.focus) bt.appendChild(h('div', { className: 'rt-day-banner-focus' }, '🎯 ' + today.focus + ' · ' + (today.method || '')));
             banner.appendChild(bt);
             v.appendChild(banner);
+            if (deloadActive()) {
+                v.appendChild(h('div', { className: 'card fade-in perf-card deload' },
+                    h('p', { className: 'perf-body', style: { marginBottom: 0 } }, t('perf_deload_on').replace('{date}', perfDate(state.user.perf.deloadUntil)))));
+            }
 
             // Nav (prev/next day)
             const navCard = h('div', { className: 'card fade-in', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px' } });
@@ -7522,7 +7539,7 @@
             if (!state.routineSession.date || state.routineSession.date !== todayStr() || state.routineSession.dayIdx !== dayIdx || state.routineSession.plan !== activePlanObj.name) {
                 state.routineSession = { date: todayStr(), dayIdx: dayIdx, plan: activePlanObj.name, dayName: today.name, exercises: {} };
                 today.exercises.forEach(ex => {
-                    state.routineSession.exercises[ex.name] = Array.from({ length: ex.sets }, () => ({ kg: '', reps: '' }));
+                    state.routineSession.exercises[ex.name] = Array.from({ length: planSets(ex) }, () => ({ kg: '', reps: '' }));
                 });
                 saveRoutineDraft();
             }
@@ -7553,7 +7570,7 @@
                 const badges = h('div', { style: { display: 'flex', gap: '4px', alignItems: 'center' } });
                 const badgeTxt = ex.kind === 'cardio'
                     ? ([ex.distance_km ? ex.distance_km + 'km' : null, ex.duration_min ? ex.duration_min + 'min' : null].filter(Boolean).join(' · ') || '🏃')
-                    : ((ex.sets || '') + 'x' + (ex.reps || ''));
+                    : ((planSets(ex) || '') + 'x' + (ex.reps || ''));
                 badges.appendChild(h('span', { className: 'session-badge', style: { background: 'var(--sf2)', border: '1px solid var(--border)', color: 'var(--text3)' } }, badgeTxt));
                 if (ex.rest_s) {
                     const restStr = ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's';
@@ -7577,7 +7594,7 @@
                     ec.appendChild(h('p', { className: 'rt-note' }, ico('bulb'), h('span', {}, ex.notes)));
                 }
 
-                const rec = checkProgression(ex.name);
+                const rec = deloadActive() ? null : checkProgression(ex.name);
                 if (rec) {
                     const recMsg = t('prog_recommend')
                         .replace('{newKg}', rec.newKg)
@@ -7590,12 +7607,12 @@
                     ec.appendChild(recDiv);
                 }
 
-                if (!rs.exercises[ex.name]) rs.exercises[ex.name] = Array.from({ length: ex.sets || 0 }, () => ({ kg: '', reps: '' }));
+                if (!rs.exercises[ex.name]) rs.exercises[ex.name] = Array.from({ length: planSets(ex) }, () => ({ kg: '', reps: '' }));
                 const setsArr = rs.exercises[ex.name];
 
                 // Sugerencia de doble progresión (si el banner de estancamiento no saltó).
                 // Tap → pre-carga el kg sugerido en las series vacías.
-                const sug = rec ? null : suggestNextLoad(ex);
+                const sug = (rec || deloadActive()) ? null : suggestNextLoad(ex);
                 if (sug) {
                     const sugMsg = (sug.up
                         ? t('rt_suggest_up').replace('{kg}', sug.kg).replace('{inc}', '+' + sug.inc)
@@ -8516,6 +8533,93 @@
                 if (maxKg > prevMax && prevMax > 0) prs.push(trD(ex.exercise) + ' ' + maxKg + 'kg');
             });
             return prs;
+        }
+
+        // ── Ajuste por rendimiento (cambio 7 de la auditoría, nov 2026) ─────────
+        // La lógica está en core/calc.js (performanceSignals, adjustMuscleVolume). Acá van
+        // la semana de descarga y la tarjeta de Inicio. Todo son sugerencias: la app nunca
+        // cambia la rutina sin que el usuario toque el botón.
+        // Semana de descarga: misma carga y la mitad de las series (Bell 2023: bajar el
+        // estrés, no parar; Coleman 2024: parar una semana no suma).
+        function deloadActive() {
+            const p = state.user && state.user.perf;
+            return !!(p && p.deloadUntil && p.deloadUntil >= todayStr());
+        }
+        function planSets(ex) {
+            const n = (ex && ex.sets) || 0;
+            return deloadActive() ? Math.max(1, Math.ceil(n / 2)) : n;
+        }
+        function perfPatch(changes) {
+            const u = state.user; if (!u) return;
+            u.perf = Object.assign({}, u.perf || {}, changes);
+            saveUser();
+        }
+        function perfAddDays(iso, n) { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return localDateStr(d); }
+        function perfDate(iso) { return new Date(iso + 'T12:00:00').toLocaleDateString(appLocale(), { weekday: 'long', day: 'numeric', month: 'short' }); }
+
+        // Tarjeta de Inicio según el registro: descarga en curso, fatiga o progreso.
+        function perfCard() {
+            const u = state.user; if (!u) return null;
+            const p = u.perf || {}, today = todayStr();
+            const card = (kind) => h('div', { className: 'card fade-in perf-card ' + kind });
+            if (deloadActive()) {
+                const c = card('deload');
+                c.appendChild(h('p', { className: 'label' }, ico('refresh'), t('perf_deload_title')));
+                c.appendChild(h('p', { className: 'perf-body' }, t('perf_deload_on').replace('{date}', perfDate(p.deloadUntil))));
+                c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', onclick: () => { perfPatch({ deloadUntil: null }); renderHome(); } }, t('perf_deload_end')));
+                return c;
+            }
+            if (p.snoozeUntil && p.snoozeUntil >= today) return null;
+            const sig = performanceSignals(state.sessions || [], today);
+            if (!sig.dataOk) return null;
+            const prim = (name) => muscleTargets(name).filter(([m, w]) => w === 1 && m !== 'abs').map(([m]) => m);
+            const names = (list) => list.slice(0, 3).map(trD).join(', ');
+            // Los cambios de volumen van sobre la rutina generada, y solo si es la que entrena
+            const onPlan = !!u.routinePlan && (state.activeRoutinePlanIdx || 0) === 0;
+            if (sig.fatigued.length >= 2) {
+                const muscles = [...new Set(sig.fatigued.flatMap(prim))];
+                const again = onPlan && muscles.length > 0 && !!p.lastDeload && daysSince(p.lastDeload) <= 42;
+                const c = card('fatigue');
+                c.appendChild(h('p', { className: 'label' }, ico('alert'), t('perf_fat_title')));
+                c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_body').replace('{list}', names(sig.fatigued))));
+                c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_offer')));
+                if (again) c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_again').replace('{muscles}', muscles.map(m => t('mus_' + m)).join(', '))));
+                const start = (cut) => {
+                    if (cut) muscles.forEach(m => adjustMuscleVolume(u.routinePlan, m, -2));
+                    perfPatch({ deloadUntil: perfAddDays(today, 6), lastDeload: today });
+                    flash(t(cut ? 'perf_cut_done' : 'perf_deload_started'));
+                    renderHome();
+                };
+                const row = h('div', { className: 'perf-actions' });
+                if (again) row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => start(true) }, t('perf_btn_deload_cut')));
+                row.appendChild(h('button', { className: 'btn ' + (again ? 'btn-secondary' : 'btn-primary') + ' btn-sm', onclick: () => start(false) }, t('perf_btn_deload')));
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { perfPatch({ snoozeUntil: perfAddDays(today, 6) }); renderHome(); } }, t('perf_btn_later')));
+                c.appendChild(row);
+                return c;
+            }
+            // Avanzados que progresan sin fatiga: ofrecer +2 series en el músculo que más mejora,
+            // como mucho cada 4 semanas y hasta 28 series fraccionales (cambio 6).
+            if (u.level === 'avanzado' && onPlan && sig.progressing.length >= 2 && !sig.fatigued.length && !(p.upSnoozeUntil && p.upSnoozeUntil >= today)) {
+                const count = {};
+                sig.progressing.forEach(n => prim(n).forEach(m => { count[m] = (count[m] || 0) + 1; }));
+                const vol = planMuscleSets(u.routinePlan);
+                const m = Object.keys(count).filter(x => (vol[x] || 0) + 2 <= 28).sort((a, b) => count[b] - count[a] || (vol[a] || 0) - (vol[b] || 0))[0];
+                if (!m) return null;
+                const c = card('progress');
+                c.appendChild(h('p', { className: 'label' }, ico('chart'), t('perf_up_title')));
+                c.appendChild(h('p', { className: 'perf-body' }, t('perf_up_body').replace('{list}', names(sig.progressing)).replace('{muscle}', t('mus_' + m)).replace('{sets}', String(Math.round(vol[m] || 0)))));
+                const row = h('div', { className: 'perf-actions' });
+                row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => {
+                    const n = adjustMuscleVolume(u.routinePlan, m, 2, 28);
+                    perfPatch({ upSnoozeUntil: perfAddDays(today, 27) });
+                    flash(t('perf_up_done').replace('{n}', n).replace('{muscle}', t('mus_' + m)));
+                    renderHome();
+                } }, t('perf_btn_up')));
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { perfPatch({ upSnoozeUntil: perfAddDays(today, 27) }); renderHome(); } }, t('perf_btn_keep')));
+                c.appendChild(row);
+                return c;
+            }
+            return null;
         }
 
         // Reps en reserva a mostrar: las del plan ('1-3', o un número en rutinas propias).

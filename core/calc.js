@@ -261,6 +261,98 @@
         return out;
     }
 
+    // ── Ajuste por rendimiento: fatiga, descarga y volumen ──────────────────
+    // Rendimiento de un ejercicio en una sesión: 1RM estimado de la mejor serie (Epley,
+    // como calc1RM); si es con el peso del cuerpo (0 kg), las reps de la mejor serie.
+    function sessionPerf(sets) {
+        var bestKg = 0, bestReps = 0;
+        (sets || []).forEach(function (s) {
+            var kg = Number(s && s.kg) || 0, r = Number(s && s.reps) || 0;
+            if (r <= 0) return;
+            if (kg > 0) bestKg = Math.max(bestKg, kg * (1 + r / 30));
+            else bestReps = Math.max(bestReps, r);
+        });
+        return bestKg > 0 ? { value: bestKg, kind: 'kg' } : bestReps > 0 ? { value: bestReps, kind: 'reps' } : null;
+    }
+
+    // Señales del historial (auditoría nov 2026, cambio 7). Solo con registro constante:
+    // al menos 2 sesiones en cada una de las últimas 3 semanas (bloques de 7 días hacia
+    // atrás desde hoy). Sin eso no hay señales: no se distingue fatiga de falta de datos.
+    // · Fatiga en un ejercicio: sus 2 últimas sesiones quedaron 5 % o más por debajo de su
+    //   mejor marca de las 3 semanas anteriores, y la última fue hace 10 días o menos. Una
+    //   caída sostenida del rendimiento es la única señal confiable de sobrecarga (Grandou
+    //   2020); el 1RM varía ~4 % entre mediciones (Grgic 2020) y una sola sesión mala puede
+    //   ser el sueño (Craven 2022): por eso 5 % y dos sesiones.
+    // · Progreso: el rendimiento subió 2,5 % o más contra la sesión de hace 3 a 5 semanas.
+    // Devuelve { dataOk, fatigued: [nombres], progressing: [nombres] }.
+    function performanceSignals(sessions, today) {
+        var t = dayNum(today);
+        var list = (sessions || []).filter(function (s) { return s && s.date && dayNum(s.date) <= t; });
+        var blocks = [0, 0, 0];
+        list.forEach(function (s) { var d = t - dayNum(s.date); if (d < 21) blocks[Math.floor(d / 7)]++; });
+        var out = { dataOk: blocks[0] >= 2 && blocks[1] >= 2 && blocks[2] >= 2, fatigued: [], progressing: [] };
+        if (!out.dataOk) return out;
+        var byEx = {};
+        list.forEach(function (s) {
+            var n = dayNum(s.date);
+            if (t - n > 42) return;
+            (s.exercises || []).forEach(function (e) {
+                var name = String((e && (e.exercise || e.name)) || '').trim();
+                var p = name && sessionPerf(e.sets);
+                if (!p) return;
+                var key = name.toLowerCase();
+                (byEx[key] = byEx[key] || { name: name, occ: [] }).occ.push({ n: n, v: p.value, kind: p.kind });
+            });
+        });
+        Object.keys(byEx).forEach(function (k) {
+            var ex = byEx[k];
+            var occ = ex.occ.sort(function (a, b) { return b.n - a.n; });
+            occ = occ.filter(function (o) { return o.kind === occ[0].kind; });
+            var last = occ[0];
+            if (t - last.n > 10) return;
+            if (occ.length >= 3) {
+                var ref = 0;
+                occ.slice(2).forEach(function (o) { if (last.n - o.n <= 21) ref = Math.max(ref, o.v); });
+                if (ref > 0 && last.v <= ref * 0.95 && occ[1].v <= ref * 0.95) { out.fatigued.push(ex.name); return; }
+            }
+            var old = null;
+            occ.forEach(function (o) { var d = last.n - o.n; if (d >= 21 && d <= 35 && (!old || o.n < old.n)) old = o; });
+            if (old && last.v >= old.v * 1.025) out.progressing.push(ex.name);
+        });
+        return out;
+    }
+
+    // Series fraccionales por músculo de una rutina ([{ exercises: [{ name, sets }] }]).
+    function planMuscleSets(plan) {
+        return muscleSets((plan || []).map(function (d) {
+            return { exercises: (d.exercises || []).map(function (e) { return { exercise: e.name, sets: new Array(Math.max(0, e.sets | 0)) }; }) };
+        }));
+    }
+
+    // Suma o resta `delta` series semanales a un músculo, de a 1 serie por ejercicio, en
+    // los ejercicios donde es el principal. Empieza por los accesorios (los últimos del
+    // día); al restar no baja de 2 series por ejercicio; al sumar no pasa de 5 series por
+    // ejercicio ni de `cap` series fraccionales semanales para ese músculo. Cambia la
+    // rutina recibida y devuelve cuántas series aplicó.
+    function adjustMuscleVolume(plan, muscle, delta, cap) {
+        var step = delta > 0 ? 1 : -1, need = Math.abs(delta | 0), applied = 0;
+        var cands = [];
+        (plan || []).forEach(function (d) {
+            (d.exercises || []).forEach(function (e, i) {
+                if (muscleTargets(e.name).some(function (mw) { return mw[0] === muscle && mw[1] === 1; })) cands.push({ e: e, i: i });
+            });
+        });
+        cands.sort(function (a, b) { return b.i - a.i; });
+        for (var round = 0; round < 4 && applied < need; round++) {
+            for (var k = 0; k < cands.length && applied < need; k++) {
+                var e = cands[k].e;
+                if (step < 0 && e.sets > 2) { e.sets--; applied++; }
+                else if (step > 0 && e.sets < 5 && (!(cap > 0) || (planMuscleSets(plan)[muscle] || 0) + 1 <= cap)) { e.sets++; applied++; }
+            }
+        }
+        return applied;
+    }
+
     // Fecha 'YYYY-MM-DD' del día LOCAL, según la zona horaria del teléfono (que
     // ya sabe país y región: Madrid y Canarias, Nueva York y Los Ángeles).
     // toISOString() da el día en UTC: en España la medianoche local cae el día
@@ -382,6 +474,10 @@
         exerciseTrend: exerciseTrend,
         prefillSets: prefillSets,
         cardioWeek: cardioWeek,
+        sessionPerf: sessionPerf,
+        performanceSignals: performanceSignals,
+        planMuscleSets: planMuscleSets,
+        adjustMuscleVolume: adjustMuscleVolume,
         MUSCLES: MUSCLES,
         muscleTargets: muscleTargets,
         muscleSets: muscleSets,
