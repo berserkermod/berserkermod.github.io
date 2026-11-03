@@ -112,6 +112,18 @@
         return Math.round(net * (weightKg || 0) * ((seconds || 0) / 3600));
     }
 
+    // Gasto ESTIMADO de una sesión de pesas, solo informativo: no se suma al balance porque
+    // el mantenimiento ya incluye el entrenamiento (factor de actividad por días de gimnasio).
+    // Compendio de Actividades Físicas 2024: pesas de 3,5 MET (moderado, 02054) a 6 MET
+    // (vigoroso, 02050). Se resta 1 MET de reposo como en el cardio y se informa el punto
+    // medio (3,75 MET netos) con su rango (2,5-5). kcal = MET × kg × horas, de a 10.
+    function strengthKcal(minutes, weightKg) {
+        var hours = (Number(minutes) || 0) / 60, kg = Number(weightKg) || 0;
+        if (!(hours > 0) || !(kg > 0)) return null;
+        var r10 = function (x) { return Math.round(x / 10) * 10; };
+        return { kcal: r10(3.75 * kg * hours), low: r10(2.5 * kg * hours), high: r10(5 * kg * hours) };
+    }
+
     // Discos por lado para armar `total` con una barra de `bar`, usando los discos
     // disponibles de mayor a menor. Devuelve { perSide: [25, 10, 2.5], rest } donde
     // rest es lo que no se pudo armar con esos discos (0 si cierra justo).
@@ -384,6 +396,7 @@
         formatPortion: formatPortion,
         calcDailyBalance: calcDailyBalance,
         calc1RM: calc1RM,
-        cardioKcal: cardioKcal
+        cardioKcal: cardioKcal,
+        strengthKcal: strengthKcal
     };
 });

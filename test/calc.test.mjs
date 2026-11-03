@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { proteinWeight, calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
+const { strengthKcal, proteinWeight, calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -76,6 +76,10 @@ console.log('\ncardioKcal ((MET × intensidad − 1) × peso × horas: calorías
     ok('intensidad alta escala', cardioKcal(8, 1.3, 80, 1800) > cardioKcal(8, 1, 80, 1800));
     ok('1h MET10 80kg → 720', cardioKcal(10, 1, 80, 3600) === 720, cardioKcal(10, 1, 80, 3600));
     ok('actividad por debajo del reposo → 0, nunca negativo', cardioKcal(0.9, 1, 80, 3600) === 0);
+    const sk = strengthKcal(60, 80);
+    ok('pesas 60 min 80 kg → ~300 kcal (rango 200-400)', sk.kcal === 300 && sk.low === 200 && sk.high === 400, sk);
+    ok('pesas 45 min 62 kg → redondeado de a 10', strengthKcal(45, 62).kcal === 170, strengthKcal(45, 62));
+    ok('pesas sin duración o sin peso → null', strengthKcal(0, 80) === null && strengthKcal(60, 0) === null && strengthKcal() === null);
     ok('args faltantes → 0 (sin crash)', cardioKcal() === 0);
 }
 

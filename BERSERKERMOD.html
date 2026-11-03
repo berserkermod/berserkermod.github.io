@@ -2223,8 +2223,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-27"></script>
-    <script src="core/i18n-data.js?v=2-27"></script>
+    <script src="core/calc.js?v=2-28"></script>
+    <script src="core/i18n-data.js?v=2-28"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2505,7 +2505,7 @@
                 nutri_history_title: "PLANES ANTERIORES",
                 nutri_history_empty: "Sin planes anteriores",
                 rt_why_title: "¿Por qué esta rutina?",
-                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici", cw_title: "CARDIO DE LA SEMANA", cw_of: "/ {target} min", cw_left: "Te faltan {min} min en {days} días.", cw_left_today: "Te faltan {min} min y hoy es el último día de la semana.", cw_done: "¡Meta cumplida! Lo que hagas de más también suma.", cw_hint_fat: "La grasa baja por el déficit y el cardio; caminar cuenta. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_hint_end: "Es la base del acondicionamiento: continuo o por intervalos rinden parecido. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_log: "Registrar cardio",
+                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici", cw_title: "CARDIO DE LA SEMANA", cw_of: "/ {target} min", cw_left: "Te faltan {min} min en {days} días.", cw_left_today: "Te faltan {min} min y hoy es el último día de la semana.", cw_done: "¡Meta cumplida! Lo que hagas de más también suma.", cw_hint_fat: "La grasa baja por el déficit y el cardio; caminar cuenta. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_hint_end: "Es la base del acondicionamiento: continuo o por intervalos rinden parecido. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado con tu peso y la duración (Compendio de Actividades Físicas): entre {low} y {high} kcal activas según la intensidad. No se suma a tu balance diario porque tu mantenimiento ya incluye el entrenamiento.", hist_kcal: "~{k} kcal",
                 rt_muscles_title: "Distribución muscular",
                 rt_time_title: "Tiempo por sesión",
                 rt_time_avg: "min promedio",
@@ -2947,7 +2947,7 @@
                 nutri_history_title: "PREVIOUS PLANS",
                 nutri_history_empty: "No previous plans",
                 rt_why_title: "Why this routine?",
-                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance", cw_title: "THIS WEEK'S CARDIO", cw_of: "/ {target} min", cw_left: "{min} min to go, {days} days left.", cw_left_today: "{min} min to go, and today is the last day of the week.", cw_done: "Goal reached! Anything extra still counts.", cw_hint_fat: "Fat comes off through the deficit and cardio; walking counts. The goal starts at 150 min and rises gradually with your average.", cw_hint_end: "It's the foundation of conditioning: steady or interval cardio work about the same. The goal starts at 150 min and rises gradually with your average.", cw_log: "Log cardio",
+                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance", cw_title: "THIS WEEK'S CARDIO", cw_of: "/ {target} min", cw_left: "{min} min to go, {days} days left.", cw_left_today: "{min} min to go, and today is the last day of the week.", cw_done: "Goal reached! Anything extra still counts.", cw_hint_fat: "Fat comes off through the deficit and cardio; walking counts. The goal starts at 150 min and rises gradually with your average.", cw_hint_end: "It's the foundation of conditioning: steady or interval cardio work about the same. The goal starts at 150 min and rises gradually with your average.", cw_log: "Log cardio", share_sum_kcal: "EST. CALORIES", share_kcal_note: "Estimated from your weight and the session length (Compendium of Physical Activities): between {low} and {high} active kcal depending on intensity. It isn't added to your daily balance because your maintenance already includes training.", hist_kcal: "~{k} kcal",
                 rt_muscles_title: "Muscle distribution",
                 rt_time_title: "Time per session",
                 rt_time_avg: "min average",
@@ -3390,7 +3390,7 @@
                 nutri_history_title: "PLANOS ANTERIORES",
                 nutri_history_empty: "Sem planos anteriores",
                 rt_why_title: "Por que esta rotina?",
-                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal", cw_title: "CARDIO DA SEMANA", cw_of: "/ {target} min", cw_left: "Faltam {min} min em {days} dias.", cw_left_today: "Faltam {min} min e hoje é o último dia da semana.", cw_done: "Meta cumprida! O que fizer a mais também conta.", cw_hint_fat: "A gordura cai pelo déficit e pelo cardio; caminhar conta. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_hint_end: "É a base do condicionamento: contínuo ou intervalado rendem parecido. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_log: "Registrar cardio",
+                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal", cw_title: "CARDIO DA SEMANA", cw_of: "/ {target} min", cw_left: "Faltam {min} min em {days} dias.", cw_left_today: "Faltam {min} min e hoje é o último dia da semana.", cw_done: "Meta cumprida! O que fizer a mais também conta.", cw_hint_fat: "A gordura cai pelo déficit e pelo cardio; caminhar conta. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_hint_end: "É a base do condicionamento: contínuo ou intervalado rendem parecido. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_log: "Registrar cardio", share_sum_kcal: "GASTO ESTIMADO", share_kcal_note: "Estimado com o seu peso e a duração (Compêndio de Atividades Físicas): entre {low} e {high} kcal ativas conforme a intensidade. Não entra no seu balanço diário porque a sua manutenção já inclui o treino.", hist_kcal: "~{k} kcal",
                 rt_muscles_title: "Distribuição muscular",
                 rt_time_title: "Tempo por sessão",
                 rt_time_avg: "min média",
@@ -7708,6 +7708,8 @@
                 else existing.exercises.push(incEx);
             });
             existing.duration = (existing.duration || 0) + (incoming.duration || 0);
+            if (existing.kcalEst && incoming.kcalEst) existing.kcalEst += incoming.kcalEst;
+            else delete existing.kcalEst;
         }
 
         function showSessionMergePrompt(onMerge, onSeparate) {
@@ -7776,6 +7778,8 @@
                 exercises: exData,
                 duration: mins >= 1 ? Math.min(mins, 240) : 60
             };
+            // Gasto estimado (informativo, no va al balance) solo con la duración medida
+            if (mins >= 1) { const est = strengthKcal(sess.duration, state.user && state.user.weight); if (est) sess.kcalEst = est.kcal; }
             state.routineSession = {};
             clearRoutineDraft(); stopRestTimer(); setWorkoutAwake(false);
             state.activeRoutineIdx++;
@@ -8479,6 +8483,7 @@
             if (!state.sessionSets.length) return;
             const dur = state.sessionStart ? Math.round((Date.now() - state.sessionStart) / 60000) : 0;
             const sess = { id: Date.now(), date: state.sessionDate || todayStr(), day: state.selDay, duration: dur, exercises: JSON.parse(JSON.stringify(state.sessionSets)) };
+            if (dur >= 1) { const est = strengthKcal(Math.min(dur, 240), state.user && state.user.weight); if (est) sess.kcalEst = est.kcal; }
             state.sessionSets = []; state.sessionStart = null; state.sessionDate = null; stopRestTimer(); setWorkoutAwake(false); clearTrainDraft();
             saveWorkoutSession(sess, (saved, merged) => {
                 if (merged) {
@@ -8668,8 +8673,15 @@
             if (vol > 0) chips.appendChild(chip(t('share_sum_volume'), fmt(Math.round(vol)) + ' ' + state.unit, 'var(--accent)'));
             chips.appendChild(chip(t('share_sum_sets'), nSets + '', 'var(--blue)'));
             if (sess.duration > 0) chips.appendChild(chip(t('share_sum_duration'), sess.duration + ' min'));
+            if (sess.kcalEst > 0) chips.appendChild(chip(t('share_sum_kcal'), '~' + fmt(sess.kcalEst) + ' kcal', 'var(--orange)'));
             if (delta != null) chips.appendChild(chip(t('share_sum_vs_prev'), (delta >= 0 ? '+' : '') + delta + '%', delta >= 0 ? 'var(--accent)' : 'var(--orange)'));
             sum.appendChild(chips);
+            if (sess.kcalEst > 0) {
+                // Rango del Compendio: 2,5-5 MET netos sobre el punto medio de 3,75
+                const r10 = (x) => Math.round(x / 10) * 10;
+                sum.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', lineHeight: '1.45', marginTop: '8px' } },
+                    t('share_kcal_note').replace('{low}', fmt(r10(sess.kcalEst * 2 / 3))).replace('{high}', fmt(r10(sess.kcalEst * 4 / 3)))));
+            }
             if (prs.length) {
                 const prRow = h('div', { style: { background: 'rgba(253,203,110,.1)', border: '1px solid rgba(253,203,110,.3)', borderRadius: '10px', padding: '8px 12px', marginTop: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--orange)' } });
                 prRow.textContent = '🏆 ' + prs.slice(0, 3).map(trD).join(' · ');
@@ -9706,7 +9718,8 @@
                     const left = h('div', { style: { flex: 1, minWidth: 0 } });
                     left.appendChild(h('p', { style: { fontWeight: 800, fontSize: '14px', color: expanded ? 'var(--accent)' : 'var(--text)' } }, weekday + (groups ? ' · ' + groups : '')));
                     left.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } },
-                        sess.date + (sess.day ? ' · ' + sess.day : '') + (sess.duration ? ' · ' + sess.duration + 'min' : '') + ' · ' +
+                        sess.date + (sess.day ? ' · ' + sess.day : '') + (sess.duration ? ' · ' + sess.duration + 'min' : '') +
+                        (sess.kcalEst ? ' · ' + t('hist_kcal').replace('{k}', fmt(sess.kcalEst)) : '') + ' · ' +
                         t('hist_summary').replace('{e}', (sess.exercises || []).length).replace('{s}', nSets)));
                     hdr.appendChild(left);
                     const right = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 } });
