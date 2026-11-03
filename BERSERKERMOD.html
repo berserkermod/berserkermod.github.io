@@ -1705,6 +1705,8 @@
         .rt-day-banner-name { font-size: 14px; font-weight: 800; color: var(--day-color, var(--text)); }
         .rt-day-banner-focus { font-size: 11px; color: var(--text3); margin-top: 2px; }
         .rt-last-weight { font-size: 12px; color: var(--text3); font-weight: 600; margin-top: 4px; }
+        .rt-rir { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text2); font-weight: 600; margin: 2px 0 6px; }
+        .rt-rir .ico { color: var(--orange); }
         /* Mapa del cuerpo */
         .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
         .bm-base { fill: var(--bm-base); }
@@ -2211,8 +2213,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-24"></script>
-    <script src="core/i18n-data.js?v=2-24"></script>
+    <script src="core/calc.js?v=2-25"></script>
+    <script src="core/i18n-data.js?v=2-25"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2317,7 +2319,7 @@
                 train_sets: "SERIES COMPLETADAS", train_finish: "FINALIZAR ENTRENAMIENTO 🔥", train_err_ex: "Seleccioná un ejercicio", train_rest: "Descanso", train_pr: "🏆 ¡NUEVO PR!", train_sess_saved: "✓ Sesión guardada",
                 dr_title: "COPIA EN GOOGLE DRIVE", dr_save: "Guardar copia en Drive", dr_restore: "Restaurar desde Drive", dr_last: "Última copia en Drive: {when}", dr_never: "Todavía no guardaste una copia en Drive.", dr_note: "Se guarda en una carpeta privada de tu Google Drive (no aparece entre tus archivos). Nuestro servidor no la ve. No incluye las fotos de progreso.", dr_busy_save: "Guardando en Drive…", dr_busy_read: "Buscando tu copia en Drive…", dr_saved: "✓ Copia guardada en Drive", dr_none: "Todavía no hay ninguna copia en tu Drive.", dr_err_closed: "Se cerró la ventana de Google sin dar permiso.", dr_err_blocked: "El navegador bloqueó la ventana de Google. Probá de nuevo.", dr_err: "No se pudo conectar con Google Drive. Revisá la conexión y probá de nuevo.", dr_more_title: "Tu copia en Drive tiene más entrenamientos", dr_more_msg: "La copia del {date} tiene {r} entrenamientos y este teléfono tiene {l}. Si guardás ahora, la reemplazás (la anterior queda guardada aparte).", dr_more_restore: "Restaurar la copia de Drive", dr_more_save: "Guardar igual",
                 theme_dark: "Oscuro", theme_light: "Claro", theme_auto: "Automático",
-                bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Mucho (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
+                bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Alto (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
                 fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
                 rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
@@ -2457,11 +2459,11 @@
                 routine_free_template: "Rutina FREE: Full Body 3 días Principiante",
                 routine_premium_unlock: "🔒 Premium",
                 routine_progression_tip: "Progresá: si completás todas las series con buena técnica, subí 2.5kg la próxima semana",
-                routine_method_muscle: "Hipertrofia · Tempo controlado 2-0-1",
-                routine_method_fat: "Definición · Descansos cortos 30-45s",
-                routine_method_strength: "Fuerza · Descansos largos 3-5min · Compuestos pesados",
+                routine_method_muscle: "Hipertrofia · 1-3 reps en reserva",
+                routine_method_fat: "Definición · Fuerza + déficit + cardio",
+                routine_method_strength: "Fuerza · Día pesado y día liviano",
                 routine_method_recomp: "Recomposición · Compuestos + aislamiento",
-                routine_method_endurance: "Resistencia · Alto volumen · Bajo descanso",
+                routine_method_endurance: "Resistencia · Fuerza pesada + series largas",
                 nutri_strategy: "ESTRATEGIA POR OBJETIVO",
                 nutri_strategy_muscle: "Hipertrofia = superávit + proteína alta. Comé cada 3-4h. Priorizá carbs alrededor del entreno y mantené consistente la proteína.",
                 nutri_strategy_fat: "Definición = déficit + proteína muy alta para preservar músculo. Hidratación, verduras voluminosas y comidas con saciedad. Evitá líquidos calóricos.",
@@ -2493,7 +2495,7 @@
                 nutri_history_title: "PLANES ANTERIORES",
                 nutri_history_empty: "Sin planes anteriores",
                 rt_why_title: "¿Por qué esta rutina?",
-                rt_progress_title: "Cómo progresar",
+                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici",
                 rt_muscles_title: "Distribución muscular",
                 rt_time_title: "Tiempo por sesión",
                 rt_time_avg: "min promedio",
@@ -2524,18 +2526,18 @@
                 nutri_per100: " (por 100g)",
                 plan_updated_goals: "🔄 Rutina actualizada según tus nuevos objetivos",
                 plan_updated_goal: "🔄 Tu plan se actualizó por el nuevo objetivo",
-                rat_goal_muscle: "Para hipertrofia priorizamos frecuencia (2x por grupo en planes 4+) y reps moderadas (8-12) con tempo controlado.",
-                rat_goal_fat: "En definición mantenemos el volumen pero con reps más altos y descansos cortos para sostener gasto calórico.",
-                rat_goal_strength: "Para fuerza priorizamos compuestos pesados, reps bajas (4-6) y descansos largos (3-5min).",
+                rat_goal_muscle: "Para hipertrofia: 8-12 reps terminando cerca del fallo (1-3 reps en reserva) y cada grupo 2 veces por semana en los planes de 4 días o más.",
+                rat_goal_fat: "En definición entrenás igual que para ganar músculo: así lo conservás mientras la grasa baja por el déficit calórico y el cardio. Sumá al menos 150 min de cardio por semana.",
+                rat_goal_strength: "Para fuerza: compuestos pesados (4-6 reps) con 2-3 reps en reserva y ~3 min de descanso. Sentadilla y press banca van 2 veces por semana: un día pesado y uno liviano.",
                 rat_goal_recomp: "Recomposición balancea compuestos pesados con accesorios — crecer mientras perdés grasa.",
-                rat_goal_endurance: "Resistencia con alto volumen y bajo descanso — acondicionamiento físico general.",
-                rat_days_3: "3 días Full Body permite 3x de frecuencia por grupo, ideal para principiantes/intermedios.",
-                rat_days_4: "Upper/Lower con 4 días balancea volumen y recuperación: cada grupo 2x por semana.",
-                rat_days_5: "PPL+UL con 5 días es el sweet spot: alta frecuencia + volumen alto.",
+                rat_goal_endurance: "Resistencia: cada día arranca con un ejercicio de fuerza pesada (mejora el rendimiento en carrera y bici) y sigue con series largas y poco descanso. Sumá 150-300 min de cardio por semana.",
+                rat_days_3: "3 días Full Body: cada grupo 2-3 veces por semana, ideal para principiantes e intermedios.",
+                rat_days_4: "Upper/Lower con 4 días: cada grupo 2 veces por semana, con el volumen repartido en dos sesiones.",
+                rat_days_5: "PPL+UL con 5 días: cada grupo 2 veces por semana y más volumen total.",
                 rat_days_6: "PPL x2 con 6 días es para avanzados que toleran alto volumen y recuperan rápido.",
                 prog_beg: "Subí 2.5kg cuando completes todas las series del tope del rango (ej. 4×8). Cambiá la rutina cada 12-16 semanas.",
-                prog_int: "Subí 1.25-2.5kg por semana. Si no podés subir peso, agregá 1 rep. Considerá un deload cada 6 semanas.",
-                prog_adv: "Progresión ondulada (intensidad/volumen). Deloads programados cada 4-5 semanas. Tracking detallado de PRs.",
+                prog_int: "Subí 1.25-2.5kg cuando completes el rango de reps; si no podés, sumá 1 rep. Si tu rendimiento baja varias sesiones seguidas, hacé una semana con la mitad de las series.",
+                prog_adv: "Progresá con doble progresión y seguí tus récords. Si tu rendimiento baja varias sesiones seguidas, hacé una semana con la mitad de las series y después volvé a tu volumen.",
                 prog_default: "Progresá subiendo peso o reps cuando puedas completar todas las series con buena técnica.",
                 pdf_lib_fail: "No se pudo cargar la librería PDF",
                 yt_link_copied: "🔗 Link copiado. Pegalo en una pestaña nueva.",
@@ -2704,7 +2706,7 @@
                 lib_detail_mistakes: "❌ ERRORES COMUNES",
                 lib_detail_variations: "🔄 VARIACIONES",
                 lib_detail_progression: "📈 CÓMO PROGRESAR",
-                lib_detail_rpe: "🎯 REPS / RPE",
+                lib_detail_rpe: "🎯 REPS SUGERIDAS",
                 lib_fav_add: "❤️ Favoritar", lib_fav_remove: "💔 Quitar de favoritos",
                 lib_added_fav: "✓ Agregado a favoritos", lib_removed_fav: "✓ Quitado de favoritos",
                 lib_custom_video_badge: "✏️ Tu video personalizado",
@@ -2899,11 +2901,11 @@
                 routine_free_template: "FREE routine: Full Body 3 days Beginner",
                 routine_premium_unlock: "🔒 Premium",
                 routine_progression_tip: "Progress: if you complete all sets with good form, add 2.5kg next week",
-                routine_method_muscle: "Hypertrophy · Controlled tempo 2-0-1",
-                routine_method_fat: "Cutting · Short rest 30-45s",
-                routine_method_strength: "Strength · Long rest 3-5min · Heavy compounds",
+                routine_method_muscle: "Hypertrophy · 1-3 reps in reserve",
+                routine_method_fat: "Cutting · Strength + deficit + cardio",
+                routine_method_strength: "Strength · Heavy day and light day",
                 routine_method_recomp: "Recomp · Compounds + isolation",
-                routine_method_endurance: "Endurance · High volume · Short rest",
+                routine_method_endurance: "Endurance · Heavy strength + long sets",
                 nutri_strategy: "STRATEGY BY GOAL",
                 nutri_strategy_muscle: "Hypertrophy = surplus + high protein. Eat every 3-4h. Prioritize carbs around training and keep protein consistent.",
                 nutri_strategy_fat: "Cutting = deficit + very high protein to preserve muscle. Hydration, voluminous veggies, satiating meals. Avoid liquid calories.",
@@ -2935,7 +2937,7 @@
                 nutri_history_title: "PREVIOUS PLANS",
                 nutri_history_empty: "No previous plans",
                 rt_why_title: "Why this routine?",
-                rt_progress_title: "How to progress",
+                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance",
                 rt_muscles_title: "Muscle distribution",
                 rt_time_title: "Time per session",
                 rt_time_avg: "min average",
@@ -2966,18 +2968,18 @@
                 nutri_per100: " (per 100g)",
                 plan_updated_goals: "🔄 Routine updated for your new goals",
                 plan_updated_goal: "🔄 Your plan was updated for your new goal",
-                rat_goal_muscle: "For hypertrophy we prioritize frequency (2x per muscle group on 4+ day plans) and moderate reps (8-12) with a controlled tempo.",
-                rat_goal_fat: "On a cut we keep the volume but with higher reps and short rests to keep calorie burn up.",
-                rat_goal_strength: "For strength we prioritize heavy compound lifts, low reps (4-6) and long rests (3-5min).",
+                rat_goal_muscle: "For hypertrophy: 8-12 reps ending close to failure (1-3 reps in reserve), and each muscle group twice a week on 4+ day plans.",
+                rat_goal_fat: "On a cut you train the same way as for building muscle: that keeps your muscle while fat comes off through the calorie deficit and cardio. Add at least 150 min of cardio a week.",
+                rat_goal_strength: "For strength: heavy compound lifts (4-6 reps) with 2-3 reps in reserve and ~3 min rest. Squat and bench press come twice a week: one heavy day and one light day.",
                 rat_goal_recomp: "Recomposition balances heavy compounds with accessories — build muscle while you lose fat.",
-                rat_goal_endurance: "Endurance with high volume and short rests — general conditioning.",
-                rat_days_3: "3 Full Body days give each muscle group 3x frequency, ideal for beginners/intermediates.",
-                rat_days_4: "Upper/Lower on 4 days balances volume and recovery: each group 2x a week.",
-                rat_days_5: "PPL+UL on 5 days is the sweet spot: high frequency + high volume.",
+                rat_goal_endurance: "Endurance: each day starts with a heavy strength exercise (it improves running and cycling performance) and continues with long sets and short rests. Add 150-300 min of cardio a week.",
+                rat_days_3: "3 Full Body days: each muscle group 2-3 times a week, ideal for beginners and intermediates.",
+                rat_days_4: "Upper/Lower on 4 days: each muscle group twice a week, with the volume split across two sessions.",
+                rat_days_5: "PPL+UL on 5 days: each muscle group twice a week with more total volume.",
                 rat_days_6: "PPL x2 on 6 days is for advanced lifters who handle high volume and recover fast.",
                 prog_beg: "Add 2.5kg once you complete every set at the top of the range (e.g. 4×8). Change the routine every 12-16 weeks.",
-                prog_int: "Add 1.25-2.5kg a week. If you can’t add weight, add 1 rep. Consider a deload every 6 weeks.",
-                prog_adv: "Undulating progression (intensity/volume). Planned deloads every 4-5 weeks. Detailed PR tracking.",
+                prog_int: "Add 1.25-2.5kg once you complete the rep range; if you can’t, add 1 rep. If your performance drops for several sessions in a row, do one week with half the sets.",
+                prog_adv: "Progress with double progression and track your PRs. If your performance drops for several sessions in a row, do one week with half the sets, then return to your usual volume.",
                 prog_default: "Progress by adding weight or reps when you can complete every set with good technique.",
                 pdf_lib_fail: "Couldn’t load the PDF library",
                 yt_link_copied: "🔗 Link copied. Paste it in a new tab.",
@@ -3146,7 +3148,7 @@
                 lib_detail_mistakes: "❌ COMMON MISTAKES",
                 lib_detail_variations: "🔄 VARIATIONS",
                 lib_detail_progression: "📈 HOW TO PROGRESS",
-                lib_detail_rpe: "🎯 REPS / RPE",
+                lib_detail_rpe: "🎯 SUGGESTED REPS",
                 lib_fav_add: "❤️ Favorite", lib_fav_remove: "💔 Remove from favorites",
                 lib_added_fav: "✓ Added to favorites", lib_removed_fav: "✓ Removed from favorites",
                 lib_custom_video_badge: "✏️ Your custom video",
@@ -3202,7 +3204,7 @@
                 train_sets: "SÉRIES CONCLUÍDAS", train_finish: "FINALIZAR TREINO 🔥", train_err_ex: "Selecione um exercício", train_rest: "Descanso", train_pr: "🏆 NOVO PR!", train_sess_saved: "✓ Sessão salva",
                 dr_title: "BACKUP NO GOOGLE DRIVE", dr_save: "Salvar backup no Drive", dr_restore: "Restaurar do Drive", dr_last: "Último backup no Drive: {when}", dr_never: "Você ainda não salvou um backup no Drive.", dr_note: "Fica numa pasta privada do seu Google Drive (não aparece entre seus arquivos). Nosso servidor não vê. Não inclui as fotos de progresso.", dr_busy_save: "Salvando no Drive…", dr_busy_read: "Procurando seu backup no Drive…", dr_saved: "✓ Backup salvo no Drive", dr_none: "Ainda não há nenhum backup no seu Drive.", dr_err_closed: "A janela do Google foi fechada sem dar permissão.", dr_err_blocked: "O navegador bloqueou a janela do Google. Tente de novo.", dr_err: "Não foi possível conectar ao Google Drive. Verifique a conexão e tente de novo.", dr_more_title: "Seu backup no Drive tem mais treinos", dr_more_msg: "O backup de {date} tem {r} treinos e este celular tem {l}. Se salvar agora, ele é substituído (o anterior fica guardado à parte).", dr_more_restore: "Restaurar o backup do Drive", dr_more_save: "Salvar mesmo assim",
                 theme_dark: "Escuro", theme_light: "Claro", theme_auto: "Automático",
-                bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Muito (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
+                bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Alto (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
                 fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
                 rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
@@ -3342,11 +3344,11 @@
                 routine_free_template: "Rotina FREE: Full Body 3 dias Iniciante",
                 routine_premium_unlock: "🔒 Premium",
                 routine_progression_tip: "Progrida: se completar todas as séries com boa técnica, suba 2.5kg na próxima semana",
-                routine_method_muscle: "Hipertrofia · Tempo controlado 2-0-1",
-                routine_method_fat: "Definição · Descanso curto 30-45s",
-                routine_method_strength: "Força · Descanso longo 3-5min · Compostos pesados",
+                routine_method_muscle: "Hipertrofia · 1-3 reps em reserva",
+                routine_method_fat: "Definição · Força + déficit + cardio",
+                routine_method_strength: "Força · Dia pesado e dia leve",
                 routine_method_recomp: "Recomposição · Compostos + isolamento",
-                routine_method_endurance: "Resistência · Alto volume · Descanso curto",
+                routine_method_endurance: "Resistência · Força pesada + séries longas",
                 nutri_strategy: "ESTRATÉGIA POR OBJETIVO",
                 nutri_strategy_muscle: "Hipertrofia = superávit + proteína alta. Coma a cada 3-4h. Priorize carbs ao redor do treino e mantenha consistente a proteína.",
                 nutri_strategy_fat: "Definição = déficit + proteína muito alta para preservar músculo. Hidratação, vegetais volumosos, refeições saciantes. Evite líquidos calóricos.",
@@ -3378,7 +3380,7 @@
                 nutri_history_title: "PLANOS ANTERIORES",
                 nutri_history_empty: "Sem planos anteriores",
                 rt_why_title: "Por que esta rotina?",
-                rt_progress_title: "Como progredir",
+                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal",
                 rt_muscles_title: "Distribuição muscular",
                 rt_time_title: "Tempo por sessão",
                 rt_time_avg: "min média",
@@ -3409,18 +3411,18 @@
                 nutri_per100: " (por 100g)",
                 plan_updated_goals: "🔄 Rotina atualizada para seus novos objetivos",
                 plan_updated_goal: "🔄 Seu plano foi atualizado para o novo objetivo",
-                rat_goal_muscle: "Para hipertrofia priorizamos frequência (2x por grupo em planos de 4+ dias) e reps moderadas (8-12) com ritmo controlado.",
-                rat_goal_fat: "Na definição mantemos o volume, mas com mais reps e descansos curtos para sustentar o gasto calórico.",
-                rat_goal_strength: "Para força priorizamos compostos pesados, poucas reps (4-6) e descansos longos (3-5min).",
+                rat_goal_muscle: "Para hipertrofia: 8-12 reps terminando perto da falha (1-3 reps em reserva) e cada grupo 2 vezes por semana nos planos de 4 dias ou mais.",
+                rat_goal_fat: "Na definição você treina igual a quando quer ganhar massa: assim preserva o músculo enquanto a gordura cai pelo déficit calórico e pelo cardio. Some pelo menos 150 min de cardio por semana.",
+                rat_goal_strength: "Para força: compostos pesados (4-6 reps) com 2-3 reps em reserva e ~3 min de descanso. Agachamento e supino entram 2 vezes por semana: um dia pesado e um leve.",
                 rat_goal_recomp: "A recomposição equilibra compostos pesados com acessórios — ganhar massa enquanto perde gordura.",
-                rat_goal_endurance: "Resistência com alto volume e pouco descanso — condicionamento físico geral.",
-                rat_days_3: "3 dias de Corpo Inteiro dão frequência 3x por grupo, ideal para iniciantes/intermediários.",
-                rat_days_4: "Superior/Inferior em 4 dias equilibra volume e recuperação: cada grupo 2x por semana.",
-                rat_days_5: "PPL+UL em 5 dias é o ponto ideal: alta frequência + volume alto.",
+                rat_goal_endurance: "Resistência: cada dia começa com um exercício de força pesada (melhora o desempenho na corrida e no pedal) e segue com séries longas e pouco descanso. Some 150-300 min de cardio por semana.",
+                rat_days_3: "3 dias de Corpo Inteiro: cada grupo 2-3 vezes por semana, ideal para iniciantes e intermediários.",
+                rat_days_4: "Superior/Inferior em 4 dias: cada grupo 2 vezes por semana, com o volume dividido em duas sessões.",
+                rat_days_5: "PPL+UL em 5 dias: cada grupo 2 vezes por semana e mais volume total.",
                 rat_days_6: "PPL x2 em 6 dias é para avançados que toleram alto volume e se recuperam rápido.",
                 prog_beg: "Suba 2,5kg quando completar todas as séries no topo da faixa (ex. 4×8). Troque a rotina a cada 12-16 semanas.",
-                prog_int: "Suba 1,25-2,5kg por semana. Se não conseguir subir a carga, faça 1 rep a mais. Considere um deload a cada 6 semanas.",
-                prog_adv: "Progressão ondulatória (intensidade/volume). Deloads programados a cada 4-5 semanas. Acompanhamento detalhado de PRs.",
+                prog_int: "Suba 1,25-2,5kg quando completar a faixa de reps; se não conseguir, faça 1 rep a mais. Se o seu rendimento cair várias sessões seguidas, faça uma semana com metade das séries.",
+                prog_adv: "Progrida com dupla progressão e acompanhe seus recordes. Se o seu rendimento cair várias sessões seguidas, faça uma semana com metade das séries e depois volte ao seu volume.",
                 prog_default: "Progrida subindo carga ou reps quando conseguir completar todas as séries com boa técnica.",
                 pdf_lib_fail: "Não foi possível carregar a biblioteca de PDF",
                 yt_link_copied: "🔗 Link copiado. Cole em uma nova aba.",
@@ -3589,7 +3591,7 @@
                 lib_detail_mistakes: "❌ ERROS COMUNS",
                 lib_detail_variations: "🔄 VARIAÇÕES",
                 lib_detail_progression: "📈 COMO PROGREDIR",
-                lib_detail_rpe: "🎯 REPS / RPE",
+                lib_detail_rpe: "🎯 REPS SUGERIDAS",
                 lib_fav_add: "❤️ Favoritar", lib_fav_remove: "💔 Remover dos favoritos",
                 lib_added_fav: "✓ Adicionado aos favoritos", lib_removed_fav: "✓ Removido dos favoritos",
                 lib_custom_video_badge: "✏️ Seu video personalizado",
@@ -6109,7 +6111,8 @@
                         const restStr = ex.rest_s ? ` · ${ex.rest_s >= 60 ? Math.round(ex.rest_s / 60 * 10) / 10 + 'min' : ex.rest_s + 's'} ${t('pdf_rest')}` : '';
                         const last = getLastWeightFor(ex.name);
                         const lastStr = last ? `   [${t('pdf_last')}: ${last.kg}${state.unit}]` : '';
-                        doc.text('• ' + trD(ex.name) + '   ' + ex.sets + '×' + ex.reps + restStr + lastStr, margin + 2, y);
+                        const rirPdf = effectiveRir(ex.rir) ? ' · RIR ' + effectiveRir(ex.rir) : '';
+                        doc.text('• ' + trD(ex.name) + '   ' + ex.sets + '×' + ex.reps + rirPdf + restStr + lastStr, margin + 2, y);
                         y += 5;
                         if (ex.notes) {
                             doc.setFontSize(8); doc.setTextColor(80, 110, 180);
@@ -6614,22 +6617,43 @@
             return { plan, downgraded, reason, actualDays, actualLevel };
         }
 
+        // Generador de rutinas. Base científica revisada en noviembre 2026 (informes
+        // "Rutinas vs. evidencia científica" y "Cambios verificados con evidencia"):
+        //  · Reps en reserva (rir) en cada ejercicio: cerca del fallo sin llegar en los
+        //    compuestos; principiantes y fuerza dejan 2-3 (ACSM 2026, Robinson 2024).
+        //  · Cada grupo grande 2 veces por semana en planes de 4+ días (ACSM 2026).
+        //  · Tope inicial de volumen por músculo: 22 series fraccionales por semana y 12 por
+        //    sesión (Pelland 2026, Remmert 2025). Ver capVolume() al final.
+        //  · Pérdida de grasa entrena como hipertrofia: el músculo se conserva entrenando
+        //    igual y la grasa baja por el déficit y el cardio, no por descansar poco.
+        //  · Fuerza: básicos 2 veces por semana, un día pesado y uno liviano.
+        //  · Resistencia: el primer compuesto de cada día es fuerza pesada (Berryman 2018).
+        // Los nombres de ejercicios son los mismos de siempre: el historial, los récords y
+        // las traducciones dependen de ellos. test/routine-plan.test.mjs controla todo esto.
         function getRoutinePlan(goal, days, level) {
             const lvl = level === 'principiante' ? 'beg' : level === 'intermedio' ? 'int' : 'adv';
+            const isStr = goal === 'strength', isEnd = goal === 'endurance';
             const mainSets = lvl === 'beg' ? 3 : lvl === 'int' ? 4 : 5;
-            const isoSets = lvl === 'beg' ? 2 : lvl === 'int' ? 3 : 4;
+            // Fuerza: accesorios en 2-3 series (la fuerza se aplana con pocas series por músculo)
+            const isoSets = isStr ? (lvl === 'adv' ? 3 : 2) : (lvl === 'beg' ? 2 : lvl === 'int' ? 3 : 4);
             // Reps by goal × intensity zone
-            const repsMain = { muscle: '8-10', fat_loss: '12-15', strength: '4-6', recomp: '6-10', endurance: '15-20' }[goal] || '8-10';
-            const repsIso = { muscle: '10-12', fat_loss: '15-20', strength: '8-10', recomp: '10-12', endurance: '20-25' }[goal] || '10-12';
+            const repsMain = { muscle: '8-10', fat_loss: '8-12', strength: '4-6', recomp: '6-10', endurance: '15-20' }[goal] || '8-10';
+            const repsIso = { muscle: '10-12', fat_loss: '12-15', strength: '8-10', recomp: '10-12', endurance: '20-25' }[goal] || '10-12';
             // Rest seconds by goal
-            const restMain = { muscle: 90, fat_loss: 45, strength: 180, recomp: 120, endurance: 30 }[goal] || 90;
-            const restIso = { muscle: 60, fat_loss: 30, strength: 120, recomp: 75, endurance: 25 }[goal] || 60;
+            const restMain = { muscle: 90, fat_loss: 75, strength: 180, recomp: 120, endurance: 30 }[goal] || 90;
+            const restIso = { muscle: 60, fat_loss: 50, strength: 120, recomp: 75, endurance: 25 }[goal] || 60;
+            // Reps en reserva al terminar la serie. Las series largas y livianas necesitan
+            // llegar más cerca del fallo para estimular (Lasevicius 2022).
+            const rirMain = (isStr || lvl === 'beg') ? '2-3' : isEnd ? '1-2' : '1-3';
+            const rirIso = isStr ? '1-2' : '0-2';
             const methodKey = { muscle: 'routine_method_muscle', fat_loss: 'routine_method_fat', strength: 'routine_method_strength', recomp: 'routine_method_recomp', endurance: 'routine_method_endurance' }[goal] || 'routine_method_muscle';
             const method = t(methodKey);
 
-            // Common helpers
-            const main = (name, opts) => ({ name, sets: opts?.sets || mainSets, reps: opts?.reps || repsMain, rest_s: opts?.rest_s || restMain, notes: opts?.notes || '' });
-            const iso = (name, opts) => ({ name, sets: opts?.sets || isoSets, reps: opts?.reps || repsIso, rest_s: opts?.rest_s || restIso, notes: opts?.notes || '' });
+            // Common helpers. isoSet guarda qué ejercicios son accesorios (capVolume recorta
+            // primero esos); no se guarda en la rutina.
+            const isoSet = new Set();
+            const main = (name, opts) => ({ name, sets: opts?.sets || mainSets, reps: opts?.reps || repsMain, rest_s: opts?.rest_s || restMain, rir: rirMain, notes: opts?.notes || '' });
+            const iso = (name, opts) => { const e = { name, sets: opts?.sets || isoSets, reps: opts?.reps || repsIso, rest_s: opts?.rest_s || restIso, rir: rirIso, notes: opts?.notes || '' }; isoSet.add(e); return e; };
             const tip = t('routine_progression_tip');
 
             // CORE — bloque de abdominales al final de cada día. El pool cubre las 4
@@ -6659,8 +6683,9 @@
                 cx('Ab Wheel Rollout', '10-12', 'Progresá hacia de pie'),                              // anti-extensión
                 cx('Dragon Flag', '5-8', 'Bajada controlada — el ejercicio más exigente del core')     // avanzado
             ];
-            // 2 ejercicios de core por día, rotando zonas (clonados para no compartir referencias).
-            const core = (i) => [corePool[i % corePool.length], corePool[(i + 2) % corePool.length]].map(e => ({ ...e }));
+            // Core rotando zonas (clonados para no compartir referencias): 2 ejercicios por día
+            // con 3-4 días; 1 por día con 5-6 días (con 2 llegaba a 30-36 series semanales).
+            const core = (i) => (days >= 5 ? [corePool[i % corePool.length]] : [corePool[i % corePool.length], corePool[(i + 2) % corePool.length]]).map(e => ({ ...e }));
 
             const plans = {
                 3: [
@@ -6689,42 +6714,48 @@
                             main('Hip Thrust', { notes: 'Pausa 1s arriba apretando glúteos' }),
                             main('Fondos Paralelas'),
                             main('Remo Mancuerna'),
-                            ...(lvl === 'beg' ? [iso('Curl Femoral'), iso('Press Francés')] :
+                            // Principiante: la prensa lleva los cuádriceps de 3 a 6 series semanales
+                            // (la dosis mínima efectiva es 4; Pelland 2026).
+                            ...(lvl === 'beg' ? [iso('Prensa Piernas', { sets: 3 }), iso('Curl Femoral'), iso('Press Francés')] :
                                 [iso('Zancadas', { reps: '10-12' }), iso('Curl Femoral'), iso('Pantorrilla Pie', { reps: '12-15' }), iso('Press Francés')]),
                             ...core(2)
                         ]
                     }
                 ],
+                // Upper/Lower real: cada día de torso con empuje y tracción, cada día de piernas
+                // con cuádriceps e isquios → cada grupo 2 veces por semana.
                 4: [
                     {
-                        name: 'UPPER A — Push', focus: 'Pecho/Hombros/Tríceps', method, exercises: [
+                        name: 'UPPER A', focus: 'Pecho/Espalda/Hombros', method, exercises: [
                             main('Press Banca Plano', { notes: tip }),
-                            main('Press Militar'),
-                            main('Press Inclinado Mancuernas'),
-                            iso('Aperturas Pec Deck'),
-                            iso('Press Francés'),
+                            main('Remo Barra'),
+                            main('Press Militar', { sets: isoSets }),
+                            iso('Jalón Polea'),
                             iso('Elevaciones Laterales'),
+                            iso('Press Francés'),
+                            iso('Curl Bíceps Barra'),
                             ...core(0)
                         ]
                     },
                     {
                         name: 'LOWER A — Cuádriceps', focus: 'Cuádriceps dominante', method, exercises: [
                             main('Sentadilla', { notes: 'Profundidad por debajo de paralela' }),
-                            main('Prensa Piernas'),
+                            main('Prensa Piernas', { sets: isoSets }),
                             iso('Extensión Cuádriceps'),
-                            iso('Zancadas Búlgaras', { reps: '10-12' }),
+                            iso('Curl Femoral'),
                             iso('Pantorrilla Pie', { sets: 4, reps: '12-15' }),
                             ...core(1)
                         ]
                     },
                     {
-                        name: 'UPPER B — Pull', focus: 'Espalda/Bíceps', method, exercises: [
+                        name: 'UPPER B', focus: 'Espalda/Pecho/Brazos', method, exercises: [
                             main('Dominadas', { notes: lvl === 'beg' ? 'Usá banda elástica si hace falta' : '' }),
-                            main('Remo Barra'),
-                            main('Jalón Polea'),
+                            main('Press Inclinado Mancuernas'),
+                            main('Remo Mancuerna', { sets: isoSets }),
+                            iso('Aperturas Pec Deck'),
                             iso('Face Pull', { reps: '15-20' }),
-                            iso('Curl Bíceps Barra'),
                             iso('Curl Martillo'),
+                            iso('Pushdown Tríceps'),
                             ...core(2)
                         ]
                     },
@@ -6732,7 +6763,6 @@
                         name: 'LOWER B — Posterior', focus: 'Femoral/Glúteo', method, exercises: [
                             main('Peso Muerto Rumano', { notes: 'Si la espalda baja se redondea, bajá peso' }),
                             main('Hip Thrust'),
-                            iso('Curl Femoral'),
                             iso('Sentadilla Búlgara', { reps: '10-12' }),
                             iso('Abductor en Máquina'),
                             iso('Pantorrilla Sentado', { sets: 4, reps: '15-20' }),
@@ -6829,6 +6859,8 @@
                             main('Sentadilla', { notes: tip }),
                             main('Prensa Piernas'),
                             iso('Extensión Cuádriceps'),
+                            // Isquios también en este día: así se entrenan 2 veces por semana
+                            iso('Curl Femoral'),
                             iso('Pantorrilla Pie', { sets: 4, reps: '12-15' }),
                             ...core(2)
                         ]
@@ -6868,7 +6900,85 @@
                     }
                 ]
             };
-            return plans[days] || plans[3];
+            const plan = plans[days] || plans[3];
+
+            // FUERZA: sentadilla y press banca 2 veces por semana (ACSM 2026; Pelland 2026).
+            // El día que no los tiene, el primer ejercicio del mismo patrón pasa a ser el
+            // básico en versión liviana (6-8 reps, lejos del fallo). Eso ya es periodización
+            // ondulante diaria, sin armar un sistema aparte.
+            if (isStr) {
+                const light = (name) => ({ name, sets: 3, reps: '6-8', rest_s: 150, rir: '2-3', notes: t('str_light_note') });
+                const second = (lift, swapRe, fallbackRe) => {
+                    if (plan.filter(d => d.exercises.some(e => e.name === lift)).length >= 2) return;
+                    const free = plan.filter(d => !d.exercises.some(e => e.name === lift));
+                    for (const d of free) {
+                        const i = d.exercises.findIndex(e => swapRe.test(e.name));
+                        if (i >= 0) { d.exercises[i] = light(lift); return; }
+                    }
+                    // Sin un ejercicio para reemplazar: se agrega al día compatible más lejano
+                    // en la semana, sin cargar el que ya recibió el otro básico liviano.
+                    const d = free.slice().reverse().filter(d => !d.exercises.some(e => e.notes === t('str_light_note')))
+                        .find(d => d.exercises.some(e => fallbackRe.test(e.name)));
+                    if (d) d.exercises.unshift(light(lift));
+                };
+                second('Press Banca Plano', /^press (banca )?inclinado/i, /press|fondos/i);
+                second('Sentadilla', /^(hack squat|sentadilla búlgara|zancadas)/i, /hip thrust|peso muerto/i);
+            }
+
+            // RESISTENCIA: el primer compuesto de cada día va pesado. La fuerza con cargas
+            // altas mejora la economía y el rendimiento en carrera y bici (Berryman 2018,
+            // Llanos-Lagos 2024); el resto sigue con series largas.
+            if (isEnd) {
+                plan.forEach(d => {
+                    const e = d.exercises[0];
+                    if (!e || isoSet.has(e)) return;
+                    Object.assign(e, { sets: lvl === 'beg' ? 3 : 4, reps: '4-6', rest_s: 120, rir: '2-3', notes: t('end_heavy_note') });
+                });
+            }
+
+            capVolume(plan, isoSet);
+            return plan;
+        }
+
+        // Tope inicial de volumen: como mucho 22 series fraccionales por músculo y semana
+        // (los rendimientos decrecen desde ~18-20 y la respuesta individual varía mucho;
+        // ACSM 2026, Pelland 2026, Aube 2022, Nóbrega 2024) y 12 por sesión (Remmert 2025).
+        // Recorta de a 1 serie: primero accesorios del músculo, después compuestos, nunca
+        // por debajo de 2 series. El abdomen no se cuenta (tiene su propio bloque).
+        const VOLUME_CAP_WEEK = 22, VOLUME_CAP_SESSION = 12;
+        function capVolume(plan, isoSet) {
+            const load = (exs) => {
+                const o = {};
+                exs.forEach(e => muscleTargets(e.name).forEach(([m, w]) => { if (m !== 'abs') o[m] = (o[m] || 0) + e.sets * w; }));
+                return o;
+            };
+            const over = (o, cap) => Object.keys(o).filter(m => o[m] > cap).sort((a, b) => o[b] - o[a])[0];
+            // Candidatos para recortar un músculo: accesorios donde es el principal, accesorios
+            // donde es secundario, compuestos donde es el principal, compuestos donde es secundario.
+            const trim = (exs, m) => {
+                const hits = exs.map(e => ({ e, w: (muscleTargets(e.name).find(([mm]) => mm === m) || [])[1] || 0 }))
+                    .filter(x => x.w > 0 && x.e.sets > 2);
+                const rank = (x) => (isoSet.has(x.e) ? 0 : 2) + (x.w === 1 ? 0 : 1);
+                hits.sort((a, b) => rank(a) - rank(b) || b.e.sets - a.e.sets);
+                if (!hits.length) return false;
+                hits[0].e.sets--;
+                return true;
+            };
+            for (const d of plan) {
+                for (let guard = 0; guard < 60; guard++) {
+                    const m = over(load(d.exercises), VOLUME_CAP_SESSION);
+                    if (!m || !trim(d.exercises, m)) break;
+                }
+            }
+            for (let guard = 0; guard < 120; guard++) {
+                const m = over(load(plan.flatMap(d => d.exercises)), VOLUME_CAP_WEEK);
+                if (!m) break;
+                // Se recorta en la sesión donde ese músculo tiene más carga
+                const day = plan.slice().sort((a, b) => (load(b.exercises)[m] || 0) - (load(a.exercises)[m] || 0))
+                    .find(d => trim(d.exercises, m));
+                if (!day) break;
+            }
+            return plan;
         }
 
         function finishOnboarding() {
@@ -7295,6 +7405,12 @@
                 prog.appendChild(h('div', { className: 'rt-edu-body' }, getRoutineProgression(u.level)));
                 grid.appendChild(prog);
 
+                // Effort (wide): qué son las reps en reserva
+                const eff = h('div', { className: 'rt-edu-card wide' });
+                eff.appendChild(h('div', { className: 'rt-edu-title' }, t('rt_effort_title')));
+                eff.appendChild(h('div', { className: 'rt-edu-body' }, t('rt_effort_body')));
+                grid.appendChild(eff);
+
                 // Time
                 const timeInfo = getEstimatedTime(activePlanObj.plan);
                 const timeCard = h('div', { className: 'rt-edu-card' });
@@ -7431,6 +7547,10 @@
                 }
                 headRow.appendChild(badges);
                 ec.appendChild(headRow);
+
+                // Esfuerzo: reps en reserva del plan (o de la rutina propia)
+                const rirTxt = ex.kind === 'cardio' ? '' : effectiveRir(ex.rir);
+                if (rirTxt) ec.appendChild(h('p', { className: 'rt-rir' }, ico('flame'), h('span', {}, t('rt_rir_line').replace('{rir}', rirTxt))));
 
                 // Last weight reminder
                 const last = getLastWeightFor(ex.name);
@@ -8377,6 +8497,14 @@
                 if (maxKg > prevMax && prevMax > 0) prs.push(trD(ex.exercise) + ' ' + maxKg + 'kg');
             });
             return prs;
+        }
+
+        // Reps en reserva a mostrar: las del plan ('1-3', o un número en rutinas propias).
+        // Desde los 60 años siempre 2-3: ir cerca del fallo es desaconsejable en mayores (ACSM 2026).
+        function effectiveRir(rir) {
+            const r = String(rir == null ? '' : rir).trim();
+            if (!/^\d+(-\d+)?$/.test(r)) return '';
+            return state.user && state.user.age >= 60 ? '2-3' : r;
         }
 
         // Doble progresión por sesión: mira la ÚLTIMA vez que hiciste el ejercicio

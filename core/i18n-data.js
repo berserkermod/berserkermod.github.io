@@ -139,6 +139,12 @@
         'FULL BODY A': ['FULL BODY A', 'CORPO INTEIRO A'], 'FULL BODY B': ['FULL BODY B', 'CORPO INTEIRO B'], 'FULL BODY C': ['FULL BODY C', 'CORPO INTEIRO C'],
         'UPPER A — Push': ['UPPER A — Push', 'SUPERIOR A — Empurrar'], 'UPPER B — Pull': ['UPPER B — Pull', 'SUPERIOR B — Puxar'],
         'LOWER A — Cuádriceps': ['LOWER A — Quads', 'INFERIOR A — Quadríceps'], 'LOWER B — Posterior': ['LOWER B — Posterior', 'INFERIOR B — Posterior'],
+        'UPPER A': ['UPPER A', 'SUPERIOR A'], 'UPPER B': ['UPPER B', 'SUPERIOR B'],
+        // Métodos de la versión anterior del generador: siguen guardados en rutinas existentes
+        'Hipertrofia · Tempo controlado 2-0-1': ['Hypertrophy · Controlled tempo 2-0-1', 'Hipertrofia · Tempo controlado 2-0-1'],
+        'Definición · Descansos cortos 30-45s': ['Cutting · Short rest 30-45s', 'Definição · Descanso curto 30-45s'],
+        'Fuerza · Descansos largos 3-5min · Compuestos pesados': ['Strength · Long rest 3-5min · Heavy compounds', 'Força · Descanso longo 3-5min · Compostos pesados'],
+        'Resistencia · Alto volumen · Bajo descanso': ['Endurance · High volume · Short rest', 'Resistência · Alto volume · Descanso curto'],
         'PUSH': ['PUSH', 'EMPURRAR'], 'PULL': ['PULL', 'PUXAR'], 'LEGS': ['LEGS', 'PERNAS'], 'UPPER': ['UPPER', 'SUPERIOR'], 'LOWER': ['LOWER', 'INFERIOR'],
         'PUSH A': ['PUSH A', 'EMPURRAR A'], 'PULL A': ['PULL A', 'PUXAR A'], 'LEGS A': ['LEGS A', 'PERNAS A'],
         'PUSH B': ['PUSH B', 'EMPURRAR B'], 'PULL B': ['PULL B', 'PUXAR B'], 'LEGS B': ['LEGS B', 'PERNAS B'],
