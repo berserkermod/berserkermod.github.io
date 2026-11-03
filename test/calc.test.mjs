@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr } = calc;
+const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -221,6 +221,22 @@ console.log('Modo Coach: semana ISO, mejor serie, progreso y precarga');
     ok('precarga: lo último que registró', eq(prefillSets('press', ses, { sets: 4, reps: '10', kg: 40 }), [{ kg: 60, reps: 6 }]));
     ok('precarga sin historial: el plan (8-12 → 8)', eq(prefillSets('Curl', ses, { sets: 3, reps: '8-12', kg: 12.5 }), [{ kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }, { kg: 12.5, reps: 8 }]));
     ok('precarga sin plan: 3 series vacías; tope 12', prefillSets('X', [], null).length === 3 && prefillSets('X', [], { sets: 40 }).length === 12);
+}
+
+console.log('Meta semanal de cardio');
+{
+    const S = (date, min) => ({ date, duration: min * 60 });
+    const today = '2026-11-04';   // miércoles; la semana arrancó el lunes 2/11
+    const none = cardioWeek([], today);
+    ok('sin historial: meta 150, faltan 150, quedan 5 días (mié → dom)', none.target === 150 && none.minutes === 0 && none.remaining === 150 && none.daysLeft === 5 && !none.done);
+    const wk = cardioWeek([S('2026-11-02', 30), S('2026-11-04', 45.4), S('2026-11-01', 60), S('2026-11-05', 99), { date: '2026-11-03' }], today);
+    ok('cuenta solo esta semana (lun-dom), sin días futuros ni sesiones sin duración', wk.minutes === 75 && wk.remaining === 75);
+    const prev = (min) => ['2026-10-26', '2026-10-19', '2026-10-12', '2026-10-05'].map((d) => S(d, min));
+    ok('sube 10 % sobre el promedio de 4 semanas (200 → 220)', cardioWeek(prev(200), today).target === 220 && cardioWeek(prev(200), today).avgPrev === 200);
+    ok('piso 150 y techo 300', cardioWeek(prev(100), today).target === 150 && cardioWeek(prev(400), today).target === 300);
+    ok('semanas sin cardio cuentan como 0 en el promedio', cardioWeek([S('2026-10-26', 400)], today).target === 150);
+    ok('meta cumplida', cardioWeek([S('2026-11-03', 160)], today).done === true);
+    ok('lunes quedan 7 días; domingo, 1', cardioWeek([], '2026-11-02').daysLeft === 7 && cardioWeek([], '2026-11-08').daysLeft === 1);
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');

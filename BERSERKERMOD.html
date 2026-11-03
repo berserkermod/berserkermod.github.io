@@ -1707,6 +1707,16 @@
         .rt-last-weight { font-size: 12px; color: var(--text3); font-weight: 600; margin-top: 4px; }
         .rt-rir { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text2); font-weight: 600; margin: 2px 0 6px; }
         .rt-rir .ico { color: var(--orange); }
+        .cw-top { display: flex; align-items: baseline; gap: 6px; margin: 2px 0 8px; }
+        .cw-num { font-size: 28px; font-weight: 900; color: var(--red); font-variant-numeric: tabular-nums; line-height: 1.1; }
+        .cw-of { font-size: 13px; color: var(--text3); font-weight: 600; }
+        .cw-bar { height: 8px; border-radius: 99px; background: var(--sf2); overflow: hidden; }
+        .cw-fill { height: 100%; border-radius: 99px; background: var(--red); transition: width .4s; }
+        .cw-card.done .cw-num { color: var(--accent); }
+        .cw-card.done .cw-fill { background: var(--accent); }
+        .cw-msg { font-size: 13px; font-weight: 700; color: var(--text); margin: 10px 0 4px; }
+        .cw-hint { font-size: 12px; color: var(--text3); line-height: 1.45; margin-bottom: 10px; }
+        .cw-card .cw-hint:last-child { margin-bottom: 0; }
         /* Mapa del cuerpo */
         .body-map { width: 100%; max-width: 360px; display: block; margin: 6px auto 0; }
         .bm-base { fill: var(--bm-base); }
@@ -2213,8 +2223,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-25"></script>
-    <script src="core/i18n-data.js?v=2-25"></script>
+    <script src="core/calc.js?v=2-26"></script>
+    <script src="core/i18n-data.js?v=2-26"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2495,7 +2505,7 @@
                 nutri_history_title: "PLANES ANTERIORES",
                 nutri_history_empty: "Sin planes anteriores",
                 rt_why_title: "¿Por qué esta rutina?",
-                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici",
+                rt_progress_title: "Cómo progresar", rt_effort_title: "🎯 Esfuerzo por serie", rt_effort_body: "Reps en reserva = cuántas repeticiones más podrías hacer con buena técnica. Cada ejercicio indica cuántas dejar: ir al fallo no suma más músculo y cansa más. Ojo: casi todos calculan 1 rep menos de las que tienen.", rt_rir_line: "Esfuerzo: terminá con {rir} reps en reserva", str_light_note: "Día liviano: técnica y velocidad, lejos del fallo", end_heavy_note: "Fuerza pesada: mejora el rendimiento en carrera y bici", cw_title: "CARDIO DE LA SEMANA", cw_of: "/ {target} min", cw_left: "Te faltan {min} min en {days} días.", cw_left_today: "Te faltan {min} min y hoy es el último día de la semana.", cw_done: "¡Meta cumplida! Lo que hagas de más también suma.", cw_hint_fat: "La grasa baja por el déficit y el cardio; caminar cuenta. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_hint_end: "Es la base del acondicionamiento: continuo o por intervalos rinden parecido. La meta arranca en 150 min y sube de a poco según tu promedio.", cw_log: "Registrar cardio",
                 rt_muscles_title: "Distribución muscular",
                 rt_time_title: "Tiempo por sesión",
                 rt_time_avg: "min promedio",
@@ -2937,7 +2947,7 @@
                 nutri_history_title: "PREVIOUS PLANS",
                 nutri_history_empty: "No previous plans",
                 rt_why_title: "Why this routine?",
-                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance",
+                rt_progress_title: "How to progress", rt_effort_title: "🎯 Effort per set", rt_effort_body: "Reps in reserve = how many more reps you could do with good form. Each exercise tells you how many to leave: going to failure doesn't build more muscle and is more tiring. Heads up: most people guess 1 rep fewer than they actually have.", rt_rir_line: "Effort: finish with {rir} reps in reserve", str_light_note: "Light day: technique and bar speed, far from failure", end_heavy_note: "Heavy strength: improves running and cycling performance", cw_title: "THIS WEEK'S CARDIO", cw_of: "/ {target} min", cw_left: "{min} min to go, {days} days left.", cw_left_today: "{min} min to go, and today is the last day of the week.", cw_done: "Goal reached! Anything extra still counts.", cw_hint_fat: "Fat comes off through the deficit and cardio; walking counts. The goal starts at 150 min and rises gradually with your average.", cw_hint_end: "It's the foundation of conditioning: steady or interval cardio work about the same. The goal starts at 150 min and rises gradually with your average.", cw_log: "Log cardio",
                 rt_muscles_title: "Muscle distribution",
                 rt_time_title: "Time per session",
                 rt_time_avg: "min average",
@@ -3380,7 +3390,7 @@
                 nutri_history_title: "PLANOS ANTERIORES",
                 nutri_history_empty: "Sem planos anteriores",
                 rt_why_title: "Por que esta rotina?",
-                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal",
+                rt_progress_title: "Como progredir", rt_effort_title: "🎯 Esforço por série", rt_effort_body: "Reps em reserva = quantas repetições a mais você conseguiria fazer com boa técnica. Cada exercício indica quantas deixar: ir até a falha não gera mais músculo e cansa mais. Atenção: quase todo mundo calcula 1 rep a menos do que realmente tem.", rt_rir_line: "Esforço: termine com {rir} reps em reserva", str_light_note: "Dia leve: técnica e velocidade, longe da falha", end_heavy_note: "Força pesada: melhora o desempenho na corrida e no pedal", cw_title: "CARDIO DA SEMANA", cw_of: "/ {target} min", cw_left: "Faltam {min} min em {days} dias.", cw_left_today: "Faltam {min} min e hoje é o último dia da semana.", cw_done: "Meta cumprida! O que fizer a mais também conta.", cw_hint_fat: "A gordura cai pelo déficit e pelo cardio; caminhar conta. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_hint_end: "É a base do condicionamento: contínuo ou intervalado rendem parecido. A meta começa em 150 min e sobe aos poucos conforme a sua média.", cw_log: "Registrar cardio",
                 rt_muscles_title: "Distribuição muscular",
                 rt_time_title: "Tempo por sessão",
                 rt_time_avg: "min média",
@@ -7109,6 +7119,10 @@
             });
             v.appendChild(sg);
 
+            // Meta semanal de cardio (perder grasa y resistencia)
+            const cwHome = cardioWeekCard(true);
+            if (cwHome) v.appendChild(cwHome);
+
             // Today's Routine Suggestion
             const todayRoutine = getTodayRoutine();
             if (todayRoutine) {
@@ -8991,8 +9005,32 @@
         });
 
         // CARDIO
+        // Meta semanal de cardio para perder grasa y resistencia: minutos de esta semana
+        // (lunes a domingo) contra la meta de cardioWeek() en core/calc.js, que arranca en
+        // 150 min y sube de a poco con el promedio de las últimas 4 semanas, hasta 300.
+        function cardioWeekCard(withButton) {
+            const u = state.user;
+            if (!u || (u.goal !== 'fat_loss' && u.goal !== 'endurance')) return null;
+            const cw = cardioWeek(state.cardioSessions || [], todayStr());
+            const c = h('div', { className: 'card fade-in cw-card' + (cw.done ? ' done' : '') });
+            c.appendChild(h('p', { className: 'label' }, ico('target'), t('cw_title')));
+            c.appendChild(h('div', { className: 'cw-top' },
+                h('span', { className: 'cw-num' }, String(cw.minutes)),
+                h('span', { className: 'cw-of' }, t('cw_of').replace('{target}', cw.target))));
+            c.appendChild(h('div', { className: 'cw-bar' },
+                h('div', { className: 'cw-fill', style: { width: Math.min(100, Math.round(cw.minutes / cw.target * 100)) + '%' } })));
+            const msg = cw.done ? t('cw_done')
+                : (cw.daysLeft === 1 ? t('cw_left_today') : t('cw_left').replace('{days}', cw.daysLeft)).replace('{min}', cw.remaining);
+            c.appendChild(h('p', { className: 'cw-msg' }, msg));
+            c.appendChild(h('p', { className: 'cw-hint' }, t(u.goal === 'fat_loss' ? 'cw_hint_fat' : 'cw_hint_end')));
+            if (withButton) c.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', onclick: () => switchTab('cardio') }, t('cw_log')));
+            return c;
+        }
+
         function renderCardio() {
             const v = $('view-cardio'); v.innerHTML = '';
+            const cwCard = cardioWeekCard(false);
+            if (cwCard) v.appendChild(cwCard);
 
             // Sport selector
             const sc = h('div', { className: 'card fade-in' });

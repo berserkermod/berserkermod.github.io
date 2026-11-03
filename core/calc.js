@@ -300,6 +300,36 @@
         return null;
     }
 
+    // Meta semanal de cardio (objetivos perder grasa y resistencia). Semana de lunes a
+    // domingo, en minutos. Arranca en 150: con menos, el efecto sobre el peso es mínimo
+    // (ACSM 2009) y es el piso de la OMS 2020. Después sube de a poco: 10 % más que el
+    // promedio de las 4 semanas completas anteriores, en pasos de 10 min, hasta 300.
+    // sessions: [{ date: 'YYYY-MM-DD', duration: segundos }], today: 'YYYY-MM-DD'.
+    // Devuelve { minutes, target, remaining, done, daysLeft (contando hoy), avgPrev }.
+    function cardioWeek(sessions, today, opts) {
+        var o = opts || {}, lo = o.min || 150, hi = o.max || 300;
+        var t = dayNum(today);
+        // dayNum('1970-01-01') es 1 (redondea al mediodía) y fue jueves: (n + 2) % 7 = 0 el lunes
+        var monday = function (n) { return n - ((n + 2) % 7); };
+        var cur = monday(t), byWeek = {};
+        (sessions || []).forEach(function (s) {
+            if (!s || !s.date || !(s.duration > 0)) return;
+            var n = dayNum(s.date);
+            if (n > t) return;
+            var w = monday(n);
+            byWeek[w] = (byWeek[w] || 0) + s.duration / 60;
+        });
+        var sum = 0;
+        for (var k = 1; k <= 4; k++) sum += byWeek[cur - 7 * k] || 0;
+        var avg = sum / 4;
+        var target = Math.max(lo, Math.min(hi, Math.round(avg * 1.1 / 10) * 10));
+        var minutes = Math.round(byWeek[cur] || 0);
+        return {
+            minutes: minutes, target: target, remaining: Math.max(0, target - minutes),
+            done: minutes >= target, daysLeft: 7 - ((t + 2) % 7), avgPrev: Math.round(avg)
+        };
+    }
+
     // Series para precargar al registrar: las de la última vez que hizo ese
     // ejercicio o, si nunca lo registró, las del plan (series × reps @ kg; '8-12' → 8).
     function prefillSets(name, sessions, plan) {
@@ -326,6 +356,7 @@
         topSet: topSet,
         exerciseTrend: exerciseTrend,
         prefillSets: prefillSets,
+        cardioWeek: cardioWeek,
         MUSCLES: MUSCLES,
         muscleTargets: muscleTargets,
         muscleSets: muscleSets,
