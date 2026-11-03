@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const here = path.dirname(fileURLToPath(import.meta.url));
 const calc = require(path.join(here, '..', 'core', 'calc.js'));
-const { calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
+const { proteinWeight, calcTDEE, calcMacros, formatPortion, calcDailyBalance, calc1RM, cardioKcal, platesPerSide, warmupSets, weightTrend, adaptiveTDEE, maintenanceOf, muscleTargets, muscleSets, isoWeek, topSet, exerciseTrend, prefillSets, localDateStr, cardioWeek } = calc;
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra !== undefined ? '  → ' + JSON.stringify(extra) : '')); } }
@@ -40,6 +40,12 @@ console.log('\ncalcMacros (ajuste por objetivo + split)');
     ok('targetCals nunca por debajo de 1200', calcMacros({ sex: 'F', weight: 45, height: 150, age: 60, days: 3, goal: 'fat_loss' }).targetCals >= 1200);
     ok('macros cierran ~ targetCals', Math.abs((m.protein * 4 + m.carbs * 4 + m.fat * 9) - m.targetCals) <= 12, m);
     ok('sin usuario → defaults', calcMacros(null).targetCals === 2000);
+    // IMC ≥ 30: proteína sobre peso ajustado (peso con IMC 25 + 25 % del exceso)
+    const big = calcMacros({ sex: 'M', weight: 120, height: 175, age: 35, days: 3, goal: 'fat_loss' });
+    ok('IMC 39: 120 kg y 1,75 m → 192 g (no 264)', big.protein === 192, big.protein);
+    ok('IMC 39 mujer: 100 kg y 1,60 m → 161 g (no 220)', calcMacros({ sex: 'F', weight: 100, height: 160, age: 35, days: 3, goal: 'fat_loss' }).protein === 161);
+    ok('IMC < 30: sin cambios (peso total)', proteinWeight({ weight: 80, height: 180 }) === 80 && proteinWeight({ weight: 95, height: 178 }) === 95);
+    ok('sin altura: usa el peso total', proteinWeight({ weight: 110 }) === 110);
 }
 
 console.log('\ncalcDailyBalance (superávit / déficit / mantenimiento)');
@@ -64,11 +70,12 @@ console.log('\ncalc1RM (Epley)');
     ok('más reps → más 1RM', calc1RM(100, 12) > calc1RM(100, 5));
 }
 
-console.log('\ncardioKcal (MET × intensidad × peso × horas)');
+console.log('\ncardioKcal ((MET × intensidad − 1) × peso × horas: calorías activas)');
 {
-    ok('MET8 80kg 30min media → 320', cardioKcal(8, 1, 80, 1800) === 320, cardioKcal(8, 1, 80, 1800));
+    ok('MET8 80kg 30min media → 280 (sin el gasto en reposo)', cardioKcal(8, 1, 80, 1800) === 280, cardioKcal(8, 1, 80, 1800));
     ok('intensidad alta escala', cardioKcal(8, 1.3, 80, 1800) > cardioKcal(8, 1, 80, 1800));
-    ok('1h MET10 80kg → 800', cardioKcal(10, 1, 80, 3600) === 800, cardioKcal(10, 1, 80, 3600));
+    ok('1h MET10 80kg → 720', cardioKcal(10, 1, 80, 3600) === 720, cardioKcal(10, 1, 80, 3600));
+    ok('actividad por debajo del reposo → 0, nunca negativo', cardioKcal(0.9, 1, 80, 3600) === 0);
     ok('args faltantes → 0 (sin crash)', cardioKcal() === 0);
 }
 

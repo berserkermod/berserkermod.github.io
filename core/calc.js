@@ -32,6 +32,17 @@
         return u && u.tdeeAdaptive > 0 ? Math.round(u.tdeeAdaptive) : calcTDEE(u);
     }
 
+    // Peso sobre el que se calcula la proteína. Con obesidad (IMC ≥ 30) se usa el peso
+    // ajustado, como en las guías clínicas: el peso con IMC 25 más el 25 % del exceso. Con
+    // el peso total, alguien de 120 kg y 1,75 m recibía 264 g; con el ajuste, 192 g, que
+    // sigue por encima de la meseta de ~1,6 g/kg (Morton 2018; Wycherley 2012).
+    function proteinWeight(u) {
+        var w = Number(u && u.weight) || 0, hm = (Number(u && u.height) || 0) / 100;
+        if (!(w > 0) || !(hm > 0)) return w;
+        var ref = 25 * hm * hm;
+        return w / (hm * hm) >= 30 ? ref + 0.25 * (w - ref) : w;
+    }
+
     // TDEE + ajuste calórico por objetivo + split proteína/grasa/carbo.
     // Devuelve { tdee, adj, targetCals, protein, carbs, fat }.
     function calcMacros(u) {
@@ -41,7 +52,7 @@
         var targetCals = Math.max(1200, tdee + adj);
 
         var proteinPerKg = { muscle: 2.0, fat_loss: 2.2, strength: 2.0, recomp: 2.2, endurance: 1.6 }[u.goal] || 2.0;
-        var protein = Math.round(u.weight * proteinPerKg);
+        var protein = Math.round(proteinWeight(u) * proteinPerKg);
 
         var fatPct = { muscle: 0.25, fat_loss: 0.20, strength: 0.30, recomp: 0.25, endurance: 0.25 }[u.goal] || 0.25;
         var fat = Math.max(40, Math.round((targetCals * fatPct) / 9));
@@ -93,10 +104,12 @@
     // 1RM estimado (fórmula de Epley). Con 1 rep el 1RM es el peso mismo.
     function calc1RM(w, r) { return r === 1 ? w : Math.round(w * (1 + r / 30)); }
 
-    // kcal de cardio = MET × factor_intensidad × peso(kg) × horas.
-    // (Compendium of Physical Activities, valores de intensidad media.)
+    // kcal de cardio = (MET × factor_intensidad − 1) × peso(kg) × horas. Se resta 1 MET,
+    // el gasto en reposo, que ya está dentro del mantenimiento: si no, se cuenta dos veces.
+    // Es lo que los relojes llaman "calorías activas". (Compendium of Physical Activities.)
     function cardioKcal(met, intensity, weightKg, seconds) {
-        return Math.round((met || 0) * (intensity || 1) * (weightKg || 0) * ((seconds || 0) / 3600));
+        var net = Math.max(0, (met || 0) * (intensity || 1) - 1);
+        return Math.round(net * (weightKg || 0) * ((seconds || 0) / 3600));
     }
 
     // Discos por lado para armar `total` con una barra de `bar`, usando los discos
@@ -367,6 +380,7 @@
         warmupSets: warmupSets,
         calcTDEE: calcTDEE,
         calcMacros: calcMacros,
+        proteinWeight: proteinWeight,
         formatPortion: formatPortion,
         calcDailyBalance: calcDailyBalance,
         calc1RM: calc1RM,
