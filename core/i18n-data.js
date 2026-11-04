@@ -118,7 +118,7 @@
     // Frases de Inicio
     var QUOTES = {
         'El dolor que sientes hoy será la fuerza que sientas mañana.': ["The pain you feel today will be the strength you feel tomorrow.", 'A dor que você sente hoje será a força que vai sentir amanhã.'],
-        'No pares cuando estés cansado. Pará cuando hayas terminado.': ["Don't stop when you're tired. Stop when you're done.", 'Não pare quando estiver cansado. Pare quando tiver terminado.'],
+        'No pares cuando llegue el cansancio. Pará cuando hayas terminado.': ["Don't stop when you're tired. Stop when you're done.", 'Não pare quando bater o cansaço. Pare quando tiver terminado.'],
         'Tu cuerpo puede soportar casi todo. Es tu mente la que tenés que convencer.': ['Your body can handle almost anything. It’s your mind you have to convince.', 'Seu corpo aguenta quase tudo. É a sua mente que você precisa convencer.'],
         'La disciplina supera a la motivación.': ['Discipline beats motivation.', 'Disciplina supera motivação.'],
         'Cada repetición te acerca a tu mejor versión.': ['Every rep brings you closer to your best self.', 'Cada repetição te aproxima da sua melhor versão.'],
@@ -130,7 +130,7 @@
         'El gimnasio no te pide explicaciones, solo constancia.': ["The gym doesn't ask for explanations, only consistency.", 'A academia não pede explicações, só constância.'],
         'Entrená como si tu futuro dependiera de eso. Porque depende.': ['Train like your future depends on it. Because it does.', 'Treine como se o seu futuro dependesse disso. Porque depende.'],
         'Los límites solo existen en tu mente.': ['Limits only exist in your mind.', 'Os limites só existem na sua mente.'],
-        'Cada día que entrenas estás invirtiendo en vos mismo.': ['Every day you train, you invest in yourself.', 'Cada dia que você treina é um investimento em você.'],
+        'Cada día que entrenás estás invirtiendo en vos.': ['Every day you train, you invest in yourself.', 'Cada dia que você treina é um investimento em você.'],
         'No se trata de ser el mejor. Se trata de ser mejor que ayer.': ["It's not about being the best. It's about being better than yesterday.", 'Não se trata de ser o melhor. Se trata de ser melhor que ontem.']
     };
 

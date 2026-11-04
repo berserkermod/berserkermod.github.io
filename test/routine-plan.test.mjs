@@ -28,7 +28,7 @@ const load = (exs) => {
     return o;
 };
 
-const errs = { unknown: [], week: [], session: [], min: [], freq: [], rir: [], sets: [], str: [], end: [], fat: [], core: [] };
+const errs = { unknown: [], week: [], session: [], min: [], freq: [], rir: [], sets: [], str: [], end: [], fat: [], core: [], bw: [] };
 for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of LEVELS) {
     const id = `${goal} ${days}d ${level}`;
     const plan = getRoutinePlan(goal, days, level);
@@ -55,6 +55,8 @@ for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of L
     }
     if (goal === 'endurance') plan.forEach((d) => { if (d.exercises[0].reps !== '4-6') errs.end.push(`${id} ${d.name}: ${d.exercises[0].name} ${d.exercises[0].reps}`); });
     if (goal === 'fat_loss') all.filter((e) => !isCore(e)).forEach((e) => { if (e.rest_s < 45) errs.fat.push(`${id}: ${e.name} ${e.rest_s}s`); });
+    // Principiantes: nada de dominadas ni fondos con el propio peso (no se ajustan con la carga).
+    if (level === 'principiante') all.forEach((e) => { if (/^(dominadas|fondos)/i.test(e.name)) errs.bw.push(`${id}: ${e.name}`); });
 }
 
 console.log('\n=== generador de rutinas ===\n');
@@ -69,5 +71,30 @@ ok('de 5 a 6 días: 1 ejercicio de core por día', !errs.core.length, errs.core)
 ok('fuerza: banca y sentadilla 2 veces por semana', !errs.str.length, errs.str);
 ok('resistencia: cada día arranca con fuerza pesada (4-6 reps)', !errs.end.length, errs.end);
 ok('pérdida de grasa: descansos de 45 s o más', !errs.fat.length, errs.fat);
+ok('principiantes: sin dominadas ni fondos con el propio peso', !errs.bw.length, errs.bw);
+
+// ── Sugerencia de carga (doble progresión) con cargas livianas ──
+{
+    const a2 = html.indexOf('        function suggestNextLoad(');
+    const b2 = html.indexOf('        function checkProgression(');
+    const state = { sessions: [], unit: 'kg' };
+    const suggest = new Function('state', html.slice(a2, b2) + '; return suggestNextLoad;')(state);
+    const run = (name, reps, kg, done) => {
+        state.sessions = [{ exercises: [{ exercise: name, sets: done.map((r) => ({ kg, reps: r })) }] }];
+        return suggest({ name, reps });
+    };
+    console.log('\n=== sugerencia de carga ===\n');
+    const lat = run('Elevaciones Laterales', '10-12', 3, [12, 12, 12]);
+    ok('3 kg con el rango completo: primero sumar reps hasta 14 (+1 kg sería +33 %)', lat && !lat.up && lat.extend && lat.targetReps === 14 && lat.kg === 3, [JSON.stringify(lat)]);
+    const lat2 = run('Elevaciones Laterales', '10-12', 3, [14, 14, 14]);
+    ok('3 kg con 14 reps en todas: sube a 4 kg (escalón real de mancuerna)', lat2 && lat2.up && lat2.kg === 4 && lat2.inc === 1, [JSON.stringify(lat2)]);
+    const sq = run('Sentadilla', '8-10', 60, [10, 10, 10]);
+    ok('60 kg en sentadilla: sube 2,5 kg como siempre (4 %)', sq && sq.up && sq.kg === 62.5, [JSON.stringify(sq)]);
+    const bar = run('Sentadilla', '8-10', 20, [10, 10, 10]);
+    ok('barra sola (20 kg): +2,5 sería 12,5 % → primero 12 reps', bar && bar.extend && bar.targetReps === 12, [JSON.stringify(bar)]);
+    const part = run('Elevaciones Laterales', '10-12', 3, [12, 11, 10]);
+    ok('sin el rango completo: mismo peso y buscar el tope (sin cambios)', part && !part.up && !part.extend && part.targetReps === 12, [JSON.stringify(part)]);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

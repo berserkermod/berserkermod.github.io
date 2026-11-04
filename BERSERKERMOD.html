@@ -2241,8 +2241,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-29"></script>
-    <script src="core/i18n-data.js?v=2-29"></script>
+    <script src="core/calc.js?v=2-30"></script>
+    <script src="core/i18n-data.js?v=2-30"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2321,7 +2321,7 @@
                 onb_add_ex_ph: "+ Nombre del ejercicio...",
                 train_min: "min",
                 onb_lang_title: "Idioma", onb_lang_sub: "Selecciona tu idioma / Select your language / Selecione seu idioma",
-                onb_welcome_title: "Bienvenido a ", onb_welcome_sub: "Tu entrenador personal inteligente. Configuremos tu perfil para crear la rutina perfecta para vos.",
+                onb_welcome_title: "Te damos la bienvenida a ", onb_welcome_sub: "Tu entrenador personal inteligente. Configuremos tu perfil para crear la rutina perfecta para vos.",
                 onb_name_title: "Tus ", onb_name_title_span: "datos", onb_personal_sub: "Necesitamos esta info para calcular tu plan personalizado.",
                 onb_name_ph: "Tu nombre", onb_age_ph: "Edad", onb_weight_ph: "Peso (kg)", onb_height_ph: "Altura (cm)",
                 onb_level_title: "Tu ", onb_level_title_span: "nivel", onb_level_sub: "¿Cuánta experiencia tenés entrenando?",
@@ -2360,7 +2360,7 @@
                 hist_summary: "{e} ej. · {s} series",
                 stats_hist: "HISTORIAL DE ENTRENAMIENTO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sesión", stats_del_sess: "¿Eliminar esta sesión permanentemente?", stats_sess_upd: "✅ Sesión actualizada", stats_sess_del: "🗑️ Sesión eliminada",
                 prof_nutri_plan: "TU PLAN NUTRICIONAL", prof_tdee: "Gasto calórico diario (Mantenimiento)", prof_target: "Objetivo Diario", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carbohidratos", prof_fats: "Grasas",
-                prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Estás seguro de borrar todos los datos? Esta acción no se puede deshacer.",
+                prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Borrar todos los datos? Esta acción no se puede deshacer.",
                 mg_pecho: "PECHO", mg_espalda: "ESPALDA", mg_piernas: "PIERNAS", mg_brazos: "BRAZOS", prof_devices: "DISPOSITIVOS",
                 home_greet_am: "Buenos días", home_greet_pm: "Buenas tardes", home_greet_eve: "Buenas noches",
                 home_streak_label: "RACHA DE ENTRENAMIENTO", home_streak_msg: "días consecutivos", home_streak_start: "¡Empezá tu racha hoy!",
@@ -2399,7 +2399,7 @@
                 watch_max_hr_saved: "HR máx actualizado",
                 hr_zone_0: "Reposo", hr_zone_1: "Recuperación", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Umbral", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino", onb_sex_hint: "Se usa solo para calcular tus calorías.", prof_sex_changed: "Listo: recalculamos tus calorías",
                 train_add_custom: "Agregar", train_custom_ph: "+ Ejercicio personalizado...",
                 stats_need_more: "Necesitás +2 sesiones para ver el gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Eliminar Sesión",
@@ -2531,7 +2531,7 @@
                 rt_download_pdf: "📄 Descargar PDF",
                 rt_last_weight: "Último:",
                 rt_suggest_up: "🎯 Hoy: {kg}{unit} ({inc}{unit}) — ¡completaste el rango, a subir!",
-                rt_suggest_same: "🎯 Hoy: {kg}{unit} — buscá llegar a {reps} reps",
+                rt_suggest_same: "🎯 Hoy: {kg}{unit} — buscá llegar a {reps} reps", rt_suggest_extend: "🎯 Hoy: {kg}{unit} — con poco peso el salto es grande: sumá reps hasta {reps} y después subí",
                 rt_suggest_tap: "tocá para cargar",
                 rt_suggest_loaded: "cargado en las series",
                 share_sum_volume: "VOLUMEN", share_sum_sets: "SERIES", share_sum_duration: "DURACIÓN", share_sum_vs_prev: "VS ANTERIOR",
@@ -2600,7 +2600,7 @@
                 share_btn_lbl: "Compartir",
                 share_btn_rocket: "Compartir 🚀",
                 share_text: "¡Terminé mi entrenamiento! 💪",
-                card_default_name: "GUERRERO",
+                card_default_name: "BERSERKER",
                 card_streak_days: "DÍAS DE RACHA  🔥",
                 card_new_pr: "🏆  NUEVO RÉCORD PERSONAL",
                 card_training_day: "DÍA DE ENTRENAMIENTO",
@@ -2841,7 +2841,7 @@
                 watch_max_hr_saved: "Max HR updated",
                 hr_zone_0: "Resting", hr_zone_1: "Recovery", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Threshold", hr_zone_5: "Max",
-                onb_sex: "SEX", onb_male: "Male", onb_female: "Female",
+                onb_sex: "SEX", onb_male: "Male", onb_female: "Female", onb_sex_hint: "Only used to calculate your calories.", prof_sex_changed: "Done: we recalculated your calories",
                 train_add_custom: "Add", train_custom_ph: "+ Custom exercise...",
                 stats_need_more: "Need +2 sessions to see the chart",
                 stats_edit_btn: "✏️ Edit", stats_del_btn: "Delete Session",
@@ -2973,7 +2973,7 @@
                 rt_download_pdf: "📄 Download PDF",
                 rt_last_weight: "Last:",
                 rt_suggest_up: "🎯 Today: {kg}{unit} ({inc}{unit}) — you completed the range, go up!",
-                rt_suggest_same: "🎯 Today: {kg}{unit} — aim for {reps} reps",
+                rt_suggest_same: "🎯 Today: {kg}{unit} — aim for {reps} reps", rt_suggest_extend: "🎯 Today: {kg}{unit} — with light weights the jump is big: build up to {reps} reps, then go up",
                 rt_suggest_tap: "tap to load",
                 rt_suggest_loaded: "loaded into sets",
                 share_sum_volume: "VOLUME", share_sum_sets: "SETS", share_sum_duration: "DURATION", share_sum_vs_prev: "VS LAST",
@@ -3206,7 +3206,7 @@
                 onb_add_ex_ph: "+ Nome do exercício...",
                 train_min: "min",
                 onb_lang_title: "Idioma", onb_lang_sub: "Selecione seu idioma",
-                onb_welcome_title: "Bem-vindo ao ", onb_welcome_sub: "Seu treinador pessoal inteligente. Vamos configurar seu perfil para criar a rotina perfeita para você.",
+                onb_welcome_title: "Boas-vindas ao ", onb_welcome_sub: "Seu treinador pessoal inteligente. Vamos configurar seu perfil para criar a rotina perfeita para você.",
                 onb_name_title: "Seus ", onb_name_title_span: "dados", onb_personal_sub: "Precisamos dessa info para calcular seu plano personalizado.",
                 onb_name_ph: "Seu nome", onb_age_ph: "Idade", onb_weight_ph: "Peso (kg)", onb_height_ph: "Altura (cm)",
                 onb_level_title: "Seu ", onb_level_title_span: "nível", onb_level_sub: "Quanta experiência você tem treinando?",
@@ -3284,7 +3284,7 @@
                 watch_max_hr_saved: "FC máx atualizada",
                 hr_zone_0: "Repouso", hr_zone_1: "Recuperação", hr_zone_2: "Base aeróbica",
                 hr_zone_3: "Aeróbico", hr_zone_4: "Limiar", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino", onb_sex_hint: "Usado só para calcular suas calorias.", prof_sex_changed: "Pronto: recalculamos suas calorias",
                 train_add_custom: "Adicionar", train_custom_ph: "+ Exercício personalizado...",
                 stats_need_more: "Precisa de +2 sessões para ver o gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Excluir Sessão",
@@ -3416,7 +3416,7 @@
                 rt_download_pdf: "📄 Baixar PDF",
                 rt_last_weight: "Último:",
                 rt_suggest_up: "🎯 Hoje: {kg}{unit} ({inc}{unit}) — você completou a faixa, suba!",
-                rt_suggest_same: "🎯 Hoje: {kg}{unit} — tente chegar a {reps} reps",
+                rt_suggest_same: "🎯 Hoje: {kg}{unit} — tente chegar a {reps} reps", rt_suggest_extend: "🎯 Hoje: {kg}{unit} — com pouco peso o salto é grande: chegue a {reps} reps e depois suba",
                 rt_suggest_tap: "toque para carregar",
                 rt_suggest_loaded: "carregado nas séries",
                 share_sum_volume: "VOLUME", share_sum_sets: "SÉRIES", share_sum_duration: "DURAÇÃO", share_sum_vs_prev: "VS ANTERIOR",
@@ -3485,7 +3485,7 @@
                 share_btn_lbl: "Compartilhar",
                 share_btn_rocket: "Compartilhar 🚀",
                 share_text: "Terminei meu treino! 💪",
-                card_default_name: "GUERREIRO",
+                card_default_name: "BERSERKER",
                 card_streak_days: "DIAS DE SEQUÊNCIA  🔥",
                 card_new_pr: "🏆  NOVO RECORDE PESSOAL",
                 card_training_day: "DIA DE TREINO",
@@ -4224,7 +4224,7 @@
         ];
         const QUOTES = [
             "El dolor que sientes hoy será la fuerza que sientas mañana.",
-            "No pares cuando estés cansado. Pará cuando hayas terminado.",
+            "No pares cuando llegue el cansancio. Pará cuando hayas terminado.",
             "Tu cuerpo puede soportar casi todo. Es tu mente la que tenés que convencer.",
             "La disciplina supera a la motivación.",
             "Cada repetición te acerca a tu mejor versión.",
@@ -4236,7 +4236,7 @@
             "El gimnasio no te pide explicaciones, solo constancia.",
             "Entrená como si tu futuro dependiera de eso. Porque depende.",
             "Los límites solo existen en tu mente.",
-            "Cada día que entrenas estás invirtiendo en vos mismo.",
+            "Cada día que entrenás estás invirtiendo en vos.",
             "No se trata de ser el mejor. Se trata de ser mejor que ayer."
         ];
         const ROUTINES = {
@@ -6279,7 +6279,7 @@
 
         // ONBOARDING
         let onbStep = 0;
-        let onbData = { name: '', age: '', weight: '', height: '', sex: 'M', level: '', goal: '', days: 4, wantsNutrition: true };
+        let onbData = { name: '', age: '', weight: '', height: '', sex: '', level: '', goal: '', days: 4, wantsNutrition: true };
 
         function renderOnboarding() {
             const ob = $('onboarding'); if (state.user) { ob.style.display = 'none'; $('app').style.display = 'block'; return; }
@@ -6459,6 +6459,7 @@
             });
             s.appendChild(cSel);
             s.appendChild(h('p', { className: 'label', style: { marginTop: '12px' } }, t('onb_sex')));
+            s.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', margin: '-4px 0 8px' } }, t('onb_sex_hint')));
             const row = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } });
             ['M', 'F'].forEach(sx => {
                 const label = sx === 'M' ? t('onb_male') : t('onb_female');
@@ -6743,6 +6744,11 @@
             const main = (name, opts) => ({ name, sets: opts?.sets || mainSets, reps: opts?.reps || repsMain, rest_s: opts?.rest_s || restMain, rir: rirMain, notes: opts?.notes || '' });
             const iso = (name, opts) => { const e = { name, sets: opts?.sets || isoSets, reps: opts?.reps || repsIso, rest_s: opts?.rest_s || restIso, rir: rirIso, notes: opts?.notes || '' }; isoSet.add(e); return e; };
             const tip = t('routine_progression_tip');
+            // Dominadas y fondos con el propio peso: casi ningún principiante llega a 8-10
+            // reps, y menos con poca fuerza de tren superior en relación al peso (el caso de
+            // la mayoría de las mujeres que empiezan). Para principiantes van variantes que
+            // se ajustan con la carga; la progresión de kg funciona igual que en el resto.
+            const pullUp = () => (lvl === 'beg' ? main('Jalón Polea') : main('Dominadas'));
 
             // CORE — bloque de abdominales al final de cada día. El pool cubre las 4
             // zonas (superior, inferior, oblicuos, estabilidad/anti-extensión) y rota
@@ -6800,7 +6806,7 @@
                     {
                         name: 'FULL BODY C', focus: 'Posterior chain', method, exercises: [
                             main('Hip Thrust', { notes: 'Pausa 1s arriba apretando glúteos' }),
-                            main('Fondos Paralelas'),
+                            lvl === 'beg' ? main('Press Banca Mancuernas') : main('Fondos Paralelas'),
                             main('Remo Mancuerna'),
                             // Principiante: la prensa lleva los cuádriceps de 3 a 6 series semanales
                             // (la dosis mínima efectiva es 4; Pelland 2026).
@@ -6837,7 +6843,7 @@
                     },
                     {
                         name: 'UPPER B', focus: 'Espalda/Pecho/Brazos', method, exercises: [
-                            main('Dominadas', { notes: lvl === 'beg' ? 'Usá banda elástica si hace falta' : '' }),
+                            pullUp(),
                             main('Press Inclinado Mancuernas'),
                             main('Remo Mancuerna', { sets: isoSets }),
                             iso('Aperturas Pec Deck'),
@@ -6873,9 +6879,9 @@
                     },
                     {
                         name: 'PULL', focus: 'Espalda/Bíceps', method, exercises: [
-                            main('Dominadas'),
+                            pullUp(),
                             main('Remo Barra'),
-                            main('Jalón Polea'),
+                            lvl === 'beg' ? main('Remo Mancuerna') : main('Jalón Polea'), // principiante: el jalón ya es el primero
                             iso('Remo Polea Baja'),
                             iso('Face Pull'),
                             iso('Curl Bíceps Barra'),
@@ -6933,7 +6939,7 @@
                     },
                     {
                         name: 'PULL A', focus: 'Espalda gruesa', method, exercises: [
-                            main('Dominadas'),
+                            pullUp(),
                             main('Remo Barra'),
                             iso('Face Pull'),
                             iso('Curl Bíceps Barra'),
@@ -6959,7 +6965,7 @@
                             main('Press Arnold'),
                             iso('Aperturas Pec Deck'),
                             iso('Pushdown Cuerda'),
-                            iso('Fondos Paralelas'),
+                            lvl === 'beg' ? iso('Extensión Overhead') : iso('Fondos Paralelas'),
                             iso('Elevaciones Posteriores'),
                             ...core(3)
                         ]
@@ -7692,7 +7698,7 @@
                 if (sug) {
                     const sugMsg = (sug.up
                         ? t('rt_suggest_up').replace('{kg}', sug.kg).replace('{inc}', '+' + sug.inc)
-                        : t('rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
+                        : t(sug.extend ? 'rt_suggest_extend' : 'rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
                     ).replaceAll('{unit}', state.unit);
                     const sugBtn = h('button', {
                         className: 'rt-sug' + (sug.up ? ' up' : ''),
@@ -8832,7 +8838,16 @@
             const isLbs = state.unit === 'lbs';
             const compound = /sentadilla|peso muerto|press banca|press inclinado|press militar|dominada|remo barra|hip thrust|prensa|hack|fondos/i.test(ex.name);
             if (allTop) {
-                const inc = isLbs ? (compound ? 5 : 2.5) : (compound ? 2.5 : 1.25);
+                let inc = isLbs ? (compound ? 5 : 2.5) : (compound ? 2.5 : 1.25);
+                // Mancuernas livianas: el escalón real suele ser de 1 kg (no existe la de 4,25).
+                if (!isLbs && maxKg < 10) inc = 1;
+                // La ACSM sugiere subir 2-10 % por vez. Con cargas livianas el salto fijo se
+                // pasa (3 kg → 4 kg = +33 %): primero se estira el rango 2 reps (regla "2 por
+                // 2") y recién con eso completo en todas las series se sube.
+                const extTop = topReps + 2;
+                if (inc / maxKg > 0.10 && !last.sets.every(st => (parseInt(st.reps, 10) || 0) >= extTop)) {
+                    return { kg: maxKg, up: false, targetReps: extTop, extend: true };
+                }
                 return { kg: Math.round((maxKg + inc) * 100) / 100, up: true, inc };
             }
             return { kg: maxKg, up: false, targetReps: topReps };
@@ -10342,11 +10357,22 @@
             const dc = h('div', { className: 'card fade-in' });
             dc.appendChild(h('p', { className: 'label' }, t('prof_personal')));
             [{ l: t('prof_weight'), v: u.weight + 'kg' }, { l: t('prof_height'), v: u.height + 'cm' }, { l: t('prof_age'), v: u.age },
-            { l: t('prof_sex'), v: u.sex === 'M' ? t('prof_male') : t('prof_female') }, { l: t('prof_country') || 'País', v: u.country || '—' }, { l: t('prof_days'), v: u.days }, { l: t('prof_routine'), v: ROUTINES[u.days]?.name || '—' }
+            { l: t('prof_country') || 'País', v: u.country || '—' }, { l: t('prof_days'), v: u.days }, { l: t('prof_routine'), v: ROUTINES[u.days]?.name || '—' }
             ].forEach(({ l, v: val }) => {
                 dc.appendChild(h('div', { className: 'profile-item' }, h('span', { style: { color: 'var(--text3)', fontSize: '13px' } }, l),
                     h('span', { style: { fontSize: '13px', fontWeight: 600 } }, val + '')));
             });
+            // Sexo editable: solo cambia el cálculo de calorías. El registro traía
+            // "Masculino" marcado y quien no lo tocó no tenía cómo corregirlo.
+            const sexPills = h('div', { style: { display: 'flex', gap: '6px' } });
+            ['M', 'F'].forEach(sx => {
+                const on = u.sex === sx;
+                sexPills.appendChild(h('button', {
+                    style: { padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', border: '1px solid ' + (on ? 'var(--accent)' : 'var(--border)'), background: on ? 'rgba(0,212,170,.12)' : 'transparent', color: on ? 'var(--accent)' : 'var(--text2)' },
+                    onclick: () => { if (u.sex === sx) return; u.sex = sx; saveUser(); flash(t('prof_sex_changed')); renderProfile(); }
+                }, sx === 'M' ? t('prof_male') : t('prof_female')));
+            });
+            dc.appendChild(h('div', { className: 'profile-item' }, h('span', { style: { color: 'var(--text3)', fontSize: '13px' } }, t('prof_sex')), sexPills));
             v.appendChild(dc);
 
             // Upgrade banner (free tier only)
