@@ -881,6 +881,31 @@
         }
 
         /* ============================================
+           MUJERES QUE ENTRENAN
+           ============================================ */
+        .mujeres { padding: 100px 24px; }
+        .mujeres-header { text-align: center; max-width: 720px; margin: 0 auto 50px; }
+        .mujeres-grid {
+            max-width: 960px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;
+        }
+        .mujeres-card {
+            padding: 28px 24px;
+            background: var(--sf1);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+        .mujeres-card .icon-tile { margin-bottom: 14px; }
+        .mujeres-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.01em; }
+        .mujeres-desc { font-size: 14px; color: var(--text2); line-height: 1.55; }
+        .mujeres-note { max-width: 720px; margin: 28px auto 0; text-align: center; font-size: 13px; color: var(--text3); line-height: 1.55; }
+        @media (max-width: 767px) {
+            .mujeres { padding: 70px 16px; }
+            .mujeres-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+            .mujeres-header { margin-bottom: 32px; }
+        }
+
+        /* ============================================
            INSTALL OPTIONS
            ============================================ */
         .install {
@@ -1173,6 +1198,7 @@
         <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></symbol>
         <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
         <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
         <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M12 13v8"/><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24"/><path d="m8 17 4-4 4 4"/></symbol>
         <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
         <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
@@ -1195,6 +1221,7 @@
             </a>
             <nav class="nav-links" aria-label="Navegación principal" data-i18n-aria>
                 <a href="#features" data-i18n>Qué hace</a>
+                <a href="#mujeres" data-i18n>Para mujeres</a>
                 <a href="#precio" data-i18n>Precio</a>
                 <a href="#coach" data-i18n>Para entrenadores</a>
                 <a href="#faq" data-i18n>FAQ</a>
@@ -1284,7 +1311,7 @@
                 <article class="feat-card reveal">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-target"/></svg></div>
                     <h3 class="feat-title" data-i18n>Rutina que se arma sola</h3>
-                    <p class="feat-desc" data-i18n>Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si cambiás algo, se rearma sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class="tag-pro">Premium</span></p>
+                    <p class="feat-desc" data-i18n>Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si querés, priorizás glúteos y piernas o torso y brazos, y cambiás todo desde tu perfil sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-1">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-timer"/></svg></div>
@@ -1423,6 +1450,40 @@
         </section>
 
         <!-- ============================================
+             MUJERES QUE ENTRENAN
+             ============================================ -->
+        <section class="mujeres section" id="mujeres">
+            <div class="mujeres-header reveal">
+                <div class="section-kicker" data-i18n>Mujeres que entrenan</div>
+                <h2 class="section-title" data-i18n>Los mismos principios.<br>Lo que a vos te sirve.</h2>
+                <p class="section-sub" style="margin: 16px auto 0;" data-i18n>Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que la base es la misma. Lo que cambia es qué querés priorizar y qué conviene cuidar.</p>
+            </div>
+            <div class="mujeres-grid">
+                <article class="mujeres-card reveal">
+                    <div class="icon-tile"><svg class="i"><use href="#i-body"/></svg></div>
+                    <h3 class="mujeres-title" data-i18n>Prioridad: glúteos y piernas</h3>
+                    <p class="mujeres-desc" data-i18n>Elegís qué zona querés destacar y la rutina le da más series por semana, sacándoselas a otra para que las sesiones no se alarguen. También podés priorizar torso y brazos, o dejarla equilibrada.</p>
+                </article>
+                <article class="mujeres-card reveal reveal-delay-1">
+                    <div class="icon-tile"><svg class="i"><use href="#i-calendar"/></svg></div>
+                    <h3 class="mujeres-title" data-i18n>Registro del período</h3>
+                    <p class="mujeres-desc" data-i18n>Opcional y solo en tu teléfono. Ves tu ciclo promedio y la app te avisa si el período deja de venir, una señal de que podés estar comiendo poco para todo lo que entrenás. La rutina no cambia según la fase: los estudios no encontraron ventaja en hacerlo.</p>
+                </article>
+                <article class="mujeres-card reveal reveal-delay-2">
+                    <div class="icon-tile"><svg class="i"><use href="#i-trend"/></svg></div>
+                    <h3 class="mujeres-title" data-i18n>Saltos de peso a tu medida</h3>
+                    <p class="mujeres-desc" data-i18n>Con mancuernas livianas, subir 1 kg puede ser más de un 30 % de golpe. Por eso la app primero te propone sumar repeticiones y sube el peso cuando el salto tiene sentido.</p>
+                </article>
+                <article class="mujeres-card reveal reveal-delay-3">
+                    <div class="icon-tile"><svg class="i"><use href="#i-target"/></svg></div>
+                    <h3 class="mujeres-title" data-i18n>Sin ejercicios imposibles al empezar</h3>
+                    <p class="mujeres-desc" data-i18n>Si recién arrancás, la rutina usa jalón en polea y press con mancuernas en vez de dominadas y fondos con tu peso, que casi nadie logra al principio. Todo se ajusta con la carga.</p>
+                </article>
+            </div>
+            <p class="mujeres-note reveal" data-i18n>Todo esto es parte del plan Free. Tus calorías se calculan con tu sexo, edad, peso y altura, y desde el perfil cambiás tu objetivo, tus días, tu nivel o tu prioridad cuando quieras.</p>
+        </section>
+
+        <!-- ============================================
              PRECIO
              ============================================ -->
         <section class="precio section" id="precio">
@@ -1440,6 +1501,7 @@
                     <div class="precio-period" data-i18n>Para siempre. Sin tarjeta.</div>
                     <ul class="precio-features">
                         <li data-i18n>Rutina automática según nivel, días y objetivo</li>
+                        <li data-i18n>Prioridad muscular y registro del período</li>
                         <li data-i18n>Registro de series con descanso, superseries y calentamiento</li>
                         <li data-i18n>Avisos de progresión, récords y 1RM estimado</li>
                         <li data-i18n>Biblioteca de 37 ejercicios con video</li>
@@ -1532,7 +1594,7 @@
                 <div class="privacy-card reveal">
                     <div class="privacy-icon icon-tile"><svg class="i"><use href="#i-phone"/></svg></div>
                     <h3 class="privacy-title" data-i18n>En tu teléfono</h3>
-                    <p class="privacy-desc" data-i18n>Tus entrenamientos y comidas se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.</p>
+                    <p class="privacy-desc" data-i18n>Tus entrenamientos, tus comidas y el registro del período se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.</p>
                 </div>
                 <div class="privacy-card reveal reveal-delay-1">
                     <div class="privacy-icon icon-tile"><svg class="i"><use href="#i-lock"/></svg></div>
@@ -1594,6 +1656,12 @@
                     <summary class="faq-summary" data-i18n>¿Es realmente gratis?</summary>
                     <div class="faq-body" data-i18n>
                         Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo.
+                    </div>
+                </details>
+                <details class="faq-item reveal reveal-delay-1">
+                    <summary class="faq-summary" data-i18n>¿Sirve si soy mujer?</summary>
+                    <div class="faq-body" data-i18n>
+                        Sí. Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que los principios son los mismos. Podés priorizar <b>glúteos y piernas</b> y activar el <b>registro del período</b>, que te avisa si deja de venir. La rutina no cambia según la fase del ciclo: el mejor estudio hasta hoy, de 2026, no encontró ventaja en hacerlo. Todo esto es gratis.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-1">
@@ -1710,7 +1778,6 @@
   "Todo lo que necesitás.<br>Nada que no.": ["Everything you need.<br>Nothing you don't.", "Tudo o que você precisa.<br>Nada além disso."],
   "Del primer día al próximo récord, sin planillas ni cuentas. Lo marcado como <span class=\"tag-pro\">Premium<\/span> lo probás gratis 7 días.": ["From day one to your next PR, no spreadsheets, no math. Anything marked <span class=\"tag-pro\">Premium<\/span> you can try free for 7 days.", "Do primeiro dia ao próximo recorde, sem planilhas nem contas. O que estiver marcado como <span class=\"tag-pro\">Premium<\/span> você testa grátis por 7 dias."],
   "Rutina que se arma sola": ["A routine that builds itself", "Rotina que se monta sozinha"],
-  "Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si cambiás algo, se rearma sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Tell it your level, how many days you train and your goal, and it builds the plan: Full Body, Upper/Lower or PPL. Change anything and it rebuilds without losing your history. Already have a routine? Import it from a PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Você informa seu nível, quantos dias treina e seu objetivo, e ele monta o plano: Full Body, Upper/Lower ou PPL. Se mudar algo, ele remonta sem perder seu histórico. Já tem sua rotina? Importe de um PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
   "Registro sin fricción": ["Frictionless logging", "Registro sem atrito"],
   "Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.": ["Tap ✓ and the rest timer starts, vibrating when it's done and keeping the screen on while you train. Supersets, warm-ups with the plates worked out, and if you close the app your session isn't lost.", "Toque em ✓ e o descanso começa, com vibração no final e a tela acesa enquanto você treina. Superséries, aquecimento com as anilhas calculadas, e se você fechar o app a sessão não se perde."],
   "Te dice cuándo subir el peso": ["Tells you when to add weight", "Avisa quando aumentar a carga"],
@@ -1806,7 +1873,6 @@
   "Privacidad": ["Privacy", "Privacidade"],
   "Tus datos son tuyos.<br>Punto.": ["Your data is yours.<br>Period.", "Seus dados são seus.<br>Ponto."],
   "En tu teléfono": ["On your phone", "No seu celular"],
-  "Tus entrenamientos y comidas se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.": ["Your workouts and meals are stored on your phone, not on our server. And it works without internet.", "Seus treinos e refeições ficam no seu celular, não no nosso servidor. E funciona sem internet."],
   "No te pedimos email ni contraseña. La copia va a una carpeta privada de tu propio Google Drive o a un archivo: la ves vos, no nosotros.": ["We don't ask for an email or a password. Backups go to a private folder in your own Google Drive or to a file: you can see them, we can't.", "Não pedimos e-mail nem senha. O backup vai para uma pasta privada do seu próprio Google Drive ou para um arquivo: quem vê é você, não nós."],
   "Sin rastreo": ["No tracking", "Sem rastreamento"],
   "Sin Google Analytics, sin Facebook Pixel, sin cookies. Solo contamos visitas a esta web de forma anónima, en nuestro propio servidor. No vendemos tus datos.": ["No Google Analytics, no Facebook Pixel, no cookies. We only count visits to this site anonymously, on our own server. We don't sell your data.", "Sem Google Analytics, sem Facebook Pixel, sem cookies. Só contamos as visitas a este site de forma anônima, no nosso próprio servidor. Não vendemos seus dados."],
@@ -1878,7 +1944,25 @@
   "Cuando se acredite (los pagos en efectivo pueden tardar) volvé a esta página o escribinos para recibir tu código.": ["Once it clears (cash payments can take a while), come back to this page or write to us to get your code.", "Quando for confirmado (pagamentos em dinheiro podem demorar), volte a esta página ou escreva para nós para receber seu código."],
   "Tu código está casi listo": ["Your code is almost ready", "Seu código está quase pronto"],
   "El pago se está acreditando. Recargá esta página en un minuto y va a aparecer tu código.": ["Your payment is clearing. Reload this page in a minute and your code will show up.", "O pagamento está sendo confirmado. Recarregue esta página em um minuto e seu código vai aparecer."],
-  "Cerrar": ["Close", "Fechar"]
+  "Cerrar": ["Close", "Fechar"],
+  "Para mujeres": ["For women", "Para mulheres"],
+  "Le decís tu nivel, cuántos días entrenás y tu objetivo, y arma el plan: Full Body, Upper/Lower o PPL. Si querés, priorizás glúteos y piernas o torso y brazos, y cambiás todo desde tu perfil sin perder tu historial. ¿Ya tenés tu rutina? Importala desde un PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Tell it your level, how many days you train and your goal, and it builds the plan: Full Body, Upper/Lower or PPL. If you want, prioritize glutes and legs or upper body and arms, and change everything from your profile without losing your history. Already have a routine? Import it from a PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Você informa seu nível, quantos dias treina e seu objetivo, e ele monta o plano: Full Body, Upper/Lower ou PPL. Se quiser, prioriza glúteos e pernas ou tronco e braços, e muda tudo no seu perfil sem perder seu histórico. Já tem sua rotina? Importe de um PDF&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Tus entrenamientos, tus comidas y el registro del período se guardan en tu teléfono, no en nuestro servidor. Y funciona sin internet.": ["Your workouts, your meals and your period log are stored on your phone, not on our server. And it works without internet.", "Seus treinos, suas refeições e o registro da menstruação ficam no seu celular, não no nosso servidor. E funciona sem internet."],
+  "Prioridad muscular y registro del período": ["Muscle priority and period log", "Prioridade muscular e registro da menstruação"],
+  "Mujeres que entrenan": ["Women who train", "Mulheres que treinam"],
+  "Los mismos principios.<br>Lo que a vos te sirve.": ["Same principles.<br>What works for you.", "Os mesmos princípios.<br>O que funciona para você."],
+  "Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que la base es la misma. Lo que cambia es qué querés priorizar y qué conviene cuidar.": ["Women gain muscle and strength at the same rate as men relative to where they start, so the foundation is the same. What changes is what you want to prioritize and what is worth keeping an eye on.", "As mulheres ganham músculo e força na mesma proporção que os homens, então a base é a mesma. O que muda é o que você quer priorizar e o que vale a pena cuidar."],
+  "Prioridad: glúteos y piernas": ["Priority: glutes and legs", "Prioridade: glúteos e pernas"],
+  "Elegís qué zona querés destacar y la rutina le da más series por semana, sacándoselas a otra para que las sesiones no se alarguen. También podés priorizar torso y brazos, o dejarla equilibrada.": ["Pick the area you want to bring up and the routine gives it more weekly sets, taking them from another so sessions do not get longer. You can also prioritize upper body and arms, or keep it balanced.", "Você escolhe a área que quer destacar e a rotina dá mais séries semanais para ela, tirando de outra para que os treinos não fiquem mais longos. Também dá para priorizar tronco e braços, ou deixar equilibrado."],
+  "Registro del período": ["Period log", "Registro da menstruação"],
+  "Opcional y solo en tu teléfono. Ves tu ciclo promedio y la app te avisa si el período deja de venir, una señal de que podés estar comiendo poco para todo lo que entrenás. La rutina no cambia según la fase: los estudios no encontraron ventaja en hacerlo.": ["Optional and only on your phone. You see your average cycle and the app warns you if your period stops coming, a sign you may be eating too little for how much you train. Your routine does not change by phase: studies found no advantage in doing so.", "Opcional e só no seu celular. Você vê seu ciclo médio e o app avisa se a menstruação parar de vir, um sinal de que você pode estar comendo pouco para o quanto treina. A rotina não muda conforme a fase: os estudos não encontraram vantagem nisso."],
+  "Saltos de peso a tu medida": ["Weight jumps that fit you", "Aumentos de carga na sua medida"],
+  "Con mancuernas livianas, subir 1 kg puede ser más de un 30 % de golpe. Por eso la app primero te propone sumar repeticiones y sube el peso cuando el salto tiene sentido.": ["With light dumbbells, going up 1 kg can mean over 30% more at once. So the app first suggests adding reps and raises the weight when the jump makes sense.", "Com halteres leves, subir 1 kg pode ser mais de 30% de uma vez. Por isso o app primeiro sugere somar repetições e sobe a carga quando o aumento faz sentido."],
+  "Sin ejercicios imposibles al empezar": ["No impossible exercises when you start", "Sem exercícios impossíveis no começo"],
+  "Si recién arrancás, la rutina usa jalón en polea y press con mancuernas en vez de dominadas y fondos con tu peso, que casi nadie logra al principio. Todo se ajusta con la carga.": ["If you are just starting, the routine uses lat pulldowns and dumbbell presses instead of bodyweight pull-ups and dips, which almost nobody can do at first. Everything adjusts with the load.", "Se você está começando, a rotina usa puxada na polia e supino com halteres em vez de barra fixa e paralelas com o peso do corpo, que quase ninguém consegue no início. Tudo se ajusta com a carga."],
+  "Todo esto es parte del plan Free. Tus calorías se calculan con tu sexo, edad, peso y altura, y desde el perfil cambiás tu objetivo, tus días, tu nivel o tu prioridad cuando quieras.": ["All of this is part of the Free plan. Your calories are calculated from your sex, age, weight and height, and from your profile you can change your goal, days, level or priority anytime.", "Tudo isso faz parte do plano Free. Suas calorias são calculadas com seu sexo, idade, peso e altura, e no perfil você muda objetivo, dias, nível ou prioridade quando quiser."],
+  "¿Sirve si soy mujer?": ["Does it work for women?", "Serve para mulheres?"],
+  "Sí. Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que los principios son los mismos. Podés priorizar <b>glúteos y piernas<\/b> y activar el <b>registro del período<\/b>, que te avisa si deja de venir. La rutina no cambia según la fase del ciclo: el mejor estudio hasta hoy, de 2026, no encontró ventaja en hacerlo. Todo esto es gratis.": ["Yes. Women gain muscle and strength at the same rate as men relative to where they start, so the principles are the same. You can prioritize <b>glutes and legs<\/b> and turn on the <b>period log<\/b>, which warns you if your period stops coming. Your routine does not change by cycle phase: the best study to date, from 2026, found no advantage in doing so. All of this is free.", "Sim. As mulheres ganham músculo e força na mesma proporção que os homens, então os princípios são os mesmos. Você pode priorizar <b>glúteos e pernas<\/b> e ativar o <b>registro da menstruação<\/b>, que avisa se ela parar de vir. A rotina não muda conforme a fase do ciclo: o melhor estudo até hoje, de 2026, não encontrou vantagem nisso. Tudo isso é grátis."]
 }
     </script>
     <script>
