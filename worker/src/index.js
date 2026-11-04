@@ -66,7 +66,7 @@ const CHECKINS_MAX = 26;                // controles semanales por rutina (~6 me
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
-const PUSH_BATCH = 40;                  // pushes por corrida del cron (5 corridas por hora = 200 por zona horaria)
+const PUSH_BATCH = 40;                  // pushes por corrida del cron (corre cada minuto: 2.400 por hora y zona ≥ PUSH_MAX)
 const REMINDER_HOUR = 18;               // el recordatorio sale a las 18 de la hora LOCAL de cada usuario
 const DEFAULT_TZ = 'America/Argentina/Buenos_Aires'; // suscripciones previas a guardar la zona
 const TRAINED_TTL = 3 * 86400;          // marca "hoy ya entrenó" (pushtr:{id}); vence sola
@@ -1426,16 +1426,22 @@ async function vapidJwt(env, audience) {
 // horaria son las REMINDER_HOUR (18), una vez por día local, y solo si ese día no
 // registró un entrenamiento (pushtr:{id}). Push vacío; 404/410 = suscripción
 // muerta → se borra. El plan Free permite 50 subrequests por invocación, así que
-// cada corrida manda como mucho PUSH_BATCH: wrangler.toml dispara el cron varias
-// veces por hora (:00, :03, :06, :09, :12) y lo resuelto queda en sent = día local.
+// cada corrida manda como mucho PUSH_BATCH: wrangler.toml dispara el cron cada
+// minuto (60 × 40 = 2.400 por hora y zona, más que PUSH_MAX) y lo resuelto queda
+// en sent = día local. Sin nadie a las 18 locales, la corrida lee una key y termina.
 async function sendDueReminders(env, when = new Date()) {
     if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
     const all = (await kvGet(env, 'push:all')) || { subs: {} };
     const due = [];
+    // Una hora local por ZONA, no por suscripción: crear un Intl.DateTimeFormat
+    // cuesta ~0,5 ms y el plan Free da 10 ms de CPU por corrida (con 200
+    // suscriptores eran 75-200 ms; así queda en menos de 1 ms).
+    const clockByTz = {};
     for (const id of Object.keys(all.subs).sort()) {
         const s = all.subs[id];
         if (!s || !s.endpoint) continue;
-        const clock = localClock(validTz(s.tz) || DEFAULT_TZ, when);
+        const tz = validTz(s.tz) || DEFAULT_TZ;
+        const clock = clockByTz[tz] || (clockByTz[tz] = localClock(tz, when));
         if (clock.hour === REMINDER_HOUR && s.sent !== clock.date) due.push({ id, date: clock.date });
     }
     if (!due.length) return { sent: 0, due: 0 };
@@ -1449,7 +1455,7 @@ async function sendDueReminders(env, when = new Date()) {
         cursor = res.list_complete ? undefined : res.cursor;
     } while (cursor);
 
-    let sent = 0, removed = 0, skipped = 0, tried = 0;
+    let sent = 0, removed = 0, skipped = 0, failed = 0, tried = 0;
     const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
     for (const d of due) {
         const s = all.subs[d.id];
@@ -1465,10 +1471,14 @@ async function sendDueReminders(env, when = new Date()) {
             });
             if (resp.status === 404 || resp.status === 410) { delete all.subs[d.id]; removed++; }
             else if (resp.status < 400) { s.sent = d.date; sent++; }
+            // Otro error (p. ej. 403 por clave VAPID vieja): hoy no se reintenta.
+            // Si no, 40 suscripciones rotas ocuparían el lote de cada corrida y
+            // las que vienen detrás nunca recibirían el aviso.
+            else { s.sent = d.date; failed++; }
         } catch { /* push service caído → la próxima corrida de esta hora reintenta */ }
     }
-    if (sent || removed || skipped) await kvPut(env, 'push:all', all);
-    return { sent, removed, skipped, due: due.length };
+    if (sent || removed || skipped || failed) await kvPut(env, 'push:all', all);
+    return { sent, removed, skipped, failed, due: due.length };
 }
 
 // ─────────────────────────────────────────────

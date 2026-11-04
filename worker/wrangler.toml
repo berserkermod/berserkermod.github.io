@@ -103,12 +103,14 @@ binding = "AI"
 
 # Cron del recordatorio push: corre cada hora y avisa a quienes en SU zona
 # horaria son las 18 (la app manda la zona del telefono al suscribirse) y no
-# entrenaron ese dia. Son 5 disparos por hora porque el plan Free permite 50
+# entrenaron ese dia. Corre CADA MINUTO porque el plan Free permite 50
 # subrequests por invocacion: cada corrida manda hasta 40 y marca a quien ya
-# le toco; las siguientes siguen con el resto. Sin nadie a las 18 locales, la
-# corrida lee una sola key y termina. (Free: max 5 crons.)
+# le toco; las siguientes siguen con el resto (60 x 40 = 2.400 por hora y zona,
+# mas que el tope de 1.000 suscripciones). Sin nadie a las 18 locales, la
+# corrida lee una sola key y termina. El limite Free de 5 es de expresiones,
+# no de disparos: esta es una sola. test/worker.test.mjs verifica la cuenta.
 [triggers]
-crons = ["0 * * * *", "3 * * * *", "6 * * * *", "9 * * * *", "12 * * * *"]
+crons = ["* * * * *"]
 
 # Rate limiting nativo de Workers (no usa KV, gratis). Key = IP del cliente.
 #   RL_OPEN   → toda ruta publica: 60 req/min por IP (un gimnasio en un NAT entra).

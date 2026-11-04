@@ -567,8 +567,8 @@ let code, licToken;
     let pushed = [];
     globalThis.fetch = async (u, opts) => {
         pushed.push({ url: String(u), auth: opts.headers.Authorization, ttl: opts.headers.TTL });
-        // ep2 devuelve 410 (suscripción muerta) → debe borrarse
-        return new Response('', { status: String(u).includes('ep2') ? 410 : 201 });
+        // ep2 devuelve 410 (suscripción muerta) → debe borrarse; "roto" = 403 (clave VAPID vieja)
+        return new Response('', { status: String(u).includes('ep2') ? 410 : String(u).includes('roto') ? 403 : 201 });
     };
     // Instante (UTC) en que en `tz` son las 18 del día `dayOffset` (relativo a hoy):
     // así el test no depende de la fecha ni del horario de verano.
@@ -609,10 +609,16 @@ let code, licToken;
 
     // Ya entrenó hoy → ese día no se le avisa; al día siguiente sí
     const tomorrowMadrid = at18('Europe/Madrid', 1);
+    // El aviso de "entrené" llega ese mismo día (17 h en Madrid): sin esto el test
+    // fallaba entre las 00 y las 12 UTC, cuando "mañana en Madrid" queda a más de
+    // 24 h y validSessionDate lo rechaza con razón.
+    const realNow = Date.now;
+    Date.now = () => tomorrowMadrid.getTime() - 3600000;
     const badTr = await call('POST', '/api/push/trained', { endpoint: 'https://atacante.example/x', date: localDay('Europe/Madrid', tomorrowMadrid) });
     const badDate = await call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', date: '2019-01-01' });
     ok('trained: endpoint ajeno o fecha inválida → 400', badTr.status === 400 && badDate.status === 400);
     const tr = await call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', date: localDay('Europe/Madrid', tomorrowMadrid) });
+    Date.now = realNow;
     ok('trained 200 y marca chica aparte de push:all', tr.status === 200 && [...env.BMOD_KV._m.keys()].some(k => k.startsWith('pushtr:')));
     ok('entrenó ese día → a las 18 no le llega nada', await runCron(tomorrowMadrid) === 0, pushed.map(p => p.url));
     ok('el día siguiente sí le llega', await runCron(at18('Europe/Madrid', 2)) === 1);
@@ -629,6 +635,39 @@ let code, licToken;
     for (let r = 0; r < 3; r++) runs.push(await runCron(new Date(tokyo.getTime() + r * 3 * 60000)));
     ok('cron en lotes de 40: 40 + 5 + 0', runs[0] === 40 && runs[1] === 5 && runs[2] === 0, runs);
     ok('sin keys de cursor (lo resuelto queda en cada suscripción)', !env.BMOD_KV._m.has('push:cursor'));
+
+    // Suscripciones rotas (403) no acaparan el lote: 49 rotas + 1 sana en Auckland.
+    // Antes se reintentaban en cada corrida y la sana podía quedar siempre afuera.
+    for (let i = 0; i < 49; i++) await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/roto' + i }, tz: 'Pacific/Auckland' });
+    await call('POST', '/api/push/subscribe', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/sano' }, tz: 'Pacific/Auckland' });
+    const akl = at18('Pacific/Auckland');
+    const aklRuns = [], aklUrls = [];
+    for (let r = 0; r < 3; r++) { aklRuns.push(await runCron(new Date(akl.getTime() + r * 60000))); aklUrls.push(...pushed.map(p => p.url)); }
+    ok('403 → no se reintenta en el día: 40 + 10 + 0', aklRuns[0] === 40 && aklRuns[1] === 10 && aklRuns[2] === 0, aklRuns);
+    ok('la sana recibe su aviso una vez aunque haya 49 rotas', aklUrls.filter(u => u.endsWith('sano')).length === 1);
+    ok('las rotas no se borran (403 no es 404/410)', Object.values(JSON.parse(await env.BMOD_KV.get('push:all')).subs).filter(s => s.endpoint.includes('roto')).length === 49);
+
+    // Capacidad: las corridas por hora × PUSH_BATCH tienen que cubrir PUSH_MAX,
+    // si no, la app acepta recordatorios que nunca manda.
+    {
+        const { readFileSync } = await import('node:fs');
+        const src = readFileSync(new URL('../src/index.js', import.meta.url), 'utf8');
+        const toml = readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
+        const max = Number(src.match(/const PUSH_MAX = (\d+)/)[1]);
+        const batch = Number(src.match(/const PUSH_BATCH = (\d+)/)[1]);
+        const crons = JSON.parse(toml.match(/^crons = (\[.*\])$/m)[1]);
+        const minutes = new Set();
+        for (const c of crons) {
+            const [min, hour] = c.split(/\s+/);
+            if (hour !== '*') continue;                      // tiene que correr todas las horas
+            for (let m = 0; m < 60; m++) {
+                const hit = min.split(',').some(f => f === '*' || (f.startsWith('*/') && m % Number(f.slice(2)) === 0) || Number(f) === m);
+                if (hit) minutes.add(m);
+            }
+        }
+        ok('crons de wrangler.toml ≤ 5 expresiones (límite Free)', crons.length <= 5, crons);
+        ok('capacidad por hora y zona ≥ PUSH_MAX (' + minutes.size + ' × ' + batch + ' ≥ ' + max + ')', minutes.size * batch >= max);
+    }
 
     globalThis.fetch = realFetch;
     delete env.VAPID_PRIVATE_JWK; delete env.VAPID_PUBLIC_KEY; delete env.VAPID_SUBJECT;
