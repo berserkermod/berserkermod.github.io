@@ -13,7 +13,7 @@ const calc = require(path.join(here, '..', 'core', 'calc.js'));
 const html = readFileSync(path.join(here, '..', 'BERSERKERMOD.html'), 'utf8');
 const a = html.indexOf('        function getRoutinePlan(');
 const b = html.indexOf('        function finishOnboarding');
-const getRoutinePlan = new Function('t', 'muscleTargets', html.slice(a, b) + '; return getRoutinePlan;')((k) => k, calc.muscleTargets);
+const getRoutinePlan = new Function('t', 'muscleTargets', 'adjustMuscleVolume', html.slice(a, b) + '; return getRoutinePlan;')((k) => k, calc.muscleTargets, calc.adjustMuscleVolume);
 
 let pass = 0, fail = 0;
 const ok = (name, cond, extra) => { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra && extra.length ? '\n      ' + extra.slice(0, 12).join('\n      ') : '')); } };
@@ -29,9 +29,10 @@ const load = (exs) => {
 };
 
 const errs = { unknown: [], week: [], session: [], min: [], freq: [], rir: [], sets: [], str: [], end: [], fat: [], core: [], bw: [] };
-for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of LEVELS) {
-    const id = `${goal} ${days}d ${level}`;
-    const plan = getRoutinePlan(goal, days, level);
+const FOCUSES = [undefined, 'lower', 'upper'];
+for (const focus of FOCUSES) for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of LEVELS) {
+    const id = `${goal} ${days}d ${level}${focus ? ' ' + focus : ''}`;
+    const plan = getRoutinePlan(goal, days, level, focus);
     const all = plan.flatMap((d) => d.exercises);
     all.forEach((e) => { if (!calc.muscleTargets(e.name).length) errs.unknown.push(`${id}: ${e.name}`); });
     all.forEach((e) => { if (!(e.sets >= 2)) errs.sets.push(`${id}: ${e.name} ${e.sets}`); });
@@ -72,6 +73,35 @@ ok('fuerza: banca y sentadilla 2 veces por semana', !errs.str.length, errs.str);
 ok('resistencia: cada día arranca con fuerza pesada (4-6 reps)', !errs.end.length, errs.end);
 ok('pérdida de grasa: descansos de 45 s o más', !errs.fat.length, errs.fat);
 ok('principiantes: sin dominadas ni fondos con el propio peso', !errs.bw.length, errs.bw);
+ok('todas las reglas anteriores valen también con prioridad en piernas y en torso', true);
+
+// ── Prioridad muscular ──
+{
+    const UP = { lower: ['glutes', 'quads', 'hamstrings'], upper: ['chest', 'lats', 'shoulders', 'biceps', 'triceps'] };
+    const DOWN = { lower: ['biceps', 'triceps', 'shoulders'], upper: ['quads', 'hamstrings', 'glutes'] };
+    const total = (p) => p.flatMap((d) => d.exercises).reduce((x, e) => x + e.sets, 0);
+    const e2 = { gain: [], drop: [], floor: [], hours: [], same: [] };
+    for (const focus of ['lower', 'upper']) for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of LEVELS) {
+        const id = `${goal} ${days}d ${level} ${focus}`;
+        const base = getRoutinePlan(goal, days, level), fp = getRoutinePlan(goal, days, level, focus);
+        const wb = load(base.flatMap((d) => d.exercises)), wf = load(fp.flatMap((d) => d.exercises));
+        const sum = (w, ms) => ms.reduce((x, m) => x + (w[m] || 0), 0);
+        if (!(sum(wf, UP[focus]) >= sum(wb, UP[focus]) + 3)) e2.gain.push(`${id}: ${sum(wb, UP[focus])} → ${sum(wf, UP[focus])}`);
+        UP[focus].forEach((m) => { if ((wf[m] || 0) < (wb[m] || 0)) e2.drop.push(`${id}: ${m} ${wb[m]} → ${wf[m]}`); });
+        DOWN[focus].forEach((m) => { if ((wf[m] || 0) < Math.min(6, wb[m] || 0)) e2.floor.push(`${id}: ${m} ${wb[m]} → ${wf[m]}`); });
+        if (total(fp) > total(base) + days) e2.hours.push(`${id}: ${total(base)} → ${total(fp)} series`);
+    }
+    // Sin prioridad (o con una desconocida) la rutina es exactamente la de siempre
+    for (const goal of GOALS) for (const days of [3, 4, 5, 6]) for (const level of LEVELS) {
+        const a1 = JSON.stringify(getRoutinePlan(goal, days, level)), a2 = JSON.stringify(getRoutinePlan(goal, days, level, 'balanced')), a3 = JSON.stringify(getRoutinePlan(goal, days, level, 'xx'));
+        if (a1 !== a2 || a1 !== a3) e2.same.push(`${goal} ${days}d ${level}`);
+    }
+    ok('prioridad: los músculos elegidos suman 3 series semanales o más en total', !e2.gain.length, e2.gain);
+    ok('prioridad: ningún músculo elegido pierde series', !e2.drop.length, e2.drop);
+    ok('prioridad: los que ceden no bajan de 6 series (o de lo que tenían)', !e2.floor.length, e2.floor);
+    ok('prioridad: como mucho 1 serie más por sesión en total (no suma horas)', !e2.hours.length, e2.hours);
+    ok('sin prioridad: la rutina es idéntica a la de siempre (no toca a nadie)', !e2.same.length, e2.same);
+}
 
 // ── Sugerencia de carga (doble progresión) con cargas livianas ──
 {

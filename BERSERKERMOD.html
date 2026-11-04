@@ -1731,6 +1731,9 @@
         .rup-changes { margin: 0 0 8px 18px; padding: 0; font-size: 13px; color: var(--text); line-height: 1.5; }
         .rup-changes li { margin-bottom: 3px; }
         .rup-card .rup-warn { font-size: 12px; color: var(--text3); }
+        .focus-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+        .focus-pill { padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); }
+        .focus-pill.sel { border-color: var(--accent); background: rgba(0,212,170,.12); color: var(--accent); }
         .rup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .rup-sheet { background: var(--sf1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; max-height: 85vh; overflow-y: auto; }
         .rup-day { font-size: 14px; font-weight: 800; color: var(--text); margin: 12px 0 4px; }
@@ -2399,7 +2402,7 @@
                 watch_max_hr_saved: "HR máx actualizado",
                 hr_zone_0: "Reposo", hr_zone_1: "Recuperación", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Umbral", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino", onb_sex_hint: "Se usa solo para calcular tus calorías.", prof_sex_changed: "Listo: recalculamos tus calorías",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino", onb_sex_hint: "Se usa solo para calcular tus calorías.", onb_focus: "PRIORIDAD (OPCIONAL)", focus_title: "🎯 Prioridad muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos y piernas", focus_upper: "Torso y brazos", focus_rat_balanced: "Todos los grupos con un volumen parejo. Si querés destacar una zona, elegí una prioridad: le damos más series y se las sacamos a otra, sin alargar las sesiones.", focus_rat_lower: "Prioridad en glúteos y piernas: más series semanales para glúteos, cuádriceps e isquios. Brazos y hombros quedan con menos, sin bajar del mínimo que los mantiene. Cada músculo crece según las series que recibe en la semana.", focus_rat_upper: "Prioridad en torso y brazos: más series semanales para pecho, espalda, hombros y brazos. Las piernas quedan con menos, sin bajar del mínimo que las mantiene. Cada músculo crece según las series que recibe en la semana.", focus_warn: "Tu rutina se rehace con esta prioridad. Si la habías editado, esos cambios se reemplazan. Podés volver a la anterior durante 14 días.", focus_done: "Rutina actualizada: {name}", prof_sex_changed: "Listo: recalculamos tus calorías",
                 train_add_custom: "Agregar", train_custom_ph: "+ Ejercicio personalizado...",
                 stats_need_more: "Necesitás +2 sesiones para ver el gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Eliminar Sesión",
@@ -2841,7 +2844,7 @@
                 watch_max_hr_saved: "Max HR updated",
                 hr_zone_0: "Resting", hr_zone_1: "Recovery", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Threshold", hr_zone_5: "Max",
-                onb_sex: "SEX", onb_male: "Male", onb_female: "Female", onb_sex_hint: "Only used to calculate your calories.", prof_sex_changed: "Done: we recalculated your calories",
+                onb_sex: "SEX", onb_male: "Male", onb_female: "Female", onb_sex_hint: "Only used to calculate your calories.", onb_focus: "PRIORITY (OPTIONAL)", focus_title: "🎯 Muscle priority", focus_balanced: "Balanced", focus_lower: "Glutes and legs", focus_upper: "Upper body and arms", focus_rat_balanced: "Every muscle group gets even volume. If you want to bring up an area, pick a priority: we give it more sets and take them from another, without making sessions longer.", focus_rat_lower: "Glutes and legs priority: more weekly sets for glutes, quads and hamstrings. Arms and shoulders get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_rat_upper: "Upper body priority: more weekly sets for chest, back, shoulders and arms. Legs get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_warn: "Your routine will be rebuilt with this priority. If you edited it, those changes are replaced. You can go back to the previous one for 14 days.", focus_done: "Routine updated: {name}", prof_sex_changed: "Done: we recalculated your calories",
                 train_add_custom: "Add", train_custom_ph: "+ Custom exercise...",
                 stats_need_more: "Need +2 sessions to see the chart",
                 stats_edit_btn: "✏️ Edit", stats_del_btn: "Delete Session",
@@ -3284,7 +3287,7 @@
                 watch_max_hr_saved: "FC máx atualizada",
                 hr_zone_0: "Repouso", hr_zone_1: "Recuperação", hr_zone_2: "Base aeróbica",
                 hr_zone_3: "Aeróbico", hr_zone_4: "Limiar", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino", onb_sex_hint: "Usado só para calcular suas calorias.", prof_sex_changed: "Pronto: recalculamos suas calorias",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino", onb_sex_hint: "Usado só para calcular suas calorias.", onb_focus: "PRIORIDADE (OPCIONAL)", focus_title: "🎯 Prioridade muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos e pernas", focus_upper: "Tronco e braços", focus_rat_balanced: "Todos os grupos com volume equilibrado. Se quiser destacar uma área, escolha uma prioridade: damos mais séries a ela e tiramos de outra, sem alongar os treinos.", focus_rat_lower: "Prioridade em glúteos e pernas: mais séries semanais para glúteos, quadríceps e posteriores. Braços e ombros ficam com menos, sem cair abaixo do mínimo que os mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_rat_upper: "Prioridade em tronco e braços: mais séries semanais para peito, costas, ombros e braços. As pernas ficam com menos, sem cair abaixo do mínimo que as mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_warn: "Sua rotina será refeita com essa prioridade. Se você a editou, essas mudanças serão substituídas. Dá para voltar à anterior durante 14 dias.", focus_done: "Rotina atualizada: {name}", prof_sex_changed: "Pronto: recalculamos suas calorias",
                 train_add_custom: "Adicionar", train_custom_ph: "+ Exercício personalizado...",
                 stats_need_more: "Precisa de +2 sessões para ver o gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Excluir Sessão",
@@ -5602,7 +5605,9 @@
         // Hash of inputs that affect routine generation. Used to detect stale plans.
         function routineInputHash(u) {
             if (!u) return 0;
-            const s = [u.goal, u.days, u.level].join('|');
+            // La prioridad entra al hash solo si se eligió una: las rutinas guardadas de
+            // los demás siguen intactas.
+            const s = [u.goal, u.days, u.level].join('|') + (ROUTINE_FOCUS[u.focus] ? '|' + u.focus : '');
             let h = 5381;
             for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
             return h;
@@ -5614,7 +5619,7 @@
             const currentHash = routineInputHash(u);
             if (u.routinePlanHash === currentHash) return;
             // Hash changed → regenerate from current params (only if user hasn't customized)
-            const sel = selectWorkoutPlan(u.days, u.level, u.goal);
+            const sel = selectWorkoutPlan(u.days, u.level, u.goal, u.focus);
             u.routinePlan = sel.plan;
             u.routinePlanGen = ROUTINE_GEN;
             u.routinePlanHash = currentHash;
@@ -6279,7 +6284,7 @@
 
         // ONBOARDING
         let onbStep = 0;
-        let onbData = { name: '', age: '', weight: '', height: '', sex: '', level: '', goal: '', days: 4, wantsNutrition: true };
+        let onbData = { name: '', age: '', weight: '', height: '', sex: '', level: '', goal: '', focus: 'balanced', days: 4, wantsNutrition: true };
 
         function renderOnboarding() {
             const ob = $('onboarding'); if (state.user) { ob.style.display = 'none'; $('app').style.display = 'block'; return; }
@@ -6531,6 +6536,8 @@
                 ));
             });
             s.appendChild(opts);
+            s.appendChild(h('p', { className: 'label', style: { marginTop: '14px' } }, t('onb_focus')));
+            s.appendChild(focusPills(onbData.focus, (k) => { onbData.focus = k; renderOnboarding(); }));
             s.appendChild(h('button', {
                 className: 'onb-btn', disabled: !onbData.goal, style: { marginTop: 'auto' },
                 onclick: () => { onbStep = 5; renderOnboarding(); }
@@ -6588,16 +6595,16 @@
             s.appendChild(h('p', { className: 'onb-sub' }, t('onb_routine_sub')));
 
             // Cache key: if the user changes any of these, regenerate the plan
-            const currentKey = onbData.days + '_' + onbData.level + '_' + onbData.goal;
+            const currentKey = onbData.days + '_' + onbData.level + '_' + onbData.goal + '_' + onbData.focus;
             if (!onbEditPlan || onbEditPlanKey !== currentKey) {
-                const sel = selectWorkoutPlan(onbData.days, onbData.level, onbData.goal);
+                const sel = selectWorkoutPlan(onbData.days, onbData.level, onbData.goal, onbData.focus);
                 onbEditPlan = JSON.parse(JSON.stringify(sel.plan));
                 onbEditPlanKey = currentKey;
                 if (sel.downgraded) {
                     // Snap the user's onboarding selection back to the allowed combo
                     onbData.days = sel.actualDays;
                     onbData.level = sel.actualLevel;
-                    onbEditPlanKey = onbData.days + '_' + onbData.level + '_' + onbData.goal;
+                    onbEditPlanKey = onbData.days + '_' + onbData.level + '_' + onbData.goal + '_' + onbData.focus;
                 }
             }
             const plan = onbEditPlan;
@@ -6698,11 +6705,11 @@
         function isRoutineAllowedForTier(_days, _level) { return true; }
 
         // Wrapper with tier check + fallback. Returns { plan, downgraded: bool, reason: string }
-        function selectWorkoutPlan(daysCount, level, goal) {
+        function selectWorkoutPlan(daysCount, level, goal, focus) {
             let actualDays = daysCount, actualLevel = level, downgraded = false, reason = '';
             if (!canSelectDays(daysCount)) { actualDays = 3; downgraded = true; reason = 'days'; }
             if (!canSelectLevel(level)) { actualLevel = 'principiante'; downgraded = true; reason = reason ? 'both' : 'level'; }
-            const plan = getRoutinePlan(goal, actualDays, actualLevel);
+            const plan = getRoutinePlan(goal, actualDays, actualLevel, focus);
             return { plan, downgraded, reason, actualDays, actualLevel };
         }
 
@@ -6719,7 +6726,7 @@
         //  · Resistencia: el primer compuesto de cada día es fuerza pesada (Berryman 2018).
         // Los nombres de ejercicios son los mismos de siempre: el historial, los récords y
         // las traducciones dependen de ellos. test/routine-plan.test.mjs controla todo esto.
-        function getRoutinePlan(goal, days, level) {
+        function getRoutinePlan(goal, days, level, focus) {
             const lvl = level === 'principiante' ? 'beg' : level === 'intermedio' ? 'int' : 'adv';
             const isStr = goal === 'strength', isEnd = goal === 'endurance';
             const mainSets = lvl === 'beg' ? 3 : lvl === 'int' ? 4 : 5;
@@ -7031,8 +7038,93 @@
             }
 
             capVolume(plan, isoSet);
+
+            // PRIORIDAD MUSCULAR (opcional): más series para los músculos elegidos y menos
+            // para otros, dentro de los mismos topes. Cada músculo crece según sus series
+            // semanales, con rendimientos decrecientes (Pelland 2026), así que priorizar es
+            // mover volumen, no sumar horas. Los que ceden no bajan de 6 series (la dosis
+            // mínima efectiva es 4). Sirve igual para cualquier persona.
+            const fz = ROUTINE_FOCUS[focus];
+            if (fz) {
+                const MAJOR = ['chest', 'lats', 'shoulders', 'biceps', 'triceps', 'quads', 'hamstrings', 'glutes'];
+                const loadOf = (exs, m) => exs.reduce((a, e) => a + e.sets * ((muscleTargets(e.name).find(([mm]) => mm === m) || [])[1] || 0), 0);
+                const weekly = (m) => loadOf(plan.flatMap(d => d.exercises), m);
+                const isPrimary = (e, m) => muscleTargets(e.name).some(([mm, w]) => mm === m && w === 1);
+                // Sacar n series de un ejercicio: no toca músculos priorizados (ni de rebote,
+                // como los isquios en el hip thrust) y ningún músculo grande baja de 6.
+                const canTake = (e, n) => muscleTargets(e.name).every(([mm, w]) => !MAJOR.includes(mm) || (!fz.up.includes(mm) && weekly(mm) - n * w >= 6));
+                // Sumar n series: ningún músculo del ejercicio pasa los topes de la semana ni
+                // de la sesión (si no, capVolume las recortaría y el presupuesto se perdería).
+                const canGive = (d, name, n) => muscleTargets(name).every(([mm, w]) => mm === 'abs' || (weekly(mm) + n * w <= VOLUME_CAP_WEEK && loadOf(d.exercises, mm) + n * w <= VOLUME_CAP_SESSION));
+
+                // 1) Los que ceden: hasta 3 series cada uno, primero de los accesorios. Lo que
+                //    ceden más 1 serie por sesión es el presupuesto para los priorizados.
+                let budget = days;
+                fz.down.forEach(m => {
+                    let want = Math.min(3, Math.floor(weekly(m) - 6));
+                    while (want > 0) {
+                        const c = plan.flatMap(d => d.exercises.map((e, i) => ({ e, i })))
+                            .filter(x => x.e.sets > 2 && isPrimary(x.e, m) && canTake(x.e, 1))
+                            .sort((a, b) => (isoSet.has(b.e) ? 1 : 0) - (isoSet.has(a.e) ? 1 : 0) || b.i - a.i);
+                        if (!c.length) break;
+                        c[0].e.sets--; want--; budget++;
+                    }
+                    if (want <= 0) return;
+                    // Accesorios ya en 2 series (principiantes): se saca uno entero. Pecho,
+                    // dorsales, piernas y glúteos conservan sus días con ejercicio principal (la
+                    // frecuencia de 2 por semana); brazos y hombros ya reciben trabajo de los
+                    // presses y remos.
+                    const primDays = (skip) => plan.filter(d => d.exercises.some(o => o !== skip && isPrimary(o, m))).length;
+                    const freqOk = (e) => !['chest', 'lats', 'quads', 'hamstrings', 'glutes'].includes(m) || primDays(e) >= Math.min(2, primDays(null));
+                    for (const d of plan) {
+                        const i = d.exercises.findIndex(e => isoSet.has(e) && isPrimary(e, m) && canTake(e, e.sets) && freqOk(e));
+                        if (i >= 0) { budget += d.exercises[i].sets; d.exercises.splice(i, 1); break; }
+                    }
+                });
+                // 2) Los priorizados: de a 1 serie por músculo y por vuelta (reparto parejo), en
+                //    el ejercicio con menos series donde es el principal, hasta 5 por ejercicio.
+                const addSet = (m) => {
+                    const c = plan.flatMap(d => d.exercises.map((e, i) => ({ e, i, d })))
+                        .filter(x => x.e.sets < 5 && isPrimary(x.e, m) && canGive(x.d, x.e.name, 1));
+                    if (!c.length) return false;
+                    c.sort((a, b) => a.e.sets - b.e.sets || b.i - a.i);
+                    c[0].e.sets++;
+                    return true;
+                };
+                const add = lvl === 'beg' ? 3 : 4, got = {};
+                for (let r = 0; r < add && budget > 0; r++) for (const m of fz.up) {
+                    if (budget <= 0) break;
+                    if (addSet(m)) { got[m] = (got[m] || 0) + 1; budget--; }
+                }
+                // 3) Si a un priorizado no le entraron (ejercicios en 5 series o sesiones llenas),
+                //    un accesorio más, primero en los días que ya lo trabajan y si no en otro,
+                //    antes del bloque de core.
+                for (const m of fz.up) {
+                    const sets = Math.min(isoSets, add - (got[m] || 0), budget);
+                    if (sets < 2) continue;
+                    const cand = plan.slice().sort((a, b) => (loadOf(a.exercises, m) > 0 ? 0 : 1) - (loadOf(b.exercises, m) > 0 ? 0 : 1) || loadOf(a.exercises, m) - loadOf(b.exercises, m));
+                    for (const d of cand) {
+                        const name = FOCUS_EXTRA[m].find(n => !d.exercises.some(e => e.name === n) && canGive(d, n, sets));
+                        if (!name) continue;
+                        const at = d.exercises.findIndex(e => { const tg = muscleTargets(e.name); return tg.length === 1 && tg[0][0] === 'abs'; });
+                        d.exercises.splice(at < 0 ? d.exercises.length : at, 0, iso(name, { sets }));
+                        budget -= sets;
+                        break;
+                    }
+                }
+                capVolume(plan, isoSet);
+            }
             return plan;
         }
+        const ROUTINE_FOCUS = {
+            lower: { up: ['glutes', 'quads', 'hamstrings'], down: ['biceps', 'triceps', 'shoulders'] },
+            upper: { up: ['chest', 'lats', 'shoulders', 'biceps', 'triceps'], down: ['quads', 'hamstrings', 'glutes'] }
+        };
+        const FOCUS_EXTRA = {
+            glutes: ['Hip Thrust', 'Abductor en Máquina'], quads: ['Extensión Cuádriceps', 'Prensa Piernas'], hamstrings: ['Curl Femoral'],
+            chest: ['Aperturas Pec Deck', 'Cruces Polea'], lats: ['Jalón Polea', 'Remo Polea Baja'], shoulders: ['Elevaciones Laterales'],
+            biceps: ['Curl Martillo', 'Curl Bíceps'], triceps: ['Pushdown Tríceps', 'Extensión Overhead']
+        };
 
         // Tope inicial de volumen: como mucho 22 series fraccionales por músculo y semana
         // (los rendimientos decrecen desde ~18-20 y la respuesta individual varía mucho;
@@ -7080,8 +7172,8 @@
                 name: onbData.name, age: parseInt(onbData.age), weight: parseFloat(onbData.weight),
                 height: parseInt(onbData.height), sex: onbData.sex, level: onbData.level,
                 goal: onbData.goal, days: onbData.days, wantsNutrition: onbData.wantsNutrition, created: todayStr(),
-                country: onbData.country || '',
-                routinePlan: onbEditPlan || getRoutinePlan(onbData.goal, onbData.days, onbData.level),
+                country: onbData.country || '', focus: onbData.focus || 'balanced',
+                routinePlan: onbEditPlan || getRoutinePlan(onbData.goal, onbData.days, onbData.level, onbData.focus),
                 routinePlanGen: ROUTINE_GEN
             };
             // Stamp the plan hash so regenerateRoutineIfNeeded() treats the (possibly
@@ -7507,6 +7599,13 @@
                 why.appendChild(h('div', { className: 'rt-edu-title' }, t('rt_why_title')));
                 why.appendChild(h('div', { className: 'rt-edu-body' }, getRoutineRationale(u.goal, u.days, u.level)));
                 grid.appendChild(why);
+
+                // Prioridad muscular (wide): elegir dónde poner más series
+                const foc = h('div', { className: 'rt-edu-card wide' });
+                foc.appendChild(h('div', { className: 'rt-edu-title' }, t('focus_title')));
+                foc.appendChild(h('div', { className: 'rt-edu-body', style: { marginBottom: '8px' } }, t(ROUTINE_FOCUS[u.focus] ? 'focus_rat_' + u.focus : 'focus_rat_balanced')));
+                foc.appendChild(focusPills(ROUTINE_FOCUS[u.focus] ? u.focus : 'balanced', applyRoutineFocus));
+                grid.appendChild(foc);
 
                 // Progress (wide)
                 const prog = h('div', { className: 'rt-edu-card wide' });
@@ -8639,7 +8738,7 @@
             const u = state.user; if (!u) return;
             if (routineHasData(state.routineSession)) { flash(t('rup_busy'), 'var(--orange)'); return; }
             u.routinePlanPrev = { plan: u.routinePlan, gen: u.routinePlanGen || 1, date: todayStr() };
-            u.routinePlan = selectWorkoutPlan(u.days, u.level, u.goal).plan;
+            u.routinePlan = selectWorkoutPlan(u.days, u.level, u.goal, u.focus).plan;
             u.routinePlanGen = ROUTINE_GEN;
             u.routinePlanHash = routineInputHash(u);
             saveUser(); resetRoutineView();
@@ -8664,7 +8763,7 @@
         }
         function openRoutineUpgradePreview() {
             const u = state.user; if (!u) return;
-            const next = selectWorkoutPlan(u.days, u.level, u.goal).plan;
+            const next = selectWorkoutPlan(u.days, u.level, u.goal, u.focus).plan;
             const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
             const card = h('div', { className: 'rup-sheet' });
             card.appendChild(h('p', { className: 'label' }, ico('star'), t('rup_preview_title')));
@@ -8681,6 +8780,28 @@
             ov.appendChild(card);
             document.body.appendChild(ov);
         }
+        // ── Prioridad muscular ──
+        function focusPills(current, onPick) {
+            const row = h('div', { className: 'focus-pills' });
+            ['balanced', 'lower', 'upper'].forEach(k => row.appendChild(h('button', {
+                className: 'focus-pill' + (current === k ? ' sel' : ''),
+                onclick: () => { if (current !== k) onPick(k); }
+            }, t('focus_' + k))));
+            return row;
+        }
+        function applyRoutineFocus(k) {
+            const u = state.user; if (!u) return;
+            if (routineHasData(state.routineSession)) { flash(t('rup_busy'), 'var(--orange)'); return; }
+            if (!confirm(t('focus_warn'))) return;
+            u.routinePlanPrev = { plan: u.routinePlan, gen: u.routinePlanGen || 1, date: todayStr(), focus: u.focus || 'balanced' };
+            u.focus = k;
+            u.routinePlan = selectWorkoutPlan(u.days, u.level, u.goal, k).plan;
+            u.routinePlanGen = ROUTINE_GEN;
+            u.routinePlanHash = routineInputHash(u);
+            saveUser(); resetRoutineView();
+            flash(t('focus_done').replace('{name}', t('focus_' + k)));
+            renderRoutines();
+        }
         function routineUpgradeCard() {
             const u = state.user; if (!u || !u.routinePlan) return null;
             // Después de cambiar: volver a la anterior durante 14 días
@@ -8691,6 +8812,8 @@
                     if (routineHasData(state.routineSession)) { flash(t('rup_busy'), 'var(--orange)'); return; }
                     u.routinePlan = u.routinePlanPrev.plan;
                     u.routinePlanGen = u.routinePlanPrev.gen || 1;
+                    if (u.routinePlanPrev.focus) u.focus = u.routinePlanPrev.focus;
+                    u.routinePlanHash = routineInputHash(u);
                     u.routineUpgradeDismissed = ROUTINE_GEN;
                     delete u.routinePlanPrev;
                     saveUser(); resetRoutineView();
@@ -8700,7 +8823,7 @@
                 return c;
             }
             if (planIsCurrentGen(u) || u.routineUpgradeDismissed === ROUTINE_GEN) return null;
-            const next = selectWorkoutPlan(u.days, u.level, u.goal).plan;
+            const next = selectWorkoutPlan(u.days, u.level, u.goal, u.focus).plan;
             const c = h('div', { className: 'card fade-in perf-card rup-card' });
             c.appendChild(h('p', { className: 'label' }, ico('star'), t('rup_title')));
             c.appendChild(h('p', { className: 'perf-body' }, t('rup_body')));
