@@ -2226,7 +2226,8 @@
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📋</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_routines">Rutinas ilimitadas</b><span data-i18n="upgrade_feat_routines_d">Creá tantas rutinas personalizadas como quieras</span></div></div>
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📊</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_stats">Estadísticas completas</b><span data-i18n="upgrade_feat_stats_d">Mensual, trimestral y anual</span></div></div>
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">🌎</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_lang">Todos los idiomas</b><span data-i18n="upgrade_feat_lang_d">Español, English y Português</span></div></div>
-                <div class="upgrade-feature"><div class="upgrade-feature-icon">📷</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_scanner">Escáner de ejercicios</b><span data-i18n="upgrade_feat_scanner_d">Identificá ejercicios con la cámara (próximamente)</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">📈</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_perf">Ajuste por rendimiento</b><span data-i18n="upgrade_feat_perf_d">Semana de descarga y volumen según tu progreso</span></div></div>
+                <div class="upgrade-feature"><div class="upgrade-feature-icon">📷</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_scanner">Escáner de alimentos</b><span data-i18n="upgrade_feat_scanner_d">Código de barras o foto de la etiqueta o del plato, con IA</span></div></div>
             </div>
             <button class="upgrade-cta" onclick="activatePremium()" data-i18n="upgrade_cta">⚡ ACTIVAR PREMIUM</button>
             <button class="upgrade-cancel" onclick="closeUpgradeModal()" data-i18n="upgrade_cancel">Ahora no</button>
@@ -2423,7 +2424,7 @@
                 upgrade_feat_routines: "Rutinas ilimitadas", upgrade_feat_routines_d: "Creá tantas rutinas personalizadas como quieras",
                 upgrade_feat_stats: "Estadísticas completas", upgrade_feat_stats_d: "Mensual, trimestral y anual",
                 upgrade_feat_lang: "Todos los idiomas", upgrade_feat_lang_d: "Español, English y Português",
-                upgrade_feat_scanner: "Escáner de ejercicios", upgrade_feat_scanner_d: "Identificá ejercicios con la cámara (próximamente)",
+                upgrade_feat_scanner: "Escáner de alimentos", upgrade_feat_scanner_d: "Código de barras o foto de la etiqueta o del plato, con IA", upgrade_feat_perf: "Ajuste por rendimiento", upgrade_feat_perf_d: "Semana de descarga y volumen según tu progreso", perf_btn_pro: "👑 Ver Premium", perf_pro_fat: "Con Premium, la descarga se aplica sola a tu rutina con un toque y, si la fatiga se repite, te ajusta el volumen.", perf_pro_up: "Con Premium, las series se suman solas a tu rutina.", perf_upgrade_sub: "Ajuste por rendimiento: la app detecta la fatiga en tu registro, te arma la semana de descarga y suma o saca series según cómo progresás.",
                 upgrade_locked_routine: "Para crear rutinas personalizadas necesitás Premium.",
                 upgrade_locked_stats: "Las estadísticas {period} son una función Premium.",
                 upgrade_locked_lang: "Português está disponible en Premium.",
@@ -2865,7 +2866,7 @@
                 upgrade_feat_routines: "Unlimited routines", upgrade_feat_routines_d: "Create as many custom routines as you want",
                 upgrade_feat_stats: "Full statistics", upgrade_feat_stats_d: "Monthly, quarterly and yearly",
                 upgrade_feat_lang: "All languages", upgrade_feat_lang_d: "Español, English & Português",
-                upgrade_feat_scanner: "Exercise scanner", upgrade_feat_scanner_d: "Identify exercises with your camera (coming soon)",
+                upgrade_feat_scanner: "Food scanner", upgrade_feat_scanner_d: "Barcode or a photo of the label or plate, with AI", upgrade_feat_perf: "Performance adjustment", upgrade_feat_perf_d: "Deload week and volume based on your progress", perf_btn_pro: "👑 See Premium", perf_pro_fat: "With Premium, the deload is applied to your routine in one tap and, if the fatigue comes back, your volume is adjusted.", perf_pro_up: "With Premium, the sets are added to your routine automatically.", perf_upgrade_sub: "Performance adjustment: the app spots fatigue in your log, sets up your deload week and adds or removes sets based on how you progress.",
                 upgrade_locked_routine: "Creating custom routines requires Premium.",
                 upgrade_locked_stats: "{period} statistics is a Premium feature.",
                 upgrade_locked_lang: "Português is available in Premium.",
@@ -3308,7 +3309,7 @@
                 upgrade_feat_routines: "Rotinas ilimitadas", upgrade_feat_routines_d: "Crie quantas rotinas personalizadas quiser",
                 upgrade_feat_stats: "Estatísticas completas", upgrade_feat_stats_d: "Mensal, trimestral e anual",
                 upgrade_feat_lang: "Todos os idiomas", upgrade_feat_lang_d: "Español, English e Português",
-                upgrade_feat_scanner: "Scanner de exercícios", upgrade_feat_scanner_d: "Identifique exercícios com a câmera (em breve)",
+                upgrade_feat_scanner: "Scanner de alimentos", upgrade_feat_scanner_d: "Código de barras ou foto do rótulo ou do prato, com IA", upgrade_feat_perf: "Ajuste por desempenho", upgrade_feat_perf_d: "Semana de descarga e volume conforme seu progresso", perf_btn_pro: "👑 Ver Premium", perf_pro_fat: "Com o Premium, a semana de descarga é aplicada à sua rotina com um toque e, se a fadiga se repetir, o volume é ajustado.", perf_pro_up: "Com o Premium, as séries são somadas à sua rotina automaticamente.", perf_upgrade_sub: "Ajuste por desempenho: o app detecta a fadiga no seu registro, monta sua semana de descarga e soma ou tira séries conforme você progride.",
                 upgrade_locked_routine: "Para criar rotinas personalizadas você precisa do Premium.",
                 upgrade_locked_stats: "As estatísticas {period} são uma função Premium.",
                 upgrade_locked_lang: "Português está disponível no Premium.",
@@ -5102,7 +5103,8 @@
                 scanner: t('upgrade_feat_scanner_d'),
                 pt: t('upgrade_locked_lang'),
                 coach: t('upgrade_coach_sub'),
-                progress: t('pg_teaser')
+                progress: t('pg_teaser'),
+                perf: t('perf_upgrade_sub')
             };
             if (sub) sub.textContent = subs[feature] || t('upgrade_sub');
             modal.classList.add('show');
@@ -9037,6 +9039,16 @@
             const names = (list) => list.slice(0, 3).map(trD).join(', ');
             // Los cambios de volumen van sobre la rutina generada, y solo si es la que entrena
             const onPlan = !!u.routinePlan && (state.activeRoutinePlanIdx || 0) === 0;
+            // Mixto (nov 2026): el aviso y la recomendación son para todos; aplicar la
+            // descarga y los cambios de volumen a la rutina es Premium. La descarga ya
+            // empezada sigue para todos (arriba).
+            const pro = isPremium();
+            const proRow = (later) => {
+                const row = h('div', { className: 'perf-actions' });
+                row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => showUpgradeModal('perf') }, t('perf_btn_pro')));
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: later }, t('perf_btn_later')));
+                return row;
+            };
             if (sig.fatigued.length >= 2) {
                 const muscles = [...new Set(sig.fatigued.flatMap(prim))];
                 const again = onPlan && muscles.length > 0 && !!p.lastDeload && daysSince(p.lastDeload) <= 42;
@@ -9045,6 +9057,11 @@
                 c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_body').replace('{list}', names(sig.fatigued))));
                 c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_offer')));
                 if (again) c.appendChild(h('p', { className: 'perf-body' }, t('perf_fat_again').replace('{muscles}', muscles.map(m => t('mus_' + m)).join(', '))));
+                if (!pro) {
+                    c.appendChild(h('p', { className: 'perf-body perf-pro' }, t('perf_pro_fat')));
+                    c.appendChild(proRow(() => { perfPatch({ snoozeUntil: perfAddDays(today, 6) }); renderHome(); }));
+                    return c;
+                }
                 const start = (cut) => {
                     if (cut) muscles.forEach(m => adjustMuscleVolume(u.routinePlan, m, -2));
                     perfPatch({ deloadUntil: perfAddDays(today, 6), lastDeload: today });
@@ -9069,6 +9086,11 @@
                 const c = card('progress');
                 c.appendChild(h('p', { className: 'label' }, ico('chart'), t('perf_up_title')));
                 c.appendChild(h('p', { className: 'perf-body' }, t('perf_up_body').replace('{list}', names(sig.progressing)).replace('{muscle}', t('mus_' + m)).replace('{sets}', String(Math.round(vol[m] || 0)))));
+                if (!pro) {
+                    c.appendChild(h('p', { className: 'perf-body perf-pro' }, t('perf_pro_up')));
+                    c.appendChild(proRow(() => { perfPatch({ upSnoozeUntil: perfAddDays(today, 27) }); renderHome(); }));
+                    return c;
+                }
                 const row = h('div', { className: 'perf-actions' });
                 row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => {
                     const n = adjustMuscleVolume(u.routinePlan, m, 2, 28);
