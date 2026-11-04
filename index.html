@@ -978,6 +978,25 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 22px var(--accent-glow);
         }
+        button.install-cta { border: 0; cursor: pointer; font-family: inherit; }
+        .install-ctas { display: flex; gap: 10px; flex-wrap: wrap; }
+        .install-cta-ghost { border: 1px solid var(--border); color: var(--text); }
+        .install-cta-ghost:hover { border-color: var(--text2); }
+        button.btn { font-family: inherit; cursor: pointer; }
+        .install-help {
+            position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.6);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .install-help[hidden] { display: none; }
+        .install-help-sheet {
+            width: 100%; max-width: 420px; background: var(--sf1); border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px;
+        }
+        .install-help-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+        .install-help-sheet p { font-size: 15px; color: var(--text2); line-height: 1.55; margin-bottom: 12px; }
+        .install-help-sheet p b { color: var(--text); }
+        .install-help-sheet .install-help-note { font-size: 13px; color: var(--text3); }
+        .install-help-sheet .btn { width: 100%; margin-top: 4px; }
         .install-cta-disabled {
             background: var(--sf2); color: var(--text3);
             border: 1px solid var(--border);
@@ -1256,6 +1275,7 @@
                     <div class="hero-ctas reveal reveal-delay-3">
                         <a href="BERSERKERMOD.html" class="btn btn-primary" data-i18n>Empezar gratis →</a>
                         <a href="#features" class="btn btn-ghost" data-i18n>Ver cómo funciona</a>
+                        <button type="button" class="btn btn-ghost js-install" hidden data-i18n>📲 Instalar app</button>
                     </div>
                     <div class="hero-meta reveal reveal-delay-4">
                         <span class="hero-meta-item"><span class="hero-meta-dot"></span> <span data-i18n>Funciona offline</span></span>
@@ -1624,8 +1644,11 @@
                     <div class="install-icon icon-tile"><svg class="i"><use href="#i-globe"/></svg></div>
                     <div class="install-title" data-i18n>Web App</div>
                     <div class="install-status live" data-i18n>● Disponible ahora</div>
-                    <p class="install-desc" data-i18n>Abrila en tu navegador y tocá "Agregar a pantalla de inicio". Queda como una app más, a pantalla completa y con el recordatorio diario. Funciona en iPhone y Android.</p>
-                    <a href="BERSERKERMOD.html" class="install-cta install-cta-primary" data-i18n>Abrir ahora →</a>
+                    <p class="install-desc" data-i18n>Tocá «Instalar app» y queda en tu pantalla de inicio como cualquier app: a pantalla completa, sin la barra del navegador y con el recordatorio diario. Funciona en Android y iPhone.</p>
+                    <div class="install-ctas">
+                        <button type="button" class="install-cta install-cta-primary js-install" data-i18n>📲 Instalar app</button>
+                        <a href="BERSERKERMOD.html" class="install-cta install-cta-ghost" data-i18n>Abrir en el navegador →</a>
+                    </div>
                 </div>
                 <div class="install-card reveal reveal-delay-1">
                     <div class="install-icon icon-tile"><svg class="i"><use href="#i-play"/></svg></div>
@@ -1748,6 +1771,16 @@
     <!-- ============================================
          MOBILE STICKY BAR
          ============================================ -->
+    <div class="install-help" id="install-help" hidden role="dialog" aria-modal="true" aria-labelledby="install-help-title">
+        <div class="install-help-sheet">
+            <h3 class="install-help-title" id="install-help-title" data-i18n>Instalá BERSERKERMOD</h3>
+            <p data-plat="android" data-i18n>En <b>Chrome</b>, tocá el menú <b>⋮</b> (arriba a la derecha) y elegí <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>. En <b>Samsung Internet</b>: menú <b>☰</b> → <b>Agregar página a</b> → <b>Pantalla de inicio</b>.</p>
+            <p data-plat="ios" data-i18n>Abrila en <b>Safari</b>, tocá <b>Compartir</b> (el cuadrado con la flecha hacia arriba) y elegí <b>Agregar a inicio</b>. Ojo: en iPhone la app instalada no comparte los datos con Safari; si ya cargaste entrenamientos, pasalos con <b>Perfil → Exportar Datos</b> o la copia en Drive.</p>
+            <p data-plat="desktop" data-i18n>En <b>Chrome</b> o <b>Edge</b>, tocá el ícono de instalar a la derecha de la barra de direcciones, o el menú → <b>Instalar BERSERKERMOD</b>.</p>
+            <p class="install-help-note" data-i18n>Si ya la instalaste, buscala en tu pantalla de inicio.</p>
+            <button type="button" class="btn btn-primary install-help-close" data-i18n>Entendido</button>
+        </div>
+    </div>
     <div class="sticky-bar" id="sticky-bar" aria-hidden="true">
         <a href="BERSERKERMOD.html" class="sticky-bar-btn" data-i18n>Abrir BERSERKERMOD →</a>
     </div>
@@ -1881,8 +1914,6 @@
   "Usala directo desde el navegador hoy, o esperá las apps en las tiendas. La experiencia y tus datos son los mismos.": ["Use it straight from your browser today, or wait for the store apps. The experience and your data are the same.", "Use direto no navegador hoje ou espere os apps nas lojas. A experiência e seus dados são os mesmos."],
   "Web App": ["Web App", "Web App"],
   "● Disponible ahora": ["● Available now", "● Disponível agora"],
-  "Abrila en tu navegador y tocá \"Agregar a pantalla de inicio\". Queda como una app más, a pantalla completa y con el recordatorio diario. Funciona en iPhone y Android.": ["Open it in your browser and tap \"Add to Home Screen\". It sits there like any other app, full screen and with the daily reminder. Works on iPhone and Android.", "Abra no navegador e toque em \"Adicionar à Tela de Início\". Fica como mais um app, em tela cheia e com o lembrete diário. Funciona no iPhone e no Android."],
-  "Abrir ahora →": ["Open now →", "Abrir agora →"],
   "Google Play": ["Google Play", "Google Play"],
   "Próximamente": ["Coming soon", "Em breve"],
   "La app de Android desde la tienda. Si ya usás la web, pasás tu historial con la copia de Drive o el archivo de backup.": ["The Android app from the store. If you already use the web version, bring your history over with the Drive backup or the backup file.", "O app de Android pela loja. Se você já usa a versão web, leva seu histórico com o backup do Drive ou o arquivo de backup."],
@@ -1964,7 +1995,16 @@
   "¿Sirve si soy mujer?": ["Does it work for women?", "Serve para mulheres?"],
   "Sí. Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que los principios son los mismos. Podés priorizar <b>glúteos y piernas<\/b> y activar el <b>registro del período<\/b>, que te avisa si deja de venir. La rutina no cambia según la fase del ciclo: el mejor estudio hasta hoy, de 2026, no encontró ventaja en hacerlo. Todo esto es gratis.": ["Yes. Women gain muscle and strength at the same rate as men relative to where they start, so the principles are the same. You can prioritize <b>glutes and legs<\/b> and turn on the <b>period log<\/b>, which warns you if your period stops coming. Your routine does not change by cycle phase: the best study to date, from 2026, found no advantage in doing so. All of this is free.", "Sim. As mulheres ganham músculo e força na mesma proporção que os homens, então os princípios são os mesmos. Você pode priorizar <b>glúteos e pernas<\/b> e ativar o <b>registro da menstruação<\/b>, que avisa se ela parar de vir. A rotina não muda conforme a fase do ciclo: o melhor estudo até hoje, de 2026, não encontrou vantagem nisso. Tudo isso é grátis."],
   "Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM, te avisa cuando un ejercicio se estanca y cuando tu rendimiento baja. Semana de descarga y volumen ajustados solos&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Complete the rep range and it suggests today's load, filled in with one tap. It spots records, estimates your 1RM, and warns you when an exercise stalls and when your performance drops. Deload week and volume adjusted for you&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Se você completou a faixa de repetições, ele sugere a carga de hoje e você preenche com um toque. Detecta recordes, estima seu 1RM e avisa quando um exercício estagna e quando seu desempenho cai. Semana de descarga e volume ajustados sozinhos&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
-  "Ajuste por rendimiento: detecta la fatiga y te arma la semana de descarga": ["Performance adjustment: spots fatigue and sets up your deload week", "Ajuste por desempenho: detecta a fadiga e monta sua semana de descarga"]
+  "Ajuste por rendimiento: detecta la fatiga y te arma la semana de descarga": ["Performance adjustment: spots fatigue and sets up your deload week", "Ajuste por desempenho: detecta a fadiga e monta sua semana de descarga"],
+  "📲 Instalar app": ["📲 Install app", "📲 Instalar app"],
+  "Tocá «Instalar app» y queda en tu pantalla de inicio como cualquier app: a pantalla completa, sin la barra del navegador y con el recordatorio diario. Funciona en Android y iPhone.": ["Tap “Install app” and it sits on your home screen like any other app: full screen, without the browser bar and with the daily reminder. Works on Android and iPhone.", "Toque em «Instalar app» e ele fica na sua tela inicial como qualquer app: em tela cheia, sem a barra do navegador e com o lembrete diário. Funciona no Android e no iPhone."],
+  "Abrir en el navegador →": ["Open in the browser →", "Abrir no navegador →"],
+  "Instalá BERSERKERMOD": ["Install BERSERKERMOD", "Instale o BERSERKERMOD"],
+  "En <b>Chrome<\/b>, tocá el menú <b>⋮<\/b> (arriba a la derecha) y elegí <b>Instalar app<\/b> o <b>Agregar a la pantalla principal<\/b>. En <b>Samsung Internet<\/b>: menú <b>☰<\/b> → <b>Agregar página a<\/b> → <b>Pantalla de inicio<\/b>.": ["In <b>Chrome<\/b>, tap the <b>⋮<\/b> menu (top right) and choose <b>Install app<\/b> or <b>Add to Home screen<\/b>. In <b>Samsung Internet<\/b>: <b>☰<\/b> menu → <b>Add page to<\/b> → <b>Home screen<\/b>.", "No <b>Chrome<\/b>, toque no menu <b>⋮<\/b> (no canto superior direito) e escolha <b>Instalar app<\/b> ou <b>Adicionar à tela inicial<\/b>. No <b>Samsung Internet<\/b>: menu <b>☰<\/b> → <b>Adicionar página a<\/b> → <b>Tela inicial<\/b>."],
+  "Abrila en <b>Safari<\/b>, tocá <b>Compartir<\/b> (el cuadrado con la flecha hacia arriba) y elegí <b>Agregar a inicio<\/b>. Ojo: en iPhone la app instalada no comparte los datos con Safari; si ya cargaste entrenamientos, pasalos con <b>Perfil → Exportar Datos<\/b> o la copia en Drive.": ["Open it in <b>Safari<\/b>, tap <b>Share<\/b> (the square with the up arrow) and choose <b>Add to Home Screen<\/b>. Note: on iPhone the installed app does not share data with Safari; if you already logged workouts, move them with <b>Profile → Export Data<\/b> or the Drive backup.", "Abra no <b>Safari<\/b>, toque em <b>Compartilhar<\/b> (o quadrado com a seta para cima) e escolha <b>Adicionar à Tela de Início<\/b>. Atenção: no iPhone o app instalado não compartilha os dados com o Safari; se você já registrou treinos, passe-os com <b>Perfil → Exportar Dados<\/b> ou o backup no Drive."],
+  "En <b>Chrome<\/b> o <b>Edge<\/b>, tocá el ícono de instalar a la derecha de la barra de direcciones, o el menú → <b>Instalar BERSERKERMOD<\/b>.": ["In <b>Chrome<\/b> or <b>Edge<\/b>, click the install icon on the right of the address bar, or the menu → <b>Install BERSERKERMOD<\/b>.", "No <b>Chrome<\/b> ou no <b>Edge<\/b>, clique no ícone de instalar à direita da barra de endereços, ou no menu → <b>Instalar BERSERKERMOD<\/b>."],
+  "Si ya la instalaste, buscala en tu pantalla de inicio.": ["If you already installed it, look for it on your home screen.", "Se você já instalou, procure na sua tela inicial."],
+  "Entendido": ["Got it", "Entendi"]
 }
     </script>
     <script>
@@ -2294,6 +2334,48 @@
         var again = false;
         try { again = sessionStorage.getItem('bm-noview') === '1'; sessionStorage.removeItem('bm-noview'); } catch (e) { }
         if (!again) bmTrack('view', window.__bmLang || 'es');
+    } catch (e) { }
+})();
+</script>
+<script>
+/* Instalar la app (2026-11-04). Android/Chrome avisa que se puede instalar con
+   beforeinstallprompt: lo guardamos y el botón abre el instalador. Donde no hay
+   ese evento (iPhone, Firefox, ya instalada) mostramos los pasos del teléfono. */
+(function () {
+    try {
+        var evt = null, help = document.getElementById('install-help');
+        var ua = navigator.userAgent;
+        var plat = (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) ? 'ios' : /Android/i.test(ua) ? 'android' : 'desktop';
+        var standalone = function () { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; };
+        var track = function (n) { try { if (window.bmTrack) window.bmTrack('cta', n); } catch (e) { } };
+        var sync = function () { var hide = standalone(); document.querySelectorAll('.js-install').forEach(function (b) { b.hidden = hide; }); };
+        window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); evt = e; sync(); });
+        window.addEventListener('appinstalled', function () { evt = null; track('install_ok'); });
+        var showHelp = function () {
+            help.querySelectorAll('[data-plat]').forEach(function (p) { p.hidden = p.getAttribute('data-plat') !== plat; });
+            help.hidden = false;
+            track('install_help_' + plat);
+        };
+        help.addEventListener('click', function (e) { if (e.target === help || (e.target.closest && e.target.closest('.install-help-close'))) help.hidden = true; });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') help.hidden = true; });
+        document.addEventListener('click', function (e) {
+            var b = e.target.closest && e.target.closest('.js-install');
+            if (!b) return;
+            if (evt) {
+                var p = evt; evt = null;
+                p.prompt();
+                track('install_prompt');
+                if (p.userChoice) p.userChoice.catch(function () { });
+                return;
+            }
+            showHelp();
+        });
+        sync();
+        // El service worker (el mismo de la app) hace que Chrome ofrezca instalar desde
+        // la primera visita y que la app abra al instante después.
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+            window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+        }
     } catch (e) { }
 })();
 </script>
