@@ -1733,6 +1733,12 @@
         .rup-card .rup-warn { font-size: 12px; color: var(--text3); }
         .focus-pills { display: flex; flex-wrap: wrap; gap: 6px; }
         .focus-pill { padding: 7px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text2); }
+        .plan-edit-label { font-size: 11px; color: var(--text3); font-weight: 800; margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+        .cyc-warn { font-size: 13px; line-height: 1.5; color: var(--orange); border: 1px solid rgba(253,203,110,.35); background: rgba(253,203,110,.08); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+        .cyc-note { font-size: 12px; color: var(--text3); line-height: 1.5; margin-top: 8px; }
+        .cyc-check { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--text2); line-height: 1.45; margin-top: 12px; cursor: pointer; }
+        .cyc-check input { margin-top: 2px; flex-shrink: 0; }
+        .cyc-date { background: var(--sf2, transparent); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; font-size: 13px; min-width: 0; flex: 1 1 130px; }
         .focus-pill.sel { border-color: var(--accent); background: rgba(0,212,170,.12); color: var(--accent); }
         .rup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
         .rup-sheet { background: var(--sf1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; max-height: 85vh; overflow-y: auto; }
@@ -2244,8 +2250,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-30"></script>
-    <script src="core/i18n-data.js?v=2-30"></script>
+    <script src="core/calc.js?v=2-31"></script>
+    <script src="core/i18n-data.js?v=2-31"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2402,7 +2408,7 @@
                 watch_max_hr_saved: "HR máx actualizado",
                 hr_zone_0: "Reposo", hr_zone_1: "Recuperación", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Umbral", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino", onb_sex_hint: "Se usa solo para calcular tus calorías.", onb_focus: "PRIORIDAD (OPCIONAL)", focus_title: "🎯 Prioridad muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos y piernas", focus_upper: "Torso y brazos", focus_rat_balanced: "Todos los grupos con un volumen parejo. Si querés destacar una zona, elegí una prioridad: le damos más series y se las sacamos a otra, sin alargar las sesiones.", focus_rat_lower: "Prioridad en glúteos y piernas: más series semanales para glúteos, cuádriceps e isquios. Brazos y hombros quedan con menos, sin bajar del mínimo que los mantiene. Cada músculo crece según las series que recibe en la semana.", focus_rat_upper: "Prioridad en torso y brazos: más series semanales para pecho, espalda, hombros y brazos. Las piernas quedan con menos, sin bajar del mínimo que las mantiene. Cada músculo crece según las series que recibe en la semana.", focus_warn: "Tu rutina se rehace con esta prioridad. Si la habías editado, esos cambios se reemplazan. Podés volver a la anterior durante 14 días.", focus_done: "Rutina actualizada: {name}", prof_sex_changed: "Listo: recalculamos tus calorías",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Femenino", onb_sex_hint: "Se usa solo para calcular tus calorías.", onb_focus: "PRIORIDAD (OPCIONAL)", prof_plan_title: "TU PLAN DE ENTRENAMIENTO", prof_goal: "Objetivo", prof_level: "Nivel", prof_focus: "Prioridad", plan_edit_btn: "Cambiar objetivo, días o nivel", plan_edit_title: "CAMBIAR TU PLAN", plan_edit_warn: "Tu rutina se rehace con estos datos y, si tenés plan de nutrición, se recalculan las calorías. Si habías editado la rutina, esos cambios se reemplazan: podés volver a la anterior desde Rutinas durante 14 días.", plan_edit_save: "Guardar cambios", plan_edit_done: "Plan actualizado", cyc_title: "REGISTRO DEL PERÍODO", cyc_intro: "Opcional. Anotá el día en que empieza tu período. No cambia tu entrenamiento (los estudios no encontraron ventaja en entrenar según la fase del ciclo): te avisa si el período deja de venir, algo que puede pasar si comés poco para todo lo que entrenás.", cyc_on_btn: "Activar registro", cyc_empty: "Todavía no anotaste ningún período.", cyc_last: "Último período: {date} · hace {n} días", cyc_avg: "Ciclo promedio: {avg} días · próximo, aprox.: {date}", cyc_today_btn: "Me vino hoy", cyc_add_btn: "Anotar fecha", cyc_saved: "Anotado", cyc_del: "Borrar esta fecha", cyc_nobleed: "Uso un anticonceptivo que suele frenar el período (DIU hormonal, pastilla continua o implante)", cyc_edu: "No hace falta cambiar el entrenamiento según la fase: entrená según cómo te sientas. Es normal tener más hambre los días previos al período.", cyc_private: "Queda solo en tu teléfono y en tus copias de seguridad. Nunca llega a nuestro servidor.", cyc_off_btn: "Desactivar y borrar las fechas", cyc_off_confirm: "¿Desactivar el registro? Se borran las fechas anotadas.", cyc_long: "Tu último ciclo duró {n} días. Si los ciclos de más de 35 días se repiten, consultalo con tu médica o médico.", cyc_missing: "Hace {n} días que no anotás un período. Si ya te vino, anotalo. Si no te vino y no estás embarazada, amamantando ni en la menopausia, consultá con tu médica o médico: que falte el período puede ser señal de que comés poco para todo lo que entrenás.", cyc_missing_fat: "Como tu objetivo es perder grasa, mientras lo consultás conviene comer tu mantenimiento: en Perfil → Tu plan podés pasar a Recomposición, que no tiene déficit.", cyc_alert_title: "REVISÁ TU CICLO", cyc_alert_go: "Anotar o revisar", focus_title: "🎯 Prioridad muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos y piernas", focus_upper: "Torso y brazos", focus_rat_balanced: "Todos los grupos con un volumen parejo. Si querés destacar una zona, elegí una prioridad: le damos más series y se las sacamos a otra, sin alargar las sesiones.", focus_rat_lower: "Prioridad en glúteos y piernas: más series semanales para glúteos, cuádriceps e isquios. Brazos y hombros quedan con menos, sin bajar del mínimo que los mantiene. Cada músculo crece según las series que recibe en la semana.", focus_rat_upper: "Prioridad en torso y brazos: más series semanales para pecho, espalda, hombros y brazos. Las piernas quedan con menos, sin bajar del mínimo que las mantiene. Cada músculo crece según las series que recibe en la semana.", focus_warn: "Tu rutina se rehace con esta prioridad. Si la habías editado, esos cambios se reemplazan. Podés volver a la anterior durante 14 días.", focus_done: "Rutina actualizada: {name}", prof_sex_changed: "Listo: recalculamos tus calorías",
                 train_add_custom: "Agregar", train_custom_ph: "+ Ejercicio personalizado...",
                 stats_need_more: "Necesitás +2 sesiones para ver el gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Eliminar Sesión",
@@ -2844,7 +2850,7 @@
                 watch_max_hr_saved: "Max HR updated",
                 hr_zone_0: "Resting", hr_zone_1: "Recovery", hr_zone_2: "Aerobic base",
                 hr_zone_3: "Aerobic", hr_zone_4: "Threshold", hr_zone_5: "Max",
-                onb_sex: "SEX", onb_male: "Male", onb_female: "Female", onb_sex_hint: "Only used to calculate your calories.", onb_focus: "PRIORITY (OPTIONAL)", focus_title: "🎯 Muscle priority", focus_balanced: "Balanced", focus_lower: "Glutes and legs", focus_upper: "Upper body and arms", focus_rat_balanced: "Every muscle group gets even volume. If you want to bring up an area, pick a priority: we give it more sets and take them from another, without making sessions longer.", focus_rat_lower: "Glutes and legs priority: more weekly sets for glutes, quads and hamstrings. Arms and shoulders get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_rat_upper: "Upper body priority: more weekly sets for chest, back, shoulders and arms. Legs get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_warn: "Your routine will be rebuilt with this priority. If you edited it, those changes are replaced. You can go back to the previous one for 14 days.", focus_done: "Routine updated: {name}", prof_sex_changed: "Done: we recalculated your calories",
+                onb_sex: "SEX", onb_male: "Male", onb_female: "Female", onb_sex_hint: "Only used to calculate your calories.", onb_focus: "PRIORITY (OPTIONAL)", prof_plan_title: "YOUR TRAINING PLAN", prof_goal: "Goal", prof_level: "Level", prof_focus: "Priority", plan_edit_btn: "Change goal, days or level", plan_edit_title: "CHANGE YOUR PLAN", plan_edit_warn: "Your routine is rebuilt with these settings and, if you have a nutrition plan, your calories are recalculated. If you had edited the routine, those changes are replaced: you can go back to the previous one from Routines for 14 days.", plan_edit_save: "Save changes", plan_edit_done: "Plan updated", cyc_title: "PERIOD LOG", cyc_intro: "Optional. Log the day your period starts. It doesn't change your training (studies found no advantage in training by cycle phase): it warns you if your period stops coming, which can happen when you eat too little for how much you train.", cyc_on_btn: "Turn on period log", cyc_empty: "You haven't logged a period yet.", cyc_last: "Last period: {date} · {n} days ago", cyc_avg: "Average cycle: {avg} days · next, approx.: {date}", cyc_today_btn: "Started today", cyc_add_btn: "Log date", cyc_saved: "Logged", cyc_del: "Delete this date", cyc_nobleed: "I use a contraceptive that usually stops my period (hormonal IUD, continuous pill or implant)", cyc_edu: "There's no need to change your training by cycle phase: train by how you feel. It's normal to be hungrier in the days before your period.", cyc_private: "It stays only on your phone and in your backups. It never reaches our server.", cyc_off_btn: "Turn off and delete the dates", cyc_off_confirm: "Turn off the period log? Your logged dates will be deleted.", cyc_long: "Your last cycle lasted {n} days. If cycles over 35 days keep happening, check with your doctor.", cyc_missing: "You haven't logged a period in {n} days. If it already came, log it. If it didn't and you're not pregnant, breastfeeding or in menopause, see your doctor: a missing period can be a sign that you eat too little for how much you train.", cyc_missing_fat: "Since your goal is fat loss, eat at maintenance while you check: in Profile → Your plan you can switch to Recomposition, which has no deficit.", cyc_alert_title: "CHECK YOUR CYCLE", cyc_alert_go: "Log or review", focus_title: "🎯 Muscle priority", focus_balanced: "Balanced", focus_lower: "Glutes and legs", focus_upper: "Upper body and arms", focus_rat_balanced: "Every muscle group gets even volume. If you want to bring up an area, pick a priority: we give it more sets and take them from another, without making sessions longer.", focus_rat_lower: "Glutes and legs priority: more weekly sets for glutes, quads and hamstrings. Arms and shoulders get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_rat_upper: "Upper body priority: more weekly sets for chest, back, shoulders and arms. Legs get fewer, never below the minimum that maintains them. Each muscle grows with the sets it gets each week.", focus_warn: "Your routine will be rebuilt with this priority. If you edited it, those changes are replaced. You can go back to the previous one for 14 days.", focus_done: "Routine updated: {name}", prof_sex_changed: "Done: we recalculated your calories",
                 train_add_custom: "Add", train_custom_ph: "+ Custom exercise...",
                 stats_need_more: "Need +2 sessions to see the chart",
                 stats_edit_btn: "✏️ Edit", stats_del_btn: "Delete Session",
@@ -3287,7 +3293,7 @@
                 watch_max_hr_saved: "FC máx atualizada",
                 hr_zone_0: "Repouso", hr_zone_1: "Recuperação", hr_zone_2: "Base aeróbica",
                 hr_zone_3: "Aeróbico", hr_zone_4: "Limiar", hr_zone_5: "Máximo",
-                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino", onb_sex_hint: "Usado só para calcular suas calorias.", onb_focus: "PRIORIDADE (OPCIONAL)", focus_title: "🎯 Prioridade muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos e pernas", focus_upper: "Tronco e braços", focus_rat_balanced: "Todos os grupos com volume equilibrado. Se quiser destacar uma área, escolha uma prioridade: damos mais séries a ela e tiramos de outra, sem alongar os treinos.", focus_rat_lower: "Prioridade em glúteos e pernas: mais séries semanais para glúteos, quadríceps e posteriores. Braços e ombros ficam com menos, sem cair abaixo do mínimo que os mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_rat_upper: "Prioridade em tronco e braços: mais séries semanais para peito, costas, ombros e braços. As pernas ficam com menos, sem cair abaixo do mínimo que as mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_warn: "Sua rotina será refeita com essa prioridade. Se você a editou, essas mudanças serão substituídas. Dá para voltar à anterior durante 14 dias.", focus_done: "Rotina atualizada: {name}", prof_sex_changed: "Pronto: recalculamos suas calorias",
+                onb_sex: "SEXO", onb_male: "Masculino", onb_female: "Feminino", onb_sex_hint: "Usado só para calcular suas calorias.", onb_focus: "PRIORIDADE (OPCIONAL)", prof_plan_title: "SEU PLANO DE TREINO", prof_goal: "Objetivo", prof_level: "Nível", prof_focus: "Prioridade", plan_edit_btn: "Mudar objetivo, dias ou nível", plan_edit_title: "MUDAR SEU PLANO", plan_edit_warn: "Sua rotina é refeita com esses dados e, se você tem plano de nutrição, as calorias são recalculadas. Se você editou a rotina, essas mudanças serão substituídas: dá para voltar à anterior em Rotinas durante 14 dias.", plan_edit_save: "Salvar mudanças", plan_edit_done: "Plano atualizado", cyc_title: "REGISTRO DA MENSTRUAÇÃO", cyc_intro: "Opcional. Anote o dia em que sua menstruação começa. Não muda seu treino (os estudos não encontraram vantagem em treinar conforme a fase do ciclo): avisa se a menstruação parar de vir, o que pode acontecer quando você come pouco para o quanto treina.", cyc_on_btn: "Ativar registro", cyc_empty: "Você ainda não anotou nenhuma menstruação.", cyc_last: "Última menstruação: {date} · há {n} dias", cyc_avg: "Ciclo médio: {avg} dias · próxima, aprox.: {date}", cyc_today_btn: "Veio hoje", cyc_add_btn: "Anotar data", cyc_saved: "Anotado", cyc_del: "Apagar esta data", cyc_nobleed: "Uso um anticoncepcional que costuma interromper a menstruação (DIU hormonal, pílula contínua ou implante)", cyc_edu: "Não é preciso mudar o treino conforme a fase: treine conforme você se sente. É normal ter mais fome nos dias antes da menstruação.", cyc_private: "Fica só no seu celular e nos seus backups. Nunca chega ao nosso servidor.", cyc_off_btn: "Desativar e apagar as datas", cyc_off_confirm: "Desativar o registro? As datas anotadas serão apagadas.", cyc_long: "Seu último ciclo durou {n} dias. Se ciclos de mais de 35 dias se repetirem, consulte sua médica ou médico.", cyc_missing: "Faz {n} dias que você não anota uma menstruação. Se já veio, anote. Se não veio e você não está grávida, amamentando nem na menopausa, consulte sua médica ou médico: a falta da menstruação pode ser sinal de que você come pouco para o quanto treina.", cyc_missing_fat: "Como seu objetivo é perder gordura, coma na manutenção enquanto consulta: em Perfil → Seu plano você pode mudar para Recomposição, que não tem déficit.", cyc_alert_title: "CONFIRA SEU CICLO", cyc_alert_go: "Anotar ou conferir", focus_title: "🎯 Prioridade muscular", focus_balanced: "Equilibrado", focus_lower: "Glúteos e pernas", focus_upper: "Tronco e braços", focus_rat_balanced: "Todos os grupos com volume equilibrado. Se quiser destacar uma área, escolha uma prioridade: damos mais séries a ela e tiramos de outra, sem alongar os treinos.", focus_rat_lower: "Prioridade em glúteos e pernas: mais séries semanais para glúteos, quadríceps e posteriores. Braços e ombros ficam com menos, sem cair abaixo do mínimo que os mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_rat_upper: "Prioridade em tronco e braços: mais séries semanais para peito, costas, ombros e braços. As pernas ficam com menos, sem cair abaixo do mínimo que as mantém. Cada músculo cresce conforme as séries que recebe na semana.", focus_warn: "Sua rotina será refeita com essa prioridade. Se você a editou, essas mudanças serão substituídas. Dá para voltar à anterior durante 14 dias.", focus_done: "Rotina atualizada: {name}", prof_sex_changed: "Pronto: recalculamos suas calorias",
                 train_add_custom: "Adicionar", train_custom_ph: "+ Exercício personalizado...",
                 stats_need_more: "Precisa de +2 sessões para ver o gráfico",
                 stats_edit_btn: "✏️ Editar", stats_del_btn: "Excluir Sessão",
@@ -7304,6 +7310,10 @@
             const pfHome = perfCard();
             if (pfHome) v.appendChild(pfHome);
 
+            // Registro del período: aviso si faltan 90 días o más
+            const cyHome = cycleHomeCard();
+            if (cyHome) v.appendChild(cyHome);
+
             // Today's Routine Suggestion
             const todayRoutine = getTodayRoutine();
             if (todayRoutine) {
@@ -8780,6 +8790,153 @@
             ov.appendChild(card);
             document.body.appendChild(ov);
         }
+        // ── Cambiar objetivo, días, nivel y prioridad desde Perfil ──
+        const GOAL_LABEL = { muscle: 'goal_muscle', fat_loss: 'goal_fat', strength: 'goal_str', recomp: 'goal_recomp', endurance: 'goal_endurance' };
+        const LEVEL_LABEL = { principiante: 'level_beg', intermedio: 'level_int', avanzado: 'level_adv' };
+        function openPlanEditor() {
+            const u = state.user; if (!u) return;
+            const cur = { goal: u.goal, days: u.days, level: u.level, focus: ROUTINE_FOCUS[u.focus] ? u.focus : 'balanced' };
+            const draft = Object.assign({}, cur);
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            const render = () => {
+                card.innerHTML = '';
+                card.appendChild(h('p', { className: 'label' }, t('plan_edit_title')));
+                const group = (label, items, key) => {
+                    card.appendChild(h('p', { className: 'plan-edit-label' }, label));
+                    const row = h('div', { className: 'focus-pills' });
+                    items.forEach(([k, txt]) => row.appendChild(h('button', { className: 'focus-pill' + (draft[key] === k ? ' sel' : ''), onclick: () => { draft[key] = k; render(); } }, txt)));
+                    card.appendChild(row);
+                };
+                group(t('prof_goal'), Object.keys(GOAL_LABEL).map(k => [k, t(GOAL_LABEL[k])]), 'goal');
+                group(t('prof_days'), [3, 4, 5, 6].map(d => [d, String(d)]), 'days');
+                group(t('prof_level'), Object.keys(LEVEL_LABEL).map(k => [k, t(LEVEL_LABEL[k])]), 'level');
+                group(t('prof_focus'), ['balanced', 'lower', 'upper'].map(k => [k, t('focus_' + k)]), 'focus');
+                const changed = Object.keys(cur).some(k => draft[k] !== cur[k]);
+                card.appendChild(h('p', { className: 'perf-body rup-warn', style: { marginTop: '14px' } }, t('plan_edit_warn')));
+                const row = h('div', { className: 'perf-actions' });
+                row.appendChild(h('button', { className: 'btn btn-primary btn-sm', disabled: !changed, onclick: () => { if (applyPlanChange(draft)) ov.remove(); } }, t('plan_edit_save')));
+                row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => ov.remove() }, t('btn_cancel')));
+                card.appendChild(row);
+            };
+            render();
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+        }
+        // Rehace la rutina con los datos nuevos. Igual que la prioridad y la rutina
+        // mejorada: bloqueado con una sesión a medias y con vuelta atrás de 14 días
+        // (rutina, objetivo, días, nivel y prioridad). Las calorías se recalculan solas
+        // porque el plan de nutrición mira objetivo y días.
+        function applyPlanChange(d) {
+            const u = state.user; if (!u) return false;
+            if (routineHasData(state.routineSession)) { flash(t('rup_busy'), 'var(--orange)'); return false; }
+            u.routinePlanPrev = { plan: u.routinePlan, gen: u.routinePlanGen || 1, date: todayStr(), focus: u.focus || 'balanced', goal: u.goal, days: u.days, level: u.level };
+            Object.assign(u, { goal: d.goal, days: d.days, level: d.level, focus: d.focus });
+            const sel = selectWorkoutPlan(u.days, u.level, u.goal, u.focus);
+            u.routinePlan = sel.plan; u.days = sel.actualDays; u.level = sel.actualLevel;
+            u.routinePlanGen = ROUTINE_GEN;
+            u.routinePlanHash = routineInputHash(u);
+            saveUser(); resetRoutineView();
+            flash(t('plan_edit_done'));
+            renderProfile();
+            return true;
+        }
+
+        // ── Registro del período (opcional, solo mujeres) ──
+        // Solo la fecha de inicio de cada período, guardada en el teléfono (bm-cycle; va en
+        // las copias de seguridad del usuario y nunca al servidor). No cambia la rutina: la
+        // lógica y la evidencia están en cycleStatus() de core/calc.js.
+        function cycleApplies() { return !!(state.user && state.user.sex === 'F'); }
+        function cycleData() {
+            try {
+                const d = JSON.parse(localStorage.getItem('bm-cycle') || 'null');
+                if (d && typeof d === 'object') return { on: !!d.on, starts: Array.isArray(d.starts) ? d.starts.filter(x => typeof x === 'string') : [], noBleed: !!d.noBleed, snooze: typeof d.snooze === 'string' ? d.snooze : null };
+            } catch { }
+            return { on: false, starts: [], noBleed: false, snooze: null };
+        }
+        function saveCycle(d) { try { localStorage.setItem('bm-cycle', JSON.stringify(d)); } catch { } }
+        function addCycleStart(date) {
+            const d = cycleData();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '') || date > todayStr()) return;
+            d.starts = [date].concat(d.starts.filter(x => x !== date)).sort().reverse().slice(0, 24);
+            d.snooze = null;
+            saveCycle(d);
+            flash(t('cyc_saved'));
+        }
+        // Alerta: 90 días sin período anotado (si no usa un anticonceptivo que lo frena)
+        function cycleAlert() {
+            if (!cycleApplies()) return null;
+            const d = cycleData();
+            if (!d.on || d.noBleed) return null;
+            const st = cycleStatus(d.starts, todayStr());
+            return st && st.missing ? st : null;
+        }
+        function cycleAlertText(st) {
+            let txt = t('cyc_missing').replace('{n}', st.daysSince);
+            if (state.user && state.user.goal === 'fat_loss') txt += ' ' + t('cyc_missing_fat');
+            return txt;
+        }
+        function renderCycleCard() {
+            const d = cycleData();
+            const c = h('div', { className: 'card fade-in', id: 'cycle-card' });
+            c.appendChild(h('p', { className: 'label' }, t('cyc_title')));
+            if (!d.on) {
+                c.appendChild(h('p', { className: 'perf-body' }, t('cyc_intro')));
+                c.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', style: { marginTop: '10px' }, onclick: () => { d.on = true; saveCycle(d); renderProfile(); } }, t('cyc_on_btn')));
+                return c;
+            }
+            const today = todayStr();
+            const st = cycleStatus(d.starts, today);
+            if (st) {
+                c.appendChild(h('p', { className: 'perf-body' }, t('cyc_last').replace('{date}', perfDate(st.last)).replace('{n}', st.daysSince)));
+                if (st.avg) c.appendChild(h('p', { className: 'perf-body' }, t('cyc_avg').replace('{avg}', st.avg).replace('{date}', perfDate(st.next))));
+                if (!d.noBleed && st.missing) c.appendChild(h('p', { className: 'cyc-warn' }, cycleAlertText(st)));
+                else if (!d.noBleed && st.long) c.appendChild(h('p', { className: 'cyc-warn' }, t('cyc_long').replace('{n}', st.lastLen)));
+            } else {
+                c.appendChild(h('p', { className: 'perf-body' }, t('cyc_empty')));
+            }
+            const row = h('div', { className: 'perf-actions', style: { marginTop: '10px' } });
+            if (!st || st.last !== today) row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { addCycleStart(today); renderProfile(); } }, t('cyc_today_btn')));
+            const dateIn = h('input', { type: 'date', className: 'cyc-date', max: today, value: '' });
+            row.appendChild(dateIn);
+            row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { if (dateIn.value) { addCycleStart(dateIn.value); renderProfile(); } } }, t('cyc_add_btn')));
+            c.appendChild(row);
+            if (d.starts.length) {
+                const chips = h('div', { className: 'focus-pills', style: { marginTop: '10px' } });
+                d.starts.slice(0, 6).forEach(x => chips.appendChild(h('button', {
+                    className: 'focus-pill', title: t('cyc_del'),
+                    onclick: () => { const n = cycleData(); n.starts = n.starts.filter(y => y !== x); saveCycle(n); renderProfile(); }
+                }, perfDate(x) + ' ✕')));
+                c.appendChild(chips);
+            }
+            const lab = h('label', { className: 'cyc-check' });
+            const cb = h('input', { type: 'checkbox', onchange: (e) => { const n = cycleData(); n.noBleed = !!e.target.checked; saveCycle(n); renderProfile(); } });
+            cb.checked = d.noBleed;
+            lab.appendChild(cb); lab.appendChild(h('span', {}, t('cyc_nobleed')));
+            c.appendChild(lab);
+            c.appendChild(h('p', { className: 'cyc-note' }, t('cyc_edu')));
+            c.appendChild(h('p', { className: 'cyc-note' }, t('cyc_private')));
+            c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '8px' }, onclick: () => {
+                if (!confirm(t('cyc_off_confirm'))) return;
+                saveCycle({ on: false, starts: [], noBleed: false, snooze: null }); renderProfile();
+            } }, t('cyc_off_btn')));
+            return c;
+        }
+        // Aviso en Inicio cuando faltan 90 días o más (se puede posponer 14 días)
+        function cycleHomeCard() {
+            const st = cycleAlert(); if (!st) return null;
+            const d = cycleData();
+            if (d.snooze && todayStr() < d.snooze) return null;
+            const c = h('div', { className: 'card fade-in perf-card' });
+            c.appendChild(h('p', { className: 'label' }, t('cyc_alert_title')));
+            c.appendChild(h('p', { className: 'perf-body' }, cycleAlertText(st)));
+            const row = h('div', { className: 'perf-actions' });
+            row.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: () => { switchTab('profile'); setTimeout(() => { const el = $('cycle-card'); if (el) el.scrollIntoView({ block: 'center' }); }, 50); } }, t('cyc_alert_go')));
+            row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { const n = cycleData(); n.snooze = perfAddDays(todayStr(), 14); saveCycle(n); renderHome(); } }, t('perf_btn_later')));
+            c.appendChild(row);
+            return c;
+        }
+
         // ── Prioridad muscular ──
         function focusPills(current, onPick) {
             const row = h('div', { className: 'focus-pills' });
@@ -8812,7 +8969,7 @@
                     if (routineHasData(state.routineSession)) { flash(t('rup_busy'), 'var(--orange)'); return; }
                     u.routinePlan = u.routinePlanPrev.plan;
                     u.routinePlanGen = u.routinePlanPrev.gen || 1;
-                    if (u.routinePlanPrev.focus) u.focus = u.routinePlanPrev.focus;
+                    ['focus', 'goal', 'days', 'level'].forEach(k => { if (u.routinePlanPrev[k] !== undefined) u[k] = u.routinePlanPrev[k]; });
                     u.routinePlanHash = routineInputHash(u);
                     u.routineUpgradeDismissed = ROUTINE_GEN;
                     delete u.routinePlanPrev;
@@ -10480,7 +10637,7 @@
             const dc = h('div', { className: 'card fade-in' });
             dc.appendChild(h('p', { className: 'label' }, t('prof_personal')));
             [{ l: t('prof_weight'), v: u.weight + 'kg' }, { l: t('prof_height'), v: u.height + 'cm' }, { l: t('prof_age'), v: u.age },
-            { l: t('prof_country') || 'País', v: u.country || '—' }, { l: t('prof_days'), v: u.days }, { l: t('prof_routine'), v: ROUTINES[u.days]?.name || '—' }
+            { l: t('prof_country') || 'País', v: u.country || '—' }
             ].forEach(({ l, v: val }) => {
                 dc.appendChild(h('div', { className: 'profile-item' }, h('span', { style: { color: 'var(--text3)', fontSize: '13px' } }, l),
                     h('span', { style: { fontSize: '13px', fontWeight: 600 } }, val + '')));
@@ -10497,6 +10654,21 @@
             });
             dc.appendChild(h('div', { className: 'profile-item' }, h('span', { style: { color: 'var(--text3)', fontSize: '13px' } }, t('prof_sex')), sexPills));
             v.appendChild(dc);
+
+            // Tu plan de entrenamiento: objetivo, días, nivel y prioridad (antes no se podían
+            // cambiar sin borrar todo)
+            const pc = h('div', { className: 'card fade-in' });
+            pc.appendChild(h('p', { className: 'label' }, t('prof_plan_title')));
+            [{ l: t('prof_goal'), v: t(GOAL_LABEL[u.goal] || 'goal_muscle') }, { l: t('prof_days'), v: u.days },
+            { l: t('prof_level'), v: t(LEVEL_LABEL[u.level] || 'level_beg') }, { l: t('prof_focus'), v: t('focus_' + (ROUTINE_FOCUS[u.focus] ? u.focus : 'balanced')) },
+            { l: t('prof_routine'), v: ROUTINES[u.days]?.name || '—' }
+            ].forEach(({ l, v: val }) => pc.appendChild(h('div', { className: 'profile-item' }, h('span', { style: { color: 'var(--text3)', fontSize: '13px' } }, l),
+                h('span', { style: { fontSize: '13px', fontWeight: 600 } }, val + ''))));
+            pc.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '10px' }, onclick: openPlanEditor }, t('plan_edit_btn')));
+            v.appendChild(pc);
+
+            // Registro del período (solo si el sexo es femenino; opcional)
+            if (cycleApplies()) v.appendChild(renderCycleCard());
 
             // Upgrade banner (free tier only)
             if (!isPremium()) {

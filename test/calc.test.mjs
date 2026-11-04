@@ -285,5 +285,23 @@ console.log('Meta semanal de cardio');
     ok('lunes quedan 7 días; domingo, 1', cardioWeek([], '2026-11-02').daysLeft === 7 && cardioWeek([], '2026-11-08').daysLeft === 1);
 }
 
+console.log('Registro del período');
+{
+    const cs = calc.cycleStatus;
+    const today = '2026-11-04';
+    ok('sin fechas → null', cs([], today) === null && cs(null, today) === null);
+    const one = cs(['2026-10-20'], today);
+    ok('una sola fecha: días desde el inicio, sin promedio ni próxima', one.daysSince === 15 && one.avg === null && one.next === null && !one.missing && !one.long);
+    const reg = cs(['2026-08-14', '2026-09-11', '2026-10-09', '2026-10-09', 'basura', '2026-11-20'], today);
+    ok('ciclos de 28 días: promedio 28, próxima el 6/11 (ignora duplicados, basura y fechas futuras)', reg.avg === 28 && reg.last === '2026-10-09' && reg.next === '2026-11-06' && reg.lastLen === 28, reg);
+    const miss = cs(['2026-06-01', '2026-06-29'], today);
+    ok('90 días o más sin período → missing', miss.missing === true && miss.daysSince === 128);
+    ok('89 días todavía no', cs(['2026-08-07'], today).missing === false && cs(['2026-08-06'], today).missing === true);
+    const lng = cs(['2026-08-20', '2026-10-01'], today);
+    ok('último ciclo de 42 días → long (más de 35)', lng.long === true && lng.lastLen === 42);
+    const gap = cs(['2026-05-01', '2026-05-29', '2026-10-01'], today);
+    ok('un hueco de 125 días no entra al promedio ni cuenta como ciclo largo', gap.avg === 28 && gap.long === false && gap.lastLen === 125, gap);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

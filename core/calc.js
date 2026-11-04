@@ -467,7 +467,40 @@
         return out;
     }
 
+    // ── Registro del período (opcional, solo mujeres; los datos quedan en el teléfono) ──
+    // No cambia el entrenamiento: entrenar según la fase no dio ventaja en músculo ni
+    // fuerza (D'Souza…Phillips, MSSE 2026; Colenso-Semple 2023). Sirve para la salud:
+    // que el período falte 3 meses o más (amenorrea) es señal de comer poco para lo que se
+    // entrena (consenso REDs del COI, 2023), y ciclos de más de 35 días también se
+    // consultan. starts: fechas 'YYYY-MM-DD' de inicio. Devuelve null sin datos o
+    // { last, daysSince, avg, lastLen, next, missing, long }.
+    var CYCLE_MISSING_DAYS = 90, CYCLE_LONG_DAYS = 35;
+    function cycleStatus(starts, today) {
+        var seen = {}, list = [];
+        (starts || []).forEach(function (s) {
+            if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s) || isNaN(dayNum(s)) || seen[s]) return;
+            seen[s] = 1; list.push(s);
+        });
+        var t = dayNum(today);
+        list = list.filter(function (s) { return dayNum(s) <= t; }).sort().reverse();
+        if (!list.length) return null;
+        var lens = [];
+        for (var i = 0; i + 1 < list.length && lens.length < 6; i++) lens.push(dayNum(list[i]) - dayNum(list[i + 1]));
+        // Para el promedio, solo ciclos plausibles (un período sin registrar duplica el largo)
+        var ok = lens.filter(function (n) { return n >= 15 && n <= 60; });
+        var avg = ok.length ? Math.round(ok.reduce(function (a, b) { return a + b; }, 0) / ok.length) : null;
+        var daysSince = t - dayNum(list[0]);
+        var next = null;
+        if (avg) { var d = new Date(Date.parse(list[0] + 'T12:00:00Z') + avg * DAY_MS); next = d.toISOString().slice(0, 10); }
+        return {
+            last: list[0], daysSince: daysSince, avg: avg, lastLen: lens.length ? lens[0] : null, next: next,
+            missing: daysSince >= CYCLE_MISSING_DAYS,
+            long: lens.length > 0 && lens[0] > CYCLE_LONG_DAYS && lens[0] < CYCLE_MISSING_DAYS
+        };
+    }
+
     return {
+        cycleStatus: cycleStatus,
         localDateStr: localDateStr,
         isoWeek: isoWeek,
         topSet: topSet,
