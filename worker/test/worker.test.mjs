@@ -185,6 +185,52 @@ let token, routineId;
     ok('borrar la rutina borra sesiones y controles', !env.BMOD_KV._m.has('checkins:' + rid) && !env.BMOD_KV._m.has('sessions:' + rid));
 }
 
+// ── Coach: baja del alumno y Premium de coach ──
+{
+    console.log('\nCoach: baja del alumno y Premium de coach');
+    const ADMIN = { 'x-admin-secret': 'test-admin' };
+    const code = (c) => JSON.parse(env.BMOD_KV._m.get('code:' + c));
+    const lu = (await call('POST', '/api/routines', { coach_id: 'coachZ', name: 'Plan Lu', plan: [{ name: 'A' }], alumno_name: 'Lu' })).body;
+    const mati = (await call('POST', '/api/routines', { coach_id: 'coachZ', name: 'Plan Mati', plan: [{ name: 'A' }], alumno_name: 'Mati' })).body;
+    const gen = await call('POST', '/api/admin/codes', { count: 3, product: 'premium', months: 3, coach_pack: true, label: 'Entrenador Z' }, ADMIN);
+    ok('admin: genera códigos de coach (Premium de 3 meses, con etiqueta)', gen.body.coach_pack === true && gen.body.codes.length === 3 && code(gen.body.codes[0]).coach_pack === true && code(gen.body.codes[0]).label === 'Entrenador Z', gen.body);
+    const notCoach = await call('POST', '/api/admin/codes', { count: 1, product: 'coach', coach_pack: true }, ADMIN);
+    ok('un código del plan Coach nunca es "de coach para alumnos"', notCoach.body.coach_pack === false && !code(notCoach.body.codes[0]).coach_pack);
+    const [c1, c2] = gen.body.codes;
+    const own = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 3 }, ADMIN)).body.codes[0];
+
+    const a1 = await call('POST', '/api/license/activate', { code: c1, deviceId: 'devLu', share: lu.share_token });
+    ok('activarlo desde el link del alumno lo ata a ese alumno', a1.status === 200 && code(c1).routine_id === lu.id && code(c1).coach_id === 'coachZ', code(c1));
+    const a2 = await call('POST', '/api/license/activate', { code: own, deviceId: 'devLu2', share: lu.share_token });
+    ok('un Premium comprado por el alumno no se ata al coach', a2.status === 200 && !code(own).routine_id);
+
+    const a3 = await call('POST', '/api/license/activate', { code: c2, deviceId: 'devMati' });
+    ok('activado en Perfil (sin link) todavía no está atado', a3.status === 200 && !code(c2).routine_id);
+    const cl = await call('POST', '/api/shares/' + mati.share_token + '/premium-claim', { license: a3.body.token });
+    ok('al vincular la rutina en la app, el código se ata al alumno', cl.status === 200 && cl.body.bound === true && code(c2).routine_id === mati.id);
+    const cl2 = await call('POST', '/api/shares/' + lu.share_token + '/premium-claim', { license: a3.body.token });
+    ok('un código ya atado a un alumno no se pasa a otro', cl2.body.bound === false && code(c2).routine_id === mati.id);
+    const cl3 = await call('POST', '/api/shares/' + lu.share_token + '/premium-claim', { license: 'abc.def' });
+    const cl4 = await call('POST', '/api/shares/' + lu.share_token + '/premium-claim', { license: a2.body.token });
+    ok('licencia inventada o comprada → no se ata', cl3.body.bound === false && cl4.body.bound === false && !code(own).routine_id);
+
+    const list = await call('GET', '/api/routines?coach_id=coachZ');
+    ok('el panel marca qué alumnos tienen el Premium del coach', list.body.find((r) => r.id === lu.id).premium === true && list.body.find((r) => r.id === mati.id).premium === true);
+
+    const del = await call('DELETE', '/api/routines/' + lu.id + '?coach_id=coachZ');
+    ok('baja: anula el Premium de coach de ese alumno', del.status === 200 && del.body.revoked === 1 && code(c1).revoked === true && code(c1).revoked_reason === 'coach_baja', del.body);
+    ok('baja: no toca el Premium comprado ni el de otro alumno', !code(own).revoked && !code(c2).revoked);
+    const ver = await call('POST', '/api/license/verify', { token: a1.body.token });
+    ok('la licencia anulada deja de verificar (la app vuelve a Free)', ver.body.valid === false, ver.body);
+    const re = await call('POST', '/api/license/activate', { code: c1, deviceId: 'devLu' });
+    ok('el código anulado no se puede volver a activar', re.status === 403);
+    const sh = await call('GET', '/api/shares/' + lu.share_token);
+    ok('su link deja de funcionar', sh.status === 404);
+    const verOwn = await call('POST', '/api/license/verify', { token: a2.body.token });
+    ok('el Premium comprado sigue valiendo', verOwn.body.valid === true);
+    await call('DELETE', '/api/routines/' + mati.id + '?coach_id=coachZ');
+}
+
 // ── Licencias: admin codes + activate + verify + binding ──
 let code, licToken;
 {

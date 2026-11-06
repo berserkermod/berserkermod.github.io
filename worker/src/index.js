@@ -10,6 +10,7 @@
 //                     POST                /api/shares/{token}/edits
 //                     POST                /api/shares/{token}/sessions  (adherencia + kg/reps del alumno)
 //                     POST                /api/shares/{token}/checkins  (control semanal del alumno)
+//                     POST                /api/shares/{token}/premium-claim (ata un código de coach al alumno)
 //   Licencias:        POST                /api/license/activate
 //                     POST                /api/license/verify
 //                     POST                /api/license/trial
@@ -312,7 +313,8 @@ async function listRoutines(env, url) {
         last_session_at: r.last_session_at || null,
         week_sessions: (r.recent_session_dates || []).filter((d) => d >= weekAgo).length,
         last_checkin_at: r.last_checkin_at || null,
-        new_checkin: !!r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)
+        new_checkin: !!r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at),
+        premium: Array.isArray(r.premium_codes) && r.premium_codes.length > 0
     })));
 }
 
@@ -357,12 +359,22 @@ async function deleteRoutine(req, env, url, id) {
     const r = await kvGet(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
+    // Baja del alumno: el Premium que le dio este coach (códigos de coach atados a él) se anula
+    let revoked = 0;
+    for (const code of (Array.isArray(r.premium_codes) ? r.premium_codes : [])) {
+        const rec = await kvGet(env, `code:${code}`);
+        if (rec && rec.coach_pack && rec.routine_id === id && !rec.revoked) {
+            rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = 'coach_baja';
+            await kvPut(env, `code:${code}`, rec);
+            revoked++;
+        }
+    }
     await env.BMOD_KV.delete(routineKey(coachId, id));
     if (r.share_token) await env.BMOD_KV.delete(`token:${r.share_token}`);
     await env.BMOD_KV.delete(editsKey(id));
     await env.BMOD_KV.delete(sessionsKey(id));
     await env.BMOD_KV.delete(checkinsKey(id));
-    return json({ ok: true });
+    return json({ ok: true, revoked });
 }
 
 async function reviewRoutine(req, env, url, id) {
@@ -581,12 +593,50 @@ async function activateLicense(req, env) {
     }
     // mismo device → idempotente, no toca nada
 
+    // Activado desde el link de un alumno: si es un código de coach, queda atado a él
+    const share = body && typeof body.share === 'string' ? body.share.trim().toLowerCase() : '';
+    if (share && rec.coach_pack) await bindCoachCode(env, code, rec, share);
+
     const product = rec.product || 'premium';
     const tier = 'premium'; // ambos productos desbloquean premium hoy; product distingue para futuro
     const iat = Date.now();
     const exp = rec.expires_at ? new Date(rec.expires_at).getTime() : null; // null = lifetime (one-time)
     const token = await signLicense(secret, { product, tier, deviceId, code, iat, exp });
     return json({ ok: true, token, product, tier, expiresAt: exp ? new Date(exp).toISOString() : null });
+}
+
+// Códigos de coach (coach_pack): el entrenador los reparte entre sus alumnos. Cada uno
+// queda atado al alumno (su rutina) desde cuyo link se activó o se reclamó, para que al
+// darlo de baja se anule ese y ningún otro: un Premium comprado por el alumno no se toca,
+// y un código ya atado a un alumno no se pasa a otro.
+async function bindCoachCode(env, code, rec, shareToken) {
+    if (!rec || !rec.coach_pack || rec.revoked || !/^[a-z0-9]{6,32}$/.test(shareToken || '')) return false;
+    const idx = await kvGet(env, `token:${shareToken}`);
+    if (!idx) return false;
+    if (rec.routine_id && rec.routine_id !== idx.routineId) return false;
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) return false;
+    if (rec.routine_id !== idx.routineId) {
+        rec.routine_id = idx.routineId; rec.coach_id = idx.coachId;
+        await kvPut(env, `code:${code}`, rec);
+    }
+    const list = Array.isArray(r.premium_codes) ? r.premium_codes : [];
+    if (!list.includes(code)) {
+        r.premium_codes = list.concat(code).slice(-5);
+        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    }
+    return true;
+}
+
+// POST /api/shares/{token}/premium-claim — el alumno vincula la rutina en la app con un
+// Premium ya activo: si su licencia es de un código de coach, se ata a este alumno.
+async function claimSharePremium(req, env, shareToken) {
+    const body = await readBody(req);
+    const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.license) : null;
+    if (!payload || !payload.code) return json({ ok: true, bound: false });
+    const rec = await kvGet(env, `code:${payload.code}`);
+    if (!rec || rec.deviceId !== payload.deviceId) return json({ ok: true, bound: false });
+    return json({ ok: true, bound: await bindCoachCode(env, payload.code, rec, shareToken) });
 }
 
 async function verifyLicenseHandler(req, env) {
@@ -659,14 +709,20 @@ async function adminCreateCodes(req, env) {
     const expires_at = body && body.expires_at ? body.expires_at : null;
     const months = body && PLAN_MONTHS.includes(Number(body.months)) ? Number(body.months) : null;
     const duration_days = months ? PLAN_DURATION_DAYS[months] : null;
+    // coach_pack: Premium que un entrenador reparte entre sus alumnos (se anula si los da de baja)
+    const coach_pack = product === 'premium' && !!(body && body.coach_pack);
+    const label = body && typeof body.label === 'string' ? body.label.trim().slice(0, 60) : '';
     const codes = [];
     for (let i = 0; i < count; i++) {
         let code = newCode();
         while (await kvGet(env, `code:${code}`)) code = newCode();
-        await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at, created_at: nowISO(), source: 'admin' });
+        const rec = { product, duration_days, used: false, deviceId: null, expires_at, created_at: nowISO(), source: 'admin' };
+        if (coach_pack) rec.coach_pack = true;
+        if (label) rec.label = label;
+        await kvPut(env, `code:${code}`, rec);
         codes.push(code);
     }
-    return json({ ok: true, product, months, codes });
+    return json({ ok: true, product, months, coach_pack, codes });
 }
 
 // ── Checkout (Mercado Pago Checkout Pro) ─────────────────────────────
@@ -1585,6 +1641,7 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
 
             // Licencias
