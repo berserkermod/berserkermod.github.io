@@ -179,6 +179,23 @@ let token, routineId;
     ok('el alumno ve sus controles', Array.isArray(sh.body.checkins) && sh.body.checkins.length === 2, sh.body.checkins);
     const bad = await call('POST', '/api/shares/nonexist00/checkins', { weight: 70 });
     ok('control con token inválido → 404', bad.status === 404);
+
+    // Control ampliado: las seis preguntas y los hábitos
+    const full = await call('POST', '/api/shares/' + tk + '/checkins', {
+        date: today, trained: 3.4, energy: 4, ex_trouble: ['Sentadilla', 'Sentadilla', 'Press banca', '', 7], ex_text: 'Me molesta la rodilla al bajar',
+        sleep: '6a7', recovery: 2, meals: 'medias', water: 'si', habits_text: 'Comí tarde', change: true, change_text: 'Pasar el jueves al viernes', note: 'Todo bien'
+    });
+    const fc = full.body.checkin || {};
+    ok('control ampliado 201 con todos los campos', full.status === 201 && fc.trained === 3 && fc.energy === 4 && fc.sleep === '6a7' && fc.recovery === 2 && fc.meals === 'medias' && fc.water === 'si' && fc.change === true && fc.change_text === 'Pasar el jueves al viernes', fc);
+    ok('ejercicios con dificultad: sin repetidos ni vacíos', JSON.stringify(fc.ex_trouble) === JSON.stringify(['Sentadilla', 'Press banca']) && fc.ex_text === 'Me molesta la rodilla al bajar', fc.ex_trouble);
+    const junk = await call('POST', '/api/shares/' + tk + '/checkins', { date: today, trained: 40, sleep: '20h', recovery: 9, meals: 'siempre', water: true, ex_trouble: 'Sentadilla', change: 'si' });
+    ok('valores fuera de rango o inventados → control vacío (400)', junk.status === 400, junk.body);
+    const onlyHabits = await call('POST', '/api/shares/' + tk + '/checkins', { date: today, meals: 'no' });
+    ok('solo un hábito alcanza para enviar', onlyHabits.status === 201 && onlyHabits.body.checkin.meals === 'no' && onlyHabits.body.checkin.trained === undefined, onlyHabits.body);
+    const onlyText = await call('POST', '/api/shares/' + tk + '/checkins', { date: today, change_text: 'Menos días' });
+    ok('texto de cambio sin el sí también marca change', onlyText.status === 201 && onlyText.body.checkin.change === true, onlyText.body);
+    const many8 = await call('POST', '/api/shares/' + tk + '/checkins', { date: today, ex_trouble: Array.from({ length: 20 }, (_, i) => 'Ejercicio ' + i + 'x'.repeat(100)) });
+    ok('tope: 8 ejercicios de 60 caracteres', many8.status === 201 && many8.body.checkin.ex_trouble.length === 8 && many8.body.checkin.ex_trouble[0].length === 60, many8.body.checkin);
     const otherCoach = await call('GET', '/api/routines/' + rid + '?coach_id=coachB');
     ok('otro coach no ve los controles', otherCoach.status === 404 || otherCoach.status === 403, otherCoach.status);
     await call('DELETE', '/api/routines/' + rid + '?coach_id=coachR');

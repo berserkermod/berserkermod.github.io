@@ -525,8 +525,14 @@ function isoWeek(dateStr) {
     return d.getUTCFullYear() + '-W' + String(week).padStart(2, '0');
 }
 
-// POST /api/shares/{token}/checkins — control semanal del alumno: peso, energía
-// (1-5) y un mensaje al coach. Uno por semana: el segundo de la misma semana pisa.
+// POST /api/shares/{token}/checkins — control semanal del alumno. Uno por semana:
+// el segundo de la misma semana pisa. Las seis preguntas del seguimiento, con
+// respuestas rápidas: entrenamientos hechos (trained), cómo se sintió (energy 1-5),
+// dificultades con ejercicios (ex_trouble + ex_text), descanso (sleep + recovery 1-5),
+// hábitos (meals, water + habits_text) y si quiere cambiar algo del plan
+// (change + change_text). Además peso y un mensaje libre (note).
+const CHK_SLEEP = ['lt6', '6a7', '7a8', 'gt8'];
+const CHK_HABIT = ['si', 'medias', 'no'];
 async function postCheckin(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
@@ -540,7 +546,26 @@ async function postCheckin(req, env, token) {
     if (energy !== null) chk.energy = Math.round(energy);
     const note = str(body && body.note, 500);
     if (note) chk.note = note;
-    if (chk.weight === undefined && chk.energy === undefined && !chk.note) return err('Control vacío', 400);
+    const b = body || {};
+    const trained = num(b.trained, 0, 14);
+    if (trained !== null) chk.trained = Math.round(trained);
+    if (Array.isArray(b.ex_trouble)) {
+        const names = [...new Set(b.ex_trouble.map((x) => str(x, 60)).filter(Boolean))].slice(0, 8);
+        if (names.length) chk.ex_trouble = names;
+    }
+    const exText = str(b.ex_text, 300);
+    if (exText) chk.ex_text = exText;
+    if (CHK_SLEEP.includes(b.sleep)) chk.sleep = b.sleep;
+    const recovery = num(b.recovery, 1, 5);
+    if (recovery !== null) chk.recovery = Math.round(recovery);
+    if (CHK_HABIT.includes(b.meals)) chk.meals = b.meals;
+    if (CHK_HABIT.includes(b.water)) chk.water = b.water;
+    const habitsText = str(b.habits_text, 300);
+    if (habitsText) chk.habits_text = habitsText;
+    const changeText = str(b.change_text, 300);
+    if (b.change === true || changeText) { chk.change = true; if (changeText) chk.change_text = changeText; }
+    const filled = ['weight', 'energy', 'note', 'trained', 'ex_trouble', 'ex_text', 'sleep', 'recovery', 'meals', 'water', 'habits_text', 'change'];
+    if (!filled.some((k) => chk[k] !== undefined)) return err('Control vacío', 400);
 
     const agg = (await kvGet(env, checkinsKey(idx.routineId))) || { items: [] };
     agg.items = [chk].concat(agg.items.filter((c) => c.week !== chk.week))
