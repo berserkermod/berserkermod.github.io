@@ -307,6 +307,7 @@ async function listRoutines(env, url) {
     // 1 list + N gets (N ≤ ROUTINES_LIST_MAX). Todo lo demás sale del registro.
     const routines = await listByPrefix(env, `routine:${coachId}:`, ROUTINES_LIST_MAX);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const today = new Date().toISOString().slice(0, 10);
     return json(routines.map((r) => ({
         id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
         share_token: r.share_token, created_at: r.created_at,
@@ -321,8 +322,115 @@ async function listRoutines(env, url) {
         status: (r.profile && r.profile.status) || 'activo',
         modality: (r.profile && r.profile.modality) || '',
         start_date: (r.profile && r.profile.start_date) || '',
-        intake_done: !!r.intake
+        intake_done: !!r.intake,
+        alerts: studentAlerts(r, today)
     })));
+}
+
+// ── Alertas del panel del coach ──
+// Salen solo del registro del alumno (la lista no puede leer más keys: 1 list + N gets
+// en el plan Free). Para eso las sesiones y los controles dejan resúmenes en el registro.
+const DAY_MS = 86400000;
+function dayDiff(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / DAY_MS); }
+function addDaysISO(d, n) { return new Date(Date.parse(d + 'T00:00:00Z') + n * DAY_MS).toISOString().slice(0, 10); }
+// Mejor serie de un ejercicio: 1RM estimado (Epley) o, sin peso, las repeticiones.
+function setScore(s) {
+    const kg = Number(s && s.kg) || 0, reps = Number(s && s.reps) || 0;
+    if (!reps) return 0;
+    return kg > 0 ? kg * (1 + reps / 30) : reps;
+}
+// Ejercicios con las cargas para revisar: en sus últimas 3 sesiones bajó (dos caídas
+// seguidas o más de 8 % en total) o se estancó (las dos últimas no superan a la anterior).
+function loadsReview(items) {
+    const by = new Map();
+    for (const s of items) {
+        if (!Array.isArray(s.exercises)) continue;
+        for (const e of s.exercises) {
+            if (!e || e.kind === 'cardio' || !Array.isArray(e.sets) || !e.sets.length) continue;
+            const best = Math.max(...e.sets.map(setScore));
+            if (!(best > 0)) continue;
+            const arr = by.get(e.name) || [];
+            if (arr.length < 3 && !arr.some((x) => x.date === s.date)) { arr.push({ best, date: s.date, at: s.at }); by.set(e.name, arr); }
+        }
+    }
+    const out = [];
+    for (const [name, arr] of by) {
+        if (arr.length < 3) continue;
+        const [a, b, c] = arr.map((x) => x.best);   // a = la más nueva
+        const base = { name, date: arr[0].date, at: arr[0].at || null };
+        if ((a < b * 0.97 && b < c * 0.97) || a < c * 0.92) out.push(Object.assign({ trend: 'drop' }, base));
+        else if (a <= c * 1.005 && b <= c * 1.005) out.push(Object.assign({ trend: 'stall' }, base));
+    }
+    return out.slice(0, 8);
+}
+// Resúmenes que guarda el registro (los recalculan las sesiones, los controles y el detalle).
+function deriveFromSessions(r, items) {
+    r.recent_session_dates = items.slice(0, 14).map((s) => s.date);
+    r.last_session_at = r.recent_session_dates[0] || null;
+    r.recent_quick_dates = items.slice(0, 14).filter((s) => !Array.isArray(s.exercises) || !s.exercises.length).map((s) => s.date);
+    r.loads_review = loadsReview(items);
+}
+function deriveFromCheckins(r, items) {
+    r.chk_recent = items.slice(0, 3).map((c) => ({
+        week: c.week, date: c.date, at: c.at, ex: c.ex_trouble || [], change: !!c.change,
+        low: !!((c.energy && c.energy <= 2) || (c.recovery && c.recovery <= 2) || c.sleep === 'lt6')
+    }));
+}
+const DERIVED_KEYS = ['recent_session_dates', 'last_session_at', 'recent_quick_dates', 'loads_review', 'chk_recent'];
+const derivedSig = (r) => JSON.stringify(DERIVED_KEYS.map((k) => (r[k] === undefined ? null : r[k])));
+
+function studentAlerts(r, today) {
+    const pf = r.profile || {};
+    if (pf.status === 'pausado' || pf.status === 'finalizado') return [];
+    const created = String(r.created_at || '').slice(0, 10) || today;
+    const start = /^\d{4}-\d{2}-\d{2}$/.test(pf.start_date || '') ? pf.start_date : null;
+    const ref = start && start > created ? start : created;     // desde cuándo corre el programa
+    const since = dayDiff(ref, today);
+    if (!(since >= 0)) return [];                                // todavía no empezó
+    const out = [];
+    const coachUpd = String(r.last_coach_update_at || '');
+    const dates = (Array.isArray(r.recent_session_dates) ? r.recent_session_dates : []).filter((d) => d <= today);
+    const last = dates.reduce((m, d) => (d > m ? d : m), '');
+    const planDays = Array.isArray(r.plan) ? r.plan.length : 0;
+    // 1. No entrena, o entrena bastante menos de lo planificado (últimas 2 semanas)
+    const idle = last ? dayDiff(last, today) : since;
+    if (since >= 7 && idle >= 7) out.push({ type: 'no_training', days: last ? idle : null });
+    else if (planDays && since >= 14) {
+        const done = dates.filter((d) => dayDiff(d, today) < 14).length;
+        if (done < planDays * 2 * 0.6) out.push({ type: 'low_adherence', done, planned: planDays * 2 });
+    }
+    // 2. Pidió un cambio en el plan (se apaga cuando el coach toca la rutina)
+    const chk = (Array.isArray(r.chk_recent) ? r.chk_recent : []).filter((c) => c.date && dayDiff(c.date, today) <= 35);
+    const c0 = chk[0];
+    if (c0 && c0.change && dayDiff(c0.date, today) <= 14 && !(coachUpd && c0.at && coachUpd >= c0.at)) out.push({ type: 'plan_change' });
+    // 3. Dificultad con el mismo ejercicio en 2 de los últimos 3 controles
+    const count = {};
+    chk.forEach((c) => (c.ex || []).forEach((n) => { count[n] = (count[n] || 0) + 1; }));
+    const rep = Object.keys(count).filter((n) => count[n] >= 2);
+    if (rep.length) out.push({ type: 'repeat_trouble', names: rep.slice(0, 3) });
+    // 4. Cargas para revisar (se apaga si el coach cambió la rutina después)
+    const loads = (Array.isArray(r.loads_review) ? r.loads_review : [])
+        .filter((l) => l.date && dayDiff(l.date, today) <= 21 && !(coachUpd && (l.at ? coachUpd >= l.at : coachUpd.slice(0, 10) > l.date)));
+    if (loads.length) out.push({ type: 'loads', items: loads.slice(0, 3).map((l) => ({ name: l.name, trend: l.trend })), more: Math.max(0, loads.length - 3) });
+    // 5. Descanso o ánimo bajos en los dos últimos controles
+    if (chk.length >= 2 && chk[0].low && chk[1].low && dayDiff(chk[0].date, today) <= 14) out.push({ type: 'repeat_low' });
+    // 6. Marca entrenamientos sin anotar pesos (2 o más en 14 días y ninguno con detalle)
+    const quick = (Array.isArray(r.recent_quick_dates) ? r.recent_quick_dates : []).filter((d) => d <= today && dayDiff(d, today) < 14);
+    const logged = dates.filter((d) => dayDiff(d, today) < 14 && !quick.includes(d));
+    if (quick.length >= 2 && !logged.length) out.push({ type: 'no_logs', count: quick.length });
+    // 7. Sin control semanal
+    const lastChk = r.last_checkin_at ? String(r.last_checkin_at).slice(0, 10) : '';
+    const chkIdle = lastChk ? dayDiff(lastChk, today) : since;
+    if (since >= 7 && chkIdle >= 8) out.push({ type: 'no_checkin', days: lastChk ? chkIdle : null });
+    // 8. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): hoy o en 3 días
+    if (start) {
+        const d = dayDiff(start, today);
+        if (d > 0) {
+            const left = d % 28 === 0 ? 0 : 28 - (d % 28);
+            if (left <= 3) out.push({ type: 'eval', in: left, cycle: Math.ceil(d / 28), date: addDaysISO(today, left) });
+        }
+    }
+    return out;
 }
 
 async function getRoutine(env, url, id) {
@@ -333,14 +441,22 @@ async function getRoutine(env, url, id) {
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const edits = ((await kvGet(env, editsKey(id))) || { items: [] }).items;
     // Sesiones del alumno (últimas 30) para que el coach vea la adherencia real.
-    const sessions = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items.slice(0, 30);
+    const sessAll = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items;
+    const sessions = sessAll.slice(0, 30);
     const checkins = ((await kvGet(env, checkinsKey(id))) || { items: [] }).items;
-    // Abrir el detalle marca el control como visto (se escribe solo si había uno nuevo).
+    // Los resúmenes de las alertas se completan acá para alumnos de antes (o si quedaron viejos).
+    const before = derivedSig(r);
+    deriveFromSessions(r, sessAll);
+    deriveFromCheckins(r, checkins);
+    let dirty = derivedSig(r) !== before;
+    // Abrir el detalle marca el control como visto.
     if (r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)) {
         r.coach_seen_checkin_at = r.last_checkin_at;
-        await kvPut(env, routineKey(coachId, id), r);
+        dirty = true;
     }
-    return json({ routine: r, edits, sessions, checkins });
+    if (dirty) await kvPut(env, routineKey(coachId, id), r);
+    const alerts = studentAlerts(r, new Date().toISOString().slice(0, 10));
+    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions, checkins });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -507,11 +623,12 @@ async function postShareSession(req, env, token) {
     await kvPut(env, sessionsKey(idx.routineId), agg);
 
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
-    if (r && isNew) {
-        r.session_count = (r.session_count || 0) + 1;
-        r.recent_session_dates = agg.items.slice(0, 14).map((s) => s.date);
-        r.last_session_at = r.recent_session_dates[0] || null;
-        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    if (r) {
+        const before = derivedSig(r);
+        if (isNew) r.session_count = (r.session_count || 0) + 1;
+        deriveFromSessions(r, agg.items);
+        // Se escribe solo si cambió algo (el plan Free tiene 1.000 escrituras por día).
+        if (isNew || derivedSig(r) !== before) await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     }
     return json({ ok: true, session: sess }, 201);
 }
@@ -575,6 +692,7 @@ async function postCheckin(req, env, token) {
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (r) {
         r.last_checkin_at = chk.at;
+        deriveFromCheckins(r, agg.items);
         await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     }
     return json({ ok: true, checkin: chk }, 201);

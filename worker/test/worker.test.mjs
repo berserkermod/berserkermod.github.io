@@ -248,6 +248,95 @@ let token, routineId;
     await call('DELETE', '/api/routines/' + mati.id + '?coach_id=coachZ');
 }
 
+// ── Coach: alertas del panel ──
+{
+    console.log('\nCoach: alertas del panel');
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const C = 'coachAL';
+    const mk = async (name, ageDays, plan) => {
+        const r = (await call('POST', '/api/routines', { coach_id: C, name, plan: plan || [{ day: 'A' }, { day: 'B' }, { day: 'C' }], alumno_name: name })).body;
+        const key = 'routine:' + C + ':' + r.id;
+        const rec = JSON.parse(env.BMOD_KV._m.get(key));
+        rec.created_at = rec.updated_at = rec.last_coach_update_at = new Date(Date.now() - ageDays * 86400000).toISOString();
+        env.BMOD_KV._m.set(key, JSON.stringify(rec));
+        return r;
+    };
+    const alertsOf = async (id) => ((await call('GET', '/api/routines?coach_id=' + C)).body.find((x) => x.id === id) || {}).alerts || [];
+    const has = (al, type) => al.find((a) => a.type === type);
+
+    const nuevo = await mk('Nuevo', 2);
+    ok('alumno de 2 días: sin alertas', (await alertsOf(nuevo.id)).length === 0, await alertsOf(nuevo.id));
+
+    const ana = await mk('Ana', 20);
+    let al = await alertsOf(ana.id);
+    ok('20 días sin registrar nada: no entrena (nunca) y sin control', has(al, 'no_training') && has(al, 'no_training').days === null && has(al, 'no_checkin') && has(al, 'no_checkin').days === null, al);
+
+    // Marca dos entrenamientos sin anotar pesos
+    await call('POST', '/api/shares/' + ana.share_token + '/sessions', { date: day(1) });
+    await call('POST', '/api/shares/' + ana.share_token + '/sessions', { date: day(3) });
+    al = await alertsOf(ana.id);
+    ok('sesiones sin pesos: "no registra" y entrena menos de lo planificado (2 de 6)', has(al, 'no_logs') && !has(al, 'no_training') && has(al, 'low_adherence') && has(al, 'low_adherence').done === 2 && has(al, 'low_adherence').planned === 6, al);
+
+    // Tres sesiones con Sentadilla que no mejora → cargas para revisar
+    const sq = (kg) => ({ exercises: [{ name: 'Sentadilla', sets: [{ kg, reps: 5 }, { kg: kg - 10, reps: 8 }] }, { name: 'Press', sets: [{ kg: 40, reps: 8 }] }] });
+    await call('POST', '/api/shares/' + ana.share_token + '/sessions', Object.assign({ date: day(10) }, sq(100)));
+    await call('POST', '/api/shares/' + ana.share_token + '/sessions', Object.assign({ date: day(6) }, sq(100)));
+    await call('POST', '/api/shares/' + ana.share_token + '/sessions', Object.assign({ date: day(2) }, sq(97.5)));
+    al = await alertsOf(ana.id);
+    const ld = has(al, 'loads');
+    ok('cargas para revisar: Sentadilla estancada', ld && ld.items.some((x) => x.name === 'Sentadilla' && x.trend === 'stall'), al);
+    ok('con sesiones con pesos ya no dice "no registra"', !has(al, 'no_logs'), al);
+    const rec = JSON.parse(env.BMOD_KV._m.get('routine:' + C + ':' + ana.id));
+    ok('el registro guarda los resúmenes (sesiones rápidas y cargas)', Array.isArray(rec.recent_quick_dates) && rec.recent_quick_dates.length === 2 && rec.loads_review.length >= 1, rec.recent_quick_dates);
+    await call('PUT', '/api/routines/' + ana.id, { coach_id: C, plan: [{ day: 'A' }, { day: 'B' }, { day: 'C' }, { day: 'D' }] });
+    al = await alertsOf(ana.id);
+    ok('si el coach cambia la rutina, la alerta de cargas se apaga', !has(al, 'loads'), al);
+
+    // Bajó de verdad en otro ejercicio
+    const bob = await mk('Bob', 30, [{ day: 'A' }]);
+    for (const [d, kg] of [[12, 80], [8, 76], [4, 72]]) await call('POST', '/api/shares/' + bob.share_token + '/sessions', { date: day(d), exercises: [{ name: 'Press banca', sets: [{ kg, reps: 6 }] }] });
+    al = await alertsOf(bob.id);
+    ok('cargas: Press banca bajó', has(al, 'loads') && has(al, 'loads').items[0].trend === 'drop', al);
+    ok('3 sesiones de 4 previstas en 2 semanas con plan de 1 día: sin alerta de adherencia', !has(al, 'low_adherence'), al);
+
+    // Controles: dificultad repetida, ánimo bajo dos semanas y pedido de cambio
+    await call('POST', '/api/shares/' + ana.share_token + '/checkins', { date: day(8), ex_trouble: ['Sentadilla'], energy: 2 });
+    await call('POST', '/api/shares/' + ana.share_token + '/checkins', { date: day(0), ex_trouble: ['Sentadilla', 'Press'], recovery: 1, change: true, change_text: 'Menos días' });
+    al = await alertsOf(ana.id);
+    ok('dificultad repetida con Sentadilla', has(al, 'repeat_trouble') && JSON.stringify(has(al, 'repeat_trouble').names) === '["Sentadilla"]', al);
+    ok('ánimo o descanso bajos dos controles seguidos', !!has(al, 'repeat_low'), al);
+    ok('pidió un cambio en el plan', !!has(al, 'plan_change'), al);
+    ok('con control reciente no hay "sin control"', !has(al, 'no_checkin'), al);
+    await call('PUT', '/api/routines/' + ana.id, { coach_id: C, plan: [{ day: 'A' }, { day: 'B' }, { day: 'C' }] });
+    al = await alertsOf(ana.id);
+    ok('el pedido de cambio se apaga cuando el coach toca la rutina', !has(al, 'plan_change') && !!has(al, 'repeat_trouble'), al);
+
+    // Evaluación de fin de ciclo
+    await call('PUT', '/api/routines/' + bob.id, { coach_id: C, profile: { start_date: day(26) } });
+    al = await alertsOf(bob.id);
+    ok('evaluación en 2 días (ciclo 1)', has(al, 'eval') && has(al, 'eval').in === 2 && has(al, 'eval').cycle === 1 && has(al, 'eval').date === day(-2), al);
+    await call('PUT', '/api/routines/' + bob.id, { coach_id: C, profile: { start_date: day(28) } });
+    al = await alertsOf(bob.id);
+    ok('evaluación hoy al cumplir 4 semanas', has(al, 'eval') && has(al, 'eval').in === 0, al);
+    await call('PUT', '/api/routines/' + bob.id, { coach_id: C, profile: { start_date: day(-5) } });
+    ok('programa que empieza en el futuro: sin alertas', (await alertsOf(bob.id)).length === 0);
+    await call('PUT', '/api/routines/' + bob.id, { coach_id: C, profile: { start_date: day(26), status: 'pausado' } });
+    ok('alumno pausado: sin alertas', (await alertsOf(bob.id)).length === 0);
+
+    // Alumno de antes (sin resúmenes): el detalle los completa y devuelve las alertas
+    const key = 'routine:' + C + ':' + ana.id;
+    const old = JSON.parse(env.BMOD_KV._m.get(key));
+    delete old.recent_quick_dates; delete old.loads_review; delete old.chk_recent;
+    env.BMOD_KV._m.set(key, JSON.stringify(old));
+    const det = await call('GET', '/api/routines/' + ana.id + '?coach_id=' + C);
+    const after = JSON.parse(env.BMOD_KV._m.get(key));
+    ok('el detalle completa los resúmenes de alumnos viejos', Array.isArray(after.chk_recent) && after.chk_recent.length === 2 && Array.isArray(after.loads_review), after.chk_recent);
+    ok('el detalle trae las alertas', Array.isArray(det.body.routine.alerts) && !!det.body.routine.alerts.find((a) => a.type === 'repeat_trouble'), det.body.routine.alerts);
+    const lst = (await call('GET', '/api/routines?coach_id=' + C)).body;
+    ok('lista con alertas para los 3 alumnos sin romper lo demás', lst.length === 3 && lst.every((x) => Array.isArray(x.alerts)), lst.length);
+    for (const x of lst) await call('DELETE', '/api/routines/' + x.id + '?coach_id=' + C);
+}
+
 // ── Coach: panel atado al código y ficha del alumno ──
 {
     console.log('\nCoach: panel atado al código y ficha del alumno');
