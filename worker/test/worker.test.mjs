@@ -231,6 +231,60 @@ let token, routineId;
     await call('DELETE', '/api/routines/' + mati.id + '?coach_id=coachZ');
 }
 
+// ── Coach: panel atado al código y ficha del alumno ──
+{
+    console.log('\nCoach: panel atado al código y ficha del alumno');
+    const ADMIN = { 'x-admin-secret': 'test-admin' };
+    const code = (c) => JSON.parse(env.BMOD_KV._m.get('code:' + c));
+    const coachCode = (await call('POST', '/api/admin/codes', { count: 1, product: 'coach', months: 3 }, ADMIN)).body.codes[0];
+    const PANEL = '11111111-2222-3333-4444-555555555555', OTRO = '99999999-8888-7777-6666-555555555555';
+    const a1 = await call('POST', '/api/license/activate', { code: coachCode, deviceId: 'celViejo', coach_id: PANEL });
+    ok('al activar el código de Coach, el panel queda atado', a1.status === 200 && a1.body.coach_id === PANEL && code(coachCode).panel_id === PANEL, a1.body);
+    const a2 = await call('POST', '/api/license/activate', { code: coachCode, deviceId: 'celNuevo', coach_id: OTRO });
+    ok('en un teléfono nuevo, el mismo código devuelve el mismo panel', a2.status === 200 && a2.body.coach_id === PANEL && code(coachCode).panel_id === PANEL, a2.body);
+    const prem = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 1 }, ADMIN)).body.codes[0];
+    const a3 = await call('POST', '/api/license/activate', { code: prem, deviceId: 'devP', coach_id: OTRO });
+    ok('un código Premium no ata ningún panel', a3.status === 200 && !a3.body.coach_id && !code(prem).panel_id);
+
+    const legacy = (await call('POST', '/api/admin/codes', { count: 1, product: 'coach', months: 3 }, ADMIN)).body.codes[0];
+    const la = await call('POST', '/api/license/activate', { code: legacy, deviceId: 'devL' });
+    const b1 = await call('POST', '/api/coach/bind', { license: la.body.token, coach_id: OTRO });
+    ok('un coach que ya tenía el código activado ata su panel con /coach/bind', b1.status === 200 && b1.body.coach_id === OTRO && code(legacy).panel_id === OTRO);
+    const b2 = await call('POST', '/api/coach/bind', { license: la.body.token, coach_id: PANEL });
+    ok('/coach/bind no pisa un panel ya atado (devuelve el original)', b2.body.coach_id === OTRO);
+    const b3 = await call('POST', '/api/coach/bind', { license: a3.body.token, coach_id: PANEL });
+    const b4 = await call('POST', '/api/coach/bind', { license: 'x.y', coach_id: PANEL });
+    ok('/coach/bind rechaza licencias Premium o inventadas', b3.status === 401 && b4.status === 401);
+
+    const cfg0 = await call('PUT', '/api/coach/config', { coach_id: PANEL, intake_questions: ['¿Practicás otro deporte?', '', '¿Qué horario preferís?', 'cuarta', 'quinta'] });
+    ok('el coach guarda hasta 3 preguntas propias', cfg0.status === 200 && cfg0.body.intake_questions.length === 3 && cfg0.body.intake_questions[0] === '¿Practicás otro deporte?', cfg0.body);
+    const r = (await call('POST', '/api/routines', { coach_id: PANEL, name: 'Plan Caro', plan: [{ name: 'A' }], alumno_name: 'Caro' })).body;
+    const sh0 = await call('GET', '/api/shares/' + r.share_token);
+    ok('el link del alumno trae las preguntas del coach y la ficha vacía', sh0.body.intake === null && sh0.body.intake_questions.length === 3);
+    const noConsent = await call('POST', '/api/shares/' + r.share_token + '/intake', { goals: ['fuerza'], limitations: 'Hernia lumbar' });
+    ok('sin consentimiento no se guardan limitaciones de salud', noConsent.status === 400);
+    const empty = await call('POST', '/api/shares/' + r.share_token + '/intake', { goals: ['inventado'] });
+    ok('una ficha vacía se rechaza (y no acepta opciones inventadas)', empty.status === 400);
+    const ik = await call('POST', '/api/shares/' + r.share_token + '/intake', { goals: ['fuerza', 'musculo', 'xx'], experience: '1a3', days: 4, schedule: 'mañanas', equipment: ['gimnasio'], limitations: 'Hernia lumbar', consent: true, contact: '+54 9 294 000', extra: ['Fútbol los sábados', '', 'Tarde'] });
+    ok('el alumno manda su ficha con consentimiento', ik.status === 201 && ik.body.intake.goals.join() === 'fuerza,musculo' && ik.body.intake.consent === true && ik.body.intake.extra.length === 2, ik.body);
+    const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + PANEL);
+    ok('el coach ve la ficha en el detalle', det.body.routine.intake && det.body.routine.intake.limitations === 'Hernia lumbar');
+    const list = await call('GET', '/api/routines?coach_id=' + PANEL);
+    ok('la lista marca la ficha completa y el estado', list.body[0].intake_done === true && list.body[0].status === 'activo');
+
+    const before = det.body.routine.last_coach_update_at;
+    const p1 = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, profile: { modality: 'Digital Seguimiento', start_date: '2026-11-10', status: 'activo', goals: 'Ganar fuerza', notes: 'Cuidar la zona lumbar' } });
+    ok('el coach completa su parte de la ficha (sin avisar al alumno de un cambio de rutina)', p1.status === 200 && p1.body.profile.modality === 'Digital Seguimiento' && p1.body.last_coach_update_at === before);
+    const p2 = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, profile: { modality: 'Digital Seguimiento', start_date: '2026-11-10', status: 'activo', goals: 'Priorizar glúteos y piernas', notes: 'Cuidar la zona lumbar' } });
+    ok('cambiar el objetivo guarda el anterior en el historial', p2.body.profile.goals === 'Priorizar glúteos y piernas' && p2.body.goal_history.length === 1 && p2.body.goal_history[0].goals === 'Ganar fuerza', p2.body.goal_history);
+    const sh1 = await call('GET', '/api/shares/' + r.share_token);
+    ok('las notas privadas del coach no llegan al link del alumno', !JSON.stringify(sh1.body).includes('Cuidar la zona') && JSON.stringify(sh1.body).includes('Hernia lumbar'));
+    ok('el link no expone la ficha del coach', !('profile' in sh1.body.routine) && !JSON.stringify(sh1.body.routine).includes('Cuidar'));
+    const bad = await call('PUT', '/api/coach/config', { coach_id: 'x', intake_questions: ['a'] });
+    ok('config con un panel inválido → 401', bad.status === 401);
+    await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + PANEL);
+}
+
 // ── Licencias: admin codes + activate + verify + binding ──
 let code, licToken;
 {

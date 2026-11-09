@@ -11,6 +11,9 @@
 //                     POST                /api/shares/{token}/sessions  (adherencia + kg/reps del alumno)
 //                     POST                /api/shares/{token}/checkins  (control semanal del alumno)
 //                     POST                /api/shares/{token}/premium-claim (ata un código de coach al alumno)
+//                     POST                /api/shares/{token}/intake    (cuestionario inicial del alumno)
+//                     POST                /api/coach/bind               (ata el panel del coach a su código)
+//                     GET/PUT             /api/coach/config             (preguntas propias del coach)
 //   Licencias:        POST                /api/license/activate
 //                     POST                /api/license/verify
 //                     POST                /api/license/trial
@@ -314,7 +317,11 @@ async function listRoutines(env, url) {
         week_sessions: (r.recent_session_dates || []).filter((d) => d >= weekAgo).length,
         last_checkin_at: r.last_checkin_at || null,
         new_checkin: !!r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at),
-        premium: Array.isArray(r.premium_codes) && r.premium_codes.length > 0
+        premium: Array.isArray(r.premium_codes) && r.premium_codes.length > 0,
+        status: (r.profile && r.profile.status) || 'activo',
+        modality: (r.profile && r.profile.modality) || '',
+        start_date: (r.profile && r.profile.start_date) || '',
+        intake_done: !!r.intake
     })));
 }
 
@@ -347,8 +354,29 @@ async function updateRoutine(req, env, url, id) {
     const now = nowISO();
     if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = body.plan;
+    // Ficha que completa el coach (privada: no viaja al link del alumno). Si cambian los
+    // objetivos, el anterior queda en el historial con su fecha.
+    if (body.profile && typeof body.profile === 'object') {
+        const p = body.profile, prev = r.profile || {};
+        const goals = str(p.goals, 300);
+        const next = {
+            modality: str(p.modality, 60) || '',
+            start_date: /^\d{4}-\d{2}-\d{2}$/.test(p.start_date || '') ? p.start_date : '',
+            status: STATUSES.includes(p.status) ? p.status : (prev.status || 'activo'),
+            goals: goals === null ? (prev.goals || '') : goals,
+            notes: str(p.notes, 800) || ''
+        };
+        if (prev.goals && next.goals !== prev.goals) {
+            r.goal_history = [{ date: (prev.goals_since || (r.created_at || now).slice(0, 10)), goals: prev.goals, until: now.slice(0, 10) }]
+                .concat(Array.isArray(r.goal_history) ? r.goal_history : []).slice(0, 20);
+            next.goals_since = now.slice(0, 10);
+        } else if (prev.goals_since) next.goals_since = prev.goals_since;
+        else if (next.goals) next.goals_since = now.slice(0, 10);
+        r.profile = next;
+    } else {
+        r.last_coach_update_at = now;   // solo un cambio de la rutina avisa al alumno
+    }
     r.updated_at = now;
-    r.last_coach_update_at = now;
     await kvPut(env, routineKey(coachId, id), r);
     return json(r);
 }
@@ -415,7 +443,9 @@ async function getShare(env, token) {
         alumno_name: r.alumno_name, share_token: r.share_token,
         last_coach_update_at: r.last_coach_update_at, created_at: r.created_at
     };
-    return json({ routine: publicRoutine, edits, sessions, checkins });
+    const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
+    return json({ routine: publicRoutine, edits, sessions, checkins, intake: r.intake || null,
+        intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -525,6 +555,67 @@ async function postCheckin(req, env, token) {
     return json({ ok: true, checkin: chk }, 201);
 }
 
+// ── Ficha del alumno ──
+const INTAKE_GOALS = ['fuerza', 'musculo', 'grasa', 'salud', 'rendimiento', 'tecnica'];
+const INTAKE_EQUIP = ['gimnasio', 'casa', 'sin_equipo', 'otro'];
+const INTAKE_EXP = ['nuevo', 'menos1', '1a3', 'mas3'];
+const STATUSES = ['activo', 'pausado', 'finalizado'];
+const pickList = (v, allowed) => (Array.isArray(v) ? [...new Set(v.filter((x) => allowed.includes(x)))] : []);
+
+// POST /api/shares/{token}/intake — cuestionario inicial que completa el alumno desde su link
+// o su app. Antecedentes y limitaciones son datos de salud: sin consentimiento expreso no se
+// guardan. Se puede volver a mandar (se pisa) para corregir.
+async function postIntake(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) return err('Routine not found', 404);
+    const body = (await readBody(req)) || {};
+    const limitations = str(body.limitations, 500) || '';
+    if (limitations && body.consent !== true) return err('Para guardar antecedentes o limitaciones hace falta tu consentimiento', 400);
+    const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
+    const qs = Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [];
+    const extra = Array.isArray(body.extra) ? body.extra : [];
+    const intake = {
+        goals: pickList(body.goals, INTAKE_GOALS),
+        goals_text: str(body.goals_text, 300) || '',
+        experience: INTAKE_EXP.includes(body.experience) ? body.experience : '',
+        days: num(body.days, 1, 7),
+        schedule: str(body.schedule, 120) || '',
+        equipment: pickList(body.equipment, INTAKE_EQUIP),
+        equipment_text: str(body.equipment_text, 200) || '',
+        limitations,
+        contact: str(body.contact, 80) || '',
+        extra: qs.map((q, i) => ({ q, a: str(extra[i], 300) || '' })).filter((x) => x.a),
+        submitted_at: nowISO()
+    };
+    if (limitations) { intake.consent = true; intake.consent_at = intake.submitted_at; }
+    if (!intake.goals.length && !intake.goals_text && !intake.experience && !intake.days) return err('Ficha vacía', 400);
+    r.intake = intake;
+    await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    return json({ ok: true, intake }, 201);
+}
+
+// Coach: preguntas propias para la ficha (hasta 3). Una key por coach.
+async function getCoachConfig(env, url) {
+    const coachId = url.searchParams.get('coach_id');
+    if (!validPanelId(coachId)) return err('Missing coach_id', 401);
+    const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
+    return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
+}
+async function putCoachConfig(req, env, url) {
+    const body = (await readBody(req)) || {};
+    const coachId = coachIdFrom(req, url, body);
+    if (!validPanelId(coachId)) return err('Missing coach_id', 401);
+    const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
+    if (Array.isArray(body.intake_questions)) {
+        cfg.intake_questions = body.intake_questions.map((q) => str(q, 120)).filter(Boolean).slice(0, 3);
+    }
+    cfg.updated_at = nowISO();
+    await kvPut(env, `coachcfg:${coachId}`, cfg);
+    return json({ ok: true, intake_questions: cfg.intake_questions || [] });
+}
+
 async function postEdit(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
@@ -597,12 +688,41 @@ async function activateLicense(req, env) {
     const share = body && typeof body.share === 'string' ? body.share.trim().toLowerCase() : '';
     if (share && rec.coach_pack) await bindCoachCode(env, code, rec, share);
 
+    // Código de Coach: el panel de alumnos queda atado al código. La primera vez se anota
+    // el panel del teléfono; en un teléfono nuevo, el mismo código devuelve ese panel.
+    const panelWant = validPanelId(body && body.coach_id);
+    if (rec.product === 'coach' && !rec.panel_id && panelWant) {
+        rec.panel_id = panelWant;
+        await kvPut(env, `code:${code}`, rec);
+    }
+
     const product = rec.product || 'premium';
     const tier = 'premium'; // ambos productos desbloquean premium hoy; product distingue para futuro
     const iat = Date.now();
     const exp = rec.expires_at ? new Date(rec.expires_at).getTime() : null; // null = lifetime (one-time)
     const token = await signLicense(secret, { product, tier, deviceId, code, iat, exp });
-    return json({ ok: true, token, product, tier, expiresAt: exp ? new Date(exp).toISOString() : null });
+    const out = { ok: true, token, product, tier, expiresAt: exp ? new Date(exp).toISOString() : null };
+    if (rec.product === 'coach' && rec.panel_id) out.coach_id = rec.panel_id;
+    return json(out);
+}
+
+// Identificador del panel del coach (el que genera la app: un UUID)
+function validPanelId(v) { return typeof v === 'string' && /^[A-Za-z0-9-]{8,80}$/.test(v) ? v : null; }
+
+// POST /api/coach/bind — coaches que ya tenían su código activado: ata su panel al código
+// (o devuelve el que ya estaba atado, para recuperarlo en otro teléfono).
+async function coachBind(req, env) {
+    const body = await readBody(req);
+    const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.license) : null;
+    if (!payload || !payload.code) return err('Licencia inválida', 401);
+    const rec = await kvGet(env, `code:${payload.code}`);
+    if (!rec || rec.revoked || rec.product !== 'coach' || rec.deviceId !== payload.deviceId) return err('Licencia inválida', 401);
+    const want = validPanelId(body && body.coach_id);
+    if (!rec.panel_id && want) {
+        rec.panel_id = want;
+        await kvPut(env, `code:${payload.code}`, rec);
+    }
+    return json({ ok: true, coach_id: rec.panel_id || null });
 }
 
 // Códigos de coach (coach_pack): el entrenador los reparte entre sus alumnos. Cada uno
@@ -1642,6 +1762,10 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
+            if (p === '/api/coach/bind' && m === 'POST') return await coachBind(req, env);
+            if (p === '/api/coach/config' && m === 'GET') return await getCoachConfig(env, url);
+            if (p === '/api/coach/config' && m === 'PUT') return await putCoachConfig(req, env, url);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
 
             // Licencias
