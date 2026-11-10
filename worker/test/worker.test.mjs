@@ -337,6 +337,65 @@ let token, routineId;
     for (const x of lst) await call('DELETE', '/api/routines/' + x.id + '?coach_id=' + C);
 }
 
+// ── Coach: descanso y video por ejercicio, videos de técnica y exportación ──
+{
+    console.log('\nCoach: video por ejercicio, videos de técnica y exportación');
+    const C = 'coachVID';
+    const plan = [{ name: 'Día 1', exercises: [
+        { name: 'Sentadilla', sets: 3, reps: '8', rest_s: '120', video_url: ' https://youtu.be/abc123 ' },
+        { name: 'Press', sets: 3, reps: '10', rest_s: 3, video_url: 'javascript:alert(1)' },
+        { name: 'Remo', sets: 3, reps: '10', rest_s: 5000, video_url: 'http://inseguro.com/v' },
+        { name: 'Plancha', sets: 3, reps: '30s', video_url: 'https://drive.google.com/file/d/x "onmouseover=alert(1)' }
+    ] }];
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan', plan, alumno_name: 'Vic' })).body;
+    const ex = r.plan[0].exercises;
+    ok('video del coach: https se guarda (sin espacios)', ex[0].video_url === 'https://youtu.be/abc123' && ex[0].rest_s === 120, ex[0]);
+    ok('links peligrosos o sin https se descartan', ex[1].video_url === undefined && ex[2].video_url === undefined && ex[3].video_url === undefined, ex);
+    ok('descanso fuera de rango se descarta', ex[1].rest_s === undefined && ex[2].rest_s === undefined, ex);
+    const up = await call('PUT', '/api/routines/' + r.id, { coach_id: C, plan: [{ name: 'Día 1', exercises: [{ name: 'Sentadilla', rest_s: 90, video_url: 'data:text/html,hola' }] }] });
+    ok('editar la rutina también limpia el plan', up.status === 200 && up.body.plan[0].exercises[0].video_url === undefined && up.body.plan[0].exercises[0].rest_s === 90, up.body.plan);
+
+    const tk = r.share_token;
+    const noEx = await call('POST', '/api/shares/' + tk + '/videos', { url: 'https://youtu.be/x1' });
+    ok('video sin ejercicio → 400', noEx.status === 400);
+    const bad = await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Sentadilla', url: 'javascript:alert(1)' });
+    ok('video con link no https → 400', bad.status === 400);
+    const v1 = await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Sentadilla', url: 'https://youtu.be/sq1', note: 'Me cuesta bajar' });
+    ok('video de técnica 201', v1.status === 201 && v1.body.video.exercise === 'Sentadilla' && !!v1.body.video.id && v1.body.video.note === 'Me cuesta bajar', v1.body);
+    let lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('alerta: 1 video sin responder', !!lst.alerts.find((a) => a.type === 'video' && a.count === 1), lst.alerts);
+    let det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('el coach ve el video en el detalle', det.body.videos.length === 1 && det.body.videos[0].url === 'https://youtu.be/sq1', det.body.videos);
+    const empty = await call('PUT', '/api/routines/' + r.id + '/videos/' + v1.body.video.id, { coach_id: C });
+    ok('respuesta vacía → 400', empty.status === 400);
+    const other = await call('PUT', '/api/routines/' + r.id + '/videos/' + v1.body.video.id, { coach_id: 'coachOtro', reply: 'x' });
+    ok('otro coach no responde', other.status === 404 || other.status === 403, other.status);
+    const rep = await call('PUT', '/api/routines/' + r.id + '/videos/' + v1.body.video.id, { coach_id: C, reply: 'Bajá más lento y empujá el piso' });
+    ok('el coach responde', rep.status === 200 && rep.body.video.reply === 'Bajá más lento y empujá el piso' && !!rep.body.video.reply_at, rep.body);
+    lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('respondido, la alerta se va', !lst.alerts.find((a) => a.type === 'video'), lst.alerts);
+    const sh = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve la respuesta por el link', sh.body.videos[0].reply === 'Bajá más lento y empujá el piso', sh.body.videos);
+    for (let i = 0; i < 6; i++) await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Press', url: 'https://youtu.be/p' + i });
+    const tope = await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Press', url: 'https://youtu.be/p9' });
+    ok('tope de 6 sin responder → 429', tope.status === 429, tope.status);
+    const someId = (await call('GET', '/api/shares/' + tk)).body.videos[0].id;
+    const del = await call('DELETE', '/api/shares/' + tk + '/videos/' + someId);
+    lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('el alumno saca un video y baja el contador', del.status === 200 && lst.alerts.find((a) => a.type === 'video').count === 5, lst.alerts);
+
+    // Exportación: todas las sesiones y no marca el control como visto
+    for (let i = 0; i < 35; i++) await call('POST', '/api/shares/' + tk + '/sessions', { date: new Date(Date.now() - i * 86400000).toISOString().slice(0, 10) });
+    await call('POST', '/api/shares/' + tk + '/checkins', { weight: 70 });
+    const exp = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C + '&export=1');
+    lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('exportar trae todas las sesiones (35) y no marca el control como visto', exp.body.sessions.length === 35 && lst.new_checkin === true, [exp.body.sessions.length, lst.new_checkin]);
+    det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('el detalle normal sigue trayendo 30', det.body.sessions.length === 30);
+    await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('dar de baja borra los videos', !env.BMOD_KV._m.has('videos:' + r.id));
+}
+
 // ── Coach: evaluación de ciclo ──
 {
     console.log('\nCoach: evaluación de ciclo');

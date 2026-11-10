@@ -67,7 +67,9 @@ const SESSION_EX_MAX = 20;              // ejercicios por sesión registrada
 const SESSION_SETS_MAX = 12;            // series por ejercicio
 const MAX_SESSION_JSON = 10 * 1024;     // red de seguridad: el peor caso válido (20 × 12 + nota) ronda 8 KB
 const CHECKINS_MAX = 26;
-const EVALS_MAX = 24;                    // evaluaciones de ciclo por alumno (~2 años)                // controles semanales por rutina (~6 meses)
+const EVALS_MAX = 24;                    // evaluaciones de ciclo por alumno (~2 años)
+const VIDEOS_MAX = 30;                   // videos de técnica por alumno (links, no archivos)
+const VIDEOS_PENDING_MAX = 6;            // sin respuesta del coach, como mucho                // controles semanales por rutina (~6 meses)
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
@@ -229,6 +231,29 @@ function sessionsKey(routineId) { return `sessions:${routineId}`; }
 function checkinsKey(routineId) { return `checkins:${routineId}`; }
 //   evals:{routineId}    = { items: [ev, ...] }     ciclo desc, una por ciclo, tope EVALS_MAX
 function evalsKey(routineId) { return `evals:${routineId}`; }
+//   videos:{routineId}   = { items: [vid, ...] }    más nuevo primero, tope VIDEOS_MAX
+function videosKey(routineId) { return `videos:${routineId}`; }
+// Links que se muestran como enlace (video del coach por ejercicio, videos de técnica
+// del alumno): solo https, sin espacios ni comillas (nada de javascript: ni data:).
+const LINK_RE = /^https:\/\/[^\s<>"'`]{4,290}$/i;
+// El plan lo arma el coach: se limpian el link del video y el descanso de cada ejercicio.
+function cleanPlanLinks(plan) {
+    const days = Array.isArray(plan) ? plan : [];
+    for (const d of days) {
+        for (const e of (d && Array.isArray(d.exercises) ? d.exercises : [])) {
+            if (!e || typeof e !== 'object') continue;
+            if (e.video_url !== undefined) {
+                const u = typeof e.video_url === 'string' ? e.video_url.trim() : '';
+                if (LINK_RE.test(u)) e.video_url = u; else delete e.video_url;
+            }
+            if (e.rest_s !== undefined && e.rest_s !== '') {
+                const n = Math.round(Number(e.rest_s));
+                if (n >= 10 && n <= 900) e.rest_s = n; else delete e.rest_s;
+            }
+        }
+    }
+    return plan;
+}
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : null);
 // Número dentro de [min, max] con un decimal, o null. Los datos del link del alumno son públicos.
 const num = (v, min, max) => {
@@ -286,7 +311,7 @@ async function createRoutine(req, env, url) {
         coach_id: coachId,
         coach_name: str(body.coach_name, 80),
         name: str(body.name, 80),
-        plan: body.plan,
+        plan: cleanPlanLinks(body.plan),
         alumno_name: str(body.alumno_name, 80),
         alumno_email: str(body.alumno_email, 120),
         share_token: token,
@@ -431,7 +456,9 @@ function studentAlerts(r, today) {
     const lastChk = r.last_checkin_at ? String(r.last_checkin_at).slice(0, 10) : '';
     const chkIdle = lastChk ? dayDiff(lastChk, today) : since;
     if (since >= 7 && chkIdle >= 8) out.push({ type: 'no_checkin', days: lastChk ? chkIdle : null });
-    // 8. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): desde 3 días antes de
+    // 8. Videos de técnica esperando respuesta del coach
+    if (r.videos_pending > 0) out.push({ type: 'video', count: r.videos_pending });
+    // 9. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): desde 3 días antes de
     // que termine el ciclo hasta que la hace (o hasta que se acerca el fin del siguiente).
     if (start) {
         const d = dayDiff(start, today);
@@ -589,8 +616,9 @@ async function getRoutine(env, url, id) {
     deriveFromSessions(r, sessAll);
     deriveFromCheckins(r, checkins);
     let dirty = derivedSig(r) !== before;
-    // Abrir el detalle marca el control como visto.
-    if (r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)) {
+    // Abrir el detalle marca el control como visto (exportar no cuenta como verlo).
+    const exporting = url.searchParams.get('export') === '1';
+    if (!exporting && r.last_checkin_at && (!r.coach_seen_checkin_at || r.last_checkin_at > r.coach_seen_checkin_at)) {
         r.coach_seen_checkin_at = r.last_checkin_at;
         dirty = true;
     }
@@ -600,7 +628,8 @@ async function getRoutine(env, url, id) {
     const evals = ((await kvGet(env, evalsKey(id))) || { items: [] }).items;
     const tgt = evalTarget(r, today);
     const eval_draft = tgt ? Object.assign(tgt, { stats: evalStats(r, sessAll, checkins, tgt.from, tgt.to, today) }) : null;
-    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions, checkins, evals, eval_draft });
+    const videos = ((await kvGet(env, videosKey(id))) || { items: [] }).items;
+    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -613,7 +642,7 @@ async function updateRoutine(req, env, url, id) {
     if (body.plan && (typeof body.plan !== 'object' || planTooBig(body.plan))) return err('Plan inválido o demasiado grande', 413);
     const now = nowISO();
     if (body.name) r.name = str(body.name, 80);
-    if (body.plan) r.plan = body.plan;
+    if (body.plan) r.plan = cleanPlanLinks(body.plan);
     // Ficha que completa el coach (privada: no viaja al link del alumno). Si cambian los
     // objetivos, el anterior queda en el historial con su fecha.
     if (body.profile && typeof body.profile === 'object') {
@@ -663,6 +692,7 @@ async function deleteRoutine(req, env, url, id) {
     await env.BMOD_KV.delete(sessionsKey(id));
     await env.BMOD_KV.delete(checkinsKey(id));
     await env.BMOD_KV.delete(evalsKey(id));
+    await env.BMOD_KV.delete(videosKey(id));
     return json({ ok: true, revoked });
 }
 
@@ -706,7 +736,8 @@ async function getShare(env, token) {
     };
     const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
     const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
-    return json({ routine: publicRoutine, edits, sessions, checkins, evals, intake: r.intake || null,
+    const videos = ((await kvGet(env, videosKey(r.id))) || { items: [] }).items.slice(0, 10);
+    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
@@ -842,6 +873,68 @@ async function postCheckin(req, env, token) {
         await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     }
     return json({ ok: true, checkin: chk }, 201);
+}
+
+// ── Videos de técnica (por link) ──
+// El alumno sube su video a Drive o YouTube (oculto) y manda el link con el ejercicio;
+// el coach lo ve en el panel y le responde. No se guarda ningún archivo.
+const pendingVideos = (items) => items.filter((v) => !v.reply).length;
+async function syncVideosPending(env, idx, items) {
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) return;
+    const n = pendingVideos(items);
+    if ((r.videos_pending || 0) !== n) { r.videos_pending = n; await kvPut(env, routineKey(idx.coachId, idx.routineId), r); }
+}
+// POST /api/shares/{token}/videos
+async function postVideo(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const body = (await readBody(req)) || {};
+    const exercise = str(body.exercise, 60);
+    const link = str(body.url, 300) || '';
+    if (!exercise) return err('Elegí el ejercicio del video', 400);
+    if (!LINK_RE.test(link)) return err('El link tiene que empezar con https://', 400);
+    const agg = (await kvGet(env, videosKey(idx.routineId))) || { items: [] };
+    if (pendingVideos(agg.items) >= VIDEOS_PENDING_MAX) return err('Tenés varios videos esperando la respuesta de tu coach', 429);
+    const date = validSessionDate(body.date) ? body.date : new Date().toISOString().slice(0, 10);
+    const vid = { id: newShareToken(), exercise, url: link, date, at: nowISO() };
+    const note = str(body.note, 300);
+    if (note) vid.note = note;
+    agg.items = [vid].concat(agg.items).slice(0, VIDEOS_MAX);
+    await kvPut(env, videosKey(idx.routineId), agg);
+    await syncVideosPending(env, idx, agg.items);
+    return json({ ok: true, video: vid }, 201);
+}
+// DELETE /api/shares/{token}/videos/{id} — el alumno saca su video
+async function deleteVideo(env, token, vidId) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const agg = (await kvGet(env, videosKey(idx.routineId))) || { items: [] };
+    if (!agg.items.some((v) => v.id === vidId)) return err('Not found', 404);
+    agg.items = agg.items.filter((v) => v.id !== vidId);
+    await kvPut(env, videosKey(idx.routineId), agg);
+    await syncVideosPending(env, idx, agg.items);
+    return json({ ok: true });
+}
+// PUT /api/routines/{id}/videos/{vid} — el coach responde (o corrige su respuesta)
+async function replyVideo(req, env, url, id, vidId) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const reply = str(body && body.reply, 1000);
+    if (!reply) return err('Escribí la respuesta', 400);
+    const agg = (await kvGet(env, videosKey(id))) || { items: [] };
+    const v = agg.items.find((x) => x.id === vidId);
+    if (!v) return err('Not found', 404);
+    v.reply = reply;
+    v.reply_at = nowISO();
+    await kvPut(env, videosKey(id), agg);
+    const n = pendingVideos(agg.items);
+    if ((r.videos_pending || 0) !== n) { r.videos_pending = n; await kvPut(env, routineKey(coachId, id), r); }
+    return json({ ok: true, video: v });
 }
 
 // ── Ficha del alumno ──
@@ -2045,6 +2138,7 @@ export default {
             if (p === '/api/routines' && m === 'GET') return await listRoutines(env, url);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
@@ -2052,6 +2146,8 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos$/)) && m === 'POST') return await postVideo(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
             if (p === '/api/coach/bind' && m === 'POST') return await coachBind(req, env);
