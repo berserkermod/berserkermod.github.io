@@ -66,7 +66,8 @@ const SESSIONS_DETAIL_MAX = 40;         // las más nuevas guardan kg/reps; las 
 const SESSION_EX_MAX = 20;              // ejercicios por sesión registrada
 const SESSION_SETS_MAX = 12;            // series por ejercicio
 const MAX_SESSION_JSON = 10 * 1024;     // red de seguridad: el peor caso válido (20 × 12 + nota) ronda 8 KB
-const CHECKINS_MAX = 26;                // controles semanales por rutina (~6 meses)
+const CHECKINS_MAX = 26;
+const EVALS_MAX = 24;                    // evaluaciones de ciclo por alumno (~2 años)                // controles semanales por rutina (~6 meses)
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
@@ -226,6 +227,8 @@ function routineKey(coachId, id) { return `routine:${coachId}:${id}`; }
 function editsKey(routineId) { return `edits:${routineId}`; }
 function sessionsKey(routineId) { return `sessions:${routineId}`; }
 function checkinsKey(routineId) { return `checkins:${routineId}`; }
+//   evals:{routineId}    = { items: [ev, ...] }     ciclo desc, una por ciclo, tope EVALS_MAX
+function evalsKey(routineId) { return `evals:${routineId}`; }
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : null);
 // Número dentro de [min, max] con un decimal, o null. Los datos del link del alumno son públicos.
 const num = (v, min, max) => {
@@ -307,7 +310,7 @@ async function listRoutines(env, url) {
     // 1 list + N gets (N ≤ ROUTINES_LIST_MAX). Todo lo demás sale del registro.
     const routines = await listByPrefix(env, `routine:${coachId}:`, ROUTINES_LIST_MAX);
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = reqToday(url, null);
     return json(routines.map((r) => ({
         id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
         share_token: r.share_token, created_at: r.created_at,
@@ -331,6 +334,12 @@ async function listRoutines(env, url) {
 // Salen solo del registro del alumno (la lista no puede leer más keys: 1 list + N gets
 // en el plan Free). Para eso las sesiones y los controles dejan resúmenes en el registro.
 const DAY_MS = 86400000;
+// Fecha local del coach que manda la app (si difiere a lo sumo 1 día de la UTC del servidor).
+function reqToday(url, body) {
+    const utc = new Date().toISOString().slice(0, 10);
+    const v = (url && url.searchParams.get('today')) || (body && body.today);
+    return /^\d{4}-\d{2}-\d{2}$/.test(v || '') && Math.abs(dayDiff(utc, v)) <= 1 ? v : utc;
+}
 function dayDiff(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / DAY_MS); }
 function addDaysISO(d, n) { return new Date(Date.parse(d + 'T00:00:00Z') + n * DAY_MS).toISOString().slice(0, 10); }
 // Mejor serie de un ejercicio: 1RM estimado (Epley) o, sin peso, las repeticiones.
@@ -422,15 +431,146 @@ function studentAlerts(r, today) {
     const lastChk = r.last_checkin_at ? String(r.last_checkin_at).slice(0, 10) : '';
     const chkIdle = lastChk ? dayDiff(lastChk, today) : since;
     if (since >= 7 && chkIdle >= 8) out.push({ type: 'no_checkin', days: lastChk ? chkIdle : null });
-    // 8. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): hoy o en 3 días
+    // 8. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): desde 3 días antes de
+    // que termine el ciclo hasta que la hace (o hasta que se acerca el fin del siguiente).
     if (start) {
         const d = dayDiff(start, today);
-        if (d > 0) {
-            const left = d % 28 === 0 ? 0 : 28 - (d % 28);
-            if (left <= 3) out.push({ type: 'eval', in: left, cycle: Math.ceil(d / 28), date: addDaysISO(today, left) });
+        const c = Math.floor((d + 3) / 28);
+        const done = Array.isArray(r.eval_cycles) ? r.eval_cycles : [];
+        if (d > 0 && c >= 1 && !done.includes(c)) {
+            const left = 28 * c - d;
+            out.push({ type: 'eval', cycle: c, in: Math.max(0, left), late: Math.max(0, -left), date: addDaysISO(today, left) });
         }
     }
     return out;
+}
+
+// ── Evaluación de ciclo (cada 4 semanas) ──
+// El sistema arma los datos del ciclo y el coach escribe la devolución; el alumno la ve
+// en su link y en la app. Los datos quedan fijos al guardar (se recalculan si la edita).
+function programStart(r) {
+    const s = r.profile && r.profile.start_date;
+    return /^\d{4}-\d{2}-\d{2}$/.test(s || '') ? s : null;
+}
+function cyclePeriod(start, cycle) { return { from: addDaysISO(start, (cycle - 1) * 28), to: addDaysISO(start, cycle * 28 - 1) }; }
+// Ciclo a evaluar: el último que terminó (o termina en 3 días) y no tiene evaluación;
+// si ya está hecha, el ciclo en curso (evaluación anticipada).
+function evalTarget(r, today) {
+    const start = programStart(r);
+    if (!start) return null;
+    const d = dayDiff(start, today);
+    if (d < 0) return null;
+    const current = Math.floor(d / 28) + 1;
+    const done = Array.isArray(r.eval_cycles) ? r.eval_cycles : [];
+    for (let c = Math.max(1, Math.floor((d + 3) / 28)); c <= current; c++) {
+        if (!done.includes(c)) return Object.assign({ cycle: c }, cyclePeriod(start, c));
+    }
+    return null;
+}
+function evalStats(r, sessions, checkins, from, to, today) {
+    const inP = (d) => d >= from && d <= to;
+    const ss = sessions.filter((s) => s && inP(s.date)).sort((a, b) => (a.date < b.date ? -1 : 1));
+    const planDays = Array.isArray(r.plan) ? r.plan.length : 0;
+    const days = Math.max(1, Math.min(28, dayDiff(from, today) + 1));     // si el ciclo sigue en curso, lo transcurrido
+    const planned = Math.round(planDays * days / 7);
+    const st = {
+        sessions: ss.length, planned, days,
+        adherence: planned ? Math.min(100, Math.round((ss.length / planned) * 100)) : null,
+        logged: ss.filter((s) => Array.isArray(s.exercises) && s.exercises.length).length
+    };
+    // Ejercicios principales: los que más se repitieron; mejor serie la primera y la última vez
+    const by = new Map();
+    for (const s of ss) {
+        for (const e of (Array.isArray(s.exercises) ? s.exercises : [])) {
+            if (!e || e.kind === 'cardio' || !Array.isArray(e.sets) || !e.sets.length) continue;
+            const best = e.sets.reduce((m, x) => (setScore(x) > setScore(m) ? x : m), e.sets[0]);
+            const score = setScore(best);
+            if (!(score > 0)) continue;
+            const o = by.get(e.name) || { name: e.name, n: 0 };
+            o.n++;
+            const pt = { kg: Number(best.kg) || 0, reps: Number(best.reps) || 0, score };
+            if (!o.first) o.first = pt;
+            o.last = pt;
+            by.set(e.name, o);
+        }
+    }
+    st.exercises = [...by.values()].filter((o) => o.n >= 2).sort((a, b) => b.n - a.n).slice(0, 6).map((o) => ({
+        name: o.name, n: o.n, first: { kg: o.first.kg, reps: o.first.reps }, last: { kg: o.last.kg, reps: o.last.reps },
+        change: Math.round((o.last.score / o.first.score - 1) * 100)
+    }));
+    // Controles del ciclo
+    const cc = checkins.filter((c) => c && inP(c.date)).sort((a, b) => (a.date < b.date ? -1 : 1));
+    st.checkins = cc.length;
+    const ws = cc.filter((c) => c.weight);
+    const before = checkins.filter((c) => c && c.weight && c.date < from).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    if (ws.length) {
+        st.weight_to = ws[ws.length - 1].weight;
+        st.weight_from = ws.length > 1 ? ws[0].weight : (before ? before.weight : null);
+    }
+    const avg = (k) => {
+        const v = cc.map((c) => c[k]).filter((x) => typeof x === 'number');
+        return v.length ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10 : null;
+    };
+    st.energy = avg('energy');
+    st.recovery = avg('recovery');
+    const tr = {};
+    cc.forEach((c) => (c.ex_trouble || []).forEach((n) => { tr[n] = (tr[n] || 0) + 1; }));
+    st.trouble = Object.entries(tr).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, n]) => ({ name, n }));
+    st.change_requests = cc.filter((c) => c.change).length;
+    // Objetivo: el actual y los que se reemplazaron desde que empezó el ciclo (el coach
+    // suele cambiarlo justo al evaluar, unos días después de que termina)
+    st.goal = (r.profile && r.profile.goals) || '';
+    st.goal_prev = (Array.isArray(r.goal_history) ? r.goal_history : []).filter((g) => g.until && g.until >= from).map((g) => g.goals).slice(0, 3);
+    return st;
+}
+const EVAL_TEXTS = ['results', 'difficulties', 'goals', 'next'];
+// PUT /api/routines/{id}/evals/{cycle} — el coach guarda (o edita) la evaluación del ciclo
+async function putEval(req, env, url, id, cycleStr) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const start = programStart(r);
+    if (!start) return err('Cargá el inicio del programa en la ficha del alumno', 400);
+    const today = reqToday(url, body);
+    const d = dayDiff(start, today);
+    const cycle = parseInt(cycleStr, 10);
+    if (!(d >= 0) || !(cycle >= 1 && cycle <= Math.floor(d / 28) + 1)) return err('Ciclo inválido', 400);
+    const texts = {};
+    for (const k of EVAL_TEXTS) { const v = str(body && body[k], 1000); if (v) texts[k] = v; }
+    if (!Object.keys(texts).length) return err('Escribí al menos una parte de la devolución', 400);
+    const sessions = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items;
+    const checkins = ((await kvGet(env, checkinsKey(id))) || { items: [] }).items;
+    const per = cyclePeriod(start, cycle);
+    const agg = (await kvGet(env, evalsKey(id))) || { items: [] };
+    const prev = agg.items.find((e) => e.cycle === cycle);
+    const now = nowISO();
+    const ev = Object.assign({ cycle, from: per.from, to: per.to, stats: evalStats(r, sessions, checkins, per.from, per.to, today),
+        created_at: prev ? prev.created_at : now, updated_at: now }, texts);
+    agg.items = [ev].concat(agg.items.filter((e) => e.cycle !== cycle)).sort((a, b) => b.cycle - a.cycle).slice(0, EVALS_MAX);
+    await kvPut(env, evalsKey(id), agg);
+    r.eval_cycles = [...new Set((r.eval_cycles || []).concat(cycle))].sort((a, b) => a - b).slice(-60);
+    r.last_eval_at = now;
+    await kvPut(env, routineKey(coachId, id), r);
+    return json({ ok: true, eval: ev }, prev ? 200 : 201);
+}
+// DELETE /api/routines/{id}/evals/{cycle}
+async function deleteEval(req, env, url, id, cycleStr) {
+    const coachId = coachIdFrom(req, url, null);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const cycle = parseInt(cycleStr, 10);
+    const agg = (await kvGet(env, evalsKey(id))) || { items: [] };
+    if (!agg.items.some((e) => e.cycle === cycle)) return err('Not found', 404);
+    agg.items = agg.items.filter((e) => e.cycle !== cycle);
+    await kvPut(env, evalsKey(id), agg);
+    r.eval_cycles = (r.eval_cycles || []).filter((c) => c !== cycle);
+    await kvPut(env, routineKey(coachId, id), r);
+    return json({ ok: true });
 }
 
 async function getRoutine(env, url, id) {
@@ -455,8 +595,12 @@ async function getRoutine(env, url, id) {
         dirty = true;
     }
     if (dirty) await kvPut(env, routineKey(coachId, id), r);
-    const alerts = studentAlerts(r, new Date().toISOString().slice(0, 10));
-    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions, checkins });
+    const today = reqToday(url, null);
+    const alerts = studentAlerts(r, today);
+    const evals = ((await kvGet(env, evalsKey(id))) || { items: [] }).items;
+    const tgt = evalTarget(r, today);
+    const eval_draft = tgt ? Object.assign(tgt, { stats: evalStats(r, sessAll, checkins, tgt.from, tgt.to, today) }) : null;
+    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions, checkins, evals, eval_draft });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -518,6 +662,7 @@ async function deleteRoutine(req, env, url, id) {
     await env.BMOD_KV.delete(editsKey(id));
     await env.BMOD_KV.delete(sessionsKey(id));
     await env.BMOD_KV.delete(checkinsKey(id));
+    await env.BMOD_KV.delete(evalsKey(id));
     return json({ ok: true, revoked });
 }
 
@@ -560,7 +705,8 @@ async function getShare(env, token) {
         last_coach_update_at: r.last_coach_update_at, created_at: r.created_at
     };
     const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
-    return json({ routine: publicRoutine, edits, sessions, checkins, intake: r.intake || null,
+    const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
+    return json({ routine: publicRoutine, edits, sessions, checkins, evals, intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
@@ -1898,6 +2044,8 @@ export default {
             if (p === '/api/routines' && m === 'POST') return await createRoutine(req, env, url);
             if (p === '/api/routines' && m === 'GET') return await listRoutines(env, url);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'DELETE') return await deleteRoutine(req, env, url, mt[1]);

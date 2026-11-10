@@ -337,6 +337,74 @@ let token, routineId;
     for (const x of lst) await call('DELETE', '/api/routines/' + x.id + '?coach_id=' + C);
 }
 
+// ── Coach: evaluación de ciclo ──
+{
+    console.log('\nCoach: evaluación de ciclo');
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const C = 'coachEV';
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan', plan: [{ day: 'A' }, { day: 'B' }], alumno_name: 'Eva' })).body;
+    const tk = r.share_token;
+    const sinInicio = await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Bien' });
+    ok('sin inicio del programa → 400', sinInicio.status === 400, sinInicio.body);
+    let det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('sin inicio no hay evaluación para armar', det.body.eval_draft === null && Array.isArray(det.body.evals) && det.body.evals.length === 0, det.body.eval_draft);
+
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: day(30), goals: 'Fuerza' } });
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: day(30), goals: 'Fuerza y bajar 2 kg' } });
+    // Ciclo 1 = day(30) .. day(3): sesiones con Sentadilla que progresa y controles
+    for (const [d, kg] of [[29, 60], [22, 62.5], [15, 65], [8, 67.5]]) {
+        await call('POST', '/api/shares/' + tk + '/sessions', { date: day(d), exercises: [{ name: 'Sentadilla', sets: [{ kg, reps: 8 }, { kg: kg - 10, reps: 10 }] }, { name: 'Remo', sets: [{ kg: 40, reps: 10 }] }] });
+    }
+    await call('POST', '/api/shares/' + tk + '/sessions', { date: day(26) });
+    await call('POST', '/api/shares/' + tk + '/sessions', { date: day(1), exercises: [{ name: 'Sentadilla', sets: [{ kg: 70, reps: 8 }] }] });   // ya es ciclo 2
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: day(28), weight: 70, energy: 3, recovery: 4 });
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: day(14), weight: 69.2, energy: 4, ex_trouble: ['Sentadilla'] });
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: day(7), weight: 68.6, energy: 5, recovery: 3, ex_trouble: ['Sentadilla'], change: true });
+
+    let lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    const ea = lst.alerts.find((a) => a.type === 'eval');
+    ok('alerta: evaluación del ciclo 1 atrasada 2 días', ea && ea.cycle === 1 && ea.late === 2 && ea.in === 0, lst.alerts);
+    det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    const dr = det.body.eval_draft;
+    ok('el detalle arma la evaluación del ciclo 1 con su período', dr && dr.cycle === 1 && dr.from === day(30) && dr.to === day(3), dr);
+    const st = dr.stats;
+    ok('cumplimiento: 5 de 8 (62 %), 4 con pesos', st.sessions === 5 && st.planned === 8 && st.adherence === 63 && st.logged === 4, st);
+    const sq = st.exercises.find((e) => e.name === 'Sentadilla');
+    ok('progresión: Sentadilla 60 → 67,5 kg (+13 %)', sq && sq.first.kg === 60 && sq.last.kg === 67.5 && sq.change === 13 && sq.n === 4, sq);
+    ok('Remo sin cambios: 0 %', st.exercises.find((e) => e.name === 'Remo').change === 0, st.exercises);
+    ok('peso 70 → 68,6, ánimo y recuperación promedio', st.weight_from === 70 && st.weight_to === 68.6 && st.energy === 4 && st.recovery === 3.5, st);
+    ok('dificultades y pedidos de cambio del ciclo', st.trouble[0].name === 'Sentadilla' && st.trouble[0].n === 2 && st.change_requests === 1, st.trouble);
+    ok('objetivo actual y el que reemplazó', st.goal === 'Fuerza y bajar 2 kg' && st.goal_prev[0] === 'Fuerza', st);
+
+    const vacia = await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C });
+    ok('devolución vacía → 400', vacia.status === 400);
+    const futura = await call('PUT', '/api/routines/' + r.id + '/evals/3', { coach_id: C, results: 'x' });
+    ok('ciclo que no empezó → 400', futura.status === 400);
+    const otro = await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: 'coachX', results: 'x' });
+    ok('otro coach no puede evaluar', otro.status === 404 || otro.status === 403, otro.status);
+    const sv = await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Subiste 7,5 kg en sentadilla', difficulties: 'Molestia en la rodilla', goals: 'Sumamos bajar 2 kg', next: 'Ciclo 2: más volumen de piernas', extra: 'no' });
+    ok('evaluación guardada 201 con datos fijos y textos', sv.status === 201 && sv.body.eval.cycle === 1 && sv.body.eval.stats.sessions === 5 && sv.body.eval.next === 'Ciclo 2: más volumen de piernas' && sv.body.eval.extra === undefined, sv.body);
+    lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('hecha la evaluación, la alerta se va', !lst.alerts.find((a) => a.type === 'eval'), lst.alerts);
+    det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('el detalle trae la evaluación y ofrece la del ciclo 2 (en curso)', det.body.evals.length === 1 && det.body.eval_draft.cycle === 2 && det.body.eval_draft.stats.days === 3, det.body.eval_draft);
+    const sh = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve su evaluación por el link', Array.isArray(sh.body.evals) && sh.body.evals[0].results === 'Subiste 7,5 kg en sentadilla' && !!sh.body.evals[0].stats, sh.body.evals);
+    const created = sv.body.eval.created_at;
+    const ed = await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Editada' });
+    ok('editar: 200, conserva la fecha de creación y reemplaza los textos', ed.status === 200 && ed.body.eval.created_at === created && ed.body.eval.results === 'Editada' && ed.body.eval.next === undefined, ed.body);
+    const del = await call('DELETE', '/api/routines/' + r.id + '/evals/1?coach_id=' + C);
+    lst = (await call('GET', '/api/routines?coach_id=' + C)).body[0];
+    ok('borrar la evaluación vuelve a pedirla', del.status === 200 && !!lst.alerts.find((a) => a.type === 'eval' && a.cycle === 1), lst.alerts);
+    await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Otra vez' });
+    // La fecha local del coach manda (dentro de ±1 día de la del servidor)
+    const lstLocal = (await call('GET', '/api/routines?coach_id=' + C + '&today=' + day(-1))).body[0];
+    const lstFar = (await call('GET', '/api/routines?coach_id=' + C + '&today=' + day(-9))).body[0];
+    ok('today del coach: ±1 día se acepta, más lejos se ignora', !lstLocal.alerts.find((a) => a.type === 'eval') && !lstFar.alerts.find((a) => a.type === 'eval' && a.cycle === 2), [lstLocal.alerts, lstFar.alerts]);
+    await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('dar de baja borra las evaluaciones', !env.BMOD_KV._m.has('evals:' + r.id));
+}
+
 // ── Coach: panel atado al código y ficha del alumno ──
 {
     console.log('\nCoach: panel atado al código y ficha del alumno');
