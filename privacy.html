@@ -159,11 +159,13 @@
     <main>
         <p class="kicker">Privacidad</p>
         <h1>Política de privacidad</h1>
-        <p class="updated">Última actualización: 2 de noviembre de 2026</p>
+        <p class="updated">Última actualización: 14 de noviembre de 2026</p>
 
         <div class="callout">
-            <strong>Resumen rápido:</strong> BERSERKERMOD guarda tus entrenamientos, comidas y stats en tu propio teléfono (localStorage del navegador). No hay cuentas ni contraseñas. A nuestro servidor solo llegan los datos técnicos mínimos de las funciones que usás (licencias, compras, modo Coach, recordatorios, IA) y un conteo anónimo de visitas a la web, sin cookies ni identificadores. No usamos Google Analytics, Facebook Pixel ni trackers publicitarios. Vendemos cero datos. Tu información es tuya.
+            <strong>Resumen rápido:</strong> BERSERKERMOD guarda tus entrenamientos, comidas y stats en tu propio teléfono (localStorage del navegador). No hay cuentas ni contraseñas. A nuestro servidor solo llega lo necesario para las funciones que usás (licencias, compras, recordatorios, IA) y un conteo anónimo de visitas a la web, sin cookies ni identificadores. Si entrenás con un coach, lo que compartís con él también se guarda en el servidor para que los dos lo vean (sección 5). No usamos Google Analytics, Facebook Pixel ni trackers publicitarios. Vendemos cero datos. Tu información es tuya.
         </div>
+
+        <p><strong>Qué cambió el 14 de noviembre de 2026:</strong> si entrenás con un coach, ahora podés completar una ficha inicial (con antecedentes de salud solo si das tu consentimiento) y un control semanal más completo, recibir una evaluación cada 4 semanas y mandarle links de videos para que corrija tu técnica. Qué se guarda, quién lo ve y cómo borrarlo está en las secciones 5 y 6.</p>
 
         <h2>1. Qué datos recopilamos</h2>
         <p>BERSERKERMOD recopila <strong>solamente</strong> los datos que vos ingresás o autorizás durante el uso de la app:</p>
@@ -174,19 +176,20 @@
             <li><strong>Nutrición</strong>: alimentos registrados, plan nutricional generado, macros calculados.</li>
             <li><strong>Frecuencia cardíaca</strong> (opcional): solo si emparejás un smartwatch vía Bluetooth Web. Las lecturas en vivo se muestran en pantalla; no se persisten por sesión todavía.</li>
             <li><strong>Configuración</strong>: idioma, tier (Free/Premium), preferencias.</li>
+            <li><strong>Si entrenás con un coach</strong>: lo que cargás para él (ficha, entrenamientos, controles semanales y links de video). Está detallado en la sección 5.</li>
         </ul>
 
         <h2>2. Dónde se guardan tus datos</h2>
-        <p>Todo lo que registrás (perfil, rutinas, sesiones, cardio, nutrición) se guarda <strong>exclusivamente en tu dispositivo</strong>, dentro del almacenamiento local del navegador (<code>localStorage</code>). No hay sincronización automática en la nube: para pasar tus datos a otro dispositivo o tener una copia, usá <strong>Exportar Datos</strong> e <strong>Importar Datos</strong> en tu perfil, o la copia opcional en tu propio Google Drive (ver sección 3).</p>
+        <p>Todo lo que registrás (perfil, rutinas, sesiones, cardio, nutrición) se guarda <strong>exclusivamente en tu dispositivo</strong>, dentro del almacenamiento local del navegador (<code>localStorage</code>), salvo lo que compartís con tu coach (sección 5). No hay sincronización automática en la nube: para pasar tus datos a otro dispositivo o tener una copia, usá <strong>Exportar Datos</strong> e <strong>Importar Datos</strong> en tu perfil, o la copia opcional en tu propio Google Drive (ver sección 3).</p>
         <p>Nuestro servidor (Cloudflare Workers) recibe <strong>solo</strong> lo necesario para estas funciones:</p>
         <ul>
-            <li><strong>Licencias Premium / Coach</strong>: el código, un identificador aleatorio de instalación que genera la app (no está ligado a tu nombre, email ni teléfono) y las fechas de activación y vencimiento.</li>
+            <li><strong>Licencias Premium / Coach</strong>: el código, un identificador aleatorio de instalación que genera la app (no está ligado a tu nombre, email ni teléfono) y las fechas de activación y vencimiento. En el plan Coach, el código queda asociado al identificador de tu panel de alumnos, para que lo recuperes si cambiás de teléfono. Si tu coach te dio un código Premium, queda asociado a tu rutina con él, para que se desactive si te da de baja.</li>
             <li><strong>Prueba gratuita y regalo para testers</strong>: el mismo identificador de instalación y un contador por red guardado como <em>hash irreversible</em> de la IP (nunca la IP), para evitar abusos. El contador se borra a los 30 días.</li>
             <li><strong>Compras</strong>: si comprás desde la web, el pago lo procesa Mercado Pago y nosotros guardamos solo el número de operación asociado a tu código. Si comprás dentro de Google Play, verificamos el comprobante que emite Google.</li>
             <li><strong>Recordatorio diario</strong> (solo si lo activás): la dirección de notificaciones que genera tu navegador, tu idioma y la zona horaria de tu teléfono (para avisarte a las 18 h de tu hora). El día que registrás un entrenamiento guardamos una marca de "ya entrenó hoy" para no mandarte el aviso; se borra sola a los 3 días.</li>
             <li><strong>Reportes de error</strong>: si la app falla, se envía el mensaje técnico del error y el tipo de navegador, sin datos de tu entrenamiento. Guardamos los últimos 150 y descartamos los de más de 30 días.</li>
             <li><strong>Estadísticas anónimas</strong>: de las visitas a la web (berserkermod.github.io) guardamos la página visitada, el botón tocado, de dónde llegaste (por ejemplo "tiktok"), el país, si usás celular o computadora y el sistema (Android, iPhone u otro). Cuando empezás una prueba gratis, activás un código o reclamás el Premium de tester, el servidor suma uno al contador de ese evento con esos mismos datos y si fue desde la web o desde la app de Google Play. Sin cookies, sin IP y sin identificadores: no podemos saber quién sos ni seguirte entre visitas. La app no envía estadísticas de uso: ese conteo sale de los pedidos de licencia que ya hace.</li>
-            <li><strong>Modo Coach e IA</strong>: ver secciones 3 y 5.</li>
+            <li><strong>Entrenar con un coach e IA</strong>: ver secciones 3 y 5.</li>
         </ul>
 
         <h2>3. Servicios de terceros</h2>
@@ -202,6 +205,7 @@
             <li><strong>OpenFoodFacts</strong>: usado para búsqueda de productos por nombre o código de barras (Premium). Las consultas se hacen anónimamente a su API pública (<code>world.openfoodfacts.org</code>).</li>
             <li><strong>Mercado Pago</strong>: si comprás desde la web, el pago se hace en Mercado Pago bajo sus propios términos. Nunca vemos ni guardamos los datos de tu tarjeta.</li>
             <li><strong>YouTube</strong>: los videos de técnica de cada ejercicio se cargan desde <code>youtube-nocookie.com</code> cuando abrís la ficha del ejercicio. YouTube no guarda cookies hasta que reproducís el video.</li>
+            <li><strong>Links de video con tu coach</strong>: el video que tu coach pone en un ejercicio y los que vos le mandás para corregir tu técnica se abren en una pestaña aparte, en el sitio donde están alojados (YouTube, Google Drive u otro). Ese sitio aplica sus propias condiciones y puede registrar tu visita.</li>
             <li><strong>Google Fonts</strong>: la app carga la tipografía Inter desde <code>fonts.googleapis.com</code>. Google puede registrar el IP y user-agent en su CDN. Si te importa, podés bloquear el dominio en tu DNS — la app sigue funcionando con la fuente fallback del sistema.</li>
         </ul>
 
@@ -215,21 +219,48 @@
             <li><strong>Sin recopilación de datos biométricos faciales</strong>.</li>
         </ul>
 
-        <h2>5. Modo Coach (cuando corresponda)</h2>
-        <p>Si usás el modo Coach, las rutinas que creás para tus alumnos se guardan en nuestro servidor (Cloudflare) para que cada alumno las abra con su link único + QR, sin cuenta: solo abre el link en su navegador. La rutina incluye el nombre del alumno y, si lo cargás, su email.</p>
-        <p>Las ediciones que hace el alumno y los días que marca como entrenados se guardan junto a esa rutina para que el coach los vea (las últimas 50 ediciones y 120 sesiones). Si el alumno lo completa, cada sesión guarda también lo que hizo (kilos, repeticiones y series de cada ejercicio, o minutos y kilómetros de cardio), qué tan duro le resultó y una nota para el coach; el detalle se conserva en las 40 sesiones más recientes.</p>
-        <p>Una vez por semana el link le ofrece al alumno un <strong>control semanal</strong> opcional: peso corporal, nivel de energía (1 a 5) y un mensaje para su coach. Guardamos los últimos 26 (unos seis meses). Solo los ven el alumno, desde su link, y el coach que creó la rutina. No los usamos para nada más ni los compartimos.</p>
-        <p>Al eliminar el share desde el panel de Coach se borra todo: la rutina, las ediciones, las sesiones y los controles semanales.</p>
+        <h2>5. Entrenar con un coach (Modo Coach)</h2>
+        <p>Esta sección vale para el coach y para sus alumnos. Lo que sigue se guarda en nuestro servidor (Cloudflare), porque tiene que estar disponible para los dos. <strong>Solo lo ven el alumno, desde su link, y el coach que creó la rutina.</strong> No lo usamos para nada más, no lo compartimos con terceros y no se envía a la inteligencia artificial de la app.</p>
+        <p><strong>El link del alumno es su llave.</strong> No hay cuenta ni contraseña: quien tenga el link puede ver la rutina y lo que el alumno cargó (su ficha, sus entrenamientos, sus controles, sus evaluaciones y sus links de video). No lo compartas ni lo publiques. Si creés que alguien más lo tiene, pedile a tu coach que te dé de baja y te arme la rutina de nuevo, con otro link.</p>
+
+        <h3>Lo que carga el coach</h3>
+        <ul>
+            <li><strong>La rutina</strong>: ejercicios, series, cargas, descansos, notas y, si quiere, el link a un video propio por ejercicio. Incluye el nombre del alumno y, si lo carga, su email.</li>
+            <li><strong>Los datos del programa</strong>: modalidad, fecha de inicio, estado (activo, pausado o finalizado), el objetivo actual con los anteriores (hasta 20) y notas privadas. Las notas privadas no se muestran en el link del alumno.</li>
+            <li><strong>Hasta 3 preguntas propias</strong>, que se suman a la ficha inicial de sus alumnos.</li>
+            <li><strong>Evaluaciones de cada ciclo de 4 semanas</strong>: un resumen que arma la app con datos que ya están guardados (cumplimiento, progresión de los ejercicios, peso, ánimo, recuperación y dificultades reportadas) más la devolución que escribe el coach. El alumno la ve. Guardamos hasta 24 por alumno.</li>
+            <li><strong>Respuestas a los videos de técnica</strong> del alumno.</li>
+        </ul>
+
+        <h3>Lo que carga el alumno (todo es opcional)</h3>
+        <ul>
+            <li><strong>Ediciones y entrenamientos</strong>: los cambios que propone a la rutina y los días que marca como entrenados (las últimas 50 ediciones y 120 sesiones). Si lo completa, cada sesión guarda también lo que hizo (kilos, repeticiones y series de cada ejercicio, o minutos y kilómetros de cardio), qué tan duro le resultó y una nota para el coach; el detalle se conserva en las 40 sesiones más recientes.</li>
+            <li><strong>Si entrenás la rutina de tu coach dentro de la app</strong> (Premium): cada sesión que terminás con esa rutina se envía también a tu coach, igual que desde el link. Lo demás que registrás en la app (otras rutinas, comidas, medidas, fotos, registro del período) no se le envía.</li>
+            <li><strong>Ficha inicial</strong>: tus objetivos, tu experiencia, los días y horarios que tenés, dónde entrenás, un contacto (WhatsApp o email) y las respuestas a las preguntas de tu coach.</li>
+            <li><strong>Antecedentes de salud o limitaciones</strong> (lesiones, dolores, cirugías, condiciones médicas o medicación): son datos sensibles. Solo se guardan si marcás la casilla de consentimiento, y guardamos la fecha en que lo diste. Se usan únicamente para que tu coach adapte tu entrenamiento. Podés retirar ese consentimiento cuando quieras (sección 6).</li>
+            <li><strong>Control semanal</strong>: cuántos entrenamientos hiciste, cómo te sentiste (1 a 5), si tuviste dificultades con algún ejercicio, tus horas de sueño y tu recuperación, si mantuviste tus comidas y tu hidratación, si querés cambiar algo del plan, tu peso y un mensaje. Es uno por semana y guardamos los últimos 26 (unos seis meses). En la app, el control viene con tus entrenamientos de la semana y tu último peso ya cargados: se envían recién cuando mandás el control.</li>
+            <li><strong>Videos de técnica</strong>: guardamos <em>el link</em> que pegás, el ejercicio y tu nota; nunca el archivo. El video queda en el servicio donde lo subiste (Google Drive, YouTube u otro), bajo sus condiciones y con los permisos que vos le pongas. Podés quitar el link cuando quieras. Guardamos hasta 30 por alumno.</li>
+        </ul>
+
+        <h3>Avisos y copia para el coach</h3>
+        <p>Con esos mismos datos la app le marca al coach a qué alumnos conviene mirar (por ejemplo, si hace una semana que no entrena o si reportó la misma dificultad dos veces). No se recopila nada más para eso.</p>
+        <p>El coach puede descargar a su dispositivo una copia de los datos de sus alumnos (planillas o un archivo). Esa copia, y el uso que el coach haga de lo que ve, quedan bajo su responsabilidad.</p>
+
+        <h3>Cuánto tiempo se guarda</h3>
+        <p>Mientras el coach mantenga al alumno en su panel. Cuando el coach toca "Dar de baja" se borra todo del servidor: la rutina con la ficha y los datos del programa, las ediciones, los entrenamientos, los controles semanales, las evaluaciones y los links de video. El link deja de funcionar. Si el alumno tenía un Premium que le dio ese coach, se desactiva; un Premium que compró el alumno no se toca.</p>
 
         <h2 id="borrar-datos">6. Tus derechos sobre tus datos (y cómo pedir que los borremos)</h2>
         <ul>
             <li><strong>Acceder</strong>: usá el botón "Exportar Datos" en tu perfil para descargar un backup JSON con todo lo que la app guardó.</li>
             <li><strong>Eliminar (en tu dispositivo)</strong>: el botón "Reset" en tu perfil borra todo el <code>localStorage</code> del navegador. Acción irreversible y no requiere pedírnoslo: es inmediata y la hacés vos.</li>
             <li><strong>Eliminar (copia en tu Google Drive)</strong>: en Google Drive entrá a Configuración → Administrar apps → BERSERKERMOD → "Borrar datos ocultos de la app". Para quitarle el permiso a la app: <a href="https://myaccount.google.com/connections" rel="noopener">myaccount.google.com/connections</a>.</li>
-            <li><strong>Eliminar (datos en nuestro servidor)</strong>: si usaste el modo Coach, escribinos a
+            <li><strong>Acceder (lo que compartís con tu coach)</strong>: tu ficha, tus entrenamientos, tus controles, tus evaluaciones y tus links de video los ves en tu link. Lo único que no se muestra ahí son las notas privadas de tu coach; si querés saber qué hay guardado sobre vos, escribinos al email de abajo.</li>
+            <li><strong>Corregir o quitar (lo que compartís con tu coach)</strong>: desde tu link o desde la app podés editar tu ficha, reenviar el control de la semana y quitar cualquier link de video.</li>
+            <li><strong>Retirar el consentimiento de tus datos de salud</strong>: entrá a "Editar mi ficha", dejá vacío el campo de antecedentes o limitaciones y enviala de nuevo: se borran del servidor en ese momento. Si no podés entrar a tu link, pedíselo a tu coach o escribinos.</li>
+            <li><strong>Eliminar (datos en nuestro servidor)</strong>: si entrenás con un coach, pedile que te dé de baja desde su panel ("Dar de baja"): eso borra la rutina, tu ficha, las ediciones, los entrenamientos, los controles semanales, las evaluaciones y los links de video. También podés escribirnos a
                 <a href="mailto:tornatiezequiel0@gmail.com?subject=Solicitud%20de%20borrado%20de%20datos">tornatiezequiel0@gmail.com</a>
-                indicando el link o token de la rutina compartida. Borramos la rutina, las ediciones, las sesiones registradas y los controles semanales dentro de los 30 días.
-                También podés borrar vos mismo un share completo desde el panel de Coach ("🗑 Eliminar share").</li>
+                indicando el link o token de tu rutina, y lo borramos dentro de los 30 días.
+                Si sos coach, dar de baja a un alumno borra todo lo suyo; para borrar además tus preguntas propias y la asociación de tu código con el panel, escribinos.</li>
             <li><strong>Portabilidad</strong>: el archivo JSON exportado contiene toda tu información en formato legible.</li>
             <li><strong>Rectificación</strong>: podés editar cualquier dato directamente en la app.</li>
             <li><strong>Oposición y revocación</strong>: si activaste el recordatorio diario, podés desactivarlo desde Perfil y borramos tu suscripción de notificaciones.</li>
@@ -241,6 +272,7 @@
         <h2>8. Seguridad</h2>
         <p>Los datos viven en el <code>localStorage</code> del navegador del dispositivo, lo que significa que solo son accesibles desde el mismo navegador donde se generaron. Si compartís tu dispositivo, otra persona podría ver tu información si abre la app sin cerrar tu sesión.</p>
         <p>Todas las comunicaciones con nuestro servidor van por HTTPS. Las licencias se firman criptográficamente, y no guardamos contraseñas porque no hay cuentas.</p>
+        <p>Si entrenás con un coach, el link de tu rutina funciona como llave: cuidalo como una contraseña (sección 5). Los links de video que se muestran en la app solo se aceptan si empiezan con <code>https://</code>.</p>
 
         <h2>9. Cambios en esta política</h2>
         <p>La fecha de "Última actualización" de arriba siempre refleja la versión vigente. Si un cambio afecta cómo usamos tus datos, lo resumimos al principio de esta página.</p>
