@@ -396,6 +396,54 @@ let token, routineId;
     ok('dar de baja borra los videos', !env.BMOD_KV._m.has('videos:' + r.id));
 }
 
+// ── Términos de uso y reportes ──
+{
+    console.log('\nTérminos de uso y reportes');
+    const C = '77777777-aaaa-bbbb-cccc-000000000001';
+    const ADMIN = { 'x-admin-secret': 'test-admin' };
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Tere', coach_name: 'Profe' })).body;
+    const tk = r.share_token;
+    let sh = await call('GET', '/api/shares/' + tk);
+    ok('rutina nueva: el alumno todavía no aceptó los términos', sh.body.terms_v === '', sh.body.terms_v);
+    const badV = await call('POST', '/api/shares/' + tk + '/terms', { version: 'v1' });
+    ok('versión de términos inválida → 400', badV.status === 400);
+    const acc = await call('POST', '/api/shares/' + tk + '/terms', { version: '2026-11-14' });
+    sh = await call('GET', '/api/shares/' + tk);
+    ok('el alumno acepta los términos y queda registrado', acc.status === 200 && sh.body.terms_v === '2026-11-14', sh.body.terms_v);
+    const rec1 = JSON.parse(env.BMOD_KV._m.get('routine:' + C + ':' + r.id));
+    await call('POST', '/api/shares/' + tk + '/terms', { version: '2026-11-14' });
+    const rec2 = JSON.parse(env.BMOD_KV._m.get('routine:' + C + ':' + r.id));
+    ok('aceptar de nuevo la misma versión no reescribe la fecha', rec1.terms.at === rec2.terms.at && !!rec1.terms.at, rec2.terms);
+    await call('PUT', '/api/coach/config', { coach_id: C, intake_questions: ['¿Deporte?'] });
+    const ct = await call('PUT', '/api/coach/config', { coach_id: C, terms: '2026-11-14' });
+    const cg = await call('GET', '/api/coach/config?coach_id=' + C);
+    ok('el coach acepta los términos sin perder sus preguntas', ct.body.terms_v === '2026-11-14' && cg.body.terms_v === '2026-11-14' && cg.body.intake_questions.length === 1, cg.body);
+
+    const noReason = await call('POST', '/api/shares/' + tk + '/report', { detail: 'algo' });
+    ok('reporte sin motivo → 400', noReason.status === 400);
+    const badTk = await call('POST', '/api/shares/nonexist00/report', { reason: 'acoso' });
+    ok('reporte con link inexistente → 404', badTk.status === 404);
+    const rp = await call('POST', '/api/shares/' + tk + '/report', { reason: 'acoso', detail: 'Me escribe cosas fuera de lugar' });
+    ok('el alumno reporta a su coach', rp.status === 201 && !!rp.body.id, rp.body);
+    const rc = await call('POST', '/api/routines/' + r.id + '/report', { coach_id: C, reason: 'spam', detail: 'x'.repeat(900) });
+    ok('el coach reporta a un alumno', rc.status === 201, rc.body);
+    const rOther = await call('POST', '/api/routines/' + r.id + '/report', { coach_id: 'coach-de-otro-lado', reason: 'spam' });
+    ok('otro coach no puede reportar sobre esta rutina', rOther.status === 404 || rOther.status === 403, rOther.status);
+    const noAdmin = await call('GET', '/api/admin/reports');
+    ok('la lista de reportes exige la clave de administrador', noAdmin.status === 401);
+    const lst = await call('GET', '/api/admin/reports', undefined, ADMIN);
+    const mine = lst.body.reports.filter((x) => x.routine_id === r.id);
+    ok('el administrador ve los dos reportes con quién, motivo y nombres', mine.length === 2 && mine[0].by === 'coach' && mine[1].by === 'alumno' && mine[1].reason === 'acoso' && mine[1].coach_name === 'Profe' && mine[1].alumno_name === 'Tere' && mine[0].detail.length === 600, mine);
+    for (let i = 0; i < 3; i++) await call('POST', '/api/shares/' + tk + '/report', { reason: 'otro' });
+    const tope = await call('POST', '/api/shares/' + tk + '/report', { reason: 'otro' });
+    ok('tope de 5 reportes por día para la misma rutina → 429', tope.status === 429, tope.status);
+    const shAfter = await call('GET', '/api/shares/' + tk);
+    ok('el link del alumno no muestra los reportes', !JSON.stringify(shAfter.body).includes('fuera de lugar'));
+    await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    const kept = (await call('GET', '/api/admin/reports', undefined, ADMIN)).body.reports.filter((x) => x.routine_id === r.id);
+    ok('los reportes se conservan aunque el alumno ya no esté', kept.length === 5, kept.length);
+}
+
 // ── Coach: evaluación de ciclo ──
 {
     console.log('\nCoach: evaluación de ciclo');

@@ -12,6 +12,10 @@
 //                     POST                /api/shares/{token}/checkins  (control semanal del alumno)
 //                     POST                /api/shares/{token}/premium-claim (ata un código de coach al alumno)
 //                     POST                /api/shares/{token}/intake    (cuestionario inicial del alumno)
+//                     POST                /api/shares/{token}/terms     (el alumno aceptó los términos de uso)
+//                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
+//                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
+//                     GET                 /api/admin/reports            (ADMIN_SECRET)
 //                     POST                /api/coach/bind               (ata el panel del coach a su código)
 //                     GET/PUT             /api/coach/config             (preguntas propias del coach)
 //   Licencias:        POST                /api/license/activate
@@ -69,7 +73,9 @@ const MAX_SESSION_JSON = 10 * 1024;     // red de seguridad: el peor caso válid
 const CHECKINS_MAX = 26;
 const EVALS_MAX = 24;                    // evaluaciones de ciclo por alumno (~2 años)
 const VIDEOS_MAX = 30;                   // videos de técnica por alumno (links, no archivos)
-const VIDEOS_PENDING_MAX = 6;            // sin respuesta del coach, como mucho                // controles semanales por rutina (~6 meses)
+const VIDEOS_PENDING_MAX = 6;            // sin respuesta del coach, como mucho
+const REPORTS_MAX = 200;                 // reportes guardados para revisar (los más nuevos)
+const REPORTS_PER_DAY = 5;               // por alumno-coach, para que no se pueda inundar                // controles semanales por rutina (~6 meses)
 const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
@@ -737,7 +743,7 @@ async function getShare(env, token) {
     const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
     const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
     const videos = ((await kvGet(env, videosKey(r.id))) || { items: [] }).items.slice(0, 10);
-    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, intake: r.intake || null,
+    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, terms_v: (r.terms && r.terms.v) || '', intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
@@ -983,7 +989,7 @@ async function getCoachConfig(env, url) {
     const coachId = url.searchParams.get('coach_id');
     if (!validPanelId(coachId)) return err('Missing coach_id', 401);
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
-    return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
+    return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '' });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -993,9 +999,72 @@ async function putCoachConfig(req, env, url) {
     if (Array.isArray(body.intake_questions)) {
         cfg.intake_questions = body.intake_questions.map((q) => str(q, 120)).filter(Boolean).slice(0, 3);
     }
+    // Aceptación de los términos de uso (versión = fecha de los términos)
+    if (TERMS_V_RE.test(body.terms || '')) cfg.terms = { v: body.terms, at: nowISO() };
     cfg.updated_at = nowISO();
     await kvPut(env, `coachcfg:${coachId}`, cfg);
-    return json({ ok: true, intake_questions: cfg.intake_questions || [] });
+    return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '' });
+}
+
+// ── Términos de uso y reportes ──
+// Lo que coach y alumno se escriben es contenido generado por usuarios: antes de cargarlo
+// aceptan los términos (queda la versión y la fecha) y cualquiera de los dos puede reportar
+// al otro o a su contenido desde la app. Los reportes los revisa el administrador.
+const TERMS_V_RE = /^\d{4}-\d{2}-\d{2}$/;
+const REPORT_REASONS = ['acoso', 'sexual', 'spam', 'ilegal', 'otro'];
+// POST /api/shares/{token}/terms — el alumno aceptó los términos (se escribe una vez por versión)
+async function postShareTerms(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const body = (await readBody(req)) || {};
+    if (!TERMS_V_RE.test(body.version || '')) return err('Versión inválida', 400);
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) return err('Routine not found', 404);
+    if (!r.terms || r.terms.v !== body.version) {
+        r.terms = { v: body.version, at: nowISO() };
+        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    }
+    return json({ ok: true, terms_v: r.terms.v });
+}
+async function saveReport(env, r, by, body) {
+    const reason = REPORT_REASONS.includes(body && body.reason) ? body.reason : null;
+    if (!reason) return err('Elegí el motivo del reporte', 400);
+    const ring = (await kvGet(env, 'reports:ring')) || { items: [] };
+    const dayAgo = new Date(Date.now() - 86400000).toISOString();
+    if (ring.items.filter((x) => x.routine_id === r.id && x.at > dayAgo).length >= REPORTS_PER_DAY) {
+        return err('Ya recibimos varios reportes de esta rutina hoy. Los estamos revisando.', 429);
+    }
+    const rep = { id: newShareToken(), at: nowISO(), by, reason, routine_id: r.id, coach_id: r.coach_id, share_token: r.share_token,
+        coach_name: r.coach_name || '', alumno_name: r.alumno_name || '' };
+    const detail = str(body.detail, 600);
+    if (detail) rep.detail = detail;
+    ring.items = [rep].concat(ring.items).slice(0, REPORTS_MAX);
+    await kvPut(env, 'reports:ring', ring);
+    return json({ ok: true, id: rep.id }, 201);
+}
+// POST /api/shares/{token}/report — el alumno reporta a su coach o su contenido
+async function postShareReport(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) return err('Routine not found', 404);
+    return saveReport(env, r, 'alumno', await readBody(req));
+}
+// POST /api/routines/{id}/report — el coach reporta a un alumno o su contenido
+async function postRoutineReport(req, env, url, id) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    return saveReport(env, r, 'coach', body);
+}
+// GET /api/admin/reports — reportes para revisar
+async function adminReports(req, env) {
+    if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
+    const ring = (await kvGet(env, 'reports:ring')) || { items: [] };
+    return json({ ok: true, count: ring.items.length, reports: ring.items });
 }
 
 async function postEdit(req, env, token) {
@@ -2125,7 +2194,7 @@ export default {
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
         if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
-        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/');
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/report$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
@@ -2139,6 +2208,7 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
@@ -2147,6 +2217,8 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos$/)) && m === 'POST') return await postVideo(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/terms$/)) && m === 'POST') return await postShareTerms(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
@@ -2187,6 +2259,7 @@ export default {
             // Observabilidad
             if (p === '/api/errors' && m === 'POST') return await ingestErrors(req, env);
             if (p === '/api/admin/errors' && m === 'GET') return await adminErrors(req, env);
+            if (p === '/api/admin/reports' && m === 'GET') return await adminReports(req, env);
 
             // Salud / varios
             if (p === '/api/health-data' && m === 'POST') return await healthData(req, env);

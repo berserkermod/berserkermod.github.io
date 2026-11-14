@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0A0A0B">
+    <title>Términos de uso — BERSERKERMOD</title>
+    <meta name="description" content="Términos de uso de BERSERKERMOD: reglas para usar la app y para lo que se escriben coach y alumno, cómo reportar y qué pasa si no se cumplen.">
+    <meta property="og:title" content="Términos de uso — BERSERKERMOD">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://berserkermod.github.io/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://berserkermod.github.io/og-image.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0A0A0B; --sf1: #141416; --sf2: #1C1C1E; --sf3: #2C2C2E;
+            --accent: #00D4AA; --orange: #FDCB6E; --red: #FF6B6B;
+            --text: #F5F5F7; --text2: #A1A1A6; --text3: #636366; --border: #2C2C2E;
+        }
+        html { scroll-behavior: smooth; scroll-padding-top: 80px; -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        .bg-glow {
+            position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(800px circle at 15% 5%, rgba(0,212,170,.05), transparent 50%),
+                radial-gradient(600px circle at 85% 90%, rgba(162,155,254,.04), transparent 50%);
+        }
+
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            padding: 18px 24px;
+            background: rgba(10, 10, 11, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            max-width: 800px; margin: 0 auto;
+            display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        }
+        .brand {
+            font-size: 16px; font-weight: 900; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text);
+        }
+        .brand-emoji { font-size: 20px; filter: drop-shadow(0 0 12px #00D4AA66); }
+        .brand .accent { color: var(--accent); }
+        .back-link {
+            font-size: 13px; font-weight: 700; color: var(--text2);
+        }
+        .back-link:hover { color: var(--accent); text-decoration: none; }
+
+        main {
+            max-width: 800px; margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+        .kicker {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+            text-transform: uppercase; color: var(--accent);
+            margin-bottom: 14px;
+        }
+        h1 {
+            font-size: 42px; font-weight: 900; line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 14px;
+        }
+        .updated {
+            font-size: 13px; color: var(--text3);
+            margin-bottom: 50px;
+        }
+        h2 {
+            font-size: 24px; font-weight: 900;
+            letter-spacing: -0.01em;
+            margin: 48px 0 16px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        h2:first-of-type { border-top: none; padding-top: 0; }
+        h3 {
+            font-size: 17px; font-weight: 800;
+            margin: 24px 0 10px;
+            color: var(--text);
+        }
+        p, li {
+            font-size: 15px; color: var(--text2);
+            line-height: 1.65;
+        }
+        p { margin-bottom: 14px; }
+        ul, ol {
+            margin: 10px 0 18px 22px;
+            color: var(--text2);
+        }
+        li { margin-bottom: 8px; }
+        strong { color: var(--text); font-weight: 700; }
+        code {
+            background: var(--sf2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            color: var(--accent);
+        }
+        .callout {
+            background: linear-gradient(135deg, rgba(0,212,170,.06), var(--sf1));
+            border: 1px solid rgba(0,212,170,.2);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 18px 0;
+            font-size: 14px;
+            color: var(--text);
+        }
+        .callout strong { color: var(--accent); }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 24px 40px;
+            text-align: center;
+            font-size: 13px; color: var(--text3);
+        }
+        footer a { margin: 0 10px; }
+
+        @media (max-width: 640px) {
+            main { padding: 40px 18px 60px; }
+            h1 { font-size: 32px; }
+            h2 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="brand">
+                <span class="brand-emoji" aria-hidden="true">💪</span>
+                BERSERKER<span class="accent">MOD</span>
+            </a>
+            <a href="index.html" class="back-link">← Volver</a>
+        </div>
+    </header>
+
+    <main>
+        <p class="kicker">Términos</p>
+        <h1>Términos de uso</h1>
+        <p class="updated">Última actualización: 14 de noviembre de 2026</p>
+
+        <div class="callout">
+            <strong>Resumen rápido:</strong> BERSERKERMOD es una app para entrenar. Usala para eso. Si entrenás con un coach, o si sos coach, tratá bien a la otra persona y no uses la app para hacer daño. Si algo que te escriben está fuera de lugar, podés reportarlo y cortar el vínculo desde la misma app.
+        </div>
+
+        <h2>1. Qué son estos términos</h2>
+        <p>Son las reglas para usar BERSERKERMOD (la app y la web). Al usarla, las aceptás. Si usás las funciones para entrenar con un coach, como coach o como alumno, la app te pide que las aceptes antes de empezar a cargar contenido, y guardamos la fecha en que lo hiciste.</p>
+
+        <h2>2. Quién puede usarla</h2>
+        <p>La app está pensada para personas de 18 años en adelante. Si sos menor, usala solo bajo la supervisión de un adulto o de un entrenador.</p>
+
+        <h2>3. No es consejo médico</h2>
+        <p>Las rutinas, los cálculos y las sugerencias de la app, y lo que te indique un coach a través de ella, son orientación general sobre entrenamiento y hábitos. No reemplazan a un médico, un kinesiólogo ni un nutricionista. Si tenés una lesión, una condición de salud o dudas, consultá a un profesional antes de entrenar. Cada persona entrena bajo su propia responsabilidad.</p>
+
+        <h2>4. Lo que se escriben coach y alumno</h2>
+        <p>Cuando un coach y un alumno entrenan juntos con la app, comparten contenido: rutinas, notas, la ficha, los controles semanales, las evaluaciones, las respuestas y los links de video. Cada uno es responsable de lo que escribe y de los links que comparte.</p>
+        <p><strong>No está permitido usar ese espacio para:</strong></p>
+        <ul>
+            <li>Acosar, amenazar, insultar, discriminar o humillar a la otra persona.</li>
+            <li>Enviar contenido sexual, o pedir fotos o videos que no tengan que ver con el entrenamiento.</li>
+            <li>Cualquier contenido que sexualice o ponga en riesgo a menores. No se tolera en ningún caso y podemos denunciarlo ante las autoridades.</li>
+            <li>Promover violencia, autolesiones, trastornos de la alimentación o prácticas peligrosas, como dietas extremas o el uso de sustancias prohibidas o de venta bajo receta.</li>
+            <li>Mandar publicidad no pedida, estafas, ventas engañosas o links a sitios maliciosos.</li>
+            <li>Compartir datos personales de otras personas sin su permiso, o hacerte pasar por otra persona.</li>
+            <li>Cualquier cosa que sea ilegal.</li>
+        </ul>
+        <p><strong>Si sos coach, además:</strong></p>
+        <ul>
+            <li>Usá los datos de tus alumnos solo para entrenarlos. Los antecedentes de salud que te cuentan son datos sensibles.</li>
+            <li>No compartas el link ni los datos de un alumno con otras personas. Si descargás una copia, guardala en un lugar seguro.</li>
+            <li>Si un alumno te pide que lo des de baja, hacelo: eso borra sus datos del servidor.</li>
+        </ul>
+
+        <h2>5. Cómo reportar y cómo cortar el vínculo</h2>
+        <ul>
+            <li><strong>Reportar</strong>: si la otra persona te escribe o te manda algo que no corresponde, tocá "Reportar". Si sos alumno, está en tu link y en la tarjeta de la rutina de tu coach dentro de la app. Si sos coach, está en el detalle de cada alumno. Elegís el motivo y, si querés, contás qué pasó. El reporte nos llega a nosotros, no a la otra persona, y lo revisamos.</li>
+            <li><strong>Cortar el vínculo</strong>: si sos alumno, podés tocar "Desvincular" en la app o pedirle a tu coach que te dé de baja. Si sos coach, podés tocar "Dar de baja" en el detalle del alumno.</li>
+            <li>También podés escribirnos a <a href="mailto:tornatiezequiel0@gmail.com?subject=Reporte%20BERSERKERMOD">tornatiezequiel0@gmail.com</a>.</li>
+        </ul>
+
+        <h2>6. Qué hacemos si alguien no cumple</h2>
+        <p>Podemos borrar el contenido, desactivar el link o la rutina, y suspender o cancelar el acceso de quien no cumpla estas reglas. Si la ley lo exige, colaboramos con las autoridades.</p>
+
+        <h2>7. Planes pagos</h2>
+        <p>La app se puede usar gratis. Los planes pagos (Premium y Coach) se rigen por lo que se informa al momento de comprar y por las condiciones de Mercado Pago o de Google Play, según dónde compres.</p>
+
+        <h2>8. Tus datos</h2>
+        <p>Qué datos se guardan, dónde, quién los ve y cómo borrarlos está en la <a href="privacy.html">Política de privacidad</a>.</p>
+
+        <h2>9. Cómo funciona la app</h2>
+        <p>Trabajamos para que la app funcione bien, pero no podemos garantizar que esté siempre disponible ni libre de errores. Tus entrenamientos viven en tu teléfono: hacé copias de seguridad desde tu perfil para no perderlos.</p>
+
+        <h2>10. Cambios en estos términos</h2>
+        <p>La fecha de "Última actualización" de arriba siempre refleja la versión vigente. Si los cambiamos de forma importante, la app te va a pedir que los aceptes de nuevo antes de seguir usando las funciones con coach.</p>
+
+        <h2>11. Contacto</h2>
+        <p>Para consultas o reportes: <a href="mailto:tornatiezequiel0@gmail.com?subject=T%C3%A9rminos%20BERSERKERMOD">tornatiezequiel0@gmail.com</a>.</p>
+    </main>
+
+    <footer>
+        <a href="index.html">Inicio</a> ·
+        <a href="BERSERKERMOD.html">Abrir app</a> ·
+        <a href="privacy.html">Privacidad</a> ·
+        <a href="terms.html">Términos</a>
+        <p style="margin-top: 14px;">© 2026 BERSERKERMOD</p>
+    </footer>
+</body>
+</html>
