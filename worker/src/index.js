@@ -76,7 +76,7 @@ const VIDEOS_MAX = 30;                   // videos de técnica por alumno (links
 const VIDEOS_PENDING_MAX = 6;            // sin respuesta del coach, como mucho
 const REPORTS_MAX = 200;                 // reportes guardados para revisar (los más nuevos)
 const REPORTS_PER_DAY = 5;               // por alumno-coach, para que no se pueda inundar                // controles semanales por rutina (~6 meses)
-const ROUTINES_LIST_MAX = 45;           // rutinas por coach que lista /api/routines (Free: 50 subrequests)
+const ROUTINES_LIST_MAX = 45;           // rutinas por coach en cada página de /api/routines (Free: 50 subrequests)
 const ERRORS_RING_MAX = 150;            // errores recientes (una sola key)
 const PUSH_MAX = 1000;                  // suscripciones push
 const PUSH_BATCH = 40;                  // pushes por corrida del cron (corre cada minuto: 2.400 por hora y zona ≥ PUSH_MAX)
@@ -335,14 +335,38 @@ async function createRoutine(req, env, url) {
     return json(routine, 201);
 }
 
+// Una página de rutinas del coach: hasta ROUTINES_LIST_MAX (1 list + N gets entra en las 50
+// subrequests del plan Free) y el cursor para pedir la que sigue. Así el panel no tiene tope
+// de alumnos sin depender de un plan pago: la app pide las páginas de a una.
+async function listRoutinesPage(env, prefix, cursor) {
+    const res = await env.BMOD_KV.list({ prefix, cursor: cursor || undefined, limit: ROUTINES_LIST_MAX });
+    const items = [];
+    for (const k of res.keys) {
+        const v = await env.BMOD_KV.get(k.name);
+        if (v) items.push(JSON.parse(v));
+    }
+    return { items, next: res.list_complete ? null : (res.cursor || null) };
+}
 async function listRoutines(env, url) {
     const coachId = url.searchParams.get('coach_id');
     if (!coachId) return err('Missing coach_id', 400);
-    // 1 list + N gets (N ≤ ROUTINES_LIST_MAX). Todo lo demás sale del registro.
-    const routines = await listByPrefix(env, `routine:${coachId}:`, ROUTINES_LIST_MAX);
+    // ?paged=1 → { items, next }. Sin eso responde la lista simple de siempre (primeras 45),
+    // para las apps que todavía no se actualizaron. Todo lo demás sale del registro.
+    const paged = url.searchParams.get('paged') === '1';
+    let routines, next = null;
+    if (paged) {
+        const cur = url.searchParams.get('cursor') || '';
+        if (cur.length > 1024) return err('Cursor inválido', 400);
+        let pg;
+        try { pg = await listRoutinesPage(env, `routine:${coachId}:`, cur); } catch { return err('Cursor inválido', 400); }
+        routines = pg.items;
+        next = pg.next;
+    } else {
+        routines = await listByPrefix(env, `routine:${coachId}:`, ROUTINES_LIST_MAX);
+    }
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
     const today = reqToday(url, null);
-    return json(routines.map((r) => ({
+    const items = routines.map((r) => ({
         id: r.id, name: r.name, alumno_name: r.alumno_name, alumno_email: r.alumno_email,
         share_token: r.share_token, created_at: r.created_at,
         last_alumno_edit_at: r.last_alumno_edit_at || null, edit_count: r.edit_count || 0,
@@ -358,7 +382,8 @@ async function listRoutines(env, url) {
         start_date: (r.profile && r.profile.start_date) || '',
         intake_done: !!r.intake,
         alerts: studentAlerts(r, today)
-    })));
+    }));
+    return json(paged ? { items, next } : items);
 }
 
 // ── Alertas del panel del coach ──

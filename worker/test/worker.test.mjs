@@ -12,8 +12,14 @@ function makeKV() {
         async put(k, v, opts) { m.set(k, v); if (opts && opts.metadata) meta.set(k, opts.metadata); else meta.delete(k); },
         async delete(k) { m.delete(k); meta.delete(k); },
         async list({ prefix = '', cursor, limit = 1000 } = {}) {
-            const keys = [...m.keys()].filter((k) => k.startsWith(prefix)).sort().map((name) => (meta.has(name) ? { name, metadata: meta.get(name) } : { name })).slice(0, limit);
-            return { keys, list_complete: true, cursor: null };
+            // Como el KV real: páginas de hasta `limit` y un cursor mientras queden más
+            // (acá el cursor es la última key devuelta).
+            const all = [...m.keys()].filter((k) => k.startsWith(prefix)).sort();
+            const from = cursor ? all.filter((k) => k <= cursor).length : 0;
+            const page = all.slice(from, from + limit);
+            const done = from + page.length >= all.length;
+            const keys = page.map((name) => (meta.has(name) ? { name, metadata: meta.get(name) } : { name }));
+            return { keys, list_complete: done, cursor: done ? null : page[page.length - 1] };
         }
     };
 }
@@ -394,6 +400,26 @@ let token, routineId;
     ok('el detalle normal sigue trayendo 30', det.body.sessions.length === 30);
     await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
     ok('dar de baja borra los videos', !env.BMOD_KV._m.has('videos:' + r.id));
+}
+
+// ── Coach: listado de alumnos por páginas (sin tope) ──
+{
+    console.log('\nCoach: listado de alumnos por páginas');
+    const C = 'coachPAG';
+    for (let i = 0; i < 52; i++) await call('POST', '/api/routines', { coach_id: C, name: 'Plan ' + i, plan: [{ name: 'A', exercises: [] }], alumno_name: 'Alumno ' + String(i).padStart(2, '0') });
+    const old = await call('GET', '/api/routines?coach_id=' + C);
+    ok('sin paged: lista simple con las primeras 45 (apps sin actualizar)', Array.isArray(old.body) && old.body.length === 45, old.body && old.body.length);
+    const p1 = await call('GET', '/api/routines?paged=1&coach_id=' + C);
+    ok('página 1: 45 alumnos y cursor para seguir', p1.status === 200 && p1.body.items.length === 45 && !!p1.body.next && Array.isArray(p1.body.items[0].alerts), [p1.body.items && p1.body.items.length, p1.body.next]);
+    const p2 = await call('GET', '/api/routines?paged=1&coach_id=' + C + '&cursor=' + encodeURIComponent(p1.body.next));
+    ok('página 2: los 7 que faltan y sin cursor', p2.status === 200 && p2.body.items.length === 7 && p2.body.next === null, [p2.body.items && p2.body.items.length, p2.body.next]);
+    const ids = new Set(p1.body.items.concat(p2.body.items).map((x) => x.id));
+    ok('entre las dos páginas están los 52, sin repetidos', ids.size === 52, ids.size);
+    const longCur = await call('GET', '/api/routines?paged=1&coach_id=' + C + '&cursor=' + 'x'.repeat(2000));
+    ok('cursor demasiado largo → 400', longCur.status === 400);
+    const other = await call('GET', '/api/routines?paged=1&coach_id=coachSinAlumnos');
+    ok('coach sin alumnos: página vacía', other.status === 200 && other.body.items.length === 0 && other.body.next === null, other.body);
+    for (const id of ids) await call('DELETE', '/api/routines/' + id + '?coach_id=' + C);
 }
 
 // ── Términos de uso y reportes ──
