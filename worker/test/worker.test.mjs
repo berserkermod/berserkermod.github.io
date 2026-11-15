@@ -1444,6 +1444,48 @@ let code, licToken;
     ok('dar de baja borra el balance', !env.BMOD_KV._m.has('review:' + r.id));
 }
 
+// ── El alumno deja a su coach y borra sus datos ──
+{
+    console.log('\nEl alumno deja a su coach');
+    const ADMIN = { 'x-admin-secret': 'test-admin' };
+    const C = 'coachLEAVE1';
+    const kv = env.BMOD_KV._m;
+    const code = (c) => JSON.parse(kv.get('code:' + c));
+    const today = new Date().toISOString().slice(0, 10);
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan Ana', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Ana' })).body;
+    const otro = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan Beto', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Beto' })).body;
+    const tk = r.share_token;
+    await call('POST', '/api/shares/' + tk + '/sessions', { date: today, exercises: [{ name: 'Sentadilla', sets: [{ kg: 50, reps: 8 }] }] });
+    await call('POST', '/api/shares/' + tk + '/checkins', { weight: '60', energy: 4 });
+    await call('POST', '/api/shares/' + tk + '/edits', { changes_json: { a: 1 } });
+    const c1 = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 3, coach_pack: true }, ADMIN)).body.codes[0];
+    await call('POST', '/api/license/activate', { code: c1, deviceId: 'devAnaLeave', share: tk });
+    ok('antes de irse tiene datos y el Premium del coach atado', kv.has('sessions:' + r.id) && kv.has('checkins:' + r.id) && kv.has('edits:' + r.id) && code(c1).routine_id === r.id);
+    const sinConf = await call('POST', '/api/shares/' + tk + '/leave', {});
+    const confMal = await call('POST', '/api/shares/' + tk + '/leave', { confirm: 'si' });
+    ok('sin { confirm: true } → 400 y no borra nada', sinConf.status === 400 && confMal.status === 400 && kv.has('routine:' + C + ':' + r.id) && kv.has('sessions:' + r.id));
+    const lv = await call('POST', '/api/shares/' + tk + '/leave', { confirm: true });
+    ok('se va: 200 y se anula el Premium que le dio el coach', lv.status === 200 && lv.body.revoked === 1 && code(c1).revoked === true && code(c1).revoked_reason === 'alumno_baja', lv.body);
+    const quedan = [...kv.keys()].filter((k) => k.includes(r.id) || k.includes(tk));
+    ok('se borra todo lo suyo del servidor', quedan.length === 0, quedan);
+    ok('su link deja de funcionar', (await call('GET', '/api/shares/' + tk)).status === 404);
+    const list = await call('GET', '/api/routines?coach_id=' + C);
+    ok('el coach deja de verlo; el otro alumno sigue', list.body.length === 1 && list.body[0].id === otro.id, list.body.map((x) => x.id));
+    const cfg = await call('GET', '/api/coach/config?coach_id=' + C);
+    ok('al coach le queda un aviso con el nombre que él cargó', cfg.body.left.length === 1 && cfg.body.left[0].name === 'Ana' && !!cfg.body.left[0].at, cfg.body.left);
+    ok('irse dos veces → 404', (await call('POST', '/api/shares/' + tk + '/leave', { confirm: true })).status === 404);
+    const raw = JSON.parse(kv.get('coachcfg:' + C));
+    raw.left.push({ name: 'Viejo', at: new Date(Date.now() - 31 * 86400000).toISOString() });
+    kv.set('coachcfg:' + C, JSON.stringify(raw));
+    const cfg2 = await call('GET', '/api/coach/config?coach_id=' + C);
+    ok('los avisos de más de 30 días ya no se muestran', cfg2.body.left.length === 1 && cfg2.body.left[0].name === 'Ana', cfg2.body.left);
+    const lv2 = await call('POST', '/api/shares/' + otro.share_token + '/leave', { confirm: true });
+    const raw2 = JSON.parse(kv.get('coachcfg:' + C));
+    ok('el segundo aviso va primero y los vencidos se limpian al guardar', lv2.status === 200 && raw2.left.length === 2 && raw2.left[0].name === 'Beto' && raw2.left[1].name === 'Ana', raw2.left);
+    const del = await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('la baja del coach sigue funcionando igual (ya no existe → 404)', del.status === 404);
+}
+
 // ── Avisos con texto y a horario (Web Push cifrado + Durable Object) ──
 {
     console.log('\nAvisos: cifrado, descanso, recordatorio del control, avisos del coach y resumen');

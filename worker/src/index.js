@@ -18,6 +18,7 @@
 //                     PUT/DELETE          /api/routines/{id}/review     (balance del programa)
 //   Avisos a horario: POST                /api/push/rest                (fin del descanso con la app cerrada)
 //                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
+//                     POST                /api/shares/{token}/leave     (el alumno deja a su coach y borra sus datos)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
 //                     GET                 /api/admin/reports            (ADMIN_SECRET)
 //                     POST                /api/coach/bind               (ata el panel del coach a su código)
@@ -856,12 +857,19 @@ async function deleteRoutine(req, env, url, id) {
     const r = await kvGet(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
-    // Baja del alumno: el Premium que le dio este coach (códigos de coach atados a él) se anula
+    return json({ ok: true, revoked: await purgeRoutine(env, coachId, r, 'coach_baja') });
+}
+
+// Borra del servidor todo lo del alumno. Lo usan la baja que hace el coach y la salida
+// que hace el propio alumno desde su link. El Premium que le dio este coach (códigos de
+// coach atados a ese alumno) se anula; uno que compró el alumno no se toca.
+async function purgeRoutine(env, coachId, r, reason) {
+    const id = r.id;
     let revoked = 0;
     for (const code of (Array.isArray(r.premium_codes) ? r.premium_codes : [])) {
         const rec = await kvGet(env, `code:${code}`);
         if (rec && rec.coach_pack && rec.routine_id === id && !rec.revoked) {
-            rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = 'coach_baja';
+            rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = reason;
             await kvPut(env, `code:${code}`, rec);
             revoked++;
         }
@@ -875,6 +883,29 @@ async function deleteRoutine(req, env, url, id) {
     await env.BMOD_KV.delete(videosKey(id));
     await env.BMOD_KV.delete(reviewKey(id));
     if ((r.push_subs || []).length && r.share_token) await callNotifier(env, 'chk:' + r.share_token, { op: 'off' });
+    return revoked;
+}
+
+// POST /api/shares/{token}/leave — el alumno deja a su coach y borra todo lo suyo del
+// servidor (lo mismo que "Dar de baja"). Pide { confirm: true }. Al coach solo le queda
+// un aviso con el nombre que él mismo cargó, que se borra solo a los LEFT_DAYS días.
+const LEFT_MAX = 20, LEFT_DAYS = 30;
+function leftRecent(list) {
+    const since = new Date(Date.now() - LEFT_DAYS * 86400000).toISOString();
+    return (Array.isArray(list) ? list : []).filter((x) => x && typeof x.at === 'string' && x.at > since);
+}
+async function postShareLeave(req, env, token) {
+    const idx = await kvGet(env, `token:${token}`);
+    if (!idx) return err('Routine not found', 404);
+    const body = (await readBody(req)) || {};
+    if (body.confirm !== true) return err('Falta confirmar', 400);
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    if (!r) { await env.BMOD_KV.delete(`token:${token}`); return err('Routine not found', 404); }
+    const revoked = await purgeRoutine(env, idx.coachId, r, 'alumno_baja');
+    const cfgKey = `coachcfg:${idx.coachId}`;
+    const cfg = (await kvGet(env, cfgKey)) || {};
+    cfg.left = [{ name: str(r.alumno_name || r.name, 60) || '', at: nowISO() }].concat(leftRecent(cfg.left)).slice(0, LEFT_MAX);
+    await kvPut(env, cfgKey, cfg);
     return json({ ok: true, revoked });
 }
 
@@ -1169,7 +1200,8 @@ async function getCoachConfig(env, url) {
     if (!validPanelId(coachId)) return err('Missing coach_id', 401);
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
     return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
-        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 } });
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 },
+        left: leftRecent(cfg.left) });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -2741,7 +2773,7 @@ export default {
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
         if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
-        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/report$/.test(p);
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave)$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
@@ -2771,6 +2803,7 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/push$/)) && m === 'POST') return await postSharePush(req, env, mt[1]);
             if (p === '/api/push/rest' && m === 'POST') return await pushRest(req, env);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/leave$/)) && m === 'POST') return await postShareLeave(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
