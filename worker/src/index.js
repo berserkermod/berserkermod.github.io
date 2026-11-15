@@ -20,6 +20,7 @@
 //                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
 //                     POST                /api/shares/{token}/leave     (el alumno deja a su coach y borra sus datos)
 //                     POST                /api/routines/{id}/new-link   (el coach le cambia el link al alumno)
+//                     POST                /api/shares/{token}/interest  (el huésped quiere seguir con el programa del coach)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
 //                     GET                 /api/admin/reports            (ADMIN_SECRET)
 //                     POST                /api/coach/bind               (ata el panel del coach a su código)
@@ -389,6 +390,10 @@ async function listRoutines(env, url) {
         modality: (r.profile && r.profile.modality) || '',
         start_date: (r.profile && r.profile.start_date) || '',
         intake_done: !!r.intake,
+        guest: !!(r.profile && r.profile.guest),
+        access_until: (r.profile && r.profile.access_until) || '',
+        closed: !!closedAt(r.access_end_at),
+        interest_at: r.interest ? r.interest.at : null,
         alerts: studentAlerts(r, today)
     }));
     return json(paged ? { items, next } : items);
@@ -476,12 +481,15 @@ const derivedSig = (r) => JSON.stringify(DERIVED_KEYS.map((k) => (r[k] === undef
 
 function studentAlerts(r, today) {
     const pf = r.profile || {};
-    if (pf.status === 'pausado' || pf.status === 'finalizado') return [];
+    // Quiere seguir con el programa (sobre todo huéspedes): se avisa aunque ya haya terminado
+    const lead = r.interest && r.interest.at && r.interest_seen !== r.interest.at ? [{ type: 'interest', at: r.interest.at }] : [];
+    if (pf.status === 'pausado' || pf.status === 'finalizado' || closedAt(r.access_end_at)) return lead;
+    const guest = !!pf.guest;   // estadía corta: sin control semanal ni ciclos de 4 semanas
     const created = String(r.created_at || '').slice(0, 10) || today;
     const start = /^\d{4}-\d{2}-\d{2}$/.test(pf.start_date || '') ? pf.start_date : null;
     const ref = start && start > created ? start : created;     // desde cuándo corre el programa
     const since = dayDiff(ref, today);
-    if (!(since >= 0)) return [];                                // todavía no empezó
+    if (!(since >= 0)) return lead;                              // todavía no empezó
     const out = [];
     const coachUpd = String(r.last_coach_update_at || '');
     const dates = (Array.isArray(r.recent_session_dates) ? r.recent_session_dates : []).filter((d) => d <= today);
@@ -490,7 +498,7 @@ function studentAlerts(r, today) {
     // 1. No entrena, o entrena bastante menos de lo planificado (últimas 2 semanas)
     const idle = last ? dayDiff(last, today) : since;
     if (since >= 7 && idle >= 7) out.push({ type: 'no_training', days: last ? idle : null });
-    else if (planDays && since >= 14) {
+    else if (!guest && planDays && since >= 14) {
         const done = dates.filter((d) => dayDiff(d, today) < 14).length;
         if (done < planDays * 2 * 0.6) out.push({ type: 'low_adherence', done, planned: planDays * 2 });
     }
@@ -516,12 +524,12 @@ function studentAlerts(r, today) {
     // 7. Sin control semanal
     const lastChk = r.last_checkin_at ? String(r.last_checkin_at).slice(0, 10) : '';
     const chkIdle = lastChk ? dayDiff(lastChk, today) : since;
-    if (since >= 7 && chkIdle >= 8) out.push({ type: 'no_checkin', days: lastChk ? chkIdle : null });
+    if (!guest && since >= 7 && chkIdle >= 8) out.push({ type: 'no_checkin', days: lastChk ? chkIdle : null });
     // 8. Videos de técnica esperando respuesta del coach
     if (r.videos_pending > 0) out.push({ type: 'video', count: r.videos_pending });
     // 9. Evaluación de fin de ciclo (cada 4 semanas desde el inicio): desde 3 días antes de
     // que termine el ciclo hasta que la hace (o hasta que se acerca el fin del siguiente).
-    if (start) {
+    if (start && !guest) {
         const d = dayDiff(start, today);
         const c = Math.floor((d + 3) / 28);
         const done = Array.isArray(r.eval_cycles) ? r.eval_cycles : [];
@@ -530,7 +538,7 @@ function studentAlerts(r, today) {
             out.push({ type: 'eval', cycle: c, in: Math.max(0, left), late: Math.max(0, -left), date: addDaysISO(today, left) });
         }
     }
-    return out;
+    return out.concat(lead);
 }
 
 // ── Evaluación de ciclo (cada 4 semanas) ──
@@ -791,9 +799,17 @@ async function getRoutine(env, url, id) {
         r.coach_seen_checkin_at = r.last_checkin_at;
         dirty = true;
     }
+    if (!exporting && r.interest && r.interest.at && r.interest_seen !== r.interest.at) {
+        r.interest_seen = r.interest.at;
+        dirty = true;
+    }
     if (dirty) await kvPut(env, routineKey(coachId, id), r);
     const today = reqToday(url, null);
     const alerts = studentAlerts(r, today);
+    const pf = r.profile || {};
+    const closed = closedAt(r.access_end_at);
+    const sper = pf.guest || pf.access_until ? stayPeriod(r, closed, today) : null;
+    const stay = sper ? stayStats(r, sessAll, sper.from, sper.to) : null;
     const evals = ((await kvGet(env, evalsKey(id))) || { items: [] }).items;
     const tgt = evalTarget(r, today);
     const eval_draft = tgt ? Object.assign(tgt, { stats: evalStats(r, sessAll, checkins, tgt.from, tgt.to, today) }) : null;
@@ -801,7 +817,7 @@ async function getRoutine(env, url, id) {
     const review = await kvGet(env, reviewKey(id));
     const rper = reviewPeriod(r, today);
     const review_draft = rper && rper.days >= 28 ? { from: rper.from, to: rper.to, stats: programStats(r, sessAll, checkins, rper.from, rper.to, today) } : null;
-    return json({ routine: Object.assign(stripPush(r), { alerts, chk_remind: chkRemindOf(r) }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos, review, review_draft });
+    return json({ routine: Object.assign(stripPush(r), { alerts, chk_remind: chkRemindOf(r), closed_at: closed }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos, review, review_draft, stay });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -815,7 +831,7 @@ async function updateRoutine(req, env, url, id) {
     const now = nowISO();
     if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = cleanPlanLinks(body.plan);
-    let chkChanged = false;
+    let chkChanged = false, accessChanged = false;
     if (body.chk_remind) {
         const c = cleanChkRemind(body.chk_remind);
         if (!c) return err('Recordatorio inválido', 400);
@@ -832,8 +848,12 @@ async function updateRoutine(req, env, url, id) {
             start_date: /^\d{4}-\d{2}-\d{2}$/.test(p.start_date || '') ? p.start_date : '',
             status: STATUSES.includes(p.status) ? p.status : (prev.status || 'activo'),
             goals: goals === null ? (prev.goals || '') : goals,
-            notes: str(p.notes, 800) || ''
+            notes: str(p.notes, 800) || '',
+            // Huésped de hotel y último día de acceso (una app vieja no los manda: quedan los de antes)
+            guest: typeof p.guest === 'boolean' ? p.guest : !!prev.guest,
+            access_until: p.access_until === undefined ? (prev.access_until || '') : (/^\d{4}-\d{2}-\d{2}$/.test(p.access_until || '') ? p.access_until : '')
         };
+        if (next.access_until) next.access_tz = validTz(p.tz) || prev.access_tz || DEFAULT_TZ;
         if (prev.goals && next.goals !== prev.goals) {
             r.goal_history = [{ date: (prev.goals_since || (r.created_at || now).slice(0, 10)), goals: prev.goals, until: now.slice(0, 10) }]
                 .concat(Array.isArray(r.goal_history) ? r.goal_history : []).slice(0, 20);
@@ -841,6 +861,11 @@ async function updateRoutine(req, env, url, id) {
         } else if (prev.goals_since) next.goals_since = prev.goals_since;
         else if (next.goals) next.goals_since = now.slice(0, 10);
         r.profile = next;
+        const endAt = next.access_until ? accessEndAt(next.access_until, next.access_tz) : null;
+        if ((r.access_end_at || null) !== endAt) {
+            if (endAt) r.access_end_at = endAt; else delete r.access_end_at;
+            accessChanged = true;
+        }
     } else if (body.plan || body.name || !body.chk_remind) {
         r.last_coach_update_at = now;   // solo un cambio de la rutina avisa al alumno
     }
@@ -849,6 +874,7 @@ async function updateRoutine(req, env, url, id) {
     if (planPush) r.push_plan_at = now;
     r.updated_at = now;
     await kvPut(env, routineKey(coachId, id), r);
+    if (accessChanged && r.share_token) await kvPut(env, `token:${r.share_token}`, tokenIndex(coachId, id, r.access_end_at));
     if (planPush) await notifyStudent(env, r, 'plan', {}, true);
     if (chkChanged && (r.push_subs || []).length) await callNotifier(env, 'chk:' + r.share_token, { op: 'chk-sync', token: r.share_token });
     return json(Object.assign(stripPush(r), { chk_remind: chkRemindOf(r) }));
@@ -890,6 +916,85 @@ async function purgeRoutine(env, coachId, r, reason) {
     return revoked;
 }
 
+// ── Acceso con fecha de fin (huéspedes de hotel o planes que terminan) ──
+// El coach elige el último día; el acceso cierra a la medianoche de ese día en su zona, sin
+// que tenga que hacer nada. El instante queda en el registro (access_end_at) y en el índice
+// del link (token:{t}.until), así cada pedido del alumno lo chequea sin leer nada más.
+// Cerrado, el link no deja cargar nada y muestra un resumen de lo que entrenó; sigue
+// pudiendo reportar o borrar sus datos. Los datos no se borran solos: decide el coach o el alumno.
+function accessEndAt(date, tz) { return new Date(zonedTime(addDaysISO(date, 1), 0, validTz(tz) || DEFAULT_TZ)).toISOString(); }
+function closedAt(until, now = Date.now()) { return until && now >= Date.parse(until) ? until : null; }
+function closedErr() { return json({ error: 'Tu acceso a esta rutina terminó', closed: true }, 403); }
+function tokenIndex(coachId, routineId, until) { return until ? { coachId, routineId, until } : { coachId, routineId }; }
+// Resumen de la estadía (o del período de acceso): lo que entrenó y sus mejores marcas.
+function stayStats(r, sessions, from, to) {
+    const ss = sessions.filter((s) => s && s.date >= from && s.date <= to);
+    let vol = 0, sets = 0;
+    for (const [d, x] of Object.entries(r.vol_log || {})) { if (d >= from && d <= to) { vol += x[0] || 0; sets += x[1] || 0; } }
+    const by = new Map();
+    for (const s of ss.slice().sort((a, b) => (a.date < b.date ? -1 : 1))) {
+        for (const e of (Array.isArray(s.exercises) ? s.exercises : [])) {
+            if (!e || e.kind === 'cardio' || !Array.isArray(e.sets) || !e.sets.length) continue;
+            const best = e.sets.reduce((m, x) => (setScore(x) > setScore(m) ? x : m), e.sets[0]);
+            const score = setScore(best);
+            if (!(score > 0)) continue;
+            const o = by.get(e.name) || { name: e.name, n: 0, first: null, best: null };
+            o.n++;
+            const pt = { kg: Number(best.kg) || 0, reps: Number(best.reps) || 0, score };
+            if (!o.first) o.first = pt;
+            if (!o.best || score > o.best.score) o.best = pt;
+            by.set(e.name, o);
+        }
+    }
+    const exercises = [...by.values()].sort((a, b) => b.n - a.n || b.best.score - a.best.score).slice(0, 6).map((o) => ({
+        name: o.name, n: o.n, best: { kg: o.best.kg, reps: o.best.reps },
+        change: o.n >= 2 && o.first.score > 0 ? Math.round((o.best.score / o.first.score - 1) * 100) : 0
+    }));
+    return { from, to, days: Math.max(1, dayDiff(from, to) + 1), sessions: ss.length, total_sets: sets, total_volume: vol, exercises };
+}
+function stayPeriod(r, closed, today) {
+    const pf = r.profile || {};
+    const from = programStart(r) || String(r.created_at || '').slice(0, 10) || today;
+    const to = closed ? (pf.access_until || closed.slice(0, 10)) : (pf.access_until && pf.access_until < today ? pf.access_until : today);
+    return { from, to };
+}
+// La invitación al programa digital que el coach les deja a sus huéspedes
+function inviteOf(cfg) { const i = (cfg && cfg.invite) || {}; return { text: i.text || '', link: i.link || '' }; }
+// GET /api/shares/{token} con el acceso cerrado: sin la rutina ni nada para cargar; el resumen
+// de lo que entrenó y, si es huésped, la invitación del coach.
+async function closedShare(env, idx, r, closed) {
+    const pf = r.profile || {};
+    const sessions = ((await kvGet(env, sessionsKey(r.id))) || { items: [] }).items;
+    const cfg = pf.guest ? ((await kvGet(env, `coachcfg:${idx.coachId}`)) || {}) : {};
+    const per = stayPeriod(r, closed, closed.slice(0, 10));
+    return json({
+        closed: true, closed_at: closed, guest: !!pf.guest, access_until: pf.access_until || '',
+        routine: { id: r.id, name: r.name, coach_name: r.coach_name, alumno_name: r.alumno_name, share_token: r.share_token,
+            created_at: r.created_at, last_coach_update_at: r.last_coach_update_at },
+        summary: stayStats(r, sessions, per.from, per.to),
+        invite: pf.guest ? inviteOf(cfg) : null,
+        interest: r.interest ? { at: r.interest.at } : null,
+        terms_v: (r.terms && r.terms.v) || ''
+    });
+}
+// POST /api/shares/{token}/interest — el alumno (sobre todo el huésped al terminar su estadía)
+// avisa que quiere seguir con el programa del coach y, si quiere, deja un contacto. Al coach le
+// aparece como alerta y en su resumen diario. Funciona aunque el acceso esté cerrado.
+async function postShareInterest(req, env, token) {
+    const got = await loadShareRoutine(env, token);
+    if (!got) return err('Routine not found', 404);
+    const { idx, r } = got;
+    const body = (await readBody(req)) || {};
+    const contact = str(body.contact, 80) || '', note = str(body.note, 300) || '';
+    // Tocar dos veces seguidas no vuelve a avisar (sí, si deja un contacto o un mensaje)
+    if (r.interest && Date.now() - Date.parse(r.interest.at) < 6 * 3600000 && !contact && !note) return json({ ok: true, at: r.interest.at });
+    r.interest = { at: nowISO() };
+    if (contact) r.interest.contact = contact;
+    if (note) r.interest.note = note;
+    await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    return json({ ok: true, at: r.interest.at }, 201);
+}
+
 // POST /api/routines/{id}/new-link — el coach le cambia el link al alumno (por ejemplo, si
 // llegó a alguien que no corresponde). Todo lo del alumno queda igual: solo cambia la llave.
 // El link viejo deja de andar y, por MOVED_DAYS días, responde 410 "cambió" (sin decir cuál
@@ -915,7 +1020,7 @@ async function newShareLink(req, env, url, id) {
     r.push_subs = [];
     if (old) r.moved_tokens = [old].concat(Array.isArray(r.moved_tokens) ? r.moved_tokens : []).slice(0, MOVED_KEEP);
     // Primero la llave nueva y el registro; recién después se apaga la vieja
-    await kvPut(env, `token:${token}`, { coachId, routineId: id });
+    await kvPut(env, `token:${token}`, tokenIndex(coachId, id, r.access_end_at));
     await kvPut(env, routineKey(coachId, id), r);
     if (old) {
         await env.BMOD_KV.delete(`token:${old}`);
@@ -974,6 +1079,8 @@ async function getShare(env, token) {
     }
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
+    const closed = closedAt(r.access_end_at);
+    if (closed) return closedShare(env, idx, r, closed);
     // "visto por el alumno": como mucho una escritura por hora (cada put gasta
     // cuota de KV; sin esto, refrescar el link en loop la agota).
     const seen = r.last_seen_by_alumno_at ? new Date(r.last_seen_by_alumno_at).getTime() : 0;
@@ -995,8 +1102,10 @@ async function getShare(env, token) {
     const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
     const videos = ((await kvGet(env, videosKey(r.id))) || { items: [] }).items.slice(0, 10);
     const review = await kvGet(env, reviewKey(r.id));
+    const pf = r.profile || {};
     return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, review, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
-        intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
+        intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [],
+        guest: !!pf.guest, access_until: pf.access_until || '' });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -1037,6 +1146,7 @@ function cleanSessionExercises(list) {
 async function postShareSession(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
+    if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
     const body = await readBody(req);
     const date = (body && body.date) ? body.date : new Date().toISOString().slice(0, 10);
     if (!validSessionDate(date)) return err('Fecha inválida', 400);
@@ -1088,6 +1198,7 @@ const CHK_HABIT = ['si', 'medias', 'no'];
 async function postCheckin(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
+    if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
     const body = await readBody(req);
     const date = (body && body.date) ? body.date : new Date().toISOString().slice(0, 10);
     if (!validSessionDate(date)) return err('Fecha inválida', 400);
@@ -1147,6 +1258,7 @@ async function syncVideosPending(env, idx, items) {
 async function postVideo(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
+    if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
     const body = (await readBody(req)) || {};
     const exercise = str(body.exercise, 60);
     const link = str(body.url, 300) || '';
@@ -1210,6 +1322,7 @@ const pickList = (v, allowed) => (Array.isArray(v) ? [...new Set(v.filter((x) =>
 async function postIntake(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
+    if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     const body = (await readBody(req)) || {};
@@ -1245,7 +1358,7 @@ async function getCoachConfig(env, url) {
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
     return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
         digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 },
-        left: leftRecent(cfg.left) });
+        left: leftRecent(cfg.left), invite: inviteOf(cfg) });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -1257,6 +1370,12 @@ async function putCoachConfig(req, env, url) {
     }
     // Aceptación de los términos de uso (versión = fecha de los términos)
     if (TERMS_V_RE.test(body.terms || '')) cfg.terms = { v: body.terms, at: nowISO() };
+    // Invitación al programa digital que ven sus huéspedes al terminar la estadía
+    if (body.invite && typeof body.invite === 'object') {
+        const link = str(body.invite.link, 300) || '';
+        if (link && !LINK_RE.test(link)) return err('El link tiene que empezar con https://', 400);
+        cfg.invite = { text: str(body.invite.text, 400) || '', link };
+    }
     // Resumen diario de alumnos para revisar, a la hora que elige el coach (en su zona)
     let digestChanged = false;
     if (body.digest && typeof body.digest === 'object') {
@@ -1279,7 +1398,7 @@ async function putCoachConfig(req, env, url) {
     await kvPut(env, `coachcfg:${coachId}`, cfg);
     if (digestChanged) await callNotifier(env, 'digest:' + coachId, { op: 'digest-sync', coachId });
     return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '',
-        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 } });
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg) });
 }
 
 // ── Términos de uso y reportes ──
@@ -1346,6 +1465,7 @@ async function adminReports(req, env) {
 async function postEdit(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
+    if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
     const body = await readBody(req);
     if (!body || !body.changes_json) return err('Missing changes_json', 400);
     if (JSON.stringify(body.changes_json).length > MAX_EDIT_JSON) return err('Edit demasiado grande', 413);
@@ -1459,7 +1579,7 @@ async function coachBind(req, env) {
 async function bindCoachCode(env, code, rec, shareToken) {
     if (!rec || !rec.coach_pack || rec.revoked || !/^[a-z0-9]{6,32}$/.test(shareToken || '')) return false;
     const idx = await kvGet(env, `token:${shareToken}`);
-    if (!idx) return false;
+    if (!idx || closedAt(idx.until)) return false;
     if (rec.routine_id && rec.routine_id !== idx.routineId) return false;
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return false;
@@ -2262,6 +2382,7 @@ async function loadShareRoutine(env, token) {
     return r ? { idx, r } : null;
 }
 function chkNextAt(r, now) {
+    if ((r.profile && r.profile.guest) || closedAt(r.access_end_at, now)) return null;
     const c = chkRemindOf(r);
     if (c.mode === 'off' || !(r.push_subs || []).length || (r.profile && r.profile.status === 'finalizado')) return null;
     return nextLocalTime(now, c.dow, c.hour, validTz(r.push_tz) || DEFAULT_TZ);
@@ -2427,6 +2548,7 @@ async function postSharePush(req, env, token) {
     if (!got) return err('Routine not found', 404);
     const { idx, r } = got;
     const body = (await readBody(req)) || {};
+    if (!body.off && closedAt(idx.until)) return closedErr();
     const subs = Array.isArray(r.push_subs) ? r.push_subs : [];
     if (body.off) {
         r.push_subs = subs.filter((s) => s.endpoint !== body.endpoint);
@@ -2449,6 +2571,7 @@ async function remindRoutine(req, env, url, id) {
     const r = await kvGet(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (closedAt(r.access_end_at)) return err('El acceso de este alumno ya terminó', 409);
     if (!(r.push_subs || []).length) return json({ ok: true, sent: 0, no_subs: true });
     if (r.remind_at && Date.now() - Date.parse(r.remind_at) < 12 * 3600000) return err('Ya le mandaste un recordatorio hace menos de 12 horas', 429);
     const res = await notifyStudent(env, r, 'remind', {}, false);
@@ -2817,7 +2940,7 @@ export default {
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
         if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
-        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link)$/.test(p);
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link|interest)$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
@@ -2849,6 +2972,7 @@ export default {
             if (p === '/api/push/rest' && m === 'POST') return await pushRest(req, env);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/leave$/)) && m === 'POST') return await postShareLeave(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/interest$/)) && m === 'POST') return await postShareInterest(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);

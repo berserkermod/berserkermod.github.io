@@ -1488,6 +1488,96 @@ let code, licToken;
     ok('la baja del coach sigue funcionando igual (ya no existe → 404)', del.status === 404);
 }
 
+// ── Huéspedes de hotel: acceso hasta una fecha, resumen final e invitación ──
+{
+    console.log('\nHuéspedes de hotel');
+    const C = 'coachHOTEL01';
+    const kv = env.BMOD_KV._m;
+    const rkey = (id) => 'routine:' + C + ':' + id;
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);   // n días atrás (negativo: adelante)
+    const BA = 'America/Argentina/Buenos_Aires';
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Hotel Ana', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Ana Huésped', coach_name: 'Profe' })).body;
+    const tk = r.share_token;
+    // El coach la marca huésped, con inicio hace 5 días y acceso hasta pasado mañana
+    const up = await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { modality: 'Hotel', start_date: day(5), status: 'activo', goals: '', notes: '', guest: true, access_until: day(-2), tz: BA } });
+    const rec = JSON.parse(kv.get(rkey(r.id)));
+    ok('huésped con fecha de fin: cierra a la medianoche de ese día en la zona del coach', up.status === 200 && rec.profile.guest === true && rec.profile.access_until === day(-2)
+        && rec.access_end_at === new Date(Date.parse(day(-3) + 'T03:00:00Z')).toISOString(), rec.access_end_at);
+    ok('el índice del link guarda el cierre (cada pedido lo chequea sin leer más)', JSON.parse(kv.get('token:' + tk)).until === rec.access_end_at);
+    const abierto = await call('GET', '/api/shares/' + tk);
+    ok('abierto: el link avisa que es huésped y hasta cuándo, con su rutina', abierto.status === 200 && abierto.body.guest === true && abierto.body.access_until === day(-2) && Array.isArray(abierto.body.routine.plan));
+    await call('POST', '/api/shares/' + tk + '/sessions', { date: day(3), exercises: [{ name: 'Sentadilla', sets: [{ kg: 40, reps: 10 }, { kg: 50, reps: 8 }] }] });
+    await call('POST', '/api/shares/' + tk + '/sessions', { date: day(2), exercises: [{ name: 'Sentadilla', sets: [{ kg: 55, reps: 8 }] }, { name: 'Remo', sets: [{ kg: 30, reps: 12 }] }] });
+    const list0 = await call('GET', '/api/routines?coach_id=' + C + '&today=' + day(0));
+    const it0 = list0.body.find((x) => x.id === r.id);
+    ok('huésped: sin alertas de control semanal ni de ciclo', it0.guest === true && it0.closed === false && !it0.alerts.some((a) => a.type === 'no_checkin' || a.type === 'eval' || a.type === 'low_adherence'), it0.alerts);
+
+    // Una app vieja guarda la ficha sin los campos nuevos: no los borra
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { modality: 'Hotel', start_date: day(5), status: 'activo', goals: '', notes: 'x' } });
+    const rec1 = JSON.parse(kv.get(rkey(r.id)));
+    ok('una app vieja que no manda huésped ni fecha no los pisa', rec1.profile.guest === true && rec1.profile.access_until === day(-2) && rec1.access_end_at === rec.access_end_at);
+
+    // Termina la estadía (último día: hace 2 días)
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { modality: 'Hotel', start_date: day(5), status: 'activo', goals: '', notes: '', guest: true, access_until: day(2), tz: BA } });
+    const cerrado = await call('GET', '/api/shares/' + tk);
+    const sm = cerrado.body.summary || {};
+    ok('cerrado: el link no trae la rutina, trae el resumen de la estadía', cerrado.status === 200 && cerrado.body.closed === true && cerrado.body.routine.plan === undefined && !!cerrado.body.closed_at
+        && sm.sessions === 2 && sm.days === 4 && sm.from === day(5) && sm.to === day(2), cerrado.body);
+    const sq = (sm.exercises || []).find((e) => e.name === 'Sentadilla');
+    ok('resumen: mejor serie de cada ejercicio y cuánto mejoró en la estadía', sq && sq.n === 2 && sq.best.kg === 55 && sq.best.reps === 8 && sq.change > 0 && sm.total_sets === 4 && sm.total_volume > 0, sm);
+    ok('sin invitación cargada, el huésped igual recibe el bloque (vacío)', cerrado.body.invite && cerrado.body.invite.text === '' && cerrado.body.invite.link === '');
+    const bloqueos = [
+        await call('POST', '/api/shares/' + tk + '/sessions', { date: day(0) }),
+        await call('POST', '/api/shares/' + tk + '/checkins', { weight: '60' }),
+        await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Sentadilla', url: 'https://youtu.be/abc123' }),
+        await call('POST', '/api/shares/' + tk + '/intake', { goals: ['fuerza'] }),
+        await call('POST', '/api/shares/' + tk + '/edits', { changes_json: { a: 1 } }),
+        await call('POST', '/api/shares/' + tk + '/push', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys: { p256dh: 'a', auth: 'b' } } })
+    ];
+    ok('cerrado: no deja cargar sesiones, controles, videos, ficha, cambios ni avisos', bloqueos.every((x) => x.status === 403 && x.body.closed === true), bloqueos.map((x) => x.status));
+    const terms = await call('POST', '/api/shares/' + tk + '/terms', { version: '2026-11-14' });
+    const rep = await call('POST', '/api/shares/' + tk + '/report', { reason: 'otro' });
+    ok('cerrado: sigue pudiendo aceptar términos y reportar', terms.status === 200 && rep.status === 201, [terms.status, rep.status]);
+    const rem = await call('POST', '/api/routines/' + r.id + '/remind', { coach_id: C });
+    ok('el coach no puede mandarle el recordatorio del control', rem.status === 409, rem.status);
+
+    // Invitación del coach
+    const malo = await call('PUT', '/api/coach/config', { coach_id: C, invite: { text: 'Seguí conmigo', link: 'http://inseguro.com' } });
+    ok('invitación: el link tiene que ser https', malo.status === 400);
+    const inv = await call('PUT', '/api/coach/config', { coach_id: C, invite: { text: 'Seguí entrenando conmigo a distancia', link: 'https://wa.me/5491112345678' } });
+    const cfgG = await call('GET', '/api/coach/config?coach_id=' + C);
+    const cer2 = await call('GET', '/api/shares/' + tk);
+    ok('invitación guardada: la ve el coach y el huésped al terminar', inv.status === 200 && cfgG.body.invite.link === 'https://wa.me/5491112345678' && cer2.body.invite.text === 'Seguí entrenando conmigo a distancia', cer2.body.invite);
+
+    // "Me interesa seguir"
+    const want = await call('POST', '/api/shares/' + tk + '/interest', { contact: '+54 9 11 5555 1234', note: 'Me gustó' });
+    const want2 = await call('POST', '/api/shares/' + tk + '/interest', {});
+    const rec2 = JSON.parse(kv.get(rkey(r.id)));
+    ok('me interesa: queda con su contacto, y tocar de nuevo no lo pisa', want.status === 201 && want2.status === 200 && rec2.interest.contact === '+54 9 11 5555 1234' && rec2.interest.note === 'Me gustó', rec2.interest);
+    const list1 = await call('GET', '/api/routines?coach_id=' + C + '&today=' + day(0));
+    const it1 = list1.body.find((x) => x.id === r.id);
+    ok('panel: cerrado, y la única alerta es que quiere seguir', it1.closed === true && it1.interest_at === rec2.interest.at && it1.alerts.length === 1 && it1.alerts[0].type === 'interest', it1);
+    const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C + '&today=' + day(0));
+    ok('detalle: el coach ve el contacto, el resumen de la estadía y la fecha de cierre', det.body.routine.interest.contact === '+54 9 11 5555 1234' && det.body.stay && det.body.stay.sessions === 2 && !!det.body.routine.closed_at && det.body.routine.alerts.length === 0, det.body.stay);
+    const list2 = await call('GET', '/api/routines?coach_id=' + C + '&today=' + day(0));
+    ok('abrir el detalle marca el interés como visto', list2.body.find((x) => x.id === r.id).alerts.length === 0);
+    const cer3 = await call('GET', '/api/shares/' + tk);
+    ok('el huésped ve que ya le avisó', cer3.body.interest && cer3.body.interest.at === rec2.interest.at);
+
+    // Cambiar el link conserva el cierre; reabrir el acceso vuelve a mostrar la rutina
+    const recC = JSON.parse(kv.get(rkey(r.id)));
+    const nl = await call('POST', '/api/routines/' + r.id + '/new-link', { coach_id: C });
+    ok('el link nuevo también está cerrado', JSON.parse(kv.get('token:' + nl.body.share_token)).until === recC.access_end_at && (await call('GET', '/api/shares/' + nl.body.share_token)).body.closed === true);
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { modality: 'Hotel', start_date: day(5), status: 'activo', goals: '', notes: '', guest: true, access_until: '', tz: BA } });
+    const reab = await call('GET', '/api/shares/' + nl.body.share_token);
+    const ses = await call('POST', '/api/shares/' + nl.body.share_token + '/sessions', { date: day(0) });
+    ok('sin fecha de fin, el acceso se reabre', reab.status === 200 && !reab.body.closed && Array.isArray(reab.body.routine.plan) && ses.status === 201 && !JSON.parse(kv.get('token:' + nl.body.share_token)).until && !JSON.parse(kv.get(rkey(r.id))).access_end_at, [reab.status, ses.status]);
+    // Con el acceso cerrado, el huésped igual puede borrar sus datos
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { modality: 'Hotel', start_date: day(5), status: 'activo', goals: '', notes: '', guest: true, access_until: day(2), tz: BA } });
+    const lv = await call('POST', '/api/shares/' + nl.body.share_token + '/leave', { confirm: true });
+    ok('cerrado: "dejar a este coach y borrar mis datos" sigue andando', lv.status === 200 && !kv.has(rkey(r.id)));
+}
+
 // ── Coach: cambiarle el link a un alumno sin darlo de baja ──
 {
     console.log('\nCoach: cambiar el link del alumno');
