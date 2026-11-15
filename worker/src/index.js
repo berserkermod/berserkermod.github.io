@@ -19,6 +19,7 @@
 //   Avisos a horario: POST                /api/push/rest                (fin del descanso con la app cerrada)
 //                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
 //                     POST                /api/shares/{token}/leave     (el alumno deja a su coach y borra sus datos)
+//                     POST                /api/routines/{id}/new-link   (el coach le cambia el link al alumno)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
 //                     GET                 /api/admin/reports            (ADMIN_SECRET)
 //                     POST                /api/coach/bind               (ata el panel del coach a su código)
@@ -185,10 +186,12 @@ function corsHeaders() {
         'Access-Control-Allow-Headers': 'Content-Type, x-api-key, x-coach-id, x-admin-secret, anthropic-version'
     };
 }
+// no-store: son datos personales y en vivo. Sin esto el navegador puede guardarse un rato
+// un 404/410 (o una respuesta con datos) y mostrar algo viejo después de un cambio.
 function json(obj, status = 200, extra = {}) {
     return new Response(JSON.stringify(obj), {
         status,
-        headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(), ...extra }
+        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders(), ...extra }
     });
 }
 function err(msg, status = 400) { return json({ error: msg }, status); }
@@ -882,8 +885,44 @@ async function purgeRoutine(env, coachId, r, reason) {
     await env.BMOD_KV.delete(evalsKey(id));
     await env.BMOD_KV.delete(videosKey(id));
     await env.BMOD_KV.delete(reviewKey(id));
+    for (const old of (Array.isArray(r.moved_tokens) ? r.moved_tokens : [])) await env.BMOD_KV.delete(movedKey(old));
     if ((r.push_subs || []).length && r.share_token) await callNotifier(env, 'chk:' + r.share_token, { op: 'off' });
     return revoked;
+}
+
+// POST /api/routines/{id}/new-link — el coach le cambia el link al alumno (por ejemplo, si
+// llegó a alguien que no corresponde). Todo lo del alumno queda igual: solo cambia la llave.
+// El link viejo deja de andar y, por MOVED_DAYS días, responde 410 "cambió" (sin decir cuál
+// es el nuevo) para que la app del alumno no lo tome como una baja y le pida el link nuevo.
+// Los avisos del alumno se apagan: cada aviso lleva el link adentro, y un teléfono ajeno
+// suscripto con el link viejo recibiría el nuevo. El alumno los activa de nuevo.
+const MOVED_DAYS = 120, MOVED_KEEP = 5;
+function movedKey(token) { return `moved:${token}`; }
+async function newShareLink(req, env, url, id) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    let token = newShareToken();
+    if (await kvGet(env, `token:${token}`)) token = newShareToken();
+    const old = r.share_token;
+    const hadPush = (r.push_subs || []).length > 0;
+    const now = nowISO();
+    r.share_token = token;
+    r.link_changed_at = now;
+    r.push_subs = [];
+    if (old) r.moved_tokens = [old].concat(Array.isArray(r.moved_tokens) ? r.moved_tokens : []).slice(0, MOVED_KEEP);
+    // Primero la llave nueva y el registro; recién después se apaga la vieja
+    await kvPut(env, `token:${token}`, { coachId, routineId: id });
+    await kvPut(env, routineKey(coachId, id), r);
+    if (old) {
+        await env.BMOD_KV.delete(`token:${old}`);
+        await kvPut(env, movedKey(old), { at: now, coachId, routineId: id }, { expirationTtl: MOVED_DAYS * 86400 });
+        if (hadPush) await callNotifier(env, 'chk:' + old, { op: 'off' });
+    }
+    return json(Object.assign(stripPush(r), { chk_remind: chkRemindOf(r) }));
 }
 
 // POST /api/shares/{token}/leave — el alumno deja a su coach y borra todo lo suyo del
@@ -927,7 +966,12 @@ async function reviewRoutine(req, env, url, id) {
 // ── Coach: shares (público, por token) ───────────────────────────────
 async function getShare(env, token) {
     const idx = await kvGet(env, `token:${token}`);
-    if (!idx) return err('Routine not found', 404);
+    if (!idx) {
+        // ¿El coach le cambió el link? (mientras el alumno siga en su panel)
+        const mv = await kvGet(env, movedKey(token));
+        if (mv && await kvGet(env, routineKey(mv.coachId, mv.routineId))) return json({ error: 'Link changed', moved: true }, 410);
+        return err('Routine not found', 404);
+    }
     const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     // "visto por el alumno": como mucho una escritura por hora (cada put gasta
@@ -2773,7 +2817,7 @@ export default {
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
         if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
-        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave)$/.test(p);
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link)$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
@@ -2789,6 +2833,7 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'PUT') return await putReview(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'DELETE') return await deleteReview(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);

@@ -55,6 +55,8 @@ console.log('\n=== BERSERKERMOD Worker tests ===\n');
     const r = await call('GET', '/api/health');
     ok('ping ok', r.status === 200 && r.body.ok === true, r.body);
     ok('CORS header presente', r.cors === '*');
+    const raw = await worker.fetch(req('GET', '/api/shares/noexistenuncaxx'), env);
+    ok('las respuestas no se guardan en el navegador (no-store), tampoco un 404', raw.status === 404 && raw.headers.get('Cache-Control') === 'no-store');
     const opt = await worker.fetch(req('OPTIONS', '/api/routines'), env);
     ok('preflight 204', opt.status === 204 && opt.headers.get('Access-Control-Allow-Methods').includes('DELETE'));
 }
@@ -1484,6 +1486,53 @@ let code, licToken;
     ok('el segundo aviso va primero y los vencidos se limpian al guardar', lv2.status === 200 && raw2.left.length === 2 && raw2.left[0].name === 'Beto' && raw2.left[1].name === 'Ana', raw2.left);
     const del = await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
     ok('la baja del coach sigue funcionando igual (ya no existe → 404)', del.status === 404);
+}
+
+// ── Coach: cambiarle el link a un alumno sin darlo de baja ──
+{
+    console.log('\nCoach: cambiar el link del alumno');
+    const C = 'coachNEWLINK1';
+    const kv = env.BMOD_KV._m;
+    const rkey = (id) => 'routine:' + C + ':' + id;
+    const today = new Date().toISOString().slice(0, 10);
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan Caro', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Caro', coach_name: 'Profe' })).body;
+    const t1 = r.share_token;
+    await call('POST', '/api/shares/' + t1 + '/sessions', { date: today, exercises: [{ name: 'Sentadilla', sets: [{ kg: 50, reps: 8 }] }] });
+    await call('POST', '/api/shares/' + t1 + '/checkins', { weight: '60', energy: 4 });
+    const rec0 = JSON.parse(kv.get(rkey(r.id)));
+    rec0.push_subs = [{ endpoint: 'https://fcm.googleapis.com/fcm/send/ajeno', keys: { p256dh: 'x', auth: 'y' } }];
+    kv.set(rkey(r.id), JSON.stringify(rec0));
+
+    const otro = await call('POST', '/api/routines/' + r.id + '/new-link', { coach_id: 'coachIntruso1' });
+    ok('otro coach no puede cambiarlo', otro.status === 404 || otro.status === 403, otro.status);
+    const nl = await call('POST', '/api/routines/' + r.id + '/new-link', { coach_id: C });
+    const t2 = nl.body && nl.body.share_token;
+    ok('link nuevo: 200, otro token y avisos apagados', nl.status === 200 && t2 && t2 !== t1 && nl.body.push_on === 0 && !!nl.body.chk_remind, nl.body);
+    const recA = JSON.parse(kv.get(rkey(r.id)));
+    ok('en el servidor: se borran los avisos (llevan el link adentro)', Array.isArray(recA.push_subs) && recA.push_subs.length === 0 && recA.share_token === t2 && !!recA.link_changed_at);
+    ok('la llave vieja se borra y la nueva apunta al mismo alumno', !kv.has('token:' + t1) && JSON.parse(kv.get('token:' + t2)).routineId === r.id);
+    const viejo = await call('GET', '/api/shares/' + t1);
+    ok('el link viejo responde 410 "cambió", sin decir cuál es el nuevo', viejo.status === 410 && viejo.body.moved === true && !JSON.stringify(viejo.body).includes(t2), viejo.body);
+    const nuevo = await call('GET', '/api/shares/' + t2);
+    ok('el link nuevo trae todo lo del alumno', nuevo.status === 200 && nuevo.body.routine.id === r.id && nuevo.body.routine.share_token === t2 && nuevo.body.sessions.length === 1 && nuevo.body.checkins.length === 1, nuevo.body.routine);
+    const escribeViejo = await call('POST', '/api/shares/' + t1 + '/sessions', { date: today });
+    ok('con el link viejo ya no se puede cargar nada', escribeViejo.status === 404, escribeViejo.status);
+    const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('el coach ve el link nuevo en el detalle', det.status === 200 && det.body.routine.share_token === t2, det.body.routine && det.body.routine.share_token);
+
+    const nl2 = await call('POST', '/api/routines/' + r.id + '/new-link', { coach_id: C });
+    const t3 = nl2.body.share_token;
+    ok('se puede cambiar otra vez: los dos links viejos responden 410', nl2.status === 200 && (await call('GET', '/api/shares/' + t1)).status === 410 && (await call('GET', '/api/shares/' + t2)).status === 410 && (await call('GET', '/api/shares/' + t3)).status === 200);
+    const del = await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('dar de baja borra también los avisos de "link cambiado"', del.status === 200 && !kv.has('moved:' + t1) && !kv.has('moved:' + t2) && (await call('GET', '/api/shares/' + t1)).status === 404, [...kv.keys()].filter((k) => k.startsWith('moved:')));
+
+    // Si el registro ya no existe (baja vieja), el aviso de "cambió" no se muestra
+    const r2 = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan Dani', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Dani' })).body;
+    const d1 = r2.share_token;
+    await call('POST', '/api/routines/' + r2.id + '/new-link', { coach_id: C });
+    kv.delete(rkey(r2.id));
+    ok('link viejo de un alumno que ya no está → 404 (no 410)', (await call('GET', '/api/shares/' + d1)).status === 404);
+    kv.delete('moved:' + d1);
 }
 
 // ── Avisos con texto y a horario (Web Push cifrado + Durable Object) ──
