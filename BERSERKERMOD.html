@@ -16683,9 +16683,19 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         async function coachExportData(onProgress) {
             const out = [];
             const list = state.myStudents || [];
+            // El servidor acepta 60 pedidos por minuto: con muchos alumnos se va de a uno por
+            // segundo, y si igual pide esperar, se reintenta.
+            const wait = (ms) => new Promise(r => setTimeout(r, ms));
+            const slow = list.length > 30;
             for (let i = 0; i < list.length; i++) {
                 onProgress(i + 1, list.length);
-                out.push(await api('GET', '/api/routines/' + list[i].id + '?export=1'));
+                let d = null;
+                for (let attempt = 0; attempt < 3 && !d; attempt++) {
+                    try { d = await api('GET', '/api/routines/' + list[i].id + '?export=1'); }
+                    catch (e) { if (attempt === 2) throw e; await wait(20000); }
+                }
+                out.push(d);
+                if (slow && i < list.length - 1) await wait(1100);
             }
             return out;
         }
