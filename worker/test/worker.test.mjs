@@ -1488,6 +1488,95 @@ let code, licToken;
     ok('la baja del coach sigue funcionando igual (ya no existe → 404)', del.status === 404);
 }
 
+// ── Accesos Premium del coach: los da desde el panel y el alumno los recibe sin código ──
+{
+    console.log('\nAccesos Premium del coach (cupo)');
+    const ADMIN = { 'x-admin-secret': 'test-admin' };
+    const kv = env.BMOD_KV._m;
+    const PANEL = 'panel-cupo-0001';
+    const cc = (await call('POST', '/api/admin/codes', { count: 1, product: 'coach' }, ADMIN)).body.codes[0];
+    await call('POST', '/api/license/activate', { code: cc, deviceId: 'devCoachCupo1', coach_id: PANEL });
+    const malo = await call('POST', '/api/admin/codes', { count: 2, product: 'premium', months: 3, coach_pack: true, coach_code: 'BMOD-NOEX-ISTE' }, ADMIN);
+    ok('cupo: un código de Coach que no existe → 400', malo.status === 400);
+    const gen = await call('POST', '/api/admin/codes', { count: 2, product: 'premium', months: 3, coach_pack: true, label: 'Cupo', coach_code: cc }, ADMIN);
+    ok('cupo: los accesos se cargan al panel del coach', gen.status === 200 && gen.body.seats.total === 2 && gen.body.seats.free === 2, gen.body);
+    const cfg0 = await call('GET', '/api/coach/config?coach_id=' + PANEL);
+    ok('el coach ve cuántos accesos tiene (sin ver los códigos)', cfg0.body.seats.total === 2 && cfg0.body.seats.free === 2 && !JSON.stringify(cfg0.body).includes(gen.body.codes[0]));
+    const mk = async (n) => (await call('POST', '/api/routines', { coach_id: PANEL, name: 'Plan ' + n, plan: [{ name: 'A', exercises: [] }], alumno_name: n })).body;
+    const a = await mk('Ana Cupo'), b = await mk('Beto Cupo'), c = await mk('Caro Cupo');
+    const da = await call('POST', '/api/routines/' + a.id + '/premium', { coach_id: PANEL });
+    ok('darle Premium: 201, queda asignado y baja el cupo', da.status === 201 && da.body.seat.status === 'assigned' && da.body.seats.free === 1, da.body);
+    const det = await call('GET', '/api/routines/' + a.id + '?coach_id=' + PANEL);
+    ok('el detalle muestra el estado, nunca el código', det.body.routine.seat.status === 'assigned' && !JSON.stringify(det.body).includes(gen.body.codes[0]) && !JSON.stringify(det.body).includes(gen.body.codes[1]));
+    ok('el link del alumno avisa que tiene un Premium para activar', (await call('GET', '/api/shares/' + a.share_token)).body.premium_seat === true && (await call('GET', '/api/shares/' + b.share_token)).body.premium_seat === false);
+    const sinCupo = await call('POST', '/api/shares/' + b.share_token + '/premium-auto', { deviceId: 'devBeto0001' });
+    ok('un alumno sin acceso asignado no recibe nada', sinCupo.status === 200 && sinCupo.body.none === true);
+    const au = await call('POST', '/api/shares/' + a.share_token + '/premium-auto', { deviceId: 'devAnaUno01' });
+    const ver = await call('POST', '/api/license/verify', { token: au.body.token });
+    ok('el teléfono del alumno recibe la licencia sin tipear nada', au.status === 200 && !!au.body.token && ver.body.valid === true && !!au.body.expiresAt, [au.body, ver.body]);
+    const list1 = await call('GET', '/api/routines?coach_id=' + PANEL);
+    ok('el panel muestra que ya lo activó', list1.body.find((x) => x.id === a.id).seat.status === 'active');
+    const re = await call('POST', '/api/shares/' + a.share_token + '/premium-auto', { deviceId: 'devAnaUno01' });
+    ok('mismo teléfono: vuelve a recibirla sin contar como cambio', re.status === 200 && JSON.parse(kv.get('code:' + gen.body.codes[0])).rebinds === undefined);
+    for (const d of ['devAnaDos02', 'devAnaTres3', 'devAnaCuat4']) await call('POST', '/api/shares/' + a.share_token + '/premium-auto', { deviceId: d });
+    const tope = await call('POST', '/api/shares/' + a.share_token + '/premium-auto', { deviceId: 'devAnaCinc5' });
+    const det2 = await call('GET', '/api/routines/' + a.id + '?coach_id=' + PANEL);
+    ok('pasar a otro teléfono tiene tope (3) y el coach lo ve', tope.status === 409 && tope.body.moved_max === true && det2.body.routine.seat.moves === 3 && det2.body.routine.seat.blocked === true, [tope.status, det2.body.routine.seat]);
+    await call('POST', '/api/routines/' + a.id + '/premium', { coach_id: PANEL, reset: true });
+    const tras = await call('POST', '/api/shares/' + a.share_token + '/premium-auto', { deviceId: 'devAnaCinc5' });
+    ok('el coach lo habilita en el teléfono nuevo', tras.status === 200 && !!tras.body.token);
+    await call('POST', '/api/routines/' + b.id + '/premium', { coach_id: PANEL });
+    const lleno = await call('POST', '/api/routines/' + c.id + '/premium', { coach_id: PANEL });
+    ok('sin accesos libres → 409', lleno.status === 409 && lleno.body.no_seats === true && lleno.body.seats.free === 0);
+    const quita = await call('DELETE', '/api/routines/' + b.id + '/premium?coach_id=' + PANEL);
+    ok('quitárselo a quien nunca lo usó lo devuelve al cupo', quita.status === 200 && quita.body.freed === true && quita.body.seats.free === 1);
+    const baja = await call('DELETE', '/api/routines/' + a.id + '?coach_id=' + PANEL);
+    const ver2 = await call('POST', '/api/license/verify', { token: tras.body.token });
+    const cfg1 = await call('GET', '/api/coach/config?coach_id=' + PANEL);
+    ok('dar de baja a quien lo usaba lo anula (ese acceso se gastó)', baja.body.revoked === 1 && ver2.body.valid === false && cfg1.body.seats.total === 1 && cfg1.body.seats.free === 1, [baja.body, cfg1.body.seats]);
+    await call('POST', '/api/routines/' + c.id + '/premium', { coach_id: PANEL });
+    await call('PUT', '/api/routines/' + c.id, { coach_id: PANEL, profile: { modality: '', start_date: '', status: 'activo', goals: '', notes: '', access_until: new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10) } });
+    const cerr = await call('POST', '/api/shares/' + c.share_token + '/premium-auto', { deviceId: 'devCaroUno1' });
+    ok('con el acceso cerrado no se activa', cerr.status === 403 && cerr.body.closed === true);
+    const bajaC = await call('DELETE', '/api/routines/' + c.id + '?coach_id=' + PANEL);
+    const cfg2 = await call('GET', '/api/coach/config?coach_id=' + PANEL);
+    ok('dar de baja a quien nunca lo usó lo devuelve al cupo', bajaC.status === 200 && bajaC.body.revoked === 0 && cfg2.body.seats.free === 1, cfg2.body.seats);
+    await call('DELETE', '/api/routines/' + b.id + '?coach_id=' + PANEL);
+}
+
+// ── Pasar los datos de Safari a la app instalada (iPhone) ──
+{
+    console.log('\nPasar los datos de Safari a la app');
+    const IP = (x) => ({ 'CF-Connecting-IP': x });
+    const fp = { os: '18_1', dev: 'iphone', scr: '393x852', dpr: 3, tz: 'America/Argentina/Buenos_Aires' };
+    const nuevo = async (code, f = fp, ip = '200.1.2.3') => call('POST', '/api/transfer', { data: 'CIFRADO-' + code, wrap: 'ENVUELTA-' + code, code, fp: f }, IP(ip));
+    const t1 = await nuevo('111111');
+    ok('Safari sube la copia cifrada y recibe el pase', t1.status === 201 && /^[a-z0-9]{20}$/.test(t1.body.id) && t1.body.ttl === 1800, t1.body);
+    ok('un código que ya está en uso → 409 (el teléfono elige otro)', (await nuevo('111111')).status === 409);
+    const c1 = await call('POST', '/api/transfer/claim', { id: t1.body.id, fp }, IP('200.1.2.77'));
+    ok('mismo teléfono y misma red: la app recibe la copia sola (sin la clave envuelta)', c1.status === 200 && c1.body.data === 'CIFRADO-111111' && c1.body.wrap === undefined, c1.body);
+    ok('sirve una sola vez', (await call('POST', '/api/transfer/claim', { id: t1.body.id, fp }, IP('200.1.2.77'))).status === 404);
+    const t2 = await nuevo('222222');
+    const otro = { ...fp, scr: '430x932' };
+    const c2 = await call('POST', '/api/transfer/claim', { id: t2.body.id, fp: otro }, IP('200.1.2.3'));
+    ok('otro teléfono con el link reenviado: no entrega nada y pide el código', c2.status === 403 && c2.body.need_code === true && !c2.body.data);
+    const w1 = await call('POST', '/api/transfer/claim', { id: t2.body.id, fp: otro, code: '000001' }, IP('200.1.2.3'));
+    const w2 = await call('POST', '/api/transfer/claim', { id: t2.body.id, fp: otro, code: '000002' }, IP('200.1.2.3'));
+    const w3 = await call('POST', '/api/transfer/claim', { id: t2.body.id, fp: otro, code: '000003' }, IP('200.1.2.3'));
+    ok('código equivocado 3 veces: el pase se anula', w1.status === 403 && w1.body.left === 2 && w2.status === 403 && w3.status === 410 && (await call('POST', '/api/transfer/claim', { id: t2.body.id, fp, code: '222222' }, IP('200.1.2.3'))).status === 404, [w1.body, w3.body]);
+    const t3 = await nuevo('333333');
+    const c3 = await call('POST', '/api/transfer/claim', { id: t3.body.id, fp }, IP('181.9.9.9'));
+    const c3b = await call('POST', '/api/transfer/claim', { id: t3.body.id, fp, code: '333333' }, IP('181.9.9.9'));
+    ok('mismo teléfono en otra red: pide el código y con el correcto la entrega (con la clave envuelta)', c3.status === 403 && c3.body.need_code === true && c3b.status === 200 && c3b.body.data === 'CIFRADO-333333' && c3b.body.wrap === 'ENVUELTA-333333');
+    const t4 = await nuevo('444444');
+    const c4 = await call('POST', '/api/transfer/claim', { code: '444444' }, IP('10.0.0.1'));
+    ok('plan B: sin pase, el código solo trae la copia y la clave envuelta', c4.status === 200 && c4.body.data === 'CIFRADO-444444' && c4.body.wrap === 'ENVUELTA-444444' && !!t4.body.id);
+    ok('plan B: un código inventado no trae nada', (await call('POST', '/api/transfer/claim', { code: '999999' }, IP('10.0.0.1'))).status === 404);
+    const t5 = await nuevo('555555', {});
+    ok('sin datos del teléfono nunca se entrega sola (pide el código)', (await call('POST', '/api/transfer/claim', { id: t5.body.id, fp: {} }, IP('200.1.2.3'))).body.need_code === true);
+    ok('copia sin código o sin clave envuelta → 400', (await call('POST', '/api/transfer', { data: 'x', wrap: 'y', fp }, IP('200.1.2.3'))).status === 400 && (await call('POST', '/api/transfer', { data: 'x', code: '666666', fp }, IP('200.1.2.3'))).status === 400);
+}
+
 // ── Huéspedes de hotel: acceso hasta una fecha, resumen final e invitación ──
 {
     console.log('\nHuéspedes de hotel');

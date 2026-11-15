@@ -21,6 +21,9 @@
 //                     POST                /api/shares/{token}/leave     (el alumno deja a su coach y borra sus datos)
 //                     POST                /api/routines/{id}/new-link   (el coach le cambia el link al alumno)
 //                     POST                /api/shares/{token}/interest  (el huésped quiere seguir con el programa del coach)
+//                     POST/DELETE         /api/routines/{id}/premium    (el coach le da o le saca un acceso de su cupo)
+//                     POST                /api/shares/{token}/premium-auto (el teléfono del alumno recibe ese Premium, sin código)
+//                     POST                /api/transfer, /api/transfer/claim (pasar los datos de Safari a la app instalada)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
 //                     GET                 /api/admin/reports            (ADMIN_SECRET)
 //                     POST                /api/coach/bind               (ata el panel del coach a su código)
@@ -107,7 +110,7 @@ const AI_QUOTA = { oracle: 20, parse: 5, food: 15 };
 const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
 const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
-const STRICT_ROUTES = ['/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained'];
+const STRICT_ROUTES = ['/api/transfer', '/api/transfer/claim', '/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained'];
 
 // ── Utilidades ───────────────────────────────────────────────────────
 const enc = new TextEncoder();
@@ -394,6 +397,7 @@ async function listRoutines(env, url) {
         access_until: (r.profile && r.profile.access_until) || '',
         closed: !!closedAt(r.access_end_at),
         interest_at: r.interest ? r.interest.at : null,
+        seat: seatState(r),
         alerts: studentAlerts(r, today)
     }));
     return json(paged ? { items, next } : items);
@@ -895,7 +899,9 @@ async function deleteRoutine(req, env, url, id) {
 async function purgeRoutine(env, coachId, r, reason) {
     const id = r.id;
     let revoked = 0;
+    if (r.premium_seat && (await releaseSeat(env, coachId, r, reason)) === 'revoked') revoked++;   // sin usar, vuelve al cupo
     for (const code of (Array.isArray(r.premium_codes) ? r.premium_codes : [])) {
+        if (code === r.premium_seat) continue;
         const rec = await kvGet(env, `code:${code}`);
         if (rec && rec.coach_pack && rec.routine_id === id && !rec.revoked) {
             rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = reason;
@@ -993,6 +999,205 @@ async function postShareInterest(req, env, token) {
     if (note) r.interest.note = note;
     await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     return json({ ok: true, at: r.interest.at }, 201);
+}
+
+// ── Accesos Premium del coach (cupo) ──
+// Los códigos de coach que se cargan a un panel (admin con coach_code) son su cupo. El coach
+// le da Premium a un alumno con un toque: el código se ata a su rutina y el alumno lo recibe
+// solo, al abrir su link o su app (premium-auto), sin ver ni tipear ningún código. Queda atado
+// al primer teléfono que lo usa; pasar a otro tiene un tope (SEAT_MOVES) y el coach lo ve.
+const SEAT_MOVES = 3;
+function seatCounts(cfg) {
+    const live = (Array.isArray(cfg && cfg.seats) ? cfg.seats : []).filter((s) => s && !s.gone);
+    return { total: live.length, free: live.filter((s) => !s.routine_id).length };
+}
+function seatExpired(rec) { return !!(rec && rec.expires_at && Date.parse(rec.expires_at) < Date.now()); }
+function seatState(r) {
+    if (!r.premium_seat) return null;
+    const st = r.premium_state || {};
+    return { status: st.activated_at ? 'active' : 'assigned', assigned_at: st.assigned_at || null, activated_at: st.activated_at || null, moves: st.moves || 0, blocked: !!st.blocked };
+}
+// POST /api/routines/{id}/premium — darle Premium (un acceso del cupo). Con { reset: true },
+// habilita que el acceso pase a otro teléfono (si cambió de celular y llegó al tope).
+async function assignSeat(req, env, url, id) {
+    const body = (await readBody(req)) || {};
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (closedAt(r.access_end_at)) return err('El acceso de este alumno ya terminó', 409);
+    const cfgKey = `coachcfg:${coachId}`;
+    const cfg = (await kvGet(env, cfgKey)) || {};
+    const now = nowISO();
+    if (r.premium_seat) {
+        if (body.reset) {
+            const rec = await kvGet(env, `code:${r.premium_seat}`);
+            if (rec && rec.routine_id === id) { rec.rebinds = 0; rec.deviceId = null; await kvPut(env, `code:${r.premium_seat}`, rec); }
+            r.premium_state = Object.assign({}, r.premium_state || {}, { moves: 0, blocked: false, reset_at: now });
+            await kvPut(env, routineKey(coachId, id), r);
+        }
+        return json({ ok: true, seat: seatState(r), seats: seatCounts(cfg) });
+    }
+    const seats = Array.isArray(cfg.seats) ? cfg.seats : [];
+    let pick = null, dirty = false;
+    for (const s of seats) {
+        if (!s || s.gone || s.routine_id) continue;
+        const rec = await kvGet(env, `code:${s.code}`);
+        // un código que ya no sirve (anulado, vencido o usado por fuera del cupo) sale del cupo
+        if (!rec || rec.revoked || seatExpired(rec) || rec.routine_id || rec.used) { s.gone = true; dirty = true; continue; }
+        rec.routine_id = id; rec.coach_id = coachId;
+        await kvPut(env, `code:${s.code}`, rec);
+        s.routine_id = id; s.at = now;
+        pick = s.code;
+        break;
+    }
+    if (!pick) {
+        if (dirty) await kvPut(env, cfgKey, cfg);
+        return json({ error: 'No te quedan accesos Premium', no_seats: true, seats: seatCounts(cfg) }, 409);
+    }
+    await kvPut(env, cfgKey, cfg);
+    r.premium_seat = pick;
+    r.premium_codes = (Array.isArray(r.premium_codes) ? r.premium_codes : []).concat(pick).slice(-5);
+    r.premium_state = { assigned_at: now };
+    await kvPut(env, routineKey(coachId, id), r);
+    return json({ ok: true, seat: seatState(r), seats: seatCounts(cfg) }, 201);
+}
+// DELETE /api/routines/{id}/premium — quitarle el Premium. Si nunca lo usó, el acceso vuelve
+// al cupo; si ya lo estaba usando, se anula (ese acceso ya se gastó).
+async function removeSeat(req, env, url, id) {
+    const coachId = coachIdFrom(req, url, null);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (!r.premium_seat) return err('Not found', 404);
+    const freed = (await releaseSeat(env, coachId, r, 'coach_quita')) === 'freed';
+    r.premium_codes = (r.premium_codes || []).filter((c) => c !== r.premium_seat);
+    delete r.premium_seat; delete r.premium_state;
+    await kvPut(env, routineKey(coachId, id), r);
+    const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
+    return json({ ok: true, freed, seats: seatCounts(cfg) });
+}
+// Suelta el acceso de un alumno: sin usar vuelve al cupo (true); usado se anula (false).
+async function releaseSeat(env, coachId, r, reason) {
+    const code = r.premium_seat;
+    const rec = code ? await kvGet(env, `code:${code}`) : null;
+    let out = null;
+    if (rec && rec.routine_id === r.id && !rec.revoked) {
+        if (!rec.used) { delete rec.routine_id; delete rec.coach_id; out = 'freed'; }
+        else { rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = reason; out = 'revoked'; }
+        await kvPut(env, `code:${code}`, rec);
+    }
+    const freed = out === 'freed';
+    const cfgKey = `coachcfg:${coachId}`;
+    const cfg = await kvGet(env, cfgKey);
+    const s = cfg && Array.isArray(cfg.seats) ? cfg.seats.find((x) => x && x.code === code) : null;
+    if (s) {
+        if (freed) { delete s.routine_id; delete s.at; } else s.gone = true;
+        await kvPut(env, cfgKey, cfg);
+    }
+    return out;
+}
+// POST /api/shares/{token}/premium-auto — el teléfono del alumno recibe el Premium que le dio
+// su coach, sin código. Devuelve la misma licencia firmada que una activación normal.
+async function postSharePremiumAuto(req, env, token) {
+    const secret = env.LICENSE_SECRET;
+    if (!secret) return err('Server not configured (LICENSE_SECRET)', 500);
+    const got = await loadShareRoutine(env, token);
+    if (!got) return err('Routine not found', 404);
+    const { idx, r } = got;
+    if (closedAt(idx.until)) return closedErr();
+    const body = (await readBody(req)) || {};
+    const deviceId = String(body.deviceId || '').trim();
+    if (!/^[A-Za-z0-9_-]{8,80}$/.test(deviceId)) return err('Missing deviceId', 400);
+    const code = r.premium_seat;
+    const rec = code ? await kvGet(env, `code:${code}`) : null;
+    if (!rec || rec.revoked || rec.routine_id !== r.id || seatExpired(rec)) return json({ ok: true, none: true });
+    const now = nowISO();
+    const st = Object.assign({}, r.premium_state || {});
+    let touched = false;
+    if (!rec.used) {
+        rec.used = true; rec.deviceId = deviceId; rec.activated_at = now;
+        if (rec.duration_days && !rec.expires_at) rec.expires_at = new Date(Date.now() + rec.duration_days * 86400000).toISOString();
+        await kvPut(env, `code:${code}`, rec);
+        st.activated_at = now; touched = true;
+        track(env, req, 'activate', 'premium', { s: 'seat' });
+    } else if (rec.deviceId !== deviceId) {
+        if ((rec.rebinds || 0) >= SEAT_MOVES) {
+            if (!st.blocked) { st.blocked = true; r.premium_state = st; await kvPut(env, routineKey(idx.coachId, idx.routineId), r); }
+            return json({ error: 'Este Premium ya se usa en otro teléfono. Pedile a tu coach que lo pase a este.', moved_max: true }, 409);
+        }
+        rec.rebinds = (rec.rebinds || 0) + 1;
+        rec.deviceId = deviceId;
+        await kvPut(env, `code:${code}`, rec);
+        st.moves = rec.rebinds; st.moved_at = now; st.activated_at = st.activated_at || now; touched = true;
+    }
+    if (touched) { st.blocked = false; r.premium_state = st; await kvPut(env, routineKey(idx.coachId, idx.routineId), r); }
+    const exp = rec.expires_at ? Date.parse(rec.expires_at) : null;
+    const tok = await signLicense(secret, { product: 'premium', tier: 'premium', deviceId, code, iat: Date.now(), exp });
+    return json({ ok: true, token: tok, product: 'premium', tier: 'premium', expiresAt: exp ? new Date(exp).toISOString() : null });
+}
+
+// ── Pasar los datos de Safari a la app instalada (iPhone) ──
+// En iPhone, la app instalada ("Agregar a inicio") no comparte nada con Safari. Safari sube
+// una copia cifrada (la clave va en la dirección, después del #, y nunca llega acá) y deja un
+// pase invisible en la dirección que el iPhone guarda al instalar. La app, al abrirse por
+// primera vez, la trae. Dura 30 minutos, sirve una vez y solo se entrega si es el mismo
+// teléfono (modelo, iOS, pantalla, zona horaria y red); si algo no coincide, hace falta el
+// código de 6 dígitos que se ve en Safari (3 intentos). Sin pase, el código solo alcanza (plan B).
+const XFER_TTL = 1800, XFER_MAX = 8 * 1024 * 1024, XFER_TRIES = 3;
+function xferFp(fp) {
+    const f = fp && typeof fp === 'object' ? fp : {};
+    const v = ['os', 'dev', 'scr', 'dpr', 'tz'].map((k) => String(f[k] == null ? '' : f[k]).slice(0, 40));
+    return v[0] && v[2] ? v.join('|') : '';   // sin datos del teléfono no hay comparación posible
+}
+function ipPrefix(ip) {
+    if (!ip || ip === 'unknown') return '';
+    return ip.includes(':') ? ip.split(':').slice(0, 4).join(':') : ip.split('.').slice(0, 3).join('.');
+}
+async function sha256b64(s) { const d = await crypto.subtle.digest('SHA-256', enc.encode(s)); return b64urlFromBytes(new Uint8Array(d)); }
+// POST /api/transfer — Safari sube la copia cifrada. El código (6 dígitos) lo elige el teléfono,
+// porque con él se envuelve la clave para el plan B.
+async function postTransfer(req, env) {
+    const body = await readBody(req, XFER_MAX);
+    const data = body && typeof body.data === 'string' ? body.data : '';
+    const wrap = body && typeof body.wrap === 'string' ? body.wrap : '';
+    const code = body && /^\d{6}$/.test(String(body.code || '')) ? String(body.code) : '';
+    if (!data || !wrap || wrap.length > 2000 || !code) return err('Copia inválida', 400);
+    if (await env.BMOD_KV.get(`xcode:${code}`)) return json({ error: 'Código en uso', code_taken: true }, 409);
+    const id = newShareToken() + newShareToken();
+    const exp = Math.floor(Date.now() / 1000) + XFER_TTL;
+    const rec = { data, wrap, fp: xferFp(body.fp), ip: await ipHash(ipPrefix(clientIp(req))), ch: await sha256b64(id + ':' + code), tries: 0, exp };
+    await kvPut(env, `xfer:${id}`, rec, { expiration: exp });
+    await env.BMOD_KV.put(`xcode:${code}`, id, { expiration: exp });
+    return json({ ok: true, id, ttl: XFER_TTL }, 201);
+}
+// POST /api/transfer/claim — la app instalada pide la copia: { id, fp } (pase), { id, fp, code }
+// (pase en otro teléfono o red) o { code } (plan B, sin pase). Se borra al entregarla.
+async function postTransferClaim(req, env) {
+    const body = (await readBody(req)) || {};
+    const code = /^\d{6}$/.test(String(body.code || '')) ? String(body.code) : '';
+    const viaPass = /^[a-z0-9]{20}$/.test(String(body.id || ''));
+    const id = viaPass ? String(body.id) : (code ? (await env.BMOD_KV.get(`xcode:${code}`)) || '' : '');
+    const rec = id ? await kvGet(env, `xfer:${id}`) : null;
+    if (!rec) return err('El pase venció o ya se usó', 404);
+    const byCode = !!code && (await sha256b64(id + ':' + code)) === rec.ch;
+    const fp = xferFp(body.fp);
+    const same = viaPass && !!rec.fp && rec.fp === fp && rec.ip === await ipHash(ipPrefix(clientIp(req)));
+    if (!byCode && !same) {
+        if (code) {
+            rec.tries = (rec.tries || 0) + 1;
+            if (rec.tries >= XFER_TRIES) { await env.BMOD_KV.delete(`xfer:${id}`); return json({ error: 'El pase se anuló por intentos fallidos', dead: true }, 410); }
+            await kvPut(env, `xfer:${id}`, rec, { expiration: Math.max(rec.exp, Math.floor(Date.now() / 1000) + 61) });
+            return json({ error: 'Código incorrecto', need_code: true, left: XFER_TRIES - rec.tries }, 403);
+        }
+        return json({ error: 'Falta el código', need_code: true }, 403);
+    }
+    await env.BMOD_KV.delete(`xfer:${id}`);
+    // Con el pase, la clave está en la dirección. Con el código (sin pase, o si el iPhone
+    // recortó la clave de la dirección), además va la clave envuelta con ese código.
+    return json(byCode ? { ok: true, data: rec.data, wrap: rec.wrap } : { ok: true, data: rec.data });
 }
 
 // POST /api/routines/{id}/new-link — el coach le cambia el link al alumno (por ejemplo, si
@@ -1105,7 +1310,7 @@ async function getShare(env, token) {
     const pf = r.profile || {};
     return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, review, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [],
-        guest: !!pf.guest, access_until: pf.access_until || '' });
+        guest: !!pf.guest, access_until: pf.access_until || '', premium_seat: !!r.premium_seat });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -1358,7 +1563,7 @@ async function getCoachConfig(env, url) {
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
     return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
         digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 },
-        left: leftRecent(cfg.left), invite: inviteOf(cfg) });
+        left: leftRecent(cfg.left), invite: inviteOf(cfg), seats: seatCounts(cfg) });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -1398,7 +1603,7 @@ async function putCoachConfig(req, env, url) {
     await kvPut(env, `coachcfg:${coachId}`, cfg);
     if (digestChanged) await callNotifier(env, 'digest:' + coachId, { op: 'digest-sync', coachId });
     return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '',
-        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg) });
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg), seats: seatCounts(cfg) });
 }
 
 // ── Términos de uso y reportes ──
@@ -1679,6 +1884,13 @@ async function adminCreateCodes(req, env) {
     // coach_pack: Premium que un entrenador reparte entre sus alumnos (se anula si los da de baja)
     const coach_pack = product === 'premium' && !!(body && body.coach_pack);
     const label = body && typeof body.label === 'string' ? body.label.trim().slice(0, 60) : '';
+    // coach_code: los códigos van al cupo del panel de ese coach (los da desde la app, sin tipear)
+    let pool = null;
+    if (coach_pack && body.coach_code) {
+        const cc = await kvGet(env, `code:${String(body.coach_code).trim().toUpperCase()}`);
+        if (!cc || cc.product !== 'coach' || !cc.panel_id) return err('Ese código de Coach no existe o todavía no abrió su panel', 400);
+        pool = cc.panel_id;
+    }
     const codes = [];
     for (let i = 0; i < count; i++) {
         let code = newCode();
@@ -1686,10 +1898,18 @@ async function adminCreateCodes(req, env) {
         const rec = { product, duration_days, used: false, deviceId: null, expires_at, created_at: nowISO(), source: 'admin' };
         if (coach_pack) rec.coach_pack = true;
         if (label) rec.label = label;
+        if (pool) rec.pool = pool;
         await kvPut(env, `code:${code}`, rec);
         codes.push(code);
     }
-    return json({ ok: true, product, months, coach_pack, codes });
+    let seats = null;
+    if (pool) {
+        const cfg = (await kvGet(env, `coachcfg:${pool}`)) || {};
+        cfg.seats = (Array.isArray(cfg.seats) ? cfg.seats : []).concat(codes.map((code) => ({ code })));
+        await kvPut(env, `coachcfg:${pool}`, cfg);
+        seats = seatCounts(cfg);
+    }
+    return json({ ok: true, product, months, coach_pack, codes, seats });
 }
 
 // ── Checkout (Mercado Pago Checkout Pro) ─────────────────────────────
@@ -2373,6 +2593,9 @@ function stripPush(r) {
     const o = Object.assign({}, r);
     o.push_on = Array.isArray(r.push_subs) ? r.push_subs.length : 0;
     delete o.push_subs;
+    o.seat = seatState(r);
+    o.premium_count = Array.isArray(r.premium_codes) ? r.premium_codes.length : 0;   // cuántos, nunca los códigos
+    delete o.premium_seat; delete o.premium_state; delete o.premium_codes;
     return o;
 }
 async function loadShareRoutine(env, token) {
@@ -2939,8 +3162,8 @@ export default {
 
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
-        if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : MAX_BODY)) return err('Payload too large', 413);
-        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link|interest)$/.test(p);
+        if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : p === '/api/transfer' ? XFER_MAX : MAX_BODY)) return err('Payload too large', 413);
+        const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link|interest|premium-auto)$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
@@ -2957,6 +3180,8 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'POST') return await assignSeat(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'DELETE') return await removeSeat(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'PUT') return await putReview(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'DELETE') return await deleteReview(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
@@ -2973,6 +3198,9 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/leave$/)) && m === 'POST') return await postShareLeave(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/interest$/)) && m === 'POST') return await postShareInterest(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-auto$/)) && m === 'POST') return await postSharePremiumAuto(req, env, mt[1]);
+            if (p === '/api/transfer' && m === 'POST') return await postTransfer(req, env);
+            if (p === '/api/transfer/claim' && m === 'POST') return await postTransferClaim(req, env);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
