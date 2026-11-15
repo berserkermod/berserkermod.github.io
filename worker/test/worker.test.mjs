@@ -1391,6 +1391,59 @@ let code, licToken;
     ok('ruta inexistente → 404', nf.status === 404);
 }
 
+// ── Balance del programa (12 semanas) ──
+{
+    console.log('\nBalance del programa');
+    const day = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    const C = 'coachBAL';
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan', plan: [{ name: 'A', exercises: [] }, { name: 'B', exercises: [] }, { name: 'C', exercises: [] }, { name: 'D', exercises: [] }], alumno_name: 'Sol', coach_name: 'Profe' })).body;
+    const tk = r.share_token;
+    const sinInicio = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C, results: 'x' });
+    ok('sin inicio del programa → 400', sinInicio.status === 400);
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: day(20), goals: 'Ganar fuerza' } });
+    const pronto = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C, results: 'x' });
+    ok('antes de las 4 semanas → 400', pronto.status === 400);
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: day(83), goals: 'Ganar fuerza' } });
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: day(83), goals: 'Fuerza y bajar 3 kg' } });
+    // 12 semanas a 4 días: 48 sesiones; las más viejas pierden el detalle (quedan las 40 nuevas)
+    for (let i = 0; i < 48; i++) {
+        const d = 82 - Math.floor(i * 82 / 48);
+        await call('POST', '/api/shares/' + tk + '/sessions', { date: day(d), exercises: [{ name: 'Sentadilla', sets: [{ kg: 60 + Math.floor(i / 4) * 1.25, reps: 8 }] }, { name: 'Press', sets: [{ kg: 40, reps: 8 }, { kg: 40, reps: 8 }] }] });
+    }
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: day(80), weight: 72, energy: 2 });
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: day(3), weight: 69.5, energy: 4 });
+    const agg = JSON.parse(env.BMOD_KV._m.get('sessions:' + r.id));
+    ok('las sesiones más viejas ya no guardan el detalle', agg.items.length === 48 && agg.items[47].exercises === undefined, agg.items.length);
+    const rec = JSON.parse(env.BMOD_KV._m.get('routine:' + C + ':' + r.id));
+    ok('pero queda la primera marca de cada ejercicio', rec.ex_first && rec.ex_first.Sentadilla && rec.ex_first.Sentadilla.kg === 60 && rec.ex_first.Sentadilla.date === day(82), rec.ex_first);
+    ok('y el volumen de cada sesión', Object.keys(rec.vol_log || {}).length === 48 && rec.vol_log[day(82)][1] === 3, Object.keys(rec.vol_log || {}).length);
+    const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    const dr = det.body.review_draft;
+    ok('el detalle ofrece armar el balance (12 semanas, 3 ciclos)', dr && dr.from === day(83) && dr.stats.weeks === 12 && dr.stats.cycles.length === 3 && det.body.review === null, dr && dr.stats.cycles);
+    const sq = dr.stats.exercises.find((e) => e.name === 'Sentadilla');
+    ok('progresión desde la primera marca (60 kg), no desde la sesión 9', sq && sq.first.kg === 60 && sq.last.kg === 73.8 && sq.change === 23, sq);
+    ok('cumplimiento total, volumen y series de las 48 sesiones', dr.stats.sessions === 48 && dr.stats.total_sets === 144 && dr.stats.total_volume > 0, [dr.stats.sessions, dr.stats.total_sets, dr.stats.total_volume]);
+    ok('peso 72 → 69,5 y ánimo del primer y último ciclo', dr.stats.weight_from === 72 && dr.stats.weight_to === 69.5 && dr.stats.cycles[0].energy === 2 && dr.stats.cycles[2].energy === 4, dr.stats.cycles);
+    ok('objetivo con el que arrancó y el de hoy', dr.stats.goal_start === 'Ganar fuerza' && dr.stats.goal === 'Fuerza y bajar 3 kg', [dr.stats.goal_start, dr.stats.goal]);
+    const vacio = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C });
+    ok('balance sin texto → 400', vacio.status === 400);
+    const otro = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: 'coachOtro', results: 'x' });
+    ok('otro coach no puede', otro.status === 404 || otro.status === 403, otro.status);
+    const sv = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C, results: 'Subiste 15 kg en sentadilla', technique: 'Mejor profundidad', pending: 'Constancia', new_goals: 'Bajar 2 kg más', next: 'Bloque de fuerza', extra: 'no' });
+    ok('balance guardado 201 con los datos y los cinco textos', sv.status === 201 && sv.body.review.stats.weeks === 12 && sv.body.review.next === 'Bloque de fuerza' && sv.body.review.extra === undefined, sv.body);
+    const sh = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve su balance por el link', sh.body.review && sh.body.review.results === 'Subiste 15 kg en sentadilla' && !!sh.body.review.stats, sh.body.review && Object.keys(sh.body.review));
+    const created = sv.body.review.created_at;
+    const ed = await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C, results: 'Editado' });
+    ok('editar: 200, conserva la creación y reemplaza los textos', ed.status === 200 && ed.body.review.created_at === created && ed.body.review.results === 'Editado' && ed.body.review.next === undefined);
+    const del = await call('DELETE', '/api/routines/' + r.id + '/review?coach_id=' + C);
+    const sh2 = await call('GET', '/api/shares/' + tk);
+    ok('borrar el balance', del.status === 200 && sh2.body.review === null);
+    await call('PUT', '/api/routines/' + r.id + '/review', { coach_id: C, results: 'Otra vez' });
+    await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('dar de baja borra el balance', !env.BMOD_KV._m.has('review:' + r.id));
+}
+
 // ── Avisos con texto y a horario (Web Push cifrado + Durable Object) ──
 {
     console.log('\nAvisos: cifrado, descanso, recordatorio del control, avisos del coach y resumen');

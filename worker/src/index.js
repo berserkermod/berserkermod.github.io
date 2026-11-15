@@ -15,6 +15,7 @@
 //                     POST                /api/shares/{token}/terms     (el alumno aceptó los términos de uso)
 //                     POST                /api/shares/{token}/push      (el alumno activa los avisos de su coach)
 //                     POST                /api/routines/{id}/remind     (el coach le recuerda el control ahora)
+//                     PUT/DELETE          /api/routines/{id}/review     (balance del programa)
 //   Avisos a horario: POST                /api/push/rest                (fin del descanso con la app cerrada)
 //                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
@@ -437,6 +438,28 @@ function deriveFromSessions(r, items) {
     r.last_session_at = r.recent_session_dates[0] || null;
     r.recent_quick_dates = items.slice(0, 14).filter((s) => !Array.isArray(s.exercises) || !s.exercises.length).map((s) => s.date);
     r.loads_review = loadsReview(items);
+    // Para el balance del programa: el detalle (kg/reps) solo queda en las 40 sesiones más
+    // nuevas, así que se guarda aparte la primera marca de cada ejercicio (no se pisa nunca)
+    // y el volumen y las series de cada sesión.
+    const first = Object.assign({}, r.ex_first || {});
+    const vol = Object.assign({}, r.vol_log || {});
+    for (let i = items.length - 1; i >= 0; i--) {
+        const s = items[i];
+        if (!s || !Array.isArray(s.exercises) || !s.exercises.length) continue;
+        let v = 0, n = 0;
+        for (const e of s.exercises) {
+            if (!e || !Array.isArray(e.sets)) continue;
+            for (const x of e.sets) { n++; v += (Number(x.kg) || 0) * (Number(x.reps) || 0); }
+            if (e.kind === 'cardio' || !e.sets.length || first[e.name] || Object.keys(first).length >= 30) continue;
+            const best = e.sets.reduce((m, x) => (setScore(x) > setScore(m) ? x : m), e.sets[0]);
+            if (setScore(best) > 0) first[e.name] = { kg: Number(best.kg) || 0, reps: Number(best.reps) || 0, date: s.date };
+        }
+        vol[s.date] = [Math.round(v), n];
+    }
+    const dates = Object.keys(vol).sort();
+    for (const d of dates.slice(0, Math.max(0, dates.length - 150))) delete vol[d];
+    r.ex_first = first;
+    r.vol_log = vol;
 }
 function deriveFromCheckins(r, items) {
     r.chk_recent = items.slice(0, 3).map((c) => ({
@@ -444,7 +467,7 @@ function deriveFromCheckins(r, items) {
         low: !!((c.energy && c.energy <= 2) || (c.recovery && c.recovery <= 2) || c.sleep === 'lt6')
     }));
 }
-const DERIVED_KEYS = ['recent_session_dates', 'last_session_at', 'recent_quick_dates', 'loads_review', 'chk_recent'];
+const DERIVED_KEYS = ['recent_session_dates', 'last_session_at', 'recent_quick_dates', 'loads_review', 'chk_recent', 'ex_first', 'vol_log'];
 const derivedSig = (r) => JSON.stringify(DERIVED_KEYS.map((k) => (r[k] === undefined ? null : r[k])));
 
 function studentAlerts(r, today) {
@@ -585,6 +608,113 @@ function evalStats(r, sessions, checkins, from, to, today) {
     return st;
 }
 const EVAL_TEXTS = ['results', 'difficulties', 'goals', 'next'];
+
+// ── Balance del programa (punto de partida contra hoy) ──
+// Lo arma el coach desde las 4 semanas (pensado para el cierre de las 12): cumplimiento total
+// y por ciclo, progresión desde la primera marca de cada ejercicio, peso, volumen, cómo se
+// sintió al principio y ahora, y el objetivo con el que arrancó. El alumno lo ve con una
+// imagen para guardar o compartir.
+const REVIEW_TEXTS = ['results', 'technique', 'pending', 'new_goals', 'next'];
+function reviewKey(id) { return `review:${id}`; }
+function reviewPeriod(r, today) {
+    const start = programStart(r);
+    if (!start) return null;
+    const d = dayDiff(start, today);
+    return d >= 0 ? { from: start, to: today, days: d + 1 } : null;
+}
+function programStats(r, sessions, checkins, from, to, today) {
+    const st = evalStats(r, sessions, checkins, from, to, today);
+    const planDays = Array.isArray(r.plan) ? r.plan.length : 0;
+    st.weeks = Math.max(1, Math.ceil((dayDiff(from, to) + 1) / 7));
+    // Cumplimiento y ánimo de cada ciclo de 4 semanas
+    st.cycles = [];
+    const nCycles = Math.min(12, Math.max(1, Math.ceil((dayDiff(from, to) + 1) / 28)));
+    for (let c = 1; c <= nCycles; c++) {
+        const p = cyclePeriod(from, c);
+        const ct = p.to > to ? to : p.to;
+        const days = Math.max(1, dayDiff(p.from, ct) + 1);
+        const n = sessions.filter((s) => s && s.date >= p.from && s.date <= ct).length;
+        const planned = Math.round(planDays * days / 7);
+        const en = checkins.filter((x) => x && x.date >= p.from && x.date <= ct).map((x) => x.energy).filter((x) => typeof x === 'number');
+        st.cycles.push({ c, sessions: n, planned, adherence: planned ? Math.min(100, Math.round((n / planned) * 100)) : null,
+            energy: en.length ? Math.round((en.reduce((a, b) => a + b, 0) / en.length) * 10) / 10 : null });
+    }
+    // Progresión: desde la primera marca registrada (aunque esa sesión ya no guarde el detalle)
+    const by = new Map();
+    for (const s of sessions.filter((x) => x && x.date >= from && x.date <= to).sort((a, b) => (a.date < b.date ? -1 : 1))) {
+        for (const e of (Array.isArray(s.exercises) ? s.exercises : [])) {
+            if (!e || e.kind === 'cardio' || !Array.isArray(e.sets) || !e.sets.length) continue;
+            const best = e.sets.reduce((m, x) => (setScore(x) > setScore(m) ? x : m), e.sets[0]);
+            const score = setScore(best);
+            if (!(score > 0)) continue;
+            const o = by.get(e.name) || { name: e.name, n: 0 };
+            o.n++;
+            const pt = { kg: Number(best.kg) || 0, reps: Number(best.reps) || 0, score, date: s.date };
+            if (!o.first) o.first = pt;
+            o.last = pt;
+            by.set(e.name, o);
+        }
+    }
+    const base = r.ex_first || {};
+    st.exercises = [...by.values()].map((o) => {
+        const b = base[o.name];
+        if (b && b.date >= from && b.date < o.first.date) { o.first = { kg: b.kg, reps: b.reps, score: setScore(b), date: b.date }; o.n++; }
+        return o;
+    }).filter((o) => o.n >= 2 && o.first.date < o.last.date).sort((a, b) => b.n - a.n).slice(0, 8).map((o) => ({
+        name: o.name, n: o.n, first: { kg: o.first.kg, reps: o.first.reps }, last: { kg: o.last.kg, reps: o.last.reps },
+        change: Math.round((o.last.score / o.first.score - 1) * 100)
+    }));
+    // Volumen total levantado y series registradas en el período
+    let vol = 0, sets = 0;
+    for (const [d, x] of Object.entries(r.vol_log || {})) { if (d >= from && d <= to) { vol += x[0] || 0; sets += x[1] || 0; } }
+    st.total_volume = vol;
+    st.total_sets = sets;
+    // Objetivo con el que arrancó (el más viejo del historial) y lo que contó en su ficha
+    const gh = Array.isArray(r.goal_history) ? r.goal_history : [];
+    st.goal_start = gh.length ? gh[gh.length - 1].goals : (st.goal || '');
+    st.intake_goals = r.intake ? { goals: r.intake.goals || [], text: r.intake.goals_text || '' } : null;
+    return st;
+}
+// PUT /api/routines/{id}/review — el coach guarda (o edita) el balance del programa
+async function putReview(req, env, url, id) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const today = reqToday(url, body);
+    const per = reviewPeriod(r, today);
+    if (!per) return err('Cargá el inicio del programa en la ficha del alumno', 400);
+    if (per.days < 28) return err('El balance se arma después de las primeras 4 semanas', 400);
+    const texts = {};
+    for (const k of REVIEW_TEXTS) { const v = str(body && body[k], 1500); if (v) texts[k] = v; }
+    if (!Object.keys(texts).length) return err('Escribí al menos una parte del balance', 400);
+    const sessions = ((await kvGet(env, sessionsKey(id))) || { items: [] }).items;
+    const checkins = ((await kvGet(env, checkinsKey(id))) || { items: [] }).items;
+    const prev = await kvGet(env, reviewKey(id));
+    const now = nowISO();
+    const rv = Object.assign({ from: per.from, to: per.to, stats: programStats(r, sessions, checkins, per.from, per.to, today),
+        created_at: prev ? prev.created_at : now, updated_at: now }, texts);
+    await kvPut(env, reviewKey(id), rv);
+    r.review_at = now;
+    await kvPut(env, routineKey(coachId, id), r);
+    if (!prev) await notifyStudent(env, r, 'review', {}, true);
+    return json({ ok: true, review: rv }, prev ? 200 : 201);
+}
+// DELETE /api/routines/{id}/review
+async function deleteReview(req, env, url, id) {
+    const coachId = coachIdFrom(req, url, null);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (!(await kvGet(env, reviewKey(id)))) return err('Not found', 404);
+    await env.BMOD_KV.delete(reviewKey(id));
+    delete r.review_at;
+    await kvPut(env, routineKey(coachId, id), r);
+    return json({ ok: true });
+}
 // PUT /api/routines/{id}/evals/{cycle} — el coach guarda (o edita) la evaluación del ciclo
 async function putEval(req, env, url, id, cycleStr) {
     const body = await readBody(req);
@@ -664,7 +794,10 @@ async function getRoutine(env, url, id) {
     const tgt = evalTarget(r, today);
     const eval_draft = tgt ? Object.assign(tgt, { stats: evalStats(r, sessAll, checkins, tgt.from, tgt.to, today) }) : null;
     const videos = ((await kvGet(env, videosKey(id))) || { items: [] }).items;
-    return json({ routine: Object.assign(stripPush(r), { alerts, chk_remind: chkRemindOf(r) }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos });
+    const review = await kvGet(env, reviewKey(id));
+    const rper = reviewPeriod(r, today);
+    const review_draft = rper && rper.days >= 28 ? { from: rper.from, to: rper.to, stats: programStats(r, sessAll, checkins, rper.from, rper.to, today) } : null;
+    return json({ routine: Object.assign(stripPush(r), { alerts, chk_remind: chkRemindOf(r) }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos, review, review_draft });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -740,6 +873,7 @@ async function deleteRoutine(req, env, url, id) {
     await env.BMOD_KV.delete(checkinsKey(id));
     await env.BMOD_KV.delete(evalsKey(id));
     await env.BMOD_KV.delete(videosKey(id));
+    await env.BMOD_KV.delete(reviewKey(id));
     if ((r.push_subs || []).length && r.share_token) await callNotifier(env, 'chk:' + r.share_token, { op: 'off' });
     return json({ ok: true, revoked });
 }
@@ -785,7 +919,8 @@ async function getShare(env, token) {
     const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
     const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
     const videos = ((await kvGet(env, videosKey(r.id))) || { items: [] }).items.slice(0, 10);
-    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
+    const review = await kvGet(env, reviewKey(r.id));
+    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, review, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
@@ -1906,9 +2041,9 @@ function localClock(tz, when) {
 // el servidor. El texto viaja cifrado para cada teléfono (RFC 8291, aes128gcm). El
 // recordatorio diario de entrenar sigue como push vacío (el teléfono pone el texto).
 const PUSH_MSG = {
-    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', plan: '🔄 {coach} actualizó tu rutina', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
-    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', plan: '🔄 {coach} updated your routine', digest: '📋 Students to review: {names}', more: ' and {n} more' },
-    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', plan: '🔄 {coach} atualizou sua rotina', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
+    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', plan: '🔄 {coach} actualizó tu rutina', review: '🏁 {coach} te dejó el balance de tu programa', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
+    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', plan: '🔄 {coach} updated your routine', review: '🏁 {coach} left your program summary', digest: '📋 Students to review: {names}', more: ' and {n} more' },
+    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', plan: '🔄 {coach} atualizou sua rotina', review: '🏁 {coach} deixou o balanço do seu programa', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
 };
 function pushText(lang, key, vars) {
     const L = PUSH_MSG[lang] || PUSH_MSG.es;
@@ -2622,6 +2757,8 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'PUT') return await putReview(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'DELETE') return await deleteReview(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
