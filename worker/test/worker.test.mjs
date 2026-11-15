@@ -904,6 +904,37 @@ let code, licToken;
     const cpLegacy = await call('POST', '/api/checkout', { product: 'premium' }); // landing vieja sin months
     ok('premium sin months → 1 mes (7500)', cpLegacy.status === 200 && sentPref.external_reference === 'premium_1m' && sentPref.items[0].unit_price === 7500, sentPref.external_reference);
 
+    // Compra desde la app: vuelve a la app y lleva el número del teléfono en la referencia
+    const NONCE = 'AbCdEf0123456789_-xyzW';
+    const cpApp = await call('POST', '/api/checkout', { product: 'premium', months: 3, ret: 'app', nonce: NONCE });
+    ok('desde la app: external_reference = premium_3m.{nonce}', cpApp.status === 200 && sentPref.external_reference === 'premium_3m.' + NONCE, sentPref.external_reference);
+    ok('desde la app: vuelve a la app (success/pending/failure)', /\/BERSERKERMOD\.html\?purchase=premium$/.test(sentPref.back_urls.success) && /\/BERSERKERMOD\.html\?purchase=pending$/.test(sentPref.back_urls.pending) && /\/BERSERKERMOD\.html\?purchase=failure$/.test(sentPref.back_urls.failure), sentPref.back_urls);
+    await call('POST', '/api/checkout', { product: 'premium', months: 1, ret: 'app', nonce: 'corto' });
+    ok('número inválido → se ignora (sin sufijo)', sentPref.external_reference === 'premium_1m', sentPref.external_reference);
+    await call('POST', '/api/checkout', { product: 'premium', months: 1, nonce: 'x'.repeat(65) });
+    ok('número de más de 64 → se ignora', sentPref.external_reference === 'premium_1m', sentPref.external_reference);
+    globalThis.fetch = async (u) => {
+        if (String(u).includes('/v1/payments/555')) return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m.' + NONCE }), { status: 200 });
+        return new Response('{}', { status: 404 });
+    };
+    const pendRef = await call('GET', '/api/license/retrieve?ref=' + NONCE);
+    ok('retirar por número antes del pago → pending', pendRef.status === 200 && pendRef.body.status === 'pending', pendRef.body);
+    const whApp = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '555' } });
+    ok('webhook con número → código de 3 meses', whApp.status === 200 && /^BMOD-/.test(whApp.body.code || ''), whApp.body);
+    const byRef = await call('GET', '/api/license/retrieve?ref=' + NONCE);
+    ok('la app retira el código con su número', byRef.body.status === 'ready' && byRef.body.code === whApp.body.code, byRef.body);
+    const byPay = await call('GET', '/api/license/retrieve?payment=555');
+    ok('y también sigue el retiro por payment id', byPay.body.status === 'ready' && byPay.body.code === whApp.body.code, byPay.body);
+    const badRef = await call('GET', '/api/license/retrieve?ref=../code:x');
+    ok('número con caracteres raros → 400', badRef.status === 400, badRef.status);
+    const actApp = await call('POST', '/api/license/activate', { code: whApp.body.code, deviceId: 'app-buy-dev' });
+    const expApp = actApp.body.expiresAt ? new Date(actApp.body.expiresAt).getTime() - Date.now() : 0;
+    ok('el código de la app es Premium de ~92 días', actApp.status === 200 && actApp.body.product === 'premium' && expApp > 91 * 86400000 && expApp < 93 * 86400000, actApp.body);
+    globalThis.fetch = async (u, opts) => {
+        if (String(u).includes('/checkout/preferences')) { sentPref = JSON.parse(opts.body); return new Response(JSON.stringify({ init_point: 'https://mp/checkout/abc', id: 'pref-2' }), { status: 200 }); }
+        return new Response('{}', { status: 404 });
+    };
+
     // Webhook → código con duración → activación arranca el reloj
     globalThis.fetch = async (u) => {
         if (String(u).includes('/v1/payments/777')) {

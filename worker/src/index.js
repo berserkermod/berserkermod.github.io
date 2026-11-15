@@ -108,6 +108,8 @@ const AI_QUOTA = { oracle: 20, parse: 5, food: 15 };
 // en efectivo) y 15 minutos después del primer retiro (refrescar la página no
 // lo pierde; enumerar payment_ids ajenos ya no sirve).
 const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
+// Número al azar que la app manda al pagar (ver createCheckout): 16-64 caracteres seguros para URL
+const BUY_NONCE_RE = /^[A-Za-z0-9_-]{16,64}$/;
 const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
 const STRICT_ROUTES = ['/api/transfer', '/api/transfer/claim', '/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained'];
@@ -1856,16 +1858,24 @@ async function startTrial(req, env) {
 // alguien que adivine el payment_id después, no). Si el comprador lo perdió,
 // el código sigue en code:{...} con payment_id → soporte por mail.
 async function retrieveCode(env, url) {
+    const ref = url.searchParams.get('ref');
     const payment = url.searchParams.get('payment');
-    if (!payment || payment.length > 40) return err('Missing payment', 400);
-    const raw = await env.BMOD_KV.get(`payment:${payment}`);
+    let key;
+    if (ref != null) {
+        if (!BUY_NONCE_RE.test(ref)) return err('Bad ref', 400);
+        key = `buy:${ref}`;
+    } else {
+        if (!payment || payment.length > 40) return err('Missing payment', 400);
+        key = `payment:${payment}`;
+    }
+    const raw = await env.BMOD_KV.get(key);
     if (!raw) return json({ status: 'pending' }, 200);
     let ticket;
     try { ticket = JSON.parse(raw); } catch { ticket = null; }
     if (!ticket || typeof ticket !== 'object') ticket = { code: raw, retrieved_at: null }; // formato viejo: string
     if (!ticket.retrieved_at) {
         ticket.retrieved_at = nowISO();
-        await kvPut(env, `payment:${payment}`, ticket, { expirationTtl: PAYMENT_TICKET_GRACE });
+        await kvPut(env, key, ticket, { expirationTtl: PAYMENT_TICKET_GRACE });
     }
     return json({ status: 'ready', code: ticket.code });
 }
@@ -1963,19 +1973,26 @@ async function createCheckout(req, env) {
     const product = (body && body.product === 'premium') ? 'premium' : 'coach';
     const months = (body && PLAN_MONTHS.includes(Number(body.months))) ? Number(body.months) : 1;
     const c = planConfig(env, product, months);
-    const extRef = product + '_' + months + 'm';
+    const plan = product + '_' + months + 'm';
+    // Compra iniciada dentro de la app: vuelve a la app (no a la landing) y lleva un
+    // número al azar que solo conoce ese teléfono; con él la app retira el código
+    // aunque el pago termine en otro navegador (iPhone: Safari ≠ app instalada).
+    const fromApp = !!(body && body.ret === 'app');
+    const nonce = (body && typeof body.nonce === 'string' && BUY_NONCE_RE.test(body.nonce)) ? body.nonce : '';
+    const extRef = plan + (nonce ? '.' + nonce : '');
     const purchaseTag = product;
-    if (!c.price || c.price <= 0) return err('Precio de ' + extRef + ' sin configurar', 503);
+    if (!c.price || c.price <= 0) return err('Precio de ' + plan + ' sin configurar', 503);
     const origin = new URL(req.url).origin;
     const landing = (env.LANDING_URL || env.APP_ORIGIN || '').replace(/\/+$/, '');
+    const back = landing + (fromApp ? '/BERSERKERMOD.html' : '/');
     const pref = {
         items: [{ title: c.title, quantity: 1, unit_price: c.price, currency_id: c.currency }],
         external_reference: extRef,
         notification_url: origin + '/api/webhook/mercadopago',
         back_urls: {
-            success: landing + '/?purchase=' + purchaseTag,
-            pending: landing + '/?purchase=pending',
-            failure: landing + '/?purchase=failure'
+            success: back + '?purchase=' + purchaseTag,
+            pending: back + '?purchase=pending',
+            failure: back + '?purchase=failure'
         },
         auto_return: 'approved'
     };
@@ -1987,7 +2004,7 @@ async function createCheckout(req, env) {
         });
         const data = await mp.json();
         if (!mp.ok || !data.init_point) return err('No se pudo crear el checkout', 502);
-        track(env, req, 'checkout', extRef, { s: 'web' });
+        track(env, req, 'checkout', plan, { s: fromApp ? 'app' : 'web' });
         return json({ ok: true, init_point: data.init_point, sandbox_init_point: data.sandbox_init_point || null, id: data.id });
     } catch {
         return err('Checkout upstream error', 502);
@@ -2026,7 +2043,7 @@ async function mercadoPagoWebhook(req, env, url) {
         // se compró en su momento.
         const extRef = String(payment.external_reference || '');
         let product = 'coach', duration_days = null;
-        const pm = extRef.match(/^(coach|premium)_(1|3|6|12)m$/);
+        const pm = extRef.match(/^(coach|premium)_(1|3|6|12)m(?:\.([A-Za-z0-9_-]{16,64}))?$/);
         if (pm) { product = pm[1]; duration_days = PLAN_DURATION_DAYS[Number(pm[2])] || null; }
         else if (extRef === 'premium') product = 'premium';
         let code = newCode();
@@ -2034,7 +2051,8 @@ async function mercadoPagoWebhook(req, env, url) {
         await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: String(paymentId) });
         await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
         await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
-        track(env, req, 'paid', extRef, { server: true });
+        if (pm && pm[3]) await kvPut(env, `buy:${pm[3]}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
+        track(env, req, 'paid', pm ? pm[1] + '_' + pm[2] + 'm' : extRef, { server: true });
         return json({ ok: true, code }, 200);
     } catch (e) {
         return json({ ok: true, error: String(e && e.message) }, 200);

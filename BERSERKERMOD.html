@@ -1449,6 +1449,9 @@
             max-width: 480px;
             border-top: 1.5px solid var(--border);
             animation: slideUp .3s cubic-bezier(.4,0,.2,1);
+            max-height: 92vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .upgrade-handle { width: 40px; height: 4px; background: var(--sf3); border-radius: 2px; margin: 12px auto 20px; }
         .upgrade-crown { font-size: 48px; text-align: center; margin-bottom: 8px; filter: drop-shadow(0 0 16px #FDCB6E66); }
@@ -1461,6 +1464,24 @@
         .upgrade-feature-text b { display: block; font-weight: 700; color: var(--text); font-size: 13px; }
         .upgrade-feature-text span { font-size: 11px; color: var(--text2); }
         .upgrade-cta { margin-top: 20px; width: 100%; padding: 16px; border-radius: 16px; background: linear-gradient(135deg,var(--orange),#e17055); color: #0A0A0B; font-size: 15px; font-weight: 800; letter-spacing: .02em; border: none; cursor: pointer; box-shadow: 0 4px 24px #FDCB6E44; }
+        #upgrade-buy { margin-bottom: 18px; }
+        .buy-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 0 0 8px; }
+        .buy-plan { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px; padding: 10px 14px; border-radius: 12px; background: transparent; border: 1.5px solid var(--border); color: var(--text2); font-family: inherit; text-align: left; cursor: pointer; }
+        .buy-plan.sel { background: rgba(253,203,110,.12); border-color: var(--orange); color: var(--text); }
+        .buy-plan-name { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .buy-plan-off { font-size: 10px; font-weight: 900; color: var(--orange); background: rgba(253,203,110,.12); padding: 2px 6px; border-radius: 8px; }
+        .buy-plan-price { text-align: right; font-size: 14px; }
+        .buy-plan-price small { display: block; font-size: 10px; color: var(--text3); font-weight: 600; }
+        .buy-note { font-size: 11px; color: var(--text3); line-height: 1.45; margin: 8px 0 0; text-align: center; }
+        .buy-play-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .buy-play-btn { display: flex; flex-direction: column; gap: 2px; padding: 10px 6px; }
+        .buy-play-name { font-weight: 700; font-size: 13px; }
+        .buy-play-price { font-size: 11px; color: var(--text3); }
+        .buy-alt { margin-top: 12px; }
+        .buy-leave { background: var(--sf2); border: 1.5px solid var(--orange); border-radius: 16px; padding: 16px; }
+        .buy-leave-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0 0 6px; color: var(--orange); }
+        .buy-leave-body { font-size: 13px; color: var(--text2); line-height: 1.5; margin: 0; }
+        .buy-code { font-size: 22px; font-weight: 900; letter-spacing: .08em; text-align: center; color: var(--accent); background: var(--sf2); border: 1.5px dashed var(--accent); border-radius: 12px; padding: 14px 8px; margin: 12px 0 4px; user-select: all; -webkit-user-select: all; word-break: break-all; }
         .upgrade-cancel { display: block; margin: 12px auto 0; font-size: 12px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 4px 12px; }
 
         /* LOCKED FEATURE INDICATOR */
@@ -2225,6 +2246,7 @@
             <div class="upgrade-crown">👑</div>
             <div class="upgrade-title" id="upgrade-title">BERSERKER<span style="color:var(--accent)">PREMIUM</span></div>
             <div class="upgrade-sub" id="upgrade-sub" data-i18n="upgrade_sub">Desbloqueá todas las funciones del entrenador más inteligente.</div>
+            <div id="upgrade-buy"></div>
             <div id="upgrade-features">
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📋</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_routines">Rutinas ilimitadas</b><span data-i18n="upgrade_feat_routines_d">Creá tantas rutinas personalizadas como quieras</span></div></div>
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📊</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_stats">Estadísticas completas</b><span data-i18n="upgrade_feat_stats_d">Mensual, trimestral y anual</span></div></div>
@@ -2232,7 +2254,6 @@
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📈</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_perf">Ajuste por rendimiento</b><span data-i18n="upgrade_feat_perf_d">Semana de descarga y volumen según tu progreso</span></div></div>
                 <div class="upgrade-feature"><div class="upgrade-feature-icon">📷</div><div class="upgrade-feature-text"><b data-i18n="upgrade_feat_scanner">Escáner de alimentos</b><span data-i18n="upgrade_feat_scanner_d">Código de barras o foto de la etiqueta o del plato, con IA</span></div></div>
             </div>
-            <button class="upgrade-cta" onclick="activatePremium()" data-i18n="upgrade_cta">⚡ ACTIVAR PREMIUM</button>
             <button class="upgrade-cancel" onclick="closeUpgradeModal()" data-i18n="upgrade_cancel">Ahora no</button>
         </div>
     </div>
@@ -2423,7 +2444,7 @@
                 prog_recommend_free: "💡 ¡Subí el peso! Llevás {days} días con el mismo estímulo. Probá con {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueá todas las funciones del entrenador más inteligente.",
-                upgrade_cta: "⚡ OBTENER PREMIUM", upgrade_cancel: "Ahora no", upgrade_go_profile: "👇 Activá tu código o probá gratis en Perfil", upgrade_coach_sub: "El modo Coach es parte del plan Coach. Activá tu código de Coach (lo conseguís en la web).",
+                upgrade_cancel: "Ahora no", upgrade_coach_sub_app: "El modo Coach es parte del plan Coach. Si ya tenés tu código de Coach, activalo acá.", buy_plans_title: "Elegí tu plan", buy_per_month: "{price}/mes", buy_mp_btn: "Pagar con Mercado Pago", buy_mp_note: "Pago único por el período elegido, sin renovación automática. Tus datos nunca se borran.", buy_leave_title: "Vas a salir de la app", buy_leave_body: "Te llevamos a Mercado Pago para pagar {plan} ({price}). Cuando termines, volvés a BERSERKERMOD y se activa solo.", buy_leave_go: "Ir a Mercado Pago", buy_back: "Volver", buy_opening: "Abriendo Mercado Pago…", buy_err: "No se pudo abrir el pago. Probá de nuevo.", buy_prices_err: "No pudimos cargar los precios. Revisá tu conexión.", buy_have_code: "Tengo un código", buy_pending: "Tu pago está en proceso. Cuando se acredite, se activa solo al abrir la app.", buy_failed: "El pago no se completó. Podés intentarlo de nuevo cuando quieras.", buy_done_coach: "¡Modo Coach activado!", buy_ready_title: "Tu compra está lista", buy_code_keep: "Este es tu código de compra. Guardalo: te sirve si cambiás de teléfono.", buy_code_manual: "Activala con este código en Perfil → Activar código:", buy_back_app: "¿Pagaste desde la app instalada? Volvé a abrirla: se activa sola.", buy_copy: "Copiar código", buy_copied: "Código copiado", upgrade_coach_sub: "El modo Coach es parte del plan Coach: elegí tu plan o activá tu código de Coach.",
                 upgrade_feat_routines: "Rutinas ilimitadas", upgrade_feat_routines_d: "Creá tantas rutinas personalizadas como quieras",
                 upgrade_feat_stats: "Estadísticas completas", upgrade_feat_stats_d: "Mensual, trimestral y anual",
                 upgrade_feat_lang: "Todos los idiomas", upgrade_feat_lang_d: "Español, English y Português",
@@ -2865,7 +2886,7 @@
                 prog_recommend_free: "💡 Increase the weight! You've had the same stimulus for {days} days. Try {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Unlock all features of the smartest trainer.",
-                upgrade_cta: "⚡ GET PREMIUM", upgrade_cancel: "Not now", upgrade_go_profile: "👇 Activate your code or start a free trial in Profile", upgrade_coach_sub: "Coach mode is part of the Coach plan. Activate your Coach code (get it on the web).",
+                upgrade_cancel: "Not now", upgrade_coach_sub_app: "Coach mode is part of the Coach plan. If you already have your Coach code, activate it here.", buy_plans_title: "Choose your plan", buy_per_month: "{price}/mo", buy_mp_btn: "Pay with Mercado Pago", buy_mp_note: "One-time payment for the chosen period, no auto-renewal. Your data is never deleted.", buy_leave_title: "You're leaving the app", buy_leave_body: "We'll take you to Mercado Pago to pay for {plan} ({price}). When you're done, come back to BERSERKERMOD and it activates on its own.", buy_leave_go: "Go to Mercado Pago", buy_back: "Back", buy_opening: "Opening Mercado Pago…", buy_err: "Couldn't open the payment. Try again.", buy_prices_err: "We couldn't load the prices. Check your connection.", buy_have_code: "I have a code", buy_pending: "Your payment is being processed. Once it clears, it activates on its own when you open the app.", buy_failed: "The payment wasn't completed. You can try again anytime.", buy_done_coach: "Coach mode activated!", buy_ready_title: "Your purchase is ready", buy_code_keep: "This is your purchase code. Keep it: you'll need it if you change phones.", buy_code_manual: "Activate it with this code in Profile → Activate code:", buy_back_app: "Paid from the installed app? Open it again: it activates on its own.", buy_copy: "Copy code", buy_copied: "Code copied", upgrade_coach_sub: "Coach mode is part of the Coach plan: choose your plan or activate your Coach code.",
                 upgrade_feat_routines: "Unlimited routines", upgrade_feat_routines_d: "Create as many custom routines as you want",
                 upgrade_feat_stats: "Full statistics", upgrade_feat_stats_d: "Monthly, quarterly and yearly",
                 upgrade_feat_lang: "All languages", upgrade_feat_lang_d: "Español, English & Português",
@@ -3308,7 +3329,7 @@
                 prog_recommend_free: "💡 Aumente o peso! Você tem o mesmo estímulo há {days} dias. Tente {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueie todas as funções do treinador mais inteligente.",
-                upgrade_cta: "⚡ OBTER PREMIUM", upgrade_cancel: "Agora não", upgrade_go_profile: "👇 Ative seu código ou teste grátis no Perfil", upgrade_coach_sub: "O modo Coach faz parte do plano Coach. Ative seu código de Coach (consiga na web).",
+                upgrade_cancel: "Agora não", upgrade_coach_sub_app: "O modo Coach faz parte do plano Coach. Se você já tem seu código de Coach, ative aqui.", buy_plans_title: "Escolha seu plano", buy_per_month: "{price}/mês", buy_mp_btn: "Pagar com Mercado Pago", buy_mp_note: "Pagamento único pelo período escolhido, sem renovação automática. Seus dados nunca são apagados.", buy_leave_title: "Você vai sair do app", buy_leave_body: "Vamos te levar ao Mercado Pago para pagar {plan} ({price}). Quando terminar, volte ao BERSERKERMOD e ele é ativado sozinho.", buy_leave_go: "Ir ao Mercado Pago", buy_back: "Voltar", buy_opening: "Abrindo o Mercado Pago…", buy_err: "Não foi possível abrir o pagamento. Tente de novo.", buy_prices_err: "Não conseguimos carregar os preços. Verifique sua conexão.", buy_have_code: "Tenho um código", buy_pending: "Seu pagamento está em processamento. Quando for creditado, é ativado sozinho ao abrir o app.", buy_failed: "O pagamento não foi concluído. Você pode tentar de novo quando quiser.", buy_done_coach: "Modo Coach ativado!", buy_ready_title: "Sua compra está pronta", buy_code_keep: "Este é o seu código de compra. Guarde: serve se você trocar de celular.", buy_code_manual: "Ative com este código em Perfil → Ativar código:", buy_back_app: "Pagou pelo app instalado? Abra de novo: ele é ativado sozinho.", buy_copy: "Copiar código", buy_copied: "Código copiado", upgrade_coach_sub: "O modo Coach faz parte do plano Coach: escolha seu plano ou ative seu código de Coach.",
                 upgrade_feat_routines: "Rotinas ilimitadas", upgrade_feat_routines_d: "Crie quantas rotinas personalizadas quiser",
                 upgrade_feat_stats: "Estatísticas completas", upgrade_feat_stats_d: "Mensal, trimestral e anual",
                 upgrade_feat_lang: "Todos os idiomas", upgrade_feat_lang_d: "Español, English e Português",
@@ -4613,7 +4634,8 @@
                 localStorage.setItem('bm-play-sub', JSON.stringify({ sku, purchaseToken }));
                 state.tier = 'premium'; saveTier();
                 flash('👑 ' + t('play_ok'));
-                renderProfile();
+                closeUpgradeModal();
+                switchTab(state.tab);
             } catch (e) {
                 if (!(e && e.name === 'AbortError')) flash('⚠️ ' + t('play_err'), 'var(--red)');
                 if (btn) btn.disabled = false;
@@ -4687,26 +4709,38 @@
                 if (resp.ok) localStorage.removeItem('bm-errors');
             } catch { /* mantener buffer */ }
         }
-        // Mercado Pago redirige de vuelta con ?payment_id&status. Si está aprobado,
-        // recuperamos el código generado por el webhook y activamos solos.
+        // Vuelta de Mercado Pago a la app (?purchase=…&payment_id&status). Sin esos datos,
+        // igual se fija si quedó una compra de este teléfono por activar.
         async function handleMpReturn() {
+            let q; try { q = new URLSearchParams(location.search); } catch { return; }
+            const purchase = q.get('purchase');
+            const pid = q.get('payment_id') || q.get('collection_id');
+            const status = q.get('status') || q.get('collection_status');
+            if (!purchase && !pid) { checkPendingBuy(false); return; }
+            try { history.replaceState({}, '', location.pathname); } catch { }
+            if (purchase === 'pending' || status === 'pending' || status === 'in_process') { flash(t('buy_pending'), 'var(--orange)'); return; }
+            if (purchase === 'failure' || (status && status !== 'approved')) {
+                // No se pagó: el número de esa compra (la última) ya no sirve; otra en efectivo pendiente sigue
+                const l = pendingBuys().sort((a, b) => a.at - b.at);
+                l.pop();
+                savePendingBuys(l);
+                flash(t('buy_failed'), 'var(--orange)');
+                return;
+            }
+            if (await checkPendingBuy(true)) return;
+            // Volvió en otro navegador (iPhone: Safari no es la app instalada): retiro por el pago
+            if (!pid || noBackendInProd()) return;
             try {
-                const q = new URLSearchParams(location.search);
-                const pid = q.get('payment_id') || q.get('collection_id');
-                const status = q.get('status') || q.get('collection_status');
-                if (!pid || (status && status !== 'approved')) return;
-                if (noBackendInProd()) return;
                 for (let i = 0; i < 5; i++) {
-                    const resp = await fetch(getApiBase() + '/api/license/retrieve?payment=' + encodeURIComponent(pid));
+                    const resp = await fetch(getApiBase() + '/api/license/retrieve?payment=' + encodeURIComponent(pid), { cache: 'no-store' });
                     const j = await resp.json().catch(() => ({}));
                     if (j && j.status === 'ready' && j.code) {
-                        const r = await activateCode(j.code);
-                        if (r.ok) { flash('👑 ' + t('lic_activated')); if (state.tab === 'profile') renderProfile(); }
-                        break;
+                        await activateBought(j.code);   // si después aparece por su número, ya está marcado como hecho
+                        return;
                     }
                     await new Promise((res) => setTimeout(res, 1500));
                 }
-                try { history.replaceState({}, '', location.pathname); } catch { }
+                flash(t('buy_pending'), 'var(--orange)');
             } catch { }
         }
         // Tras restaurar una copia que trae el código del Premium (applyBackup deja
@@ -4762,7 +4796,8 @@
             'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
             'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code',
-            'bm-push-on', 'bm-push-synced', 'bm-push-tz', 'bm-push-trained', 'bm-restore-license'
+            'bm-push-on', 'bm-push-synced', 'bm-push-tz', 'bm-push-trained', 'bm-restore-license',
+            'bm-mp-buy', 'bm-mp-done'
         ];
         // El token de licencia queda fuera (está atado a este dispositivo), pero la
         // copia lleva el CÓDIGO de un Premium/Coach pago: al restaurar en otro
@@ -5102,6 +5137,7 @@
         function showUpgradeModal(feature) {
             const modal = $('upgrade-modal');
             const sub = $('upgrade-sub');
+            const coach = feature === 'coach';
             const subs = {
                 days: t('routine_locked_days'),
                 level: t('routine_locked_level'),
@@ -5111,30 +5147,243 @@
                 routine: t('upgrade_locked_routine'),
                 scanner: t('upgrade_feat_scanner_d'),
                 pt: t('upgrade_locked_lang'),
-                coach: t('upgrade_coach_sub'),
+                // En la app de Google Play no se nombra la compra por fuera (política de Play)
+                coach: isTWA() ? t('upgrade_coach_sub_app') : t('upgrade_coach_sub'),
                 progress: t('pg_teaser'),
                 perf: t('perf_upgrade_sub'),
                 coach_link: t('coach_link_pro')
             };
             if (sub) sub.textContent = subs[feature] || t('upgrade_sub');
+            const ttl = $('upgrade-title');
+            if (ttl) {
+                ttl.textContent = 'BERSERKER';
+                const sp = document.createElement('span');
+                sp.style.color = 'var(--accent)';
+                sp.textContent = coach ? 'COACH' : 'PREMIUM';
+                ttl.appendChild(sp);
+            }
+            // El Coach es otro producto: su ventana no repite la lista de Premium
+            const feats = $('upgrade-features');
+            if (feats) feats.style.display = coach ? 'none' : '';
+            renderUpgradeBuy(coach ? 'coach' : 'premium');
+            const sheet = modal.querySelector('.upgrade-sheet');
+            if (sheet) sheet.scrollTop = 0;
             modal.classList.add('show');
         }
         function closeUpgradeModal() { $('upgrade-modal').classList.remove('show'); }
-        // El CTA del modal de upgrade ya NO regala premium: lleva al usuario al
-        // Perfil, donde está la card para activar un código o probar gratis.
-        function goToUpgrade() {
-            closeUpgradeModal();
-            switchTab('profile');
-            setTimeout(() => { try { flash(t('upgrade_go_profile')); } catch { } }, 300);
+
+        // ── Comprar desde la ventana de Premium ──
+        // Web, iPhone y PC: Mercado Pago. Avisa que sale de la app, y al volver se activa
+        // solo (la app guarda un número al azar con el que retira el código, aunque el pago
+        // termine en otro navegador). App de Google Play: solo la compra de Google, porque
+        // la política de Play no deja mandar a pagar afuera algo digital como Premium.
+        let _buyPlans = null;                              // { premium: [...], coach: [...] }
+        const _buySel = { premium: 12, coach: 12 };
+        async function loadBuyPlans() {
+            if (_buyPlans) return _buyPlans;
+            const r = await fetch(getApiBase() + '/api/products', { cache: 'no-store' });
+            const d = await r.json();
+            const ok = (l) => (Array.isArray(l) ? l : []).filter(x => x && x.available && x.price > 0);
+            _buyPlans = { premium: ok(d && d.premium_plans), coach: ok(d && d.coach_plans) };
+            return _buyPlans;
         }
-        // Solo en dev: atajo para activar premium sin pagar (para testear).
-        // En producción redirige al flujo real (no hay premium gratis).
-        function activatePremium() {
-            if (!DEBUG_APP) { goToUpgrade(); return; }
-            state.tier = 'premium'; saveTier();
+        function fmtMoney(n, cur) {
+            try { return Number(n).toLocaleString(appLocale(), { style: 'currency', currency: cur || 'ARS', maximumFractionDigits: 0 }); }
+            catch { return '$ ' + n; }
+        }
+        function planLabel(m) { return m === 1 ? t('play_month') : t('play_months').replace('{n}', m); }
+        function upgradeDone(product) {
             closeUpgradeModal();
-            flash('👑 Premium (dev)', 'var(--orange)');
-            renderProfile();
+            flash('👑 ' + (product === 'coach' ? t('buy_done_coach') : t('lic_activated')));
+            switchTab(state.tab);
+        }
+        function renderUpgradeBuy(product) {
+            const box = $('upgrade-buy');
+            if (!box) return;
+            box.innerHTML = '';
+            const store = h('div', {});
+            box.appendChild(store);
+            if (isTWA()) {
+                // App de Google Play: la hoja de pago de Google, sin salir de la app
+                if (product === 'premium' && playAvailable()) {
+                    store.appendChild(h('p', { className: 'buy-label' }, t('buy_plans_title')));
+                    const grid = h('div', { className: 'buy-play-grid' });
+                    PLAY_PLANS.forEach(pl => {
+                        const b = h('button', { className: 'btn btn-secondary btn-sm buy-play-btn', onclick: (e) => playBuy(pl.sku, e.currentTarget) },
+                            h('span', { className: 'buy-play-name' }, planLabel(pl.months)));
+                        if (_playPrices[pl.sku]) b.appendChild(h('span', { className: 'buy-play-price' }, _playPrices[pl.sku]));
+                        grid.appendChild(b);
+                    });
+                    store.appendChild(grid);
+                    store.appendChild(h('p', { className: 'buy-note' }, t('play_note')));
+                }
+            } else if (!noBackendInProd()) {
+                store.appendChild(h('p', { className: 'buy-note' }, '…'));
+                loadBuyPlans().then(() => renderMpPlans(store, product)).catch(() => {
+                    store.innerHTML = '';
+                    store.appendChild(h('p', { className: 'buy-note', style: { color: 'var(--orange)' } }, t('buy_prices_err')));
+                });
+            }
+            // Código y prueba gratis, siempre a mano
+            const alt = h('div', { className: 'buy-alt' });
+            const codeBtn = h('button', { className: 'btn btn-secondary btn-sm btn-full' }, ico('tag'), ' ' + t('buy_have_code'));
+            const codeWrap = h('div', { style: { display: 'none' } });
+            const inp = h('input', { className: 'input', placeholder: 'BMOD-XXXX-XXXX', autocapitalize: 'characters', style: { marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '.05em' } });
+            const go = h('button', { className: 'btn btn-primary btn-full btn-sm' }, t('lic_activate_btn'));
+            go.onclick = async () => {
+                const code = inp.value.trim();
+                if (!code) { inp.focus(); return; }
+                go.disabled = true; go.textContent = '…';
+                const r = await activateCode(code);
+                if (r.ok) { upgradeDone(r.product); return; }
+                flash('⚠️ ' + r.error, 'var(--red)'); go.disabled = false; go.textContent = t('lic_activate_btn');
+            };
+            codeWrap.appendChild(inp); codeWrap.appendChild(go);
+            codeBtn.onclick = () => { codeWrap.style.display = 'block'; codeBtn.style.display = 'none'; setTimeout(() => inp.focus(), 50); };
+            alt.appendChild(codeBtn); alt.appendChild(codeWrap);
+            if (product === 'premium') {
+                const trial = h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '8px' } }, t('lic_try_free'));
+                trial.onclick = async () => {
+                    trial.disabled = true;
+                    const r = await startTrialClient('premium');
+                    if (r.ok) { closeUpgradeModal(); flash('👑 ' + t('lic_trial_started').replace('{n}', r.days)); switchTab(state.tab); }
+                    else { flash('⚠️ ' + r.error, 'var(--red)'); trial.disabled = false; }
+                };
+                alt.appendChild(trial);
+            }
+            box.appendChild(alt);
+        }
+        function renderMpPlans(store, product) {
+            store.innerHTML = '';
+            const plans = (_buyPlans && _buyPlans[product]) || [];
+            if (!plans.length) { store.appendChild(h('p', { className: 'buy-note', style: { color: 'var(--orange)' } }, t('buy_prices_err'))); return; }
+            if (!plans.some(x => x.months === _buySel[product])) _buySel[product] = plans[plans.length - 1].months;
+            store.appendChild(h('p', { className: 'buy-label' }, t('buy_plans_title')));
+            plans.forEach(pl => {
+                const row = h('button', { type: 'button', className: 'buy-plan' + (pl.months === _buySel[product] ? ' sel' : ''), onclick: () => { _buySel[product] = pl.months; renderMpPlans(store, product); } });
+                const left = h('span', { className: 'buy-plan-name' }, planLabel(pl.months));
+                if (pl.discount_pct > 0) left.appendChild(h('span', { className: 'buy-plan-off' }, '-' + pl.discount_pct + '%'));
+                const right = h('span', { className: 'buy-plan-price' }, h('b', {}, fmtMoney(pl.price, pl.currency)));
+                if (pl.months > 1 && pl.per_month) right.appendChild(h('small', {}, t('buy_per_month').replace('{price}', fmtMoney(pl.per_month, pl.currency))));
+                row.appendChild(left); row.appendChild(right);
+                store.appendChild(row);
+            });
+            store.appendChild(h('button', { className: 'upgrade-cta', style: { marginTop: '10px' }, onclick: () => confirmMpLeave(store, product) }, t('buy_mp_btn')));
+            store.appendChild(h('p', { className: 'buy-note' }, t('buy_mp_note')));
+        }
+        // Antes de salir a Mercado Pago, avisar
+        function confirmMpLeave(store, product) {
+            const pl = ((_buyPlans && _buyPlans[product]) || []).find(x => x.months === _buySel[product]);
+            if (!pl) return;
+            store.innerHTML = '';
+            const c = h('div', { className: 'buy-leave' });
+            c.appendChild(h('p', { className: 'buy-leave-title' }, ico('alert'), t('buy_leave_title')));
+            c.appendChild(h('p', { className: 'buy-leave-body' }, t('buy_leave_body').replace('{plan}', planLabel(pl.months)).replace('{price}', fmtMoney(pl.price, pl.currency))));
+            const go = h('button', { className: 'upgrade-cta', style: { marginTop: '14px' } }, t('buy_leave_go'));
+            const msg = h('p', { className: 'buy-note' });
+            go.onclick = async () => {
+                go.disabled = true; go.textContent = t('buy_opening');
+                try {
+                    const nonce = buyNonce();
+                    const r = await fetch(getApiBase() + '/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product, months: pl.months, ret: 'app', nonce }) });
+                    const j = await r.json().catch(() => ({}));
+                    if (!r.ok || !j.init_point) throw new Error('checkout');
+                    savePendingBuys(pendingBuys().concat([{ nonce, product, months: pl.months, at: Date.now() }]));
+                    location.href = j.init_point;
+                } catch {
+                    go.disabled = false; go.textContent = t('buy_leave_go');
+                    msg.textContent = t('buy_err'); msg.style.color = 'var(--red)';
+                }
+            };
+            c.appendChild(go);
+            c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '8px' }, onclick: () => renderMpPlans(store, product) }, t('buy_back')));
+            c.appendChild(msg);
+            store.appendChild(c);
+        }
+        function buyNonce() {
+            const b = new Uint8Array(18);
+            crypto.getRandomValues(b);
+            return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        // Compras con Mercado Pago empezadas en este teléfono y todavía sin activar (máx. 3, 8 días)
+        function pendingBuys() {
+            try {
+                const l = JSON.parse(localStorage.getItem('bm-mp-buy') || '[]');
+                return Array.isArray(l) ? l.filter(b => b && typeof b.nonce === 'string' && Date.now() - (b.at || 0) < 8 * 86400000) : [];
+            } catch { return []; }
+        }
+        function savePendingBuys(l) {
+            try { if (l.length) localStorage.setItem('bm-mp-buy', JSON.stringify(l.slice(-3))); else localStorage.removeItem('bm-mp-buy'); } catch { }
+        }
+        // Códigos de compra ya activados acá (para no volver a festejar el mismo)
+        function buyDone(code) {
+            try { return (JSON.parse(localStorage.getItem('bm-mp-done') || '[]') || []).includes(code); } catch { return false; }
+        }
+        function markBuyDone(code) {
+            try {
+                const l = (JSON.parse(localStorage.getItem('bm-mp-done') || '[]') || []).filter(c => c !== code);
+                l.push(code);
+                localStorage.setItem('bm-mp-done', JSON.stringify(l.slice(-5)));
+            } catch { }
+        }
+        async function activateBought(code) {
+            if (buyDone(code)) return true;
+            const a = await activateCode(code);
+            if (a.ok) markBuyDone(code);
+            showBoughtSheet(code, a.ok ? a.product : null, a.ok ? '' : a.error);
+            if (a.ok) switchTab(state.tab);
+            return true;
+        }
+        // eager: recién vuelve del pago → insiste unos segundos (el aviso de MP puede tardar)
+        let _buyChecking = false;
+        async function checkPendingBuy(eager) {
+            if (_buyChecking || noBackendInProd()) return false;
+            const list = pendingBuys();
+            savePendingBuys(list);
+            if (!list.length) return false;
+            _buyChecking = true;
+            try {
+                const recent = list.some(b => Date.now() - b.at < 30 * 60000);
+                const tries = eager ? 8 : (recent ? 3 : 1);
+                for (let i = 0; i < tries; i++) {
+                    for (const b of pendingBuys()) {
+                        let j = null;
+                        try {
+                            const r = await fetch(getApiBase() + '/api/license/retrieve?ref=' + encodeURIComponent(b.nonce), { cache: 'no-store' });
+                            j = await r.json().catch(() => null);
+                        } catch { }
+                        if (j && j.status === 'ready' && j.code) {
+                            savePendingBuys(pendingBuys().filter(x => x.nonce !== b.nonce));
+                            return await activateBought(j.code);
+                        }
+                    }
+                    if (i < tries - 1) await new Promise(res => setTimeout(res, 2000));
+                }
+                return false;
+            } finally { _buyChecking = false; }
+        }
+        // Vuelve a la app (por ejemplo, desde Safari después de pagar): ¿ya se acreditó?
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            let has = false; try { has = !!localStorage.getItem('bm-mp-buy'); } catch { }
+            if (has) checkPendingBuy(false);
+        });
+        function showBoughtSheet(code, product, errMsg) {
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            const ok = !errMsg;
+            card.appendChild(h('p', { style: { fontSize: '36px', textAlign: 'center', margin: '4px 0' } }, ok ? '👑' : '🧾'));
+            card.appendChild(h('p', { className: 'label', style: { textAlign: 'center' } }, ok ? (product === 'coach' ? t('buy_done_coach') : t('lic_activated')) : t('buy_ready_title')));
+            card.appendChild(h('p', { className: 'perf-body' }, ok ? t('buy_code_keep') : t('buy_code_manual')));
+            card.appendChild(h('div', { className: 'buy-code' }, code));
+            if (!ok) card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--orange)', lineHeight: 1.45 } }, errMsg));
+            if (ok && installPlatform() === 'ios' && !runningInstalled()) card.appendChild(h('p', { className: 'buy-note' }, t('buy_back_app')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '10px' }, onclick: () => {
+                try { navigator.clipboard.writeText(code).then(() => flash(t('buy_copied')), () => { }); } catch { }
+            } }, ico('copy'), ' ' + t('buy_copy')));
+            card.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('xf_ok')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
         }
 
         // UTILS
@@ -7586,7 +7835,7 @@
                 }
             }, t('routines_create'));
             createRow.appendChild(createBtn);
-            if (!isPremium()) createRow.appendChild(h('span', { className: 'lock-badge' }, ico('lock'), 'Premium'));
+            if (!isPremium()) createRow.appendChild(h('span', { className: 'lock-badge', style: { cursor: 'pointer' }, onclick: () => showUpgradeModal('routine') }, ico('lock'), 'Premium'));
             header.appendChild(createRow);
             v.appendChild(header);
 
@@ -7599,14 +7848,14 @@
                 }
             }, '📄 ' + t('routine_import_pdf'));
             importRow.appendChild(importBtn);
-            if (!isPremium()) importRow.appendChild(h('span', { className: 'lock-badge' }, ico('lock'), 'Premium'));
+            if (!isPremium()) importRow.appendChild(h('span', { className: 'lock-badge', style: { cursor: 'pointer' }, onclick: () => showUpgradeModal('routine') }, ico('lock'), 'Premium'));
             v.appendChild(importRow);
 
             // Rutina de mi coach (alumnos): pegar el link y entrenarla dentro de la app
             if (!canUseCoach()) {
                 const coachRow = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '-8px', marginBottom: '16px' } });
                 coachRow.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 1, padding: '12px', borderStyle: 'dashed' }, onclick: openCoachLinkSheet }, t('coach_link_btn')));
-                if (!isPremium()) coachRow.appendChild(h('span', { className: 'lock-badge' }, ico('lock'), 'Premium'));
+                if (!isPremium()) coachRow.appendChild(h('span', { className: 'lock-badge', style: { cursor: 'pointer' }, onclick: () => showUpgradeModal('coach_link') }, ico('lock'), 'Premium'));
                 v.appendChild(coachRow);
             }
 
@@ -10937,7 +11186,7 @@
                 const uc = h('div', { className: 'card fade-in', style: { border: '1.5px solid rgba(253,203,110,.3)', background: 'linear-gradient(135deg,rgba(253,203,110,.08),rgba(225,112,85,.05))' } });
                 uc.appendChild(h('p', { className: 'label', style: { color: 'var(--orange)' } }, t('prof_tier_label') + ' · FREE'));
                 uc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '12px', marginTop: '4px' } }, t('prof_premium_sub')));
-                uc.appendChild(h('button', { className: 'upgrade-cta', onclick: () => showUpgradeModal('routine') }, t('prof_upgrade')));
+                uc.appendChild(h('button', { className: 'upgrade-cta', onclick: () => showUpgradeModal('') }, t('prof_upgrade')));
                 v.appendChild(uc);
             } else {
                 const uc = h('div', { className: 'card fade-in', style: { border: '1.5px solid rgba(0,212,170,.2)', background: 'linear-gradient(135deg,rgba(0,212,170,.08),rgba(0,212,170,.02))' } });
