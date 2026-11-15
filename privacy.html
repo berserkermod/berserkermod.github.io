@@ -159,11 +159,13 @@
     <main>
         <p class="kicker">Privacidad</p>
         <h1>Política de privacidad</h1>
-        <p class="updated">Última actualización: 14 de noviembre de 2026</p>
+        <p class="updated">Última actualización: 15 de noviembre de 2026</p>
 
         <div class="callout">
             <strong>Resumen rápido:</strong> BERSERKERMOD guarda tus entrenamientos, comidas y stats en tu propio teléfono (localStorage del navegador). No hay cuentas ni contraseñas. A nuestro servidor solo llega lo necesario para las funciones que usás (licencias, compras, recordatorios, IA) y un conteo anónimo de visitas a la web, sin cookies ni identificadores. Si entrenás con un coach, lo que compartís con él también se guarda en el servidor para que los dos lo vean (sección 5). No usamos Google Analytics, Facebook Pixel ni trackers publicitarios. Vendemos cero datos. Tu información es tuya.
         </div>
+
+        <p><strong>Qué cambió el 15 de noviembre de 2026:</strong> si los activás, ahora la app puede avisarte con la app cerrada: el fin del descanso y los avisos de tu coach. Para eso guardamos la dirección de notificaciones de tu teléfono (sección 2 y sección 5).</p>
 
         <p><strong>Qué cambió el 14 de noviembre de 2026:</strong> si entrenás con un coach, ahora podés completar una ficha inicial (con antecedentes de salud solo si das tu consentimiento) y un control semanal más completo, recibir una evaluación cada 4 semanas y mandarle links de videos para que corrija tu técnica. Qué se guarda, quién lo ve y cómo borrarlo está en las secciones 5 y 6.</p>
 
@@ -187,6 +189,7 @@
             <li><strong>Prueba gratuita y regalo para testers</strong>: el mismo identificador de instalación y un contador por red guardado como <em>hash irreversible</em> de la IP (nunca la IP), para evitar abusos. El contador se borra a los 30 días.</li>
             <li><strong>Compras</strong>: si comprás desde la web, el pago lo procesa Mercado Pago y nosotros guardamos solo el número de operación asociado a tu código. Si comprás dentro de Google Play, verificamos el comprobante que emite Google.</li>
             <li><strong>Recordatorio diario</strong> (solo si lo activás): la dirección de notificaciones que genera tu navegador, tu idioma y la zona horaria de tu teléfono (para avisarte a las 18 h de tu hora). El día que registrás un entrenamiento guardamos una marca de "ya entrenó hoy" para no mandarte el aviso; se borra sola a los 3 días.</li>
+            <li><strong>Aviso de fin del descanso con la app cerrada</strong> (solo si lo activás con 📲 en el cronómetro): cuando salís de la app con un descanso corriendo, guardamos la dirección de notificaciones de tu teléfono (con las claves que genera tu navegador para que solo tu teléfono pueda leer el aviso), tu idioma y la hora en que termina. Se borra al mandarse el aviso o al volver a la app.</li>
             <li><strong>Reportes de error</strong>: si la app falla, se envía el mensaje técnico del error y el tipo de navegador, sin datos de tu entrenamiento. Guardamos los últimos 150 y descartamos los de más de 30 días.</li>
             <li><strong>Estadísticas anónimas</strong>: de las visitas a la web (berserkermod.github.io) guardamos la página visitada, el botón tocado, de dónde llegaste (por ejemplo "tiktok"), el país, si usás celular o computadora y el sistema (Android, iPhone u otro). Cuando empezás una prueba gratis, activás un código o reclamás el Premium de tester, el servidor suma uno al contador de ese evento con esos mismos datos y si fue desde la web o desde la app de Google Play. Sin cookies, sin IP y sin identificadores: no podemos saber quién sos ni seguirte entre visitas. La app no envía estadísticas de uso: ese conteo sale de los pedidos de licencia que ya hace.</li>
             <li><strong>Entrenar con un coach e IA</strong>: ver secciones 3 y 5.</li>
@@ -250,8 +253,12 @@
         <p>Antes de cargar contenido, coach y alumno aceptan los <a href="terms.html">Términos de uso</a>. Guardamos qué versión aceptó cada uno y la fecha.</p>
         <p>Si uno reporta al otro desde la app, guardamos quién reportó (alumno o coach), el motivo, el detalle que escriba y los nombres del alumno y del coach, para poder revisarlo. Los reportes los vemos solo nosotros: no se le muestran a la otra persona. Conservamos los últimos 200, aunque después el alumno sea dado de baja.</p>
 
+        <h3>Avisos con la app cerrada</h3>
+        <p>Si el alumno activa los avisos de su coach, guardamos junto a su rutina la dirección de notificaciones de hasta 3 teléfonos (con las claves que genera el navegador para que solo ese teléfono pueda leer el aviso), su idioma y su zona horaria. Se usan para avisarle del control semanal (el día y la hora que elige el coach, o el domingo a las 18 h), de una evaluación nueva, de una respuesta a su video, de un cambio en su rutina o de un recordatorio que le manda el coach. El texto del aviso viaja cifrado. El coach solo ve si el alumno tiene los avisos activados, no la dirección ni las claves. El alumno los apaga desde su link o su app.</p>
+        <p>Si el coach activa el resumen diario, guardamos la dirección de notificaciones de su teléfono, la hora que eligió, su idioma y su zona horaria, para mandarle una vez por día los nombres de los alumnos que conviene revisar. Lo apaga desde su panel.</p>
+
         <h3>Cuánto tiempo se guarda</h3>
-        <p>Mientras el coach mantenga al alumno en su panel. Cuando el coach toca "Dar de baja" se borra todo del servidor: la rutina con la ficha y los datos del programa, las ediciones, los entrenamientos, los controles semanales, las evaluaciones y los links de video. El link deja de funcionar. Si el alumno tenía un Premium que le dio ese coach, se desactiva; un Premium que compró el alumno no se toca.</p>
+        <p>Mientras el coach mantenga al alumno en su panel. Cuando el coach toca "Dar de baja" se borra todo del servidor: la rutina con la ficha y los datos del programa, las ediciones, los entrenamientos, los controles semanales, las evaluaciones y los links de video. El link deja de funcionar y el recordatorio programado se apaga. Si el alumno tenía un Premium que le dio ese coach, se desactiva; un Premium que compró el alumno no se toca.</p>
 
         <h2 id="borrar-datos">6. Tus derechos sobre tus datos (y cómo pedir que los borremos)</h2>
         <ul>

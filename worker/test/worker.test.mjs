@@ -1,7 +1,7 @@
 // Test del Worker sin servidor: importa el módulo real y lo ejerce con un env
 // mock (KV en memoria). Node 24 ya trae crypto.subtle, Request/Response, btoa,
 // crypto.randomUUID/getRandomValues globalmente. Corré con: node test/worker.test.mjs
-import worker from '../src/index.js';
+import worker, { Notifier } from '../src/index.js';
 
 // ── KV mock (Map) con get/put/delete/list(prefix,cursor) ──
 function makeKV() {
@@ -1389,6 +1389,203 @@ let code, licToken;
     ok('server-info prod share_origin', si.status === 200 && si.body.share_origin.includes('github.io') && si.body.prod === true, si.body);
     const nf = await call('GET', '/api/nope');
     ok('ruta inexistente → 404', nf.status === 404);
+}
+
+// ── Avisos con texto y a horario (Web Push cifrado + Durable Object) ──
+{
+    console.log('\nAvisos: cifrado, descanso, recordatorio del control, avisos del coach y resumen');
+    const T = Notifier._test;
+    const b64 = (u8) => Buffer.from(u8).toString('base64url');
+    const unb64 = (x) => new Uint8Array(Buffer.from(x, 'base64url'));
+
+    // 1) Cifrado: idéntico al ejemplo del RFC 8291 (apéndice A)
+    const asPub = unb64('BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8');
+    const asPriv = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', d: 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw', x: b64(asPub.slice(1, 33)), y: b64(asPub.slice(33, 65)) }, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+    const rfcOut = await T.encryptPushPayload(
+        { p256dh: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4', auth: 'BTBZMqHH6r4Tts7J_aSIgg' },
+        unb64('V2hlbiBJIGdyb3cgdXAsIEkgd2FudCB0byBiZSBhIHdhdGVybWVsb24'),
+        { salt: unb64('DGv6ra1nlYgDCS1FRnbzlw'), asPrivate: asPriv, asPublic: asPub });
+    ok('cifrado idéntico al ejemplo del RFC 8291', b64(rfcOut) === 'DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN', b64(rfcOut));
+
+    // 2) Horarios con horario de verano (Madrid cambia el domingo 28 de marzo de 2027)
+    ok('próximo domingo 18 h antes del cambio de hora (CET)', T.nextLocalTime(Date.UTC(2027, 2, 18, 12), 0, 18, 'Europe/Madrid') === Date.UTC(2027, 2, 21, 17));
+    ok('próximo domingo 18 h el día del cambio de hora (CEST)', T.nextLocalTime(Date.UTC(2027, 2, 25, 12), 0, 18, 'Europe/Madrid') === Date.UTC(2027, 2, 28, 16));
+    ok('todos los días a las 9 h de Buenos Aires', T.nextLocalTime(Date.UTC(2027, 0, 10, 15), null, 9, 'America/Argentina/Buenos_Aires') === Date.UTC(2027, 0, 11, 12));
+
+    // Teléfonos de prueba (con su clave para descifrar lo que les llega)
+    const makePhone = async (endpoint) => {
+        const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+        const pub = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
+        const auth = crypto.getRandomValues(new Uint8Array(16));
+        return { sub: { endpoint, keys: { p256dh: b64(pub), auth: b64(auth) } }, priv: kp.privateKey, pub, auth };
+    };
+    const hk = async (salt, ikm, info, len) => { const k = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']); return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, k, len * 8)); };
+    const cat = (...ps) => { const o = new Uint8Array(ps.reduce((a, x) => a + x.length, 0)); let i = 0; for (const x of ps) { o.set(x, i); i += x.length; } return o; };
+    const decrypt = async (phone, body) => {
+        const salt = body.slice(0, 16), idlen = body[20], asPublic = body.slice(21, 21 + idlen), ct = body.slice(21 + idlen);
+        const asKey = await crypto.subtle.importKey('raw', asPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+        const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: asKey }, phone.priv, 256));
+        const te = new TextEncoder(), z = new Uint8Array([0]);
+        const ikm = await hk(phone.auth, ecdh, cat(te.encode('WebPush: info'), z, phone.pub, asPublic), 32);
+        const cek = await hk(salt, ikm, cat(te.encode('Content-Encoding: aes128gcm'), z), 16);
+        const nonce = await hk(salt, ikm, cat(te.encode('Content-Encoding: nonce'), z), 12);
+        const key = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['decrypt']);
+        const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, ct));
+        return JSON.parse(new TextDecoder().decode(plain.slice(0, plain.length - 1)));
+    };
+
+    // Durable Objects de prueba (memoria + alarma) y servicio de push simulado
+    const dos = new Map();
+    const fakeStorage = () => {
+        const m = new Map();
+        const st = { _m: m, alarm: null, async get(k) { return m.get(k); }, async put(k, v) { m.set(k, JSON.parse(JSON.stringify(v))); }, async delete(k) { m.delete(k); }, async setAlarm(t) { st.alarm = Number(t); }, async getAlarm() { return st.alarm; }, async deleteAlarm() { st.alarm = null; } };
+        return st;
+    };
+    env.NOTIFIER = {
+        idFromName: (name) => ({ name }),
+        get: (id) => {
+            if (!dos.has(id.name)) { const storage = fakeStorage(); dos.set(id.name, { storage, obj: new Notifier({ storage }, env) }); }
+            const d = dos.get(id.name);
+            return { fetch: (u, init) => d.obj.fetch(new Request(u, init)) };
+        }
+    };
+    if (!env.VAPID_PRIVATE_JWK) {
+        const vk = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+        env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', vk.privateKey));
+        env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', vk.publicKey)).toString('base64url');
+    }
+    const realFetch = globalThis.fetch;
+    let pushes = [], statusFor = () => 201;
+    globalThis.fetch = async (u, opts) => {
+        pushes.push({ url: String(u), headers: (opts && opts.headers) || {}, body: opts && opts.body ? new Uint8Array(opts.body) : null });
+        return new Response('', { status: statusFor(String(u)) });
+    };
+    const BA = 'America/Argentina/Buenos_Aires';
+    const dowOf = (t) => new Date(T.localParts(BA, new Date(t)).date + 'T00:00:00Z').getUTCDay();
+
+    // 3) El alumno activa los avisos de su coach
+    const C = 'coachAVISOS';
+    const r = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan', plan: [{ name: 'A', exercises: [{ name: 'Sentadilla' }] }], alumno_name: 'Vale', coach_name: 'Profe Juan' })).body;
+    const tk = r.share_token;
+    const phone = await makePhone('https://fcm.googleapis.com/fcm/send/alumno1');
+    const bad = await call('POST', '/api/shares/' + tk + '/push', { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys: { p256dh: 'abc', auth: 'def' } } });
+    ok('suscripción sin claves válidas → 400', bad.status === 400);
+    const evil = await call('POST', '/api/shares/' + tk + '/push', { subscription: Object.assign({}, phone.sub, { endpoint: 'https://evil.example.com/push' }) });
+    ok('servicio de push desconocido → 400', evil.status === 400);
+    const on = await call('POST', '/api/shares/' + tk + '/push', { subscription: phone.sub, lang: 'es', tz: BA });
+    const chkDO = dos.get('chk:' + tk);
+    const lpN = T.localParts(BA, new Date(on.body.next || 0));
+    ok('activa los avisos: recordatorio automático el domingo a las 18 h del alumno', on.status === 200 && on.body.on === true && on.body.chk_remind.mode === 'auto' && dowOf(on.body.next) === 0 && lpN.hour === 18 && lpN.minute === 0 && chkDO.storage.alarm === on.body.next, [on.body, lpN]);
+    const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
+    ok('el coach ve que tiene avisos, pero no la dirección ni las claves', det.body.routine.push_on === 1 && det.body.routine.push_subs === undefined && !JSON.stringify(det.body).includes('alumno1') && det.body.routine.chk_remind.mode === 'auto', det.body.routine.push_on);
+
+    // 4) El coach elige el día y la hora
+    const cr = await call('PUT', '/api/routines/' + r.id, { coach_id: C, chk_remind: { mode: 'custom', dow: 3, hour: 7 } });
+    ok('el coach elige miércoles 7 h y se reprograma', cr.status === 200 && cr.body.chk_remind.dow === 3 && dowOf(chkDO.storage.alarm) === 3 && T.localParts(BA, new Date(chkDO.storage.alarm)).hour === 7, cr.body.chk_remind);
+    ok('cambiar el recordatorio no cuenta como "tu coach actualizó la rutina"', cr.body.last_coach_update_at === r.last_coach_update_at && cr.body.push_subs === undefined);
+    const badC = await call('PUT', '/api/routines/' + r.id, { coach_id: C, chk_remind: { mode: 'custom', dow: 9, hour: 7 } });
+    ok('día inválido → 400', badC.status === 400);
+
+    // 5) La alarma manda el recordatorio cifrado (y se reprograma a la semana siguiente)
+    pushes = [];
+    const firstAt = chkDO.storage.alarm;
+    let res = await T.notifierAlarm(chkDO.storage, env, firstAt);
+    const msg = pushes.length ? await decrypt(phone, pushes[0].body) : null;
+    ok('la alarma manda el recordatorio cifrado con el nombre del coach y el link', res.sent === 1 && pushes[0].headers['Content-Encoding'] === 'aes128gcm' && msg && msg.body.includes('Profe Juan') && msg.body.includes('control') && msg.url === './BERSERKERMOD.html?r=' + tk, msg);
+    ok('y queda programado para la semana siguiente', Math.abs(chkDO.storage.alarm - firstAt - 7 * 86400000) < 2 * 3600000, [firstAt, chkDO.storage.alarm]);
+    await call('POST', '/api/shares/' + tk + '/checkins', { weight: 70 });
+    pushes = [];
+    res = await T.notifierAlarm(chkDO.storage, env, Date.now() + 60000);
+    ok('si ya mandó el control de la semana, no le llega', res.skipped === true && pushes.length === 0, res);
+
+    // 6) Botón "Recordarle ahora"
+    pushes = [];
+    const rm = await call('POST', '/api/routines/' + r.id + '/remind', { coach_id: C });
+    const rmMsg = pushes.length ? await decrypt(phone, pushes[0].body) : null;
+    ok('"Recordarle ahora" le manda el aviso', rm.status === 200 && rm.body.sent === 1 && rmMsg && rmMsg.body.startsWith('🔔') && rmMsg.body.includes('Profe Juan'), rm.body);
+    const rm2 = await call('POST', '/api/routines/' + r.id + '/remind', { coach_id: C });
+    ok('otro recordatorio antes de 12 horas → 429', rm2.status === 429);
+
+    // 7) Evaluación, respuesta a video y rutina actualizada
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, profile: { start_date: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10) } });
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Bien' });
+    ok('evaluación nueva → aviso', pushes.length === 1 && (await decrypt(phone, pushes[0].body)).body.includes('ciclo 1'));
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/evals/1', { coach_id: C, results: 'Editada' });
+    ok('editar la evaluación no vuelve a avisar', pushes.length === 0);
+    const vd = await call('POST', '/api/shares/' + tk + '/videos', { exercise: 'Sentadilla', url: 'https://youtu.be/x1' });
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/videos/' + vd.body.video.id, { coach_id: C, reply: 'Bajá lento' });
+    ok('primera respuesta a un video → aviso con el ejercicio', pushes.length === 1 && (await decrypt(phone, pushes[0].body)).body.includes('Sentadilla'));
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/videos/' + vd.body.video.id, { coach_id: C, reply: 'Corrijo' });
+    ok('editar la respuesta no vuelve a avisar', pushes.length === 0);
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, plan: [{ name: 'A', exercises: [{ name: 'Press' }] }] });
+    const plMsg = pushes.length ? await decrypt(phone, pushes[0].body) : null;
+    ok('rutina actualizada → aviso', pushes.length === 1 && plMsg && plMsg.body.includes('actualizó'), plMsg);
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id, { coach_id: C, plan: [{ name: 'A', exercises: [{ name: 'Remo' }] }] });
+    ok('otro cambio de rutina en la misma hora no vuelve a avisar', pushes.length === 0);
+
+    // 8) Suscripción muerta, recordatorio sin avisos y apagar
+    statusFor = () => 410;
+    pushes = [];
+    res = await T.notifierAlarm(chkDO.storage, env, chkDO.storage.alarm);
+    const key = 'routine:' + C + ':' + r.id;
+    let rec = JSON.parse(env.BMOD_KV._m.get(key));
+    ok('suscripción muerta (410) → se borra y se apaga el recordatorio', pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined && chkDO.storage.alarm === firstAt + 7 * 86400000 || (pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined), [pushes.length, rec.push_subs.length]);
+    statusFor = () => 201;
+    delete rec.remind_at;
+    env.BMOD_KV._m.set(key, JSON.stringify(rec));
+    const rm3 = await call('POST', '/api/routines/' + r.id + '/remind', { coach_id: C });
+    ok('sin avisos activados: el coach se entera (para mandarlo por WhatsApp)', rm3.status === 200 && rm3.body.no_subs === true && rm3.body.sent === 0, rm3.body);
+    await call('POST', '/api/shares/' + tk + '/push', { subscription: phone.sub, tz: BA });
+    const off = await call('POST', '/api/shares/' + tk + '/push', { off: true, endpoint: phone.sub.endpoint });
+    ok('el alumno apaga los avisos: sin suscripción y sin recordatorio', off.status === 200 && off.body.on === false && chkDO.storage.alarm === null, off.body);
+
+    // 9) Fin del descanso con la app cerrada
+    const restPhone = await makePhone('https://web.push.apple.com/rest1');
+    const restAt = Date.now() + 90000;
+    const rs = await call('POST', '/api/push/rest', { subscription: restPhone.sub, at: restAt, lang: 'es' });
+    const restDO = dos.get([...dos.keys()].find((k) => k.startsWith('rest:')));
+    ok('descanso con la app cerrada: queda programado al segundo', rs.status === 200 && restDO && restDO.storage.alarm === restAt, rs.body);
+    const rsBad = await call('POST', '/api/push/rest', { subscription: restPhone.sub, at: Date.now() + 3600000 });
+    ok('descanso de más de 15 minutos → 400', rsBad.status === 400);
+    pushes = [];
+    res = await T.notifierAlarm(restDO.storage, env, restAt);
+    const restMsg = pushes.length ? await decrypt(restPhone, pushes[0].body) : null;
+    ok('al terminar el descanso llega el aviso, urgente y de vida corta', res.sent === 1 && pushes[0].headers.Urgency === 'high' && pushes[0].headers.TTL === '120' && restMsg && restMsg.tag === 'bm-rest' && restMsg.body.includes('descanso'), restMsg);
+    await call('POST', '/api/push/rest', { subscription: restPhone.sub, at: Date.now() + 60000 });
+    const cancel = await call('POST', '/api/push/rest', { subscription: restPhone.sub, cancel: true });
+    ok('si vuelve a la app antes, se cancela', cancel.status === 200 && restDO.storage.alarm === null && restDO.storage._m.get('job') === undefined);
+
+    // 10) Resumen diario del coach
+    const coachPhone = await makePhone('https://fcm.googleapis.com/fcm/send/coach1');
+    const CP = '88888888-aaaa-bbbb-cccc-000000000002';
+    const a1 = (await call('POST', '/api/routines', { coach_id: CP, name: 'P', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Luz' })).body;
+    const k1 = 'routine:' + CP + ':' + a1.id;
+    const rec1 = JSON.parse(env.BMOD_KV._m.get(k1));
+    rec1.created_at = rec1.updated_at = rec1.last_coach_update_at = new Date(Date.now() - 20 * 86400000).toISOString();
+    env.BMOD_KV._m.set(k1, JSON.stringify(rec1));
+    await call('POST', '/api/routines', { coach_id: CP, name: 'P', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Nuevo' });
+    const dgBad = await call('PUT', '/api/coach/config', { coach_id: CP, digest: { on: true, hour: 9 } });
+    ok('resumen sin notificaciones en el teléfono → 400', dgBad.status === 400);
+    const dg = await call('PUT', '/api/coach/config', { coach_id: CP, digest: { on: true, hour: 9, subscription: coachPhone.sub, tz: BA, lang: 'es' } });
+    const dgDO = dos.get('digest:' + CP);
+    ok('el coach activa el resumen diario a las 9 h', dg.status === 200 && dg.body.digest.on === true && dgDO && T.localParts(BA, new Date(dgDO.storage.alarm)).hour === 9, dg.body);
+    pushes = [];
+    res = await T.notifierAlarm(dgDO.storage, env, dgDO.storage.alarm);
+    const dgMsg = pushes.length ? await decrypt(coachPhone, pushes[0].body) : null;
+    ok('el resumen nombra a quien hay que revisar (y no al recién llegado)', res.count === 1 && dgMsg && dgMsg.body.includes('Luz') && !dgMsg.body.includes('Nuevo'), dgMsg);
+    const cfgG = await call('GET', '/api/coach/config?coach_id=' + CP);
+    ok('la config del coach muestra el resumen sin exponer la suscripción', cfgG.body.digest.on === true && cfgG.body.digest.hour === 9 && !JSON.stringify(cfgG.body).includes('coach1'), cfgG.body);
+    const dgOff = await call('PUT', '/api/coach/config', { coach_id: CP, digest: { on: false } });
+    ok('apagar el resumen borra la alarma', dgOff.body.digest.on === false && dgDO.storage.alarm === null);
+
+    globalThis.fetch = realFetch;
+    delete env.NOTIFIER;
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');

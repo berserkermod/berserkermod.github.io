@@ -13,6 +13,9 @@
 //                     POST                /api/shares/{token}/premium-claim (ata un código de coach al alumno)
 //                     POST                /api/shares/{token}/intake    (cuestionario inicial del alumno)
 //                     POST                /api/shares/{token}/terms     (el alumno aceptó los términos de uso)
+//                     POST                /api/shares/{token}/push      (el alumno activa los avisos de su coach)
+//                     POST                /api/routines/{id}/remind     (el coach le recuerda el control ahora)
+//   Avisos a horario: POST                /api/push/rest                (fin del descanso con la app cerrada)
 //                     POST                /api/shares/{token}/report    (el alumno reporta a su coach o su contenido)
 //                     POST                /api/routines/{id}/report     (el coach reporta a un alumno o su contenido)
 //                     GET                 /api/admin/reports            (ADMIN_SECRET)
@@ -612,6 +615,7 @@ async function putEval(req, env, url, id, cycleStr) {
     r.eval_cycles = [...new Set((r.eval_cycles || []).concat(cycle))].sort((a, b) => a - b).slice(-60);
     r.last_eval_at = now;
     await kvPut(env, routineKey(coachId, id), r);
+    if (!prev) await notifyStudent(env, r, 'eval', { c: cycle }, true);
     return json({ ok: true, eval: ev }, prev ? 200 : 201);
 }
 // DELETE /api/routines/{id}/evals/{cycle}
@@ -660,7 +664,7 @@ async function getRoutine(env, url, id) {
     const tgt = evalTarget(r, today);
     const eval_draft = tgt ? Object.assign(tgt, { stats: evalStats(r, sessAll, checkins, tgt.from, tgt.to, today) }) : null;
     const videos = ((await kvGet(env, videosKey(id))) || { items: [] }).items;
-    return json({ routine: Object.assign({}, r, { alerts }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos });
+    return json({ routine: Object.assign(stripPush(r), { alerts, chk_remind: chkRemindOf(r) }), edits, sessions: exporting ? sessAll : sessions, checkins, evals, eval_draft, videos });
 }
 
 async function updateRoutine(req, env, url, id) {
@@ -674,6 +678,13 @@ async function updateRoutine(req, env, url, id) {
     const now = nowISO();
     if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = cleanPlanLinks(body.plan);
+    let chkChanged = false;
+    if (body.chk_remind) {
+        const c = cleanChkRemind(body.chk_remind);
+        if (!c) return err('Recordatorio inválido', 400);
+        r.chk_remind = c;
+        chkChanged = true;
+    }
     // Ficha que completa el coach (privada: no viaja al link del alumno). Si cambian los
     // objetivos, el anterior queda en el historial con su fecha.
     if (body.profile && typeof body.profile === 'object') {
@@ -693,12 +704,17 @@ async function updateRoutine(req, env, url, id) {
         } else if (prev.goals_since) next.goals_since = prev.goals_since;
         else if (next.goals) next.goals_since = now.slice(0, 10);
         r.profile = next;
-    } else {
+    } else if (body.plan || body.name || !body.chk_remind) {
         r.last_coach_update_at = now;   // solo un cambio de la rutina avisa al alumno
     }
+    // Aviso "tu coach actualizó tu rutina": como mucho uno por hora (el coach guarda varias veces)
+    const planPush = !!body.plan && (r.push_subs || []).length > 0 && !(r.push_plan_at && Date.now() - Date.parse(r.push_plan_at) < 3600000);
+    if (planPush) r.push_plan_at = now;
     r.updated_at = now;
     await kvPut(env, routineKey(coachId, id), r);
-    return json(r);
+    if (planPush) await notifyStudent(env, r, 'plan', {}, true);
+    if (chkChanged && (r.push_subs || []).length) await callNotifier(env, 'chk:' + r.share_token, { op: 'chk-sync', token: r.share_token });
+    return json(Object.assign(stripPush(r), { chk_remind: chkRemindOf(r) }));
 }
 
 async function deleteRoutine(req, env, url, id) {
@@ -724,6 +740,7 @@ async function deleteRoutine(req, env, url, id) {
     await env.BMOD_KV.delete(checkinsKey(id));
     await env.BMOD_KV.delete(evalsKey(id));
     await env.BMOD_KV.delete(videosKey(id));
+    if ((r.push_subs || []).length && r.share_token) await callNotifier(env, 'chk:' + r.share_token, { op: 'off' });
     return json({ ok: true, revoked });
 }
 
@@ -768,7 +785,7 @@ async function getShare(env, token) {
     const cfg = (await kvGet(env, `coachcfg:${idx.coachId}`)) || {};
     const evals = ((await kvGet(env, evalsKey(r.id))) || { items: [] }).items.slice(0, 6);
     const videos = ((await kvGet(env, videosKey(r.id))) || { items: [] }).items.slice(0, 10);
-    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, terms_v: (r.terms && r.terms.v) || '', intake: r.intake || null,
+    return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [] });
 }
 
@@ -960,11 +977,13 @@ async function replyVideo(req, env, url, id, vidId) {
     const agg = (await kvGet(env, videosKey(id))) || { items: [] };
     const v = agg.items.find((x) => x.id === vidId);
     if (!v) return err('Not found', 404);
+    const firstReply = !v.reply;
     v.reply = reply;
     v.reply_at = nowISO();
     await kvPut(env, videosKey(id), agg);
     const n = pendingVideos(agg.items);
     if ((r.videos_pending || 0) !== n) { r.videos_pending = n; await kvPut(env, routineKey(coachId, id), r); }
+    if (firstReply) await notifyStudent(env, r, 'video', { ex: v.exercise }, true);
     return json({ ok: true, video: v });
 }
 
@@ -1014,7 +1033,8 @@ async function getCoachConfig(env, url) {
     const coachId = url.searchParams.get('coach_id');
     if (!validPanelId(coachId)) return err('Missing coach_id', 401);
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
-    return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '' });
+    return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 } });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -1026,9 +1046,29 @@ async function putCoachConfig(req, env, url) {
     }
     // Aceptación de los términos de uso (versión = fecha de los términos)
     if (TERMS_V_RE.test(body.terms || '')) cfg.terms = { v: body.terms, at: nowISO() };
+    // Resumen diario de alumnos para revisar, a la hora que elige el coach (en su zona)
+    let digestChanged = false;
+    if (body.digest && typeof body.digest === 'object') {
+        const d = body.digest, prev = cfg.digest || {};
+        const hour = Number(d.hour);
+        const next = {
+            on: !!d.on,
+            hour: Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : (prev.hour != null ? prev.hour : 9),
+            tz: validTz(d.tz) || prev.tz || null,
+            lang: PUSH_MSG[d.lang] ? d.lang : (prev.lang || 'es'),
+            subs: Array.isArray(prev.subs) ? prev.subs : []
+        };
+        const sub = cleanSub(d.subscription);
+        if (sub) next.subs = [sub].concat(next.subs.filter((s) => s.endpoint !== sub.endpoint)).slice(0, 3);
+        if (next.on && !next.subs.length) return err('Activá las notificaciones en este teléfono', 400);
+        cfg.digest = next;
+        digestChanged = true;
+    }
     cfg.updated_at = nowISO();
     await kvPut(env, `coachcfg:${coachId}`, cfg);
-    return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '' });
+    if (digestChanged) await callNotifier(env, 'digest:' + coachId, { op: 'digest-sync', coachId });
+    return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '',
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 } });
 }
 
 // ── Términos de uso y reportes ──
@@ -1860,6 +1900,353 @@ function localClock(tz, when) {
     return { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) % 24 };
 }
 
+// ═════════ Avisos con texto y a horario (Web Push cifrado + Durable Object) ═════════
+// iPhone congela las apps web en segundo plano: lo que tiene que sonar con la app cerrada
+// (fin del descanso, recordatorio del control, avisos del coach, resumen del coach) lo manda
+// el servidor. El texto viaja cifrado para cada teléfono (RFC 8291, aes128gcm). El
+// recordatorio diario de entrenar sigue como push vacío (el teléfono pone el texto).
+const PUSH_MSG = {
+    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', plan: '🔄 {coach} actualizó tu rutina', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
+    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', plan: '🔄 {coach} updated your routine', digest: '📋 Students to review: {names}', more: ' and {n} more' },
+    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', plan: '🔄 {coach} atualizou sua rotina', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
+};
+function pushText(lang, key, vars) {
+    const L = PUSH_MSG[lang] || PUSH_MSG.es;
+    let s = L[key] || PUSH_MSG.es[key] || '';
+    for (const [k, v] of Object.entries(vars || {})) s = s.split('{' + k + '}').join(String(v));
+    return s;
+}
+function concatBytes(...parts) {
+    const out = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
+    let o = 0;
+    for (const p of parts) { out.set(p, o); o += p.length; }
+    return out;
+}
+async function hkdf(salt, ikm, info, len) {
+    const key = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt, info }, key, len * 8));
+}
+// Cifra el texto para una suscripción: RFC 8291 + RFC 8188, un solo registro (rs 4096).
+// `test` fija la clave efímera y la sal (para comparar con el ejemplo del RFC).
+async function encryptPushPayload(keys, plain, test) {
+    const uaPublic = b64urlToBytes(keys.p256dh), authSecret = b64urlToBytes(keys.auth);
+    const salt = (test && test.salt) || crypto.getRandomValues(new Uint8Array(16));
+    let asPrivate, asPublic;
+    if (test && test.asPrivate) { asPrivate = test.asPrivate; asPublic = test.asPublic; }
+    else {
+        const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+        asPrivate = kp.privateKey;
+        asPublic = new Uint8Array(await crypto.subtle.exportKey('raw', kp.publicKey));
+    }
+    const uaKey = await crypto.subtle.importKey('raw', uaPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+    const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: uaKey }, asPrivate, 256));
+    const zero = new Uint8Array([0]);
+    const ikm = await hkdf(authSecret, ecdh, concatBytes(enc.encode('WebPush: info'), zero, uaPublic, asPublic), 32);
+    const cek = await hkdf(salt, ikm, concatBytes(enc.encode('Content-Encoding: aes128gcm'), zero), 16);
+    const nonce = await hkdf(salt, ikm, concatBytes(enc.encode('Content-Encoding: nonce'), zero), 12);
+    const aes = await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['encrypt']);
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, aes, concatBytes(plain, new Uint8Array([2]))));
+    const header = new Uint8Array(21 + asPublic.length);
+    header.set(salt, 0);
+    new DataView(header.buffer).setUint32(16, 4096);
+    header[20] = asPublic.length;
+    header.set(asPublic, 21);
+    return concatBytes(header, ct);
+}
+// Suscripción completa (dirección + claves) de un servicio de push conocido, o null.
+function cleanSub(s) {
+    if (!s || typeof s.endpoint !== 'string' || s.endpoint.length > 1024 || !pushHostAllowed(s.endpoint)) return null;
+    const k = s.keys || {};
+    if (typeof k.p256dh !== 'string' || typeof k.auth !== 'string' || k.p256dh.length > 120 || k.auth.length > 40) return null;
+    try { if (b64urlToBytes(k.p256dh).length !== 65 || b64urlToBytes(k.auth).length !== 16) return null; } catch { return null; }
+    return { endpoint: s.endpoint, keys: { p256dh: k.p256dh, auth: k.auth } };
+}
+// Manda un push (con texto cifrado si hay payload). Devuelve el estado HTTP (0 = no salió).
+async function sendPush(env, sub, payload, opts = {}) {
+    if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY || !sub || !sub.endpoint) return 0;
+    try {
+        const origin = new URL(sub.endpoint).origin;
+        const jwts = opts.jwts || {};
+        if (!jwts[origin]) jwts[origin] = await vapidJwt(env, origin);
+        const headers = { TTL: String(opts.ttl || 86400), Authorization: 'vapid t=' + jwts[origin] + ', k=' + env.VAPID_PUBLIC_KEY };
+        if (opts.urgency) headers.Urgency = opts.urgency;
+        let body;
+        if (payload && sub.keys) {
+            body = await encryptPushPayload(sub.keys, enc.encode(JSON.stringify(payload)));
+            headers['Content-Encoding'] = 'aes128gcm';
+            headers['Content-Type'] = 'application/octet-stream';
+        }
+        const resp = await fetch(sub.endpoint, { method: 'POST', headers, body });
+        return resp.status;
+    } catch { return 0; }
+}
+async function pushMany(env, subs, payload, opts) {
+    const jwts = {};
+    let sent = 0;
+    const dead = [];
+    for (const s of subs) {
+        const st = await sendPush(env, s, payload, Object.assign({ jwts }, opts || {}));
+        if (st === 404 || st === 410) dead.push(s.endpoint);       // suscripción muerta → se borra
+        else if (st > 0 && st < 400) sent++;
+    }
+    return { sent, dead };
+}
+
+// ── Horarios en la zona del teléfono ──
+function localParts(tz, when) {
+    const p = {};
+    for (const x of new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(when)) p[x.type] = x.value;
+    return { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) % 24, minute: Number(p.minute) };
+}
+// Instante (ms) en que en `tz` es el día `date` a las `hour`:00 (con horario de verano).
+function zonedTime(date, hour, tz) {
+    const want = Date.parse(date + 'T00:00:00Z') + hour * 3600000;
+    let t = want;
+    for (let i = 0; i < 3; i++) {
+        const lp = localParts(tz, new Date(t));
+        const got = Date.parse(lp.date + 'T00:00:00Z') + lp.hour * 3600000 + lp.minute * 60000;
+        if (got === want) break;
+        t += want - got;
+    }
+    return t;
+}
+// Próxima vez (después de `now`) que en `tz` es el día `dow` (0 = domingo; null = cualquiera) a las `hour`.
+function nextLocalTime(now, dow, hour, tz) {
+    const today = localParts(tz, new Date(now)).date;
+    for (let d = 0; d <= 8; d++) {
+        const date = addDaysISO(today, d);
+        if (dow != null && new Date(date + 'T00:00:00Z').getUTCDay() !== dow) continue;
+        const t = zonedTime(date, hour, tz);
+        if (t > now + 30000) return t;
+    }
+    return now + 7 * 86400000;
+}
+
+// ── Recordatorio semanal del control: el coach elige día y hora; si no, domingo 18 h ──
+function cleanChkRemind(c) {
+    if (!c || typeof c !== 'object') return null;
+    if (c.mode === 'off' || c.mode === 'auto') return { mode: c.mode };
+    if (c.mode !== 'custom') return null;
+    const dow = Number(c.dow), hour = Number(c.hour);
+    if (!(Number.isInteger(dow) && dow >= 0 && dow <= 6 && Number.isInteger(hour) && hour >= 0 && hour <= 23)) return null;
+    return { mode: 'custom', dow, hour };
+}
+function chkRemindOf(r) {
+    const c = r.chk_remind || { mode: 'auto' };
+    if (c.mode === 'off') return { mode: 'off' };
+    if (c.mode === 'custom') return { mode: 'custom', dow: c.dow, hour: c.hour };
+    return { mode: 'auto', dow: 0, hour: 18 };
+}
+// Lo que ve el coach del registro del alumno: si tiene avisos, no las direcciones ni las claves.
+function stripPush(r) {
+    const o = Object.assign({}, r);
+    o.push_on = Array.isArray(r.push_subs) ? r.push_subs.length : 0;
+    delete o.push_subs;
+    return o;
+}
+async function loadShareRoutine(env, token) {
+    const idx = token ? await kvGet(env, `token:${token}`) : null;
+    if (!idx) return null;
+    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    return r ? { idx, r } : null;
+}
+function chkNextAt(r, now) {
+    const c = chkRemindOf(r);
+    if (c.mode === 'off' || !(r.push_subs || []).length || (r.profile && r.profile.status === 'finalizado')) return null;
+    return nextLocalTime(now, c.dow, c.hour, validTz(r.push_tz) || DEFAULT_TZ);
+}
+
+// ── Notifier: un Durable Object por aviso (por nombre), con su alarma ──
+// rest:{hash}   fin del descanso de un teléfono (una vez)
+// chk:{token}   recordatorio semanal del control de un alumno
+// digest:{coach} resumen diario del coach
+// send:{id}     manda avisos con texto (cifrar acá: 30 s de CPU en vez de 10 ms)
+export class Notifier {
+    constructor(ctx, env) { this.ctx = ctx; this.env = env; }
+    async fetch(req) {
+        let body = {};
+        try { body = await req.json(); } catch { /* vacío */ }
+        const out = await notifierOp(this.ctx.storage, this.env, body, Date.now());
+        return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } });
+    }
+    async alarm() {
+        // Sin throw: una alarma que falla se reintenta sola y podría mandar el aviso dos veces.
+        try { await notifierAlarm(this.ctx.storage, this.env, Date.now()); } catch { /* el próximo se reprograma */ }
+    }
+}
+async function callNotifier(env, name, body) {
+    if (!env.NOTIFIER) return { ok: false, error: 'sin notifier' };
+    try {
+        const stub = env.NOTIFIER.get(env.NOTIFIER.idFromName(name));
+        const resp = await stub.fetch('https://notifier/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        return await resp.json();
+    } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+}
+async function notifierOp(storage, env, b, now) {
+    switch (b && b.op) {
+        case 'send': {
+            const subs = (Array.isArray(b.subs) ? b.subs : []).map(cleanSub).filter(Boolean).slice(0, 5);
+            return Object.assign({ ok: true }, await pushMany(env, subs, b.payload || null, { ttl: b.ttl, urgency: b.urgency }));
+        }
+        case 'rest': {
+            const sub = cleanSub(b.sub);
+            const at = Number(b.at);
+            if (!sub || !(at >= now + 3000 && at <= now + 15 * 60000)) return { ok: false, error: 'invalid' };
+            await storage.put('job', { kind: 'rest', sub, at, lang: PUSH_MSG[b.lang] ? b.lang : 'es' });
+            await storage.setAlarm(at);
+            return { ok: true, at };
+        }
+        case 'chk-sync': {
+            const got = await loadShareRoutine(env, String(b.token || ''));
+            const at = got ? chkNextAt(got.r, now) : null;
+            if (!at) { await storage.delete('job'); await storage.deleteAlarm(); return { ok: true, next: null }; }
+            await storage.put('job', { kind: 'chk', token: String(b.token) });
+            await storage.setAlarm(at);
+            return { ok: true, next: at };
+        }
+        case 'digest-sync': {
+            const coachId = String(b.coachId || '');
+            const cfg = validPanelId(coachId) ? await kvGet(env, `coachcfg:${coachId}`) : null;
+            const dg = cfg && cfg.digest;
+            if (!dg || !dg.on || !(dg.subs || []).length) { await storage.delete('job'); await storage.deleteAlarm(); return { ok: true, next: null }; }
+            const at = nextLocalTime(now, null, dg.hour, validTz(dg.tz) || DEFAULT_TZ);
+            await storage.put('job', { kind: 'digest', coachId });
+            await storage.setAlarm(at);
+            return { ok: true, next: at };
+        }
+        case 'off':
+            await storage.delete('job');
+            await storage.deleteAlarm();
+            return { ok: true };
+        default:
+            return { ok: false, error: 'op' };
+    }
+}
+const DIGEST_PAGE = 40;   // alumnos por corrida del resumen (list + 40 gets + avisos < 50 subrequests)
+async function notifierAlarm(storage, env, now) {
+    const job = await storage.get('job');
+    if (!job) return { none: true };
+    if (job.kind === 'rest') {
+        await storage.delete('job');
+        const res = await pushMany(env, [job.sub], { title: 'BERSERKERMOD', body: pushText(job.lang, 'rest'), tag: 'bm-rest', url: './BERSERKERMOD.html' }, { ttl: 120, urgency: 'high' });
+        return { kind: 'rest', sent: res.sent };
+    }
+    if (job.kind === 'chk') {
+        const got = await loadShareRoutine(env, job.token);
+        if (!got) { await storage.delete('job'); return { kind: 'chk', gone: true }; }
+        const { idx, r } = got;
+        const tz = validTz(r.push_tz) || DEFAULT_TZ;
+        const week = isoWeek(localParts(tz, new Date(now)).date);
+        const done = !!r.last_checkin_at && isoWeek(localParts(tz, new Date(r.last_checkin_at)).date) === week;
+        const paused = !!(r.profile && r.profile.status === 'pausado');
+        let sent = 0;
+        if (!done && !paused && (r.push_subs || []).length) {
+            const lang = r.push_lang || 'es';
+            const res = await pushMany(env, r.push_subs, { title: 'BERSERKERMOD', body: pushText(lang, 'chk', { coach: r.coach_name || pushText(lang, 'coach') }), tag: 'bm-coach-chk', url: './BERSERKERMOD.html?r=' + r.share_token }, { ttl: 43200 });
+            sent = res.sent;
+            if (res.dead.length) {
+                r.push_subs = r.push_subs.filter((s) => !res.dead.includes(s.endpoint));
+                await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+            }
+        }
+        const at = chkNextAt(r, now);
+        if (at) await storage.setAlarm(at); else await storage.delete('job');
+        return { kind: 'chk', sent, skipped: done || paused, next: at };
+    }
+    if (job.kind === 'digest') {
+        const cfg = await kvGet(env, `coachcfg:${job.coachId}`);
+        const dg = cfg && cfg.digest;
+        if (!dg || !dg.on || !(dg.subs || []).length) { await storage.delete('job'); return { kind: 'digest', off: true }; }
+        const tz = validTz(dg.tz) || DEFAULT_TZ;
+        const today = localParts(tz, new Date(now)).date;
+        const res = await env.BMOD_KV.list({ prefix: `routine:${job.coachId}:`, cursor: job.cursor || undefined, limit: DIGEST_PAGE });
+        const names = job.names || [];
+        let count = job.count || 0;
+        for (const k of res.keys) {
+            const r = await kvGet(env, k.name);
+            if (r && studentAlerts(r, today).length) { count++; if (names.length < 3) names.push(r.alumno_name || '—'); }
+        }
+        if (!res.list_complete) {   // más de 40 alumnos: sigue en 2 segundos con la página que viene
+            await storage.put('job', { kind: 'digest', coachId: job.coachId, cursor: res.cursor, names, count });
+            await storage.setAlarm(now + 2000);
+            return { kind: 'digest', partial: true };
+        }
+        let sent = 0;
+        if (count) {
+            const lang = dg.lang || 'es';
+            const list = names.join(', ') + (count > names.length ? pushText(lang, 'more', { n: count - names.length }) : '');
+            const r2 = await pushMany(env, dg.subs, { title: 'BERSERKERMOD', body: pushText(lang, 'digest', { names: list }), tag: 'bm-coach-digest', url: './BERSERKERMOD.html' }, { ttl: 43200 });
+            sent = r2.sent;
+            if (r2.dead.length) { dg.subs = dg.subs.filter((s) => !r2.dead.includes(s.endpoint)); await kvPut(env, `coachcfg:${job.coachId}`, cfg); }
+        }
+        await storage.put('job', { kind: 'digest', coachId: job.coachId });
+        await storage.setAlarm(nextLocalTime(now, null, dg.hour, tz));
+        return { kind: 'digest', sent, count };
+    }
+    await storage.delete('job');
+    return { unknown: true };
+}
+// Aviso con texto a un alumno (todos sus teléfonos con avisos activos).
+async function notifyStudent(env, r, kind, vars, persist) {
+    const subs = Array.isArray(r.push_subs) ? r.push_subs : [];
+    if (!subs.length) return { sent: 0, no_subs: true };
+    const lang = r.push_lang || 'es';
+    const payload = { title: 'BERSERKERMOD', body: pushText(lang, kind, Object.assign({ coach: r.coach_name || pushText(lang, 'coach') }, vars || {})), tag: 'bm-coach-' + kind, url: './BERSERKERMOD.html?r=' + r.share_token };
+    const res = await callNotifier(env, 'send:' + r.id, { op: 'send', subs, payload, ttl: kind === 'remind' ? 43200 : 86400 });
+    if (res && Array.isArray(res.dead) && res.dead.length) {
+        r.push_subs = subs.filter((s) => !res.dead.includes(s.endpoint));
+        if (persist) await kvPut(env, routineKey(r.coach_id, r.id), r);
+    }
+    return { sent: (res && res.sent) || 0, no_subs: !(r.push_subs || []).length };
+}
+// POST /api/push/rest — fin del descanso aunque la app esté cerrada (o cancelarlo al volver)
+async function pushRest(req, env) {
+    const body = (await readBody(req)) || {};
+    const sub = cleanSub(body.subscription);
+    if (!sub) return err('Suscripción inválida', 400);
+    const name = 'rest:' + await sha256hex(sub.endpoint);
+    const res = body.cancel ? await callNotifier(env, name, { op: 'off' }) : await callNotifier(env, name, { op: 'rest', sub, at: Number(body.at), lang: body.lang });
+    if (res && res.error === 'invalid') return err('Horario inválido', 400);
+    if (!res || !res.ok) return err('No se pudo programar el aviso', 503);
+    return json({ ok: true });
+}
+// POST /api/shares/{token}/push — el alumno activa (o apaga con off) los avisos de su coach
+async function postSharePush(req, env, token) {
+    const got = await loadShareRoutine(env, token);
+    if (!got) return err('Routine not found', 404);
+    const { idx, r } = got;
+    const body = (await readBody(req)) || {};
+    const subs = Array.isArray(r.push_subs) ? r.push_subs : [];
+    if (body.off) {
+        r.push_subs = subs.filter((s) => s.endpoint !== body.endpoint);
+    } else {
+        const sub = cleanSub(body.subscription);
+        if (!sub) return err('Suscripción inválida', 400);
+        r.push_subs = [sub].concat(subs.filter((s) => s.endpoint !== sub.endpoint)).slice(0, 3);
+        r.push_lang = PUSH_MSG[body.lang] ? body.lang : (r.push_lang || 'es');
+        r.push_tz = validTz(body.tz) || r.push_tz || null;
+    }
+    await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+    const sync = await callNotifier(env, 'chk:' + token, { op: 'chk-sync', token });
+    return json({ ok: true, on: r.push_subs.length > 0, next: (sync && sync.next) || null, chk_remind: chkRemindOf(r) });
+}
+// POST /api/routines/{id}/remind — el coach le recuerda el control al alumno ahora
+async function remindRoutine(req, env, url, id) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGet(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    if (!(r.push_subs || []).length) return json({ ok: true, sent: 0, no_subs: true });
+    if (r.remind_at && Date.now() - Date.parse(r.remind_at) < 12 * 3600000) return err('Ya le mandaste un recordatorio hace menos de 12 horas', 429);
+    const res = await notifyStudent(env, r, 'remind', {}, false);
+    if (res.sent > 0) r.remind_at = nowISO();
+    await kvPut(env, routineKey(coachId, id), r);
+    return json({ ok: true, sent: res.sent, no_subs: res.no_subs });
+}
+Notifier._test = { encryptPushPayload, nextLocalTime, notifierAlarm, notifierOp, localParts };
+
 async function pushSubscribe(req, env) {
     const body = await readBody(req);
     const sub = body && body.subscription;
@@ -2234,6 +2621,7 @@ export default {
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
+            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
             if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
@@ -2243,6 +2631,8 @@ export default {
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos$/)) && m === 'POST') return await postVideo(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/terms$/)) && m === 'POST') return await postShareTerms(req, env, mt[1]);
+            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/push$/)) && m === 'POST') return await postSharePush(req, env, mt[1]);
+            if (p === '/api/push/rest' && m === 'POST') return await pushRest(req, env);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
             if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);

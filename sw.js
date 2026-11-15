@@ -3,7 +3,7 @@
 // so live sync / coach data stay fresh.
 
 // VERSION va también en la URL de core/calc.js en BERSERKERMOD.html (test/release.test.mjs lo chequea).
-const VERSION = '2-31';
+const VERSION = '2-32';
 const CACHE = 'berserkermod-v' + VERSION;
 // Paths are relative to the SW's scope so the same shell list works both on
 // local serve.ps1 (root scope) and on GitHub Pages subpath (/berserkermod/).
@@ -52,6 +52,20 @@ const PUSH_TEXTS = {
 };
 self.addEventListener('push', (event) => {
     event.waitUntil((async () => {
+        // Avisos con texto (los cifra el servidor): fin del descanso y avisos del coach.
+        let data = null;
+        try { data = event.data ? event.data.json() : null; } catch { data = null; }
+        if (data && data.body) {
+            return self.registration.showNotification(data.title || 'BERSERKERMOD', {
+                body: String(data.body).slice(0, 300),
+                icon: './icon-192.png',
+                badge: './icon-192.png',
+                tag: data.tag || 'bm-coach',
+                renotify: true,
+                data: { url: data.url || './BERSERKERMOD.html' }
+            });
+        }
+        // Push vacío = recordatorio diario de entrenar (el texto lo pone el teléfono).
         let lang = 'es';
         try {
             const c = await caches.open('bm-prefs');
@@ -74,12 +88,17 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     const url = (event.notification.data && event.notification.data.url) || './BERSERKERMOD.html';
+    const target = new URL(url, self.registration.scope).href;
     event.waitUntil(
-        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (wins) => {
             for (const w of wins) {
-                if (w.url.includes('BERSERKERMOD') && 'focus' in w) return w.focus();
+                if (w.url.includes('BERSERKERMOD') && 'focus' in w) {
+                    // Aviso del coach: lleva al link del alumno (su control, su evaluación)
+                    if (url.includes('?r=') && w.url !== target && 'navigate' in w) { try { await w.navigate(target); } catch { /* sigue con focus */ } }
+                    return w.focus();
+                }
             }
-            return self.clients.openWindow(url);
+            return self.clients.openWindow(target);
         })
     );
 });

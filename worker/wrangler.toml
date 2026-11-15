@@ -112,6 +112,17 @@ binding = "AI"
 [triggers]
 crons = ["* * * * *"]
 
+# Avisos a horario (fin del descanso, recordatorio del control, resumen del coach) y
+# avisos con texto. Durable Object con SQLite: incluido en el plan gratis (si se pasa
+# del límite diario, da error; no cobra).
+[[durable_objects.bindings]]
+name = "NOTIFIER"
+class_name = "Notifier"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Notifier"]
+
 # Rate limiting nativo de Workers (no usa KV, gratis). Key = IP del cliente.
 #   RL_OPEN   → toda ruta publica: 60 req/min por IP (un gimnasio en un NAT entra).
 #   RL_STRICT → rutas caras/abusables (errores, checkout, trial, testers, IA,
