@@ -4,3 +4,13 @@ worker/.dev.vars
 worker/.dev.local-secrets.txt
 worker/.wrangler/
 *.log
+
+# Claves y llaves privadas: nunca al repo (viven en ../play-store-keys, fuera de git)
+play-store-keys/
+*service-account*.json
+berserkermod-*.json
+client_secret_*.json
+*.keystore
+*.jks
+*.p12
+*.pem
