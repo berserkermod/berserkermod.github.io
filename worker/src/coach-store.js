@@ -214,6 +214,7 @@ export class CoachStore {
                 await this.storage.delete('mq:' + row);
             } catch (e) {
                 console.error('[coach] espejo a KV pendiente', this.kvName(row), String((e && e.message) || e).slice(0, 120));
+                this.kvError = String((e && e.message) || e).slice(0, 200);   // el Worker se lo pasa al vigía al soltar la fila
                 await this.scheduleRetry(now);
                 return false;
             }

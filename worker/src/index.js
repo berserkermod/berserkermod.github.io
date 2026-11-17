@@ -119,7 +119,7 @@ const PAYMENT_TICKET_TTL = 7 * 24 * 3600;
 const BUY_NONCE_RE = /^[A-Za-z0-9_-]{16,64}$/;
 const PAYMENT_TICKET_GRACE = 15 * 60;
 // Rutas caras o abusables: 5 req/min por IP (RL_STRICT). El resto: 60/min (RL_OPEN).
-const STRICT_ROUTES = ['/api/transfer', '/api/transfer/claim', '/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained'];
+const STRICT_ROUTES = ['/api/transfer', '/api/transfer/claim', '/api/errors', '/api/checkout', '/api/license/trial', '/api/testers/claim', '/api/oracle', '/api/parse-routine', '/api/food-vision', '/api/push/subscribe', '/api/push/trained', '/api/health/deep'];
 
 // ── Utilidades ───────────────────────────────────────────────────────
 const enc = new TextEncoder();
@@ -2106,8 +2106,9 @@ async function createCheckout(req, env) {
 const MP_REF_RE = /^(coach|premium)_(1|3|6|12)m(?:\.([A-Za-z0-9_-]{16,64}))?$/;
 async function mercadoPagoWebhook(req, env, url) {
     let paymentId = '';
-    const retry = (why) => {
+    const retry = async (why) => {
         console.error('[webhook mp] reintentar', paymentId, why);
+        await noteKvLimit(env, why);
         return json({ ok: false, error: 'retry' }, 500);
     };
     try {
@@ -2848,12 +2849,15 @@ export class Notifier {
             try { out = await this.lock(() => coachOp(this.ctx.storage, this.env, body)); }
             catch (e) {
                 console.error('[coach] pedido falló', body.op, body.path || body.fn, (e && e.message) || e);
+                await noteKvLimit(this.env, (e && e.message) || e);   // ya fuera de la fila
                 if (body.op === 'c-run') return jsonResp({ ok: false, error: String((e && e.message) || e) });
                 return e instanceof PayloadTooLarge ? err('Payload too large', 413) : err('Internal error: ' + String(e && e.message), 500);
             }
             // Avisos a otros objetos (recordatorio, resumen): después de soltar la fila, así
             // este objeto nunca espera a otro con la fila tomada.
             for (const fx of out.after) { try { await fx(); } catch (e) { console.error('[coach] aviso posterior falló', (e && e.message) || e); } }
+            // El espejo a KV falló adentro de la fila (el pedido salió bien): señal para el vigía.
+            if (out.kvError) await noteKvLimit(this.env, out.kvError);
             return body.op === 'c-run' ? jsonResp({ ok: true, result: out.result === undefined ? null : out.result }) : out.resp;
         }
         return jsonResp(await this.lock(() => notifierOp(this.ctx.storage, this.env, body, Date.now())));
@@ -2896,11 +2900,44 @@ async function coachOp(storage, env, b) {
         out.resp = (await coachRoutes(req, cenv, new URL(req.url), b.path, b.method)) || err('Not found', 404);
     }
     await store.commit();
+    out.kvError = store.kvError || null;
     return out;
 }
 // Mantenimiento con la alarma del objeto: copias a KV que quedaron pendientes (objeto de un
 // coach) y limpieza de contadores vencidos (objeto 'counters').
 const COUNTER_PREFIXES = ['aiq:', 'tip:', 'tr:'];
+
+// ═════════ Vigía (auditoría M-1) ═════════
+// Lo que hoy fallaría en silencio deja una señal que ve /api/health/deep:
+//   kv-limit  KV rechazó una operación por tope (429 / "Too Many Requests"): con el plan
+//             gratis pasa al gastar las 1.000 escrituras del día, y entonces fallan
+//             activaciones, pruebas y pagos hasta las 00:00 UTC.
+// Una tarea de GitHub (.github/workflows/vigia.yml) consulta esa ruta cada 30 minutos y,
+// si no da 200, GitHub le manda un mail al dueño del repo.
+const HEALTH_FLAGS = ['kv-limit'];
+const HEALTH_KV_WINDOW = 60 * 60000;   // la señal cuenta durante una hora
+let kvLimitNotedAt = 0;                // por isolate: como mucho una señal por minuto
+function isKvLimit(msg) { return /KV[^\n]{0,40}(429|too many requests)|too many requests[^\n]{0,40}KV/i.test(String(msg || '')); }
+async function noteKvLimit(env, msg) {
+    if (!isKvLimit(msg) || !env || !env.NOTIFIER) return;
+    const now = Date.now();
+    if (now - kvLimitNotedAt < 60000) return;
+    kvLimitNotedAt = now;
+    try { await callNotifier(env, 'counters', { op: 'flag-set', name: 'kv-limit', why: String(msg).slice(0, 160) }); } catch { /* el registro ya lo tiene */ }
+}
+// GET /api/health/deep — para el vigía. 200 si todo anda; 503 (con el detalle) si no.
+async function healthDeep(env) {
+    const now = Date.now();
+    const checks = {};
+    try { await env.BMOD_KV.get('health:probe'); checks.kv_reads = true; } catch { checks.kv_reads = false; }
+    const f = env.NOTIFIER ? await callNotifier(env, 'counters', { op: 'flag-get' }) : { ok: false };
+    checks.durable_objects = !!(f && f.ok);
+    const kv = f && f.ok && f.flags && f.flags['kv-limit'];
+    checks.kv_limit_at = kv ? new Date(kv.at).toISOString() : null;
+    checks.kv_writes = !(kv && now - kv.at < HEALTH_KV_WINDOW);
+    const ok = checks.kv_reads && checks.durable_objects && checks.kv_writes;
+    return json({ ok, service: 'berserkermod-api', checks }, ok ? 200 : 503);
+}
 async function objectUpkeep(storage, env, now) {
     const who = await storage.get(['coach', 'ctr']);
     if (who.get('coach')) {
@@ -3020,6 +3057,21 @@ async function notifierOp(storage, env, b, now) {
                 startAfter = rows[rows.length - 1][0];
             }
             return { ok: true, marks, since };
+        }
+        // ── Señales para el vigía (objeto 'counters') ──
+        // Se escriben solo cuando algo falla (nunca en un pedido normal) y las lee
+        // /api/health/deep, que consulta una tarea de GitHub cada 30 minutos (auditoría M-1).
+        case 'flag-set': {
+            const name = String(b.name || '');
+            if (!HEALTH_FLAGS.includes(name)) return { ok: false, error: 'invalid' };
+            const prev = await storage.get('flag:' + name);
+            await storage.put('flag:' + name, { at: now, n: ((prev && prev.n) || 0) + 1, why: String(b.why || '').slice(0, 160) });
+            return { ok: true };
+        }
+        case 'flag-get': {
+            const flags = {};
+            for (const name of HEALTH_FLAGS) { const v = await storage.get('flag:' + name); if (v) flags[name] = v; }
+            return { ok: true, flags };
         }
         case 'digest-sync': {
             const coachId = String(b.coachId || '');
@@ -3229,7 +3281,7 @@ async function remindRoutine(req, env, url, id) {
     await kvPut(env, routineKey(coachId, id), r);
     return json({ ok: true, sent: res.sent, no_subs: res.no_subs });
 }
-Notifier._test = { encryptPushPayload, nextLocalTime, notifierAlarm, notifierAlarmRetry, notifierOp, localParts };
+Notifier._test = { encryptPushPayload, nextLocalTime, notifierAlarm, notifierAlarmRetry, notifierOp, localParts, isKvLimit, resetKvNote: () => { kvLimitNotedAt = 0; } };
 
 async function pushSubscribe(req, env) {
     const body = await readBody(req);
@@ -3718,7 +3770,11 @@ async function forwardToCoach(req, env, url, p, m, kind) {
 
 export default {
     async scheduled(controller, env, ctx) {
-        ctx.waitUntil(sendDueReminders(env, new Date((controller && controller.scheduledTime) || Date.now())));
+        ctx.waitUntil(sendDueReminders(env, new Date((controller && controller.scheduledTime) || Date.now())).catch(async (e) => {
+            const msg = String((e && e.message) || e);
+            console.error('[cron] recordatorio diario falló', msg.slice(0, 300));
+            await noteKvLimit(env, msg);
+        }));
     },
     async fetch(req, env) {
         if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() });
@@ -3745,6 +3801,7 @@ export default {
 
         try {
             if (p === '/' || p === '/api/health') return json({ ok: true, service: 'berserkermod-api' });
+            if (p === '/api/health/deep' && m === 'GET') return await healthDeep(env);
 
             // Coach
             // Coach: todo lo de un coach y sus alumnos se resuelve en el objeto de ese coach
@@ -3797,6 +3854,9 @@ export default {
             return err('Not found', 404);
         } catch (e) {
             if (e instanceof PayloadTooLarge) return err('Payload too large', 413);
+            const msg = String((e && e.message) || e);
+            console.error('[worker] error', m, p, msg.slice(0, 300));
+            await noteKvLimit(env, msg);
             return err('Internal error: ' + String(e && e.message), 500);
         }
     }

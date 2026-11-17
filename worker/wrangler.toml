@@ -155,3 +155,11 @@ simple = { limit = 60, period = 60 }
 name = "RL_STRICT"
 namespace_id = "1002"
 simple = { limit = 5, period = 60 }
+
+# Registros del Worker (auditoría M-1): errores y avisos de console.error/console.warn
+# visibles en el panel (Workers → berserkermod-api → Logs). Plan gratis: 200.000
+# registros por día, guardados 3 días; pasado el tope deja de guardar, no cobra.
+# El vigía de GitHub (.github/workflows/vigia.yml) consulta /api/health/deep cada 30 min.
+[observability]
+enabled = true
+head_sampling_rate = 1

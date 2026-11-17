@@ -1,0 +1,48 @@
+name: Vigía
+
+# Cada 30 minutos mira que el servidor (Worker) y la app (GitHub Pages) respondan bien.
+# Si algo falla 3 veces seguidas (con 1 minuto entre intentos), la tarea queda en rojo y
+# GitHub le manda un mail al dueño del repo. Auditoría de infraestructura 2026-11, M-1.
+#
+# /api/health/deep da 503 si los Durable Objects no responden, si KV no deja leer o si
+# en la última hora KV rechazó algo por tope (las 1.000 escrituras diarias del plan gratis).
+# Solo lee: no gasta escrituras.
+#
+# Ojo: GitHub apaga las tareas programadas de un repo público después de 60 días sin
+# actividad. Si eso pasa, avisa por mail y se reactiva desde la pestaña Actions.
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  salud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Servidor (Worker)
+        run: |
+          url="https://berserkermod-api.berserkermod.workers.dev/api/health/deep"
+          for i in 1 2 3; do
+            code=$(curl -s -o salud.json -w '%{http_code}' --max-time 20 "$url" || echo 000)
+            if [ "$code" = "200" ]; then cat salud.json; echo; exit 0; fi
+            echo "Intento $i: HTTP $code"; cat salud.json 2>/dev/null; echo
+            [ "$i" -lt 3 ] && sleep 60
+          done
+          echo "::error::El servidor de BERSERKERMOD no está sano (HTTP $code). Mirá los registros en Cloudflare: Workers → berserkermod-api → Logs."
+          exit 1
+
+      - name: App (GitHub Pages)
+        run: |
+          url="https://berserkermod.github.io/BERSERKERMOD.html"
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$url" || echo 000)
+            if [ "$code" = "200" ]; then echo "App ok"; exit 0; fi
+            echo "Intento $i: HTTP $code"
+            [ "$i" -lt 3 ] && sleep 60
+          done
+          echo "::error::La app no responde (HTTP $code)."
+          exit 1

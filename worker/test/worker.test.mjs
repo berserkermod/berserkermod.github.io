@@ -2148,5 +2148,90 @@ let code, licToken;
     delete env.RL_OPEN; delete env.RL_STRICT;
 }
 
+// ── Vigía: registros y /api/health/deep (auditoría M-1) ──
+{
+    console.log('\nVigía: /api/health/deep y señal de KV sin cupo');
+    const T = Notifier._test;
+    const prevNS = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const ns = env.NOTIFIER;
+    const realLog = console.error;
+    const logged = [];
+    console.error = (...a) => { logged.push(a.join(' ')); };
+    try {
+        ok('reconoce los errores de KV por tope', T.isKvLimit('KV PUT failed: 429 Too Many Requests') && T.isKvLimit('KV GET failed: 429') && !T.isKvLimit('KV GET failed: 500') && !T.isKvLimit('boom'));
+        // Arranca limpio (otras pruebas de este archivo ya simularon KV en 429)
+        const ctrs = ns._dos.get('counters');
+        if (ctrs) ctrs.storage._m.delete('flag:kv-limit');
+        T.resetKvNote();
+        let h = await call('GET', '/api/health/deep');
+        ok('todo sano → 200 con cada chequeo en true', h.status === 200 && h.body.ok === true && h.body.checks.kv_reads && h.body.checks.durable_objects && h.body.checks.kv_writes && h.body.checks.kv_limit_at === null, h.body);
+
+        // KV se queda sin escrituras en una ruta común (prueba gratis)
+        const realPut = env.BMOD_KV.put;
+        env.BMOD_KV.put = async () => { throw new Error('KV PUT failed: 429 Too Many Requests'); };
+        const tr = await call('POST', '/api/license/trial', { deviceId: 'vigia-dev-1', product: 'premium' });
+        env.BMOD_KV.put = realPut;
+        ok('el error queda en los registros con la ruta', tr.status === 500 && logged.some((l) => l.includes('[worker] error') && l.includes('/api/license/trial') && l.includes('429')), [tr.status, logged.slice(-2)]);
+        h = await call('GET', '/api/health/deep');
+        ok('después, el vigía ve KV sin cupo → 503', h.status === 503 && h.body.ok === false && h.body.checks.kv_writes === false && !!h.body.checks.kv_limit_at, h.body);
+        // Pasada la hora, vuelve a dar sano
+        const flag = ns._dos.get('counters').storage._m.get('flag:kv-limit');
+        flag.at -= 2 * 3600000;
+        ns._dos.get('counters').storage._m.set('flag:kv-limit', flag);
+        h = await call('GET', '/api/health/deep');
+        ok('una hora después de la última falla vuelve a 200', h.status === 200 && h.body.checks.kv_writes === true, h.body);
+
+        // Un error que no es de cupo no dispara la señal
+        T.resetKvNote();
+        const realGet = env.BMOD_KV.get;
+        env.BMOD_KV.get = async () => { throw new Error('boom'); };
+        await call('POST', '/api/license/activate', { code: 'BMOD-XXXX-YYYY', deviceId: 'vigia-dev-2' });
+        env.BMOD_KV.get = realGet;
+        h = await call('GET', '/api/health/deep');
+        ok('un error cualquiera queda registrado pero no marca KV sin cupo', h.status === 200, h.body);
+
+        // El cron: si falla, lo registra y deja la señal (antes se perdía sin rastro)
+        T.resetKvNote();
+        if (!env.VAPID_PRIVATE_JWK) {
+            const vk = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+            env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', vk.privateKey));
+            env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', vk.publicKey)).toString('base64url');
+        }
+        env.BMOD_KV.get = async () => { throw new Error('KV GET failed: 429 Too Many Requests'); };
+        const pend = [];
+        let threw = false;
+        try { await worker.scheduled({ scheduledTime: Date.now() }, env, { waitUntil: (p) => pend.push(p) }); await Promise.all(pend); } catch { threw = true; }
+        env.BMOD_KV.get = realGet;
+        h = await call('GET', '/api/health/deep');
+        ok('cron con KV sin cupo: no revienta, lo registra y el vigía lo ve', !threw && logged.some((l) => l.includes('[cron]')) && h.status === 503, [threw, h.body]);
+
+        // Durable Objects caídos → 503
+        ns._dos.get('counters').storage._m.delete('flag:kv-limit');
+        ns.down = true;
+        h = await call('GET', '/api/health/deep');
+        ns.down = false;
+        ok('Durable Objects sin responder → 503', h.status === 503 && h.body.checks.durable_objects === false, h.body);
+
+        // Datos del Coach en su objeto: si el espejo a KV falla por cupo, el pedido sale bien y el vigía se entera
+        if (RUN_DO) {
+            ns._dos.get('counters').storage._m.delete('flag:kv-limit');
+            T.resetKvNote();
+            const rt = (await call('POST', '/api/routines', { coach_id: 'coachVigia', name: 'P', plan: [{ day: 'A' }], alumno_name: 'Ana' })).body;
+            env.BMOD_KV.put = async (k, v, o) => { if (String(k).startsWith('sessions:')) throw new Error('KV PUT failed: 429 Too Many Requests'); return realPut.call(env.BMOD_KV, k, v, o); };
+            const ses = await call('POST', '/api/shares/' + rt.share_token + '/sessions', { date: new Date().toISOString().slice(0, 10), exercises: [] });
+            env.BMOD_KV.put = realPut;
+            h = await call('GET', '/api/health/deep');
+            ok('espejo sin cupo: el entrenamiento se guarda igual y el vigía da 503', ses.status < 300 && h.status === 503, [ses.status, ses.body, h.body]);
+        }
+        ns._dos.get('counters').storage._m.delete('flag:kv-limit');
+    } finally {
+        console.error = realLog;
+        env.NOTIFIER = prevNS;
+        if (!prevNS) delete env.NOTIFIER;
+        T.resetKvNote();
+    }
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);
