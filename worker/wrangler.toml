@@ -20,6 +20,18 @@ compatibility_date = "2024-09-23"
 APP_ORIGIN = "https://berserkermod.github.io"
 APP_PATH = "/BERSERKERMOD.html"
 LANDING_URL = "https://berserkermod.github.io/"
+# Datos del Coach en Durable Objects (un objeto por coach + uno de contadores; ver
+# src/coach-store.js). Sin clase nueva: usan la de los avisos (Notifier).
+#   DO_DATA    "on": todo lo de cada coach vive en su objeto. "off": como antes, en KV.
+#   KV_MIRROR  "on": cada cambio se copia también a KV con el formato de siempre, así se
+#              puede volver al Worker anterior publicándolo. Apagarlo ("off") es el paso
+#              sin vuelta atrás: solo con OK del dueño, tras dos semanas sin errores en los
+#              registros y con una copia de KV hecha ese día.
+#   DATA_EPOCH subirlo (2, 3…) SOLO al volver a publicar este Worker después de haber vuelto
+#              al anterior: cada objeto descarta lo suyo y vuelve a traer todo de KV.
+DO_DATA = "on"
+KV_MIRROR = "on"
+DATA_EPOCH = "1"
 ENABLE_HEALTH_SYNC = "false"
 # Modelo que estructura los PDF de rutinas. Corre en Cloudflare Workers AI
 # (GRATIS dentro de 10.000 neuronas/día, sin API key ni cuenta de terceros).

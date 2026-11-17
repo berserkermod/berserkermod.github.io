@@ -2,6 +2,12 @@
 // mock (KV en memoria). Node 24 ya trae crypto.subtle, Request/Response, btoa,
 // crypto.randomUUID/getRandomValues globalmente. Corré con: node test/worker.test.mjs
 import worker, { Notifier } from '../src/index.js';
+import { routineLite } from '../src/coach-store.js';
+import { makeDONamespace } from './do-fake.mjs';
+
+// Se corre dos veces: sin --do, los datos del Coach quedan en KV (DO_DATA = "off", como el
+// Worker anterior); con --do, en el objeto de cada coach (lo que corre en producción).
+const RUN_DO = process.argv.includes('--do');
 
 // ── KV mock (Map) con get/put/delete/list(prefix,cursor) ──
 function makeKV() {
@@ -33,6 +39,28 @@ const env = {
     ENABLE_HEALTH_SYNC: 'false'
 };
 
+if (RUN_DO) env.NOTIFIER = makeDONamespace(Notifier, env); else env.DO_DATA = 'off';
+const coachData = () => !!env.NOTIFIER && env.DO_DATA !== 'off';
+// Cambiar a mano un registro guardado (para simular fechas viejas o alumnos de antes). Con los
+// datos en el objeto del coach, el cambio va también ahí (KV es solo la copia).
+async function setRec(key, rec) {
+    env.BMOD_KV._m.set(key, JSON.stringify(rec));
+    if (!coachData()) return;
+    const [, coach, id] = key.split(':');
+    const d = env.NOTIFIER._dos.get('coach:' + coach);
+    if (d && d.storage._m.has('routine:' + id)) await d.storage.put({ ['routine:' + id]: JSON.stringify(rec), ['sum:' + id]: routineLite(rec) });
+}
+
+// Borrar a mano un alumno (como una baja vieja hecha antes de este cambio).
+async function delRec(key) {
+    env.BMOD_KV._m.delete(key);
+    if (!coachData()) return;
+    const [, coach, id] = key.split(':');
+    const d = env.NOTIFIER._dos.get('coach:' + coach);
+    if (d) { await d.storage.delete(['routine:' + id, 'sum:' + id]); await d.storage.put('gone:' + id, 1); }
+}
+const counterRows = () => (coachData() && env.NOTIFIER._dos.get('counters') ? env.NOTIFIER._dos.get('counters').storage._m : new Map());
+
 let pass = 0, fail = 0;
 function ok(name, cond, extra) { if (cond) { pass++; console.log('  ✓ ' + name); } else { fail++; console.log('  ✗ ' + name + (extra ? '  → ' + JSON.stringify(extra) : '')); } }
 
@@ -47,7 +75,7 @@ const call = async (method, path, body, headers) => {
     return { status: res.status, body: j, cors: res.headers.get('Access-Control-Allow-Origin') };
 };
 
-console.log('\n=== BERSERKERMOD Worker tests ===\n');
+console.log('\n=== BERSERKERMOD Worker tests (' + (RUN_DO ? 'datos del Coach en Durable Objects' : 'datos del Coach en KV') + ') ===\n');
 
 // ── Ping + CORS ──
 {
@@ -266,7 +294,7 @@ let token, routineId;
         const key = 'routine:' + C + ':' + r.id;
         const rec = JSON.parse(env.BMOD_KV._m.get(key));
         rec.created_at = rec.updated_at = rec.last_coach_update_at = new Date(Date.now() - ageDays * 86400000).toISOString();
-        env.BMOD_KV._m.set(key, JSON.stringify(rec));
+        await setRec(key, rec);
         return r;
     };
     const alertsOf = async (id) => ((await call('GET', '/api/routines?coach_id=' + C)).body.find((x) => x.id === id) || {}).alerts || [];
@@ -335,7 +363,7 @@ let token, routineId;
     const key = 'routine:' + C + ':' + ana.id;
     const old = JSON.parse(env.BMOD_KV._m.get(key));
     delete old.recent_quick_dates; delete old.loads_review; delete old.chk_recent;
-    env.BMOD_KV._m.set(key, JSON.stringify(old));
+    await setRec(key, old);
     const det = await call('GET', '/api/routines/' + ana.id + '?coach_id=' + C);
     const after = JSON.parse(env.BMOD_KV._m.get(key));
     ok('el detalle completa los resúmenes de alumnos viejos', Array.isArray(after.chk_recent) && after.chk_recent.length === 2 && Array.isArray(after.loads_review), after.chk_recent);
@@ -1063,7 +1091,7 @@ let code, licToken;
     ok('trained: endpoint ajeno o fecha inválida → 400', badTr.status === 400 && badDate.status === 400);
     const tr = await call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/ep1', date: localDay('Europe/Madrid', tomorrowMadrid) });
     Date.now = realNow;
-    ok('trained 200 y marca chica aparte de push:all', tr.status === 200 && [...env.BMOD_KV._m.keys()].some(k => k.startsWith('pushtr:')));
+    ok('trained 200 y marca chica aparte de push:all', tr.status === 200 && (coachData() ? [...counterRows().keys()].some(k => k.startsWith('tr:')) && ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('pushtr:')) : [...env.BMOD_KV._m.keys()].some(k => k.startsWith('pushtr:'))));
     ok('entrenó ese día → a las 18 no le llega nada', await runCron(tomorrowMadrid) === 0, pushed.map(p => p.url));
     ok('el día siguiente sí le llega', await runCron(at18('Europe/Madrid', 2)) === 1);
 
@@ -1328,8 +1356,12 @@ let code, licToken;
     ok('Importar PDF: llamada 6 del día → 429', parseLast.status === 429, parseLast.body);
     const legacyKey = await call('POST', '/api/oracle', { apiKey: 'sk-ant-x', prompt: 'x' });
     ok('camino legacy con API key propia no consume cuota (no 429)', legacyKey.status !== 429, legacyKey.status);
-    const dayKeys = [...env.BMOD_KV._m.keys()].filter(k => k.startsWith('aiq:') && (k.endsWith(gen.body.codes[0]) || k.endsWith(gen2.body.codes[0])));
-    const q1 = JSON.parse(await env.BMOD_KV.get('aiq:' + new Date().toISOString().slice(0, 10) + ':' + gen.body.codes[0]));
+    // Con los datos en Durable Objects, la cuota vive en el objeto de contadores (sin escrituras de KV)
+    const aiqRows = coachData() ? counterRows() : env.BMOD_KV._m;
+    const dayKeys = [...aiqRows.keys()].filter(k => k.startsWith('aiq:') && (k.endsWith(gen.body.codes[0]) || k.endsWith(gen2.body.codes[0])));
+    const q1raw = aiqRows.get('aiq:' + new Date().toISOString().slice(0, 10) + ':' + gen.body.codes[0]);
+    const q1 = coachData() ? (q1raw && q1raw.f) : JSON.parse(q1raw);
+    if (coachData()) ok('la cuota de IA no escribe en KV', ![...env.BMOD_KV._m.keys()].some(k => k.startsWith('aiq:')));
     ok('cuota: una key por licencia y día, con ambos contadores', dayKeys.length === 2 && q1.oracle === 20 && q1.parse === 5, [dayKeys, q1]);
     delete env.AI;
 
@@ -1745,7 +1777,7 @@ let code, licToken;
     const r2 = (await call('POST', '/api/routines', { coach_id: C, name: 'Plan Dani', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Dani' })).body;
     const d1 = r2.share_token;
     await call('POST', '/api/routines/' + r2.id + '/new-link', { coach_id: C });
-    kv.delete(rkey(r2.id));
+    await delRec(rkey(r2.id));
     ok('link viejo de un alumno que ya no está → 404 (no 410)', (await call('GET', '/api/shares/' + d1)).status === 404);
     kv.delete('moved:' + d1);
 }
@@ -1794,20 +1826,9 @@ let code, licToken;
     };
 
     // Durable Objects de prueba (memoria + alarma) y servicio de push simulado
-    const dos = new Map();
-    const fakeStorage = () => {
-        const m = new Map();
-        const st = { _m: m, alarm: null, async get(k) { return m.get(k); }, async put(k, v) { m.set(k, JSON.parse(JSON.stringify(v))); }, async delete(k) { m.delete(k); }, async setAlarm(t) { st.alarm = Number(t); }, async getAlarm() { return st.alarm; }, async deleteAlarm() { st.alarm = null; } };
-        return st;
-    };
-    env.NOTIFIER = {
-        idFromName: (name) => ({ name }),
-        get: (id) => {
-            if (!dos.has(id.name)) { const storage = fakeStorage(); dos.set(id.name, { storage, obj: new Notifier({ storage }, env) }); }
-            const d = dos.get(id.name);
-            return { fetch: (u, init) => d.obj.fetch(new Request(u, init)) };
-        }
-    };
+    const prevNotifier = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const dos = env.NOTIFIER._dos;
     if (!env.VAPID_PRIVATE_JWK) {
         const vk = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
         env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', vk.privateKey));
@@ -1899,7 +1920,7 @@ let code, licToken;
     ok('suscripción muerta (410) → se borra y se apaga el recordatorio', pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined && chkDO.storage.alarm === firstAt + 7 * 86400000 || (pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined), [pushes.length, rec.push_subs.length]);
     statusFor = () => 201;
     delete rec.remind_at;
-    env.BMOD_KV._m.set(key, JSON.stringify(rec));
+    await setRec(key, rec);
     const rm3 = await call('POST', '/api/routines/' + r.id + '/remind', { coach_id: C });
     ok('sin avisos activados: el coach se entera (para mandarlo por WhatsApp)', rm3.status === 200 && rm3.body.no_subs === true && rm3.body.sent === 0, rm3.body);
     await call('POST', '/api/shares/' + tk + '/push', { subscription: phone.sub, tz: BA });
@@ -1929,7 +1950,7 @@ let code, licToken;
     const k1 = 'routine:' + CP + ':' + a1.id;
     const rec1 = JSON.parse(env.BMOD_KV._m.get(k1));
     rec1.created_at = rec1.updated_at = rec1.last_coach_update_at = new Date(Date.now() - 20 * 86400000).toISOString();
-    env.BMOD_KV._m.set(k1, JSON.stringify(rec1));
+    await setRec(k1, rec1);
     await call('POST', '/api/routines', { coach_id: CP, name: 'P', plan: [{ name: 'A', exercises: [] }], alumno_name: 'Nuevo' });
     const dgBad = await call('PUT', '/api/coach/config', { coach_id: CP, digest: { on: true, hour: 9 } });
     ok('resumen sin notificaciones en el teléfono → 400', dgBad.status === 400);
@@ -1944,7 +1965,8 @@ let code, licToken;
     ok('la config del coach muestra el resumen sin exponer la suscripción', cfgG.body.digest.on === true && cfgG.body.digest.hour === 9 && !JSON.stringify(cfgG.body).includes('coach1'), cfgG.body);
     // 11) Una falla momentánea no apaga el resumen para siempre (auditoría D-1)
     const realGet = env.BMOD_KV.get;
-    env.BMOD_KV.get = async () => { throw new Error('KV GET failed: 429'); };
+    if (coachData()) env.NOTIFIER.down = true;   // el objeto del coach no responde
+    else env.BMOD_KV.get = async () => { throw new Error('KV GET failed: 429'); };
     const tFail = Date.now();
     dgDO.storage.alarm = null;   // como en Cloudflare: mientras corre, la alarma ya no figura como programada
     await dgDO.obj.alarm();
@@ -1954,6 +1976,7 @@ let code, licToken;
     await dgDO.obj.alarm();
     ok('si vuelve a fallar, espera el doble (30 minutos)', dgDO.storage.alarm - Date.now() > 29 * 60000 && dgDO.storage._m.get('job').fails === 2, dgDO.storage._m.get('job'));
     env.BMOD_KV.get = realGet;
+    if (coachData()) env.NOTIFIER.down = false;
     pushes = [];
     res = await T.notifierAlarm(dgDO.storage, env, dgDO.storage.alarm);
     ok('cuando KV vuelve, manda el resumen, borra la cuenta de fallas y vuelve a las 9 h', res.kind === 'digest' && pushes.length === 1 && !dgDO.storage._m.get('job').fails && T.localParts(BA, new Date(dgDO.storage.alarm)).hour === 9, [res, dgDO.storage._m.get('job')]);
@@ -1972,30 +1995,15 @@ let code, licToken;
     ok('apagar el resumen borra la alarma', dgOff.body.digest.on === false && dgDO.storage.alarm === null);
 
     globalThis.fetch = realFetch;
-    delete env.NOTIFIER;
+    env.NOTIFIER = prevNotifier;   // en la corrida --do sigue el de todo el archivo
 }
 
 // ── Auditoría de infraestructura 2026-11: tanda 1 ──
 {
     console.log('\nAuditoría 2026-11 (tanda 1): pagos, testers, cron, avisos, límites');
-    // Durable Objects de prueba que, como los de verdad, atienden de a un pedido por vez
-    const makeDONamespace = () => {
-        const dos = new Map();
-        const fakeStorage = () => {
-            const m = new Map();
-            const st = { _m: m, alarm: null, async get(k) { await null; return m.get(k); }, async put(k, v) { await null; m.set(k, JSON.parse(JSON.stringify(v))); }, async delete(k) { m.delete(k); }, async setAlarm(t) { st.alarm = Number(t); }, async getAlarm() { return st.alarm; }, async deleteAlarm() { st.alarm = null; } };
-            return st;
-        };
-        return {
-            _dos: dos,
-            idFromName: (name) => ({ name }),
-            get: (id) => {
-                if (!dos.has(id.name)) { const storage = fakeStorage(); dos.set(id.name, { storage, obj: new Notifier({ storage }, env), q: Promise.resolve() }); }
-                const d = dos.get(id.name);
-                return { fetch: (u, init) => { const run = d.q.then(() => d.obj.fetch(new Request(u, init))); d.q = run.catch(() => { }); return run; } };
-            }
-        };
-    };
+    // Durable Objects de prueba (la fila de espera la pone el propio Worker: Notifier.lock)
+    const prevNotifierT1 = env.NOTIFIER;
+    const makeDONamespaceT1 = () => prevNotifierT1 || makeDONamespace(Notifier, env);
     const codesOfPayment = (id) => [...env.BMOD_KV._m.entries()].filter(([k, v]) => k.startsWith('code:') && JSON.parse(v).payment_id === id).map(([k]) => k.slice(5));
 
     // ── Mercado Pago ──
@@ -2049,7 +2057,7 @@ let code, licToken;
     ok('P-1: el reintento genera el código', w.status === 200 && /^BMOD-/.test(await env.BMOD_KV.get('paid:2006') || ''), w.body);
 
     // Con el Durable Object (como en producción)
-    env.NOTIFIER = makeDONamespace();
+    env.NOTIFIER = makeDONamespaceT1();
     pays['3001'] = { status: 'approved', external_reference: 'premium_1m.' + 'N'.repeat(20), transaction_amount: 7500, currency_id: 'ARS' };
     const both = await Promise.all([hook('3001'), hook('3001')]);
     const c3001 = codesOfPayment('3001');
@@ -2096,7 +2104,7 @@ let code, licToken;
     const admT = await call('GET', '/api/admin/testers', undefined, { 'x-admin-secret': 'test-admin' });
     ok('el panel admin muestra el número del Durable Object, no la copia de KV', admT.body.count === startN + 3 + 5, [admT.body.count, startN]);
     env.TESTERS_CLAIM_OPEN = 'false';
-    delete env.NOTIFIER;
+    env.NOTIFIER = prevNotifierT1;
 
     // ── Cron: la zona horaria se valida una vez por zona, no por suscripción (L-2) ──
     if (!env.VAPID_PRIVATE_JWK) {

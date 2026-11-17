@@ -53,7 +53,14 @@
 //   payment:{paymentId}            → CODE          (retrieval tras redirect MP)
 //   trial:{product}:{deviceId}     → { issued_at }  (anti-reinstall de trials)
 //   error:{ts}:{rand}              → error (TTL 30d)
+//
+// Datos del Coach (routine:, coachcfg:, sessions:, checkins:, edits:, evals:, videos:,
+// review:): con DO_DATA en "on" los guarda el objeto de cada coach ('coach:{coachId}', ver
+// coach-store.js) y KV queda como copia mientras KV_MIRROR esté en "on". Los contadores
+// pasajeros (aiq:, trial-ip:, pushtr:) pasan al objeto 'counters'.
 // =====================================================================
+
+import { CoachStore, coachKV, guardKV } from './coach-store.js';
 
 const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // sin chars ambiguos (igual que serve.ps1)
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // mayúsculas, sin O/0/I/1
@@ -223,6 +230,38 @@ async function kvGet(env, key) {
 }
 function kvPut(env, key, obj, opts) { return env.BMOD_KV.put(key, JSON.stringify(obj), opts); }
 
+// ── Datos del Coach en un Durable Object por coach (auditoría 2026-11: K-1, L-1, L-3) ──
+// Con el binding NOTIFIER y DO_DATA distinto de "off", todo lo de un coach y sus alumnos
+// vive en su objeto ('coach:{coachId}', ver coach-store.js) y los contadores pasajeros en el
+// objeto 'counters'. El código de las rutas es el mismo de siempre: adentro del objeto,
+// env.BMOD_KV es una fachada que manda las keys del coach a su almacén y deja el resto en KV;
+// env.__coach es ese almacén. Sin el binding (o con DO_DATA = "off") todo sigue en KV, como antes.
+function doData(env) { return !!(env && env.NOTIFIER) && String(env.DO_DATA || 'on') !== 'off'; }
+// Registro de un alumno. Adentro del objeto se le suma el último "visto", que ya no se
+// guarda en el registro (así abrir el link no lo reescribe entero ni gasta una escritura de KV).
+async function kvGetRoutine(env, key) {
+    const r = await kvGet(env, key);
+    if (r && env.__coach && r.id) {
+        const seen = await env.__coach.seen(r.id);
+        if (seen && !(r.last_seen_by_alumno_at >= seen)) r.last_seen_by_alumno_at = seen;
+    }
+    return r;
+}
+async function touchSeen(env, idx, r) {
+    r.last_seen_by_alumno_at = nowISO();
+    if (env.__coach) return env.__coach.markSeen(r.id, r.last_seen_by_alumno_at);
+    return kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+}
+// Una función del coach, adentro de su objeto (para lo que no llega como pedido de la API:
+// alarmas de avisos, cargar cupo desde el admin, atar un código al activar una licencia).
+async function runInCoach(env, coachId, fn, args) {
+    const stub = env.NOTIFIER.get(env.NOTIFIER.idFromName('coach:' + coachId));
+    const resp = await stub.fetch('https://notifier/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'c-run', coachId, fn, args: args || [] }) });
+    const out = await resp.json();
+    if (!out || !out.ok) throw new Error('coach: ' + ((out && out.error) || 'sin respuesta'));
+    return out.result;
+}
+
 // Lista y lee hasta `max` registros de un prefijo. OJO: 1 list + N gets =
 // N+1 subrequests; solo para rutas admin o listas acotadas (rutinas por coach).
 async function listByPrefix(env, prefix, max = ROUTINES_LIST_MAX) {
@@ -301,6 +340,14 @@ async function ipHash(ip) {
 async function aiQuotaOk(env, payload, kind) {
     const id = (payload && (payload.code || payload.deviceId)) || 'anon';
     const key = `aiq:${new Date().toISOString().slice(0, 10)}:${id}`;
+    if (doData(env)) {
+        // En el objeto de contadores: no gasta escrituras de KV y cuenta bien con pedidos a la vez.
+        const res = await callNotifier(env, 'counters', { op: 'ctr-hit', key, field: kind, max: AI_QUOTA[kind], ttl: 2 * 86400 });
+        if (res && res.ok) return !!res.allowed;
+        // Sin contador no se le corta la IA a quien pagó: mejor regalar unas consultas.
+        console.error('[contadores] sin respuesta: la IA sigue sin contar', kind, res && res.error);
+        return true;
+    }
     const rec = (await kvGet(env, key)) || {};
     if ((rec[kind] || 0) >= AI_QUOTA[kind]) return false;
     rec[kind] = (rec[kind] || 0) + 1;
@@ -368,7 +415,16 @@ async function listRoutines(env, url) {
     // para las apps que todavía no se actualizaron. Todo lo demás sale del registro.
     const paged = url.searchParams.get('paged') === '1';
     let routines, next = null;
-    if (paged) {
+    if (env.__coach) {
+        // Adentro del objeto del coach: la página sale de ahí (sin listar KV una vez migrado).
+        // Lo que devuelve alcanza para el panel y las alertas (ver routineLite).
+        const cur = paged ? (url.searchParams.get('cursor') || '') : '';
+        if (cur.length > 1024) return err('Cursor inválido', 400);
+        let pg;
+        try { pg = await env.__coach.listPage(cur, ROUTINES_LIST_MAX); } catch { return err('Cursor inválido', 400); }
+        routines = pg.items;
+        next = pg.next;
+    } else if (paged) {
         const cur = url.searchParams.get('cursor') || '';
         if (cur.length > 1024) return err('Cursor inválido', 400);
         let pg;
@@ -698,7 +754,7 @@ async function putReview(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const today = reqToday(url, body);
@@ -724,7 +780,7 @@ async function putReview(req, env, url, id) {
 async function deleteReview(req, env, url, id) {
     const coachId = coachIdFrom(req, url, null);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     if (!(await kvGet(env, reviewKey(id)))) return err('Not found', 404);
@@ -738,7 +794,7 @@ async function putEval(req, env, url, id, cycleStr) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const start = programStart(r);
@@ -770,7 +826,7 @@ async function putEval(req, env, url, id, cycleStr) {
 async function deleteEval(req, env, url, id, cycleStr) {
     const coachId = coachIdFrom(req, url, null);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const cycle = parseInt(cycleStr, 10);
@@ -786,7 +842,7 @@ async function deleteEval(req, env, url, id, cycleStr) {
 async function getRoutine(env, url, id) {
     const coachId = url.searchParams.get('coach_id');
     // Necesitamos coachId para construir la key; sin él no se puede buscar.
-    const r = coachId ? await kvGet(env, routineKey(coachId, id)) : null;
+    const r = coachId ? await kvGetRoutine(env, routineKey(coachId, id)) : null;
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const edits = ((await kvGet(env, editsKey(id))) || { items: [] }).items;
@@ -830,7 +886,7 @@ async function updateRoutine(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     if (body.plan && (typeof body.plan !== 'object' || planTooBig(body.plan))) return err('Plan inválido o demasiado grande', 413);
@@ -882,14 +938,14 @@ async function updateRoutine(req, env, url, id) {
     await kvPut(env, routineKey(coachId, id), r);
     if (accessChanged && r.share_token) await kvPut(env, `token:${r.share_token}`, tokenIndex(coachId, id, r.access_end_at));
     if (planPush) await notifyStudent(env, r, 'plan', {}, true);
-    if (chkChanged && (r.push_subs || []).length) await callNotifier(env, 'chk:' + r.share_token, { op: 'chk-sync', token: r.share_token });
+    if (chkChanged && (r.push_subs || []).length) await callNotifier(env, 'chk:' + r.share_token, { op: 'chk-set', token: r.share_token, at: chkNextAt(r, Date.now()) });
     return json(Object.assign(stripPush(r), { chk_remind: chkRemindOf(r) }));
 }
 
 async function deleteRoutine(req, env, url, id) {
     const coachId = coachIdFrom(req, url, null);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     return json({ ok: true, revoked: await purgeRoutine(env, coachId, r, 'coach_baja') });
@@ -1025,7 +1081,7 @@ async function assignSeat(req, env, url, id) {
     const body = (await readBody(req)) || {};
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     if (closedAt(r.access_end_at)) return err('El acceso de este alumno ya terminó', 409);
@@ -1046,8 +1102,10 @@ async function assignSeat(req, env, url, id) {
     for (const s of seats) {
         if (!s || s.gone || s.routine_id) continue;
         const rec = await kvGet(env, `code:${s.code}`);
+        // Un intento anterior que ató el código a ESTE alumno y no llegó a guardar el resto: se retoma.
+        const resume = rec && rec.routine_id === id && !rec.used && !rec.revoked && !seatExpired(rec);
         // un código que ya no sirve (anulado, vencido o usado por fuera del cupo) sale del cupo
-        if (!rec || rec.revoked || seatExpired(rec) || rec.routine_id || rec.used) { s.gone = true; dirty = true; continue; }
+        if (!resume && (!rec || rec.revoked || seatExpired(rec) || rec.routine_id || rec.used)) { s.gone = true; dirty = true; continue; }
         rec.routine_id = id; rec.coach_id = coachId;
         await kvPut(env, `code:${s.code}`, rec);
         s.routine_id = id; s.at = now;
@@ -1070,7 +1128,7 @@ async function assignSeat(req, env, url, id) {
 async function removeSeat(req, env, url, id) {
     const coachId = coachIdFrom(req, url, null);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     if (!r.premium_seat) return err('Not found', 404);
@@ -1214,7 +1272,7 @@ async function newShareLink(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     let token = newShareToken();
@@ -1250,7 +1308,7 @@ async function postShareLeave(req, env, token) {
     if (!idx) return err('Routine not found', 404);
     const body = (await readBody(req)) || {};
     if (body.confirm !== true) return err('Falta confirmar', 400);
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) { await env.BMOD_KV.delete(`token:${token}`); return err('Routine not found', 404); }
     const revoked = await purgeRoutine(env, idx.coachId, r, 'alumno_baja');
     const cfgKey = `coachcfg:${idx.coachId}`;
@@ -1264,7 +1322,7 @@ async function reviewRoutine(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const agg = (await kvGet(env, editsKey(id))) || { items: [] };
@@ -1281,20 +1339,17 @@ async function getShare(env, token) {
     if (!idx) {
         // ¿El coach le cambió el link? (mientras el alumno siga en su panel)
         const mv = await kvGet(env, movedKey(token));
-        if (mv && await kvGet(env, routineKey(mv.coachId, mv.routineId))) return json({ error: 'Link changed', moved: true }, 410);
+        if (mv && await kvGetRoutine(env, routineKey(mv.coachId, mv.routineId))) return json({ error: 'Link changed', moved: true }, 410);
         return err('Routine not found', 404);
     }
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     const closed = closedAt(r.access_end_at);
     if (closed) return closedShare(env, idx, r, closed);
     // "visto por el alumno": como mucho una escritura por hora (cada put gasta
     // cuota de KV; sin esto, refrescar el link en loop la agota).
     const seen = r.last_seen_by_alumno_at ? new Date(r.last_seen_by_alumno_at).getTime() : 0;
-    if (Date.now() - seen > 3600000) {
-        r.last_seen_by_alumno_at = nowISO();
-        await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
-    }
+    if (Date.now() - seen > 3600000) await touchSeen(env, idx, r);
     const edits = ((await kvGet(env, editsKey(r.id))) || { items: [] }).items.slice(0, 20);
     // Sesiones del alumno (para que vea su propia adherencia y el check de hoy)
     const sessions = ((await kvGet(env, sessionsKey(r.id))) || { items: [] }).items.slice(0, 30);
@@ -1374,7 +1429,7 @@ async function postShareSession(req, env, token) {
     agg.items.forEach((s, i) => { if (i >= SESSIONS_DETAIL_MAX) { delete s.exercises; delete s.note; } });
     await kvPut(env, sessionsKey(idx.routineId), agg);
 
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (r) {
         const before = derivedSig(r);
         if (isNew) r.session_count = (r.session_count || 0) + 1;
@@ -1442,7 +1497,7 @@ async function postCheckin(req, env, token) {
         .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, CHECKINS_MAX);
     await kvPut(env, checkinsKey(idx.routineId), agg);
 
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (r) {
         r.last_checkin_at = chk.at;
         deriveFromCheckins(r, agg.items);
@@ -1456,7 +1511,7 @@ async function postCheckin(req, env, token) {
 // el coach lo ve en el panel y le responde. No se guarda ningún archivo.
 const pendingVideos = (items) => items.filter((v) => !v.reply).length;
 async function syncVideosPending(env, idx, items) {
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return;
     const n = pendingVideos(items);
     if ((r.videos_pending || 0) !== n) { r.videos_pending = n; await kvPut(env, routineKey(idx.coachId, idx.routineId), r); }
@@ -1498,7 +1553,7 @@ async function replyVideo(req, env, url, id, vidId) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     const reply = str(body && body.reply, 1000);
@@ -1530,7 +1585,7 @@ async function postIntake(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
     if (closedAt(idx.until)) return closedErr();   // acceso cerrado: no se carga nada
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     const body = (await readBody(req)) || {};
     const limitations = str(body.limitations, 500) || '';
@@ -1603,7 +1658,11 @@ async function putCoachConfig(req, env, url) {
     }
     cfg.updated_at = nowISO();
     await kvPut(env, `coachcfg:${coachId}`, cfg);
-    if (digestChanged) await callNotifier(env, 'digest:' + coachId, { op: 'digest-sync', coachId });
+    if (digestChanged) {
+        const dg = cfg.digest;
+        const at = dg && dg.on && (dg.subs || []).length ? nextLocalTime(Date.now(), null, dg.hour, validTz(dg.tz) || DEFAULT_TZ) : null;
+        await callNotifier(env, 'digest:' + coachId, { op: 'digest-set', coachId, at });
+    }
     return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '',
         digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg), seats: seatCounts(cfg) });
 }
@@ -1620,7 +1679,7 @@ async function postShareTerms(req, env, token) {
     if (!idx) return err('Routine not found', 404);
     const body = (await readBody(req)) || {};
     if (!TERMS_V_RE.test(body.version || '')) return err('Versión inválida', 400);
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     if (!r.terms || r.terms.v !== body.version) {
         r.terms = { v: body.version, at: nowISO() };
@@ -1648,7 +1707,7 @@ async function saveReport(env, r, by, body) {
 async function postShareReport(req, env, token) {
     const idx = await kvGet(env, `token:${token}`);
     if (!idx) return err('Routine not found', 404);
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return err('Routine not found', 404);
     return saveReport(env, r, 'alumno', await readBody(req));
 }
@@ -1657,7 +1716,7 @@ async function postRoutineReport(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     return saveReport(env, r, 'coach', body);
@@ -1691,7 +1750,7 @@ async function postEdit(req, env, token) {
     await kvPut(env, editsKey(idx.routineId), agg);
 
     if (edit.edited_by === 'alumno') {
-        const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+        const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
         if (r) {
             r.edit_count = (r.edit_count || 0) + 1;
             r.unreviewed_count = (r.unreviewed_count || 0) + 1;
@@ -1787,8 +1846,15 @@ async function bindCoachCode(env, code, rec, shareToken) {
     if (!rec || !rec.coach_pack || rec.revoked || !/^[a-z0-9]{6,32}$/.test(shareToken || '')) return false;
     const idx = await kvGet(env, `token:${shareToken}`);
     if (!idx || closedAt(idx.until)) return false;
+    if (doData(env) && !env.__coach) {
+        // Llamado desde afuera del objeto del coach (al activar una licencia desde el link de
+        // un alumno): el registro del alumno se toca adentro de su objeto.
+        const out = await runInCoach(env, idx.coachId, 'bind', [code, rec, shareToken]);
+        if (out && out.rec) Object.assign(rec, out.rec);
+        return !!(out && out.ok);
+    }
     if (rec.routine_id && rec.routine_id !== idx.routineId) return false;
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    const r = await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     if (!r) return false;
     if (rec.routine_id !== idx.routineId) {
         rec.routine_id = idx.routineId; rec.coach_id = idx.coachId;
@@ -1842,12 +1908,22 @@ async function startTrial(req, env) {
     // tope por red (ver TRIAL_IP_MAX); la IP se guarda hasheada
     const ipKey = `trial-ip:${product}:${await ipHash(clientIp(req))}`;
     const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
-    if (ipRec.n >= TRIAL_IP_MAX) return err('Demasiadas pruebas gratuitas desde esta red. Si es un error, escribinos.', 429);
+    const tooMany = () => err('Demasiadas pruebas gratuitas desde esta red. Si es un error, escribinos.', 429);
     const days = TRIAL_DAYS[product] || 3;
     const iat = Date.now();
     const exp = iat + days * 86400000;
-    await kvPut(env, key, { issued_at: nowISO() });
-    await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TRIAL_IP_TTL });
+    if (doData(env)) {
+        // El tope por red vive en el objeto de contadores. El contador viejo de KV (vence solo
+        // a los 30 días) es el punto de partida la primera vez que aparece esa red.
+        const hit = await callNotifier(env, 'counters', { op: 'ctr-hit', key: 'tip:' + ipKey.slice(9), field: 'n', max: TRIAL_IP_MAX, ttl: TRIAL_IP_TTL, seed: ipRec.n });
+        if (hit && hit.ok) { if (!hit.allowed) return tooMany(); }
+        else console.error('[contadores] sin respuesta: la prueba sale sin contar la red', hit && hit.error);
+        await kvPut(env, key, { issued_at: nowISO() });
+    } else {
+        if (ipRec.n >= TRIAL_IP_MAX) return tooMany();
+        await kvPut(env, key, { issued_at: nowISO() });
+        await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TRIAL_IP_TTL });
+    }
     track(env, req, 'trial', product, { s: surfaceOf(body) });
     const token = await signLicense(secret, { product, tier: 'premium', deviceId, code: null, iat, exp, trial: true });
     return json({ ok: true, token, product, tier: 'premium', trial: true, days, expiresAt: new Date(exp).toISOString() });
@@ -1913,7 +1989,9 @@ async function adminCreateCodes(req, env) {
         codes.push(code);
     }
     let seats = null;
-    if (pool) {
+    if (pool && doData(env)) {
+        seats = await runInCoach(env, pool, 'seatsAdd', [codes]);   // el cupo vive en el objeto de ese coach
+    } else if (pool) {
         const cfg = (await kvGet(env, `coachcfg:${pool}`)) || {};
         cfg.seats = (Array.isArray(cfg.seats) ? cfg.seats : []).concat(codes.map((code) => ({ code })));
         await kvPut(env, `coachcfg:${pool}`, cfg);
@@ -2579,7 +2657,9 @@ async function sendPush(env, sub, payload, opts = {}) {
             headers['Content-Encoding'] = 'aes128gcm';
             headers['Content-Type'] = 'application/octet-stream';
         }
-        const resp = await fetch(sub.endpoint, { method: 'POST', headers, body });
+        // Con tope de tiempo: un servicio de avisos colgado no puede dejar esperando a quien llamó
+        // (el objeto del coach manda estos avisos con su fila tomada).
+        const resp = await fetch(sub.endpoint, { method: 'POST', headers, body, signal: AbortSignal.timeout(8000) });
         return resp.status;
     } catch { return 0; }
 }
@@ -2653,9 +2733,85 @@ function stripPush(r) {
 async function loadShareRoutine(env, token) {
     const idx = token ? await kvGet(env, `token:${token}`) : null;
     if (!idx) return null;
-    const r = await kvGet(env, routineKey(idx.coachId, idx.routineId));
+    // Desde otro objeto (la alarma del recordatorio): el registro se le pide al objeto del coach.
+    const r = doData(env) && !env.__coach
+        ? await runInCoach(env, idx.coachId, 'load', [idx.routineId])
+        : await kvGetRoutine(env, routineKey(idx.coachId, idx.routineId));
     return r ? { idx, r } : null;
 }
+// Lo que las alarmas de avisos leen y escriben del coach: en su objeto o, sin él, en KV.
+async function pruneStudentSubs(env, idx, r, dead) {
+    if (doData(env) && !env.__coach) return runInCoach(env, idx.coachId, 'prune', [idx.routineId, dead]);
+    r.push_subs = (r.push_subs || []).filter((s) => !dead.includes(s.endpoint));
+    return kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+}
+async function coachCfgOf(env, coachId) {
+    return doData(env) && !env.__coach ? runInCoach(env, coachId, 'cfg', []) : kvGet(env, `coachcfg:${coachId}`);
+}
+// Una página de alumnos para el resumen diario: cuántos tienen algo para revisar y sus nombres.
+async function digestPage(env, coachId, cursor, today) {
+    if (doData(env) && !env.__coach) return runInCoach(env, coachId, 'digestPage', [cursor || '', today, DIGEST_PAGE]);
+    const res = await env.BMOD_KV.list({ prefix: `routine:${coachId}:`, cursor: cursor || undefined, limit: DIGEST_PAGE });
+    const names = [];
+    let count = 0;
+    for (const k of res.keys) {
+        const r = await kvGet(env, k.name);
+        if (r && studentAlerts(r, today).length) { count++; names.push(r.alumno_name || '—'); }
+    }
+    return { count, names: names.slice(0, 3), next: res.list_complete ? null : res.cursor };
+}
+async function pruneDigestSubs(env, coachId, cfg, dead) {
+    if (doData(env) && !env.__coach) return runInCoach(env, coachId, 'digestPrune', [dead]);
+    cfg.digest.subs = cfg.digest.subs.filter((s) => !dead.includes(s.endpoint));
+    return kvPut(env, `coachcfg:${coachId}`, cfg);
+}
+// Funciones que corren adentro del objeto del coach (ver runInCoach). env ya es el del objeto.
+const COACH_FNS = {
+    async load(env, routineId) {
+        const r = await kvGetRoutine(env, routineKey(env.__coach.coachId, routineId));
+        if (!r) return null;
+        const o = Object.assign({}, r);
+        delete o.plan; delete o.vol_log; delete o.ex_first;   // las alarmas no lo usan
+        return o;
+    },
+    async prune(env, routineId, dead) {
+        const key = routineKey(env.__coach.coachId, routineId);
+        const r = await kvGetRoutine(env, key);
+        if (!r || !Array.isArray(dead) || !dead.length) return false;
+        const left = (r.push_subs || []).filter((s) => !dead.includes(s.endpoint));
+        if (left.length === (r.push_subs || []).length) return false;
+        r.push_subs = left;
+        await kvPut(env, key, r);
+        return true;
+    },
+    async bind(env, code, rec, shareToken) {
+        const ok = await bindCoachCode(env, code, rec, shareToken);
+        return { ok, rec };
+    },
+    async seatsAdd(env, codes) {
+        const key = `coachcfg:${env.__coach.coachId}`;
+        const cfg = (await kvGet(env, key)) || {};
+        cfg.seats = (Array.isArray(cfg.seats) ? cfg.seats : []).concat((codes || []).map((code) => ({ code })));
+        await kvPut(env, key, cfg);
+        return seatCounts(cfg);
+    },
+    async cfg(env) { return kvGet(env, `coachcfg:${env.__coach.coachId}`); },
+    async digestPage(env, cursor, today, limit) {
+        const pg = await env.__coach.listPage(cursor || '', Math.min(Number(limit) || DIGEST_PAGE, ROUTINES_LIST_MAX));
+        const names = [];
+        let count = 0;
+        for (const r of pg.items) if (studentAlerts(r, today).length) { count++; names.push(r.alumno_name || '—'); }
+        return { count, names: names.slice(0, 3), next: pg.next };
+    },
+    async digestPrune(env, dead) {
+        const key = `coachcfg:${env.__coach.coachId}`;
+        const cfg = await kvGet(env, key);
+        if (!cfg || !cfg.digest || !Array.isArray(dead)) return false;
+        cfg.digest.subs = (cfg.digest.subs || []).filter((s) => !dead.includes(s.endpoint));
+        await kvPut(env, key, cfg);
+        return true;
+    }
+};
 function chkNextAt(r, now) {
     if ((r.profile && r.profile.guest) || closedAt(r.access_end_at, now)) return null;
     const c = chkRemindOf(r);
@@ -2668,25 +2824,101 @@ function chkNextAt(r, now) {
 // chk:{token}   recordatorio semanal del control de un alumno
 // digest:{coach} resumen diario del coach
 // send:{id}     manda avisos con texto (cifrar acá: 30 s de CPU en vez de 10 ms)
+// coach:{coachId} todo lo de un coach y sus alumnos (ver coach-store.js)
+// counters      contadores pasajeros: cuota de IA, pruebas por red, "hoy ya entrené"
+//
+// La clase se llama Notifier por historia: es la única clase de Durable Object del Worker y
+// no se agregan otras a propósito, porque una vuelta atrás no puede cruzar un cambio de clases.
 export class Notifier {
-    constructor(ctx, env) { this.ctx = ctx; this.env = env; }
+    constructor(ctx, env) { this.ctx = ctx; this.env = env; this._q = Promise.resolve(); }
+    // Fila de espera del objeto: un pedido por vez, de punta a punta. Cubre también las
+    // esperas a KV y a otros servicios (ahí el objeto, solo, dejaría entrar otro pedido en
+    // el medio, entre leer y guardar).
+    lock(fn) {
+        const run = this._q.then(fn);
+        this._q = run.then(() => { }, () => { });
+        return run;
+    }
     async fetch(req) {
         let body = {};
         try { body = await req.json(); } catch { /* vacío */ }
-        const out = await notifierOp(this.ctx.storage, this.env, body, Date.now());
-        return new Response(JSON.stringify(out), { headers: { 'Content-Type': 'application/json' } });
+        const jsonResp = (o) => new Response(JSON.stringify(o), { headers: { 'Content-Type': 'application/json' } });
+        if (body && (body.op === 'c-http' || body.op === 'c-run')) {
+            let out;
+            try { out = await this.lock(() => coachOp(this.ctx.storage, this.env, body)); }
+            catch (e) {
+                console.error('[coach] pedido falló', body.op, body.path || body.fn, (e && e.message) || e);
+                if (body.op === 'c-run') return jsonResp({ ok: false, error: String((e && e.message) || e) });
+                return e instanceof PayloadTooLarge ? err('Payload too large', 413) : err('Internal error: ' + String(e && e.message), 500);
+            }
+            // Avisos a otros objetos (recordatorio, resumen): después de soltar la fila, así
+            // este objeto nunca espera a otro con la fila tomada.
+            for (const fx of out.after) { try { await fx(); } catch (e) { console.error('[coach] aviso posterior falló', (e && e.message) || e); } }
+            return body.op === 'c-run' ? jsonResp({ ok: true, result: out.result === undefined ? null : out.result }) : out.resp;
+        }
+        return jsonResp(await this.lock(() => notifierOp(this.ctx.storage, this.env, body, Date.now())));
     }
     async alarm() {
         // Sin throw: una alarma que falla se reintenta sola y podría mandar el aviso dos veces.
         // Pero tampoco se puede quedar callada: si falló antes de programar la próxima, se
         // reintenta más tarde (auditoría 2026-11, D-1).
-        try { await notifierAlarm(this.ctx.storage, this.env, Date.now()); }
-        catch (e) {
-            console.error('[notifier] alarma falló', (e && e.message) || e);
-            try { await notifierAlarmRetry(this.ctx.storage, Date.now()); } catch { /* sin más salida */ }
-        }
+        await this.lock(async () => {
+            try { await notifierAlarm(this.ctx.storage, this.env, Date.now()); }
+            catch (e) {
+                console.error('[notifier] alarma falló', (e && e.message) || e);
+                try { await notifierAlarmRetry(this.ctx.storage, Date.now()); } catch { /* sin más salida */ }
+            }
+            try { await objectUpkeep(this.ctx.storage, this.env, Date.now()); }
+            catch (e) { console.error('[notifier] mantenimiento falló', (e && e.message) || e); }
+        });
     }
 }
+// Un pedido del coach adentro de su objeto: 'c-http' es un pedido de la API tal cual llegó
+// al Worker; 'c-run' es una función suelta (COACH_FNS). Corre con la fila tomada. Si el
+// código tira un error, no se guarda nada de lo que escribió.
+async function coachOp(storage, env, b) {
+    const coachId = String(b.coachId || '');
+    if (!coachId) throw new Error('falta el coach');
+    const store = new CoachStore(storage, env, coachId, new Map(Array.isArray(b.pre) ? [b.pre] : []));
+    await store.open();
+    const cenv = Object.create(env);
+    cenv.BMOD_KV = coachKV(store);
+    cenv.__coach = store;
+    const out = { after: store.after };
+    if (b.op === 'c-run') {
+        const fn = Object.prototype.hasOwnProperty.call(COACH_FNS, b.fn) ? COACH_FNS[b.fn] : null;
+        if (!fn) throw new Error('función desconocida');
+        out.result = await fn(cenv, ...(Array.isArray(b.args) ? b.args : []));
+    } else {
+        const init = { method: b.method, headers: b.headers || {} };
+        if (typeof b.body === 'string' && b.method !== 'GET' && b.method !== 'HEAD') init.body = b.body;
+        const req = new Request('https://api.internal' + b.path + (b.search || ''), init);
+        out.resp = (await coachRoutes(req, cenv, new URL(req.url), b.path, b.method)) || err('Not found', 404);
+    }
+    await store.commit();
+    return out;
+}
+// Mantenimiento con la alarma del objeto: copias a KV que quedaron pendientes (objeto de un
+// coach) y limpieza de contadores vencidos (objeto 'counters').
+const COUNTER_PREFIXES = ['aiq:', 'tip:', 'tr:'];
+async function objectUpkeep(storage, env, now) {
+    const who = await storage.get(['coach', 'ctr']);
+    if (who.get('coach')) {
+        const store = new CoachStore(storage, env, who.get('coach'));
+        await store.open(now);
+    }
+    if (who.get('ctr')) {
+        for (const prefix of COUNTER_PREFIXES) {
+            const rows = await storage.list({ prefix, limit: 500 });
+            const dead = [...rows].filter((x) => !(x[1] && x[1].exp > now)).map((x) => x[0]);
+            for (let i = 0; i < dead.length; i += 100) await storage.delete(dead.slice(i, i + 100));
+        }
+        if (!(await storage.getAlarm())) await storage.setAlarm(now + 86400000);
+    }
+}
+// Lo que los pedidos del coach le avisan a otros objetos (recordatorio y resumen). Adentro
+// del objeto del coach no se llama en el momento: queda para después de soltar la fila.
+const DEFERRED_OPS = ['chk-set', 'digest-set', 'off'];
 // Reintento de una alarma que falló: 15 min, 30, 1 h, 2 h… hasta 6 h entre intentos, sin
 // rendirse. Solo si la falla fue ANTES de dejar programada la próxima (notifierAlarm la
 // programa apenas manda el aviso), así un error después de mandar no lo duplica. El fin del
@@ -2703,6 +2935,11 @@ async function notifierAlarmRetry(storage, now) {
 }
 async function callNotifier(env, name, body) {
     if (!env.NOTIFIER) return { ok: false, error: 'sin notifier' };
+    if (env.__coach && body && DEFERRED_OPS.includes(body.op)) {
+        const real = Object.getPrototypeOf(env);
+        env.__coach.after.push(() => callNotifier(real, name, body));
+        return { ok: true, next: body.at || null };
+    }
     try {
         const stub = env.NOTIFIER.get(env.NOTIFIER.idFromName(name));
         const resp = await stub.fetch('https://notifier/op', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -2731,9 +2968,62 @@ async function notifierOp(storage, env, b, now) {
             await storage.setAlarm(at);
             return { ok: true, next: at };
         }
+        // Igual que chk-sync y digest-sync, pero el horario ya viene calculado por quien
+        // acaba de guardar el dato (no hay que volver a leerlo).
+        case 'chk-set': {
+            const at = Number(b.at) || 0;
+            if (!(at > now)) { await storage.delete('job'); await storage.deleteAlarm(); return { ok: true, next: null }; }
+            await storage.put('job', { kind: 'chk', token: String(b.token) });
+            await storage.setAlarm(at);
+            return { ok: true, next: at };
+        }
+        case 'digest-set': {
+            const at = Number(b.at) || 0;
+            const coachId = String(b.coachId || '');
+            if (!(at > now) || !validPanelId(coachId)) { await storage.delete('job'); await storage.deleteAlarm(); return { ok: true, next: null }; }
+            await storage.put('job', { kind: 'digest', coachId });
+            await storage.setAlarm(at);
+            return { ok: true, next: at };
+        }
+        // ── Contadores pasajeros (un solo objeto: 'counters') ──
+        // Sumar uno si no se llegó al tope. Cuenta bien aunque lleguen muchos a la vez.
+        case 'ctr-hit': {
+            const key = String(b.key || ''), field = String(b.field || 'n');
+            const max = Number(b.max) || 0, ttl = Number(b.ttl) || 86400;
+            if (!COUNTER_PREFIXES.some((p) => key.startsWith(p)) || key.length > 200) return { ok: false, error: 'invalid' };
+            await counterInit(storage, now);
+            let rec = await storage.get(key);
+            if (rec && !(rec.exp > now)) rec = null;
+            const f = rec ? Object.assign({}, rec.f) : {};
+            const n = rec ? (Number(f[field]) || 0) : Math.max(0, Number(b.seed) || 0);   // seed: lo que había en el contador viejo de KV
+            if (n >= max) return { ok: true, allowed: false, n };
+            f[field] = n + 1;
+            await storage.put(key, { f, exp: rec ? rec.exp : now + ttl * 1000 });
+            return { ok: true, allowed: true, n: n + 1 };
+        }
+        // "Hoy ya entrené": una marca por suscripción, que vence sola.
+        case 'tr-set': {
+            const id = String(b.id || '');
+            if (!/^[a-f0-9]{16,64}$/.test(id) || typeof b.d !== 'string') return { ok: false, error: 'invalid' };
+            await counterInit(storage, now);
+            await storage.put('tr:' + id, { d: b.d.slice(0, 10), exp: now + (Number(b.ttl) || 3 * 86400) * 1000 });
+            return { ok: true };
+        }
+        case 'tr-list': {
+            const since = await counterInit(storage, now);
+            const marks = {};
+            let startAfter;
+            for (let page = 0; page < 5; page++) {   // hasta 5.000 marcas (el tope de suscripciones es 1.000)
+                const rows = [...(await storage.list(startAfter ? { prefix: 'tr:', limit: 1000, startAfter } : { prefix: 'tr:', limit: 1000 }))];
+                for (const [k, v] of rows) if (v && v.exp > now) marks[k.slice(3)] = v.d;
+                if (rows.length < 1000) break;
+                startAfter = rows[rows.length - 1][0];
+            }
+            return { ok: true, marks, since };
+        }
         case 'digest-sync': {
             const coachId = String(b.coachId || '');
-            const cfg = validPanelId(coachId) ? await kvGet(env, `coachcfg:${coachId}`) : null;
+            const cfg = validPanelId(coachId) ? await coachCfgOf(env, coachId) : null;
             const dg = cfg && cfg.digest;
             if (!dg || !dg.on || !(dg.subs || []).length) { await storage.delete('job'); await storage.deleteAlarm(); return { ok: true, next: null }; }
             const at = nextLocalTime(now, null, dg.hour, validTz(dg.tz) || DEFAULT_TZ);
@@ -2798,6 +3088,17 @@ async function notifierOp(storage, env, b, now) {
             return { ok: false, error: 'op' };
     }
 }
+// Primera vez que se usa el objeto de contadores: se anota desde cuándo (las marcas viejas de
+// KV se siguen mirando unos días) y se programa la limpieza diaria.
+async function counterInit(storage, now) {
+    let since = await storage.get('ctr');
+    if (!since) {
+        since = now;
+        await storage.put('ctr', since);
+        if (!(await storage.getAlarm())) await storage.setAlarm(now + 86400000);
+    }
+    return since;
+}
 const DIGEST_PAGE = 40;   // alumnos por corrida del resumen (list + 40 gets + avisos < 50 subrequests)
 async function notifierAlarm(storage, env, now) {
     const job = await storage.get('job');
@@ -2815,14 +3116,14 @@ async function notifierAlarm(storage, env, now) {
         const week = isoWeek(localParts(tz, new Date(now)).date);
         const done = !!r.last_checkin_at && isoWeek(localParts(tz, new Date(r.last_checkin_at)).date) === week;
         const paused = !!(r.profile && r.profile.status === 'pausado');
-        let sent = 0, dirty = false;
+        let sent = 0, dead = [];
         if (!done && !paused && (r.push_subs || []).length) {
             const lang = r.push_lang || 'es';
             const res = await pushMany(env, r.push_subs, { title: 'BERSERKERMOD', body: pushText(lang, 'chk', { coach: r.coach_name || pushText(lang, 'coach') }), tag: 'bm-coach-chk', url: './BERSERKERMOD.html?r=' + r.share_token }, { ttl: 43200 });
             sent = res.sent;
             if (res.dead.length) {
-                r.push_subs = r.push_subs.filter((s) => !res.dead.includes(s.endpoint));
-                dirty = true;
+                dead = res.dead;
+                r.push_subs = r.push_subs.filter((s) => !dead.includes(s.endpoint));   // para calcular la próxima alarma
             }
         }
         // Primero la próxima alarma (así, si después falla la limpieza, no se reintenta ni se duplica).
@@ -2831,24 +3132,20 @@ async function notifierAlarm(storage, env, now) {
             await storage.setAlarm(at);
             if (job.fails) await storage.put('job', { kind: 'chk', token: job.token });
         } else await storage.delete('job');
-        if (dirty) await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+        if (dead.length) await pruneStudentSubs(env, idx, r, dead);
         return { kind: 'chk', sent, skipped: done || paused, next: at };
     }
     if (job.kind === 'digest') {
-        const cfg = await kvGet(env, `coachcfg:${job.coachId}`);
+        const cfg = await coachCfgOf(env, job.coachId);
         const dg = cfg && cfg.digest;
         if (!dg || !dg.on || !(dg.subs || []).length) { await storage.delete('job'); return { kind: 'digest', off: true }; }
         const tz = validTz(dg.tz) || DEFAULT_TZ;
         const today = localParts(tz, new Date(now)).date;
-        const res = await env.BMOD_KV.list({ prefix: `routine:${job.coachId}:`, cursor: job.cursor || undefined, limit: DIGEST_PAGE });
-        const names = job.names || [];
-        let count = job.count || 0;
-        for (const k of res.keys) {
-            const r = await kvGet(env, k.name);
-            if (r && studentAlerts(r, today).length) { count++; if (names.length < 3) names.push(r.alumno_name || '—'); }
-        }
-        if (!res.list_complete) {   // más de 40 alumnos: sigue en 2 segundos con la página que viene
-            await storage.put('job', { kind: 'digest', coachId: job.coachId, cursor: res.cursor, names, count });
+        const pg = await digestPage(env, job.coachId, job.cursor, today);
+        const names = (job.names || []).concat(pg.names || []).slice(0, 3);
+        const count = (job.count || 0) + (pg.count || 0);
+        if (pg.next) {   // más de 40 alumnos: sigue en 2 segundos con la página que viene
+            await storage.put('job', { kind: 'digest', coachId: job.coachId, cursor: pg.next, names, count });
             await storage.setAlarm(now + 2000);
             return { kind: 'digest', partial: true };
         }
@@ -2863,7 +3160,7 @@ async function notifierAlarm(storage, env, now) {
         // Primero la próxima alarma (así, si después falla la limpieza, no se reintenta ni se duplica).
         await storage.put('job', { kind: 'digest', coachId: job.coachId });
         await storage.setAlarm(nextLocalTime(now, null, dg.hour, tz));
-        if (dead.length) { dg.subs = dg.subs.filter((s) => !dead.includes(s.endpoint)); await kvPut(env, `coachcfg:${job.coachId}`, cfg); }
+        if (dead.length) await pruneDigestSubs(env, job.coachId, cfg, dead);
         return { kind: 'digest', sent, count };
     }
     await storage.delete('job');
@@ -2911,7 +3208,9 @@ async function postSharePush(req, env, token) {
         r.push_tz = validTz(body.tz) || r.push_tz || null;
     }
     await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
-    const sync = await callNotifier(env, 'chk:' + token, { op: 'chk-sync', token });
+    // El horario se calcula acá, con el registro recién guardado (antes el objeto del aviso
+    // lo volvía a leer de KV, que puede devolver una copia vieja).
+    const sync = await callNotifier(env, 'chk:' + token, { op: 'chk-set', token, at: chkNextAt(r, Date.now()) });
     return json({ ok: true, on: r.push_subs.length > 0, next: (sync && sync.next) || null, chk_remind: chkRemindOf(r) });
 }
 // POST /api/routines/{id}/remind — el coach le recuerda el control al alumno ahora
@@ -2919,7 +3218,7 @@ async function remindRoutine(req, env, url, id) {
     const body = await readBody(req);
     const coachId = coachIdFrom(req, url, body);
     if (!coachId) return err('Missing coach_id', 401);
-    const r = await kvGet(env, routineKey(coachId, id));
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
     if (!r) return err('Not found', 404);
     if (r.coach_id !== coachId) return err('Forbidden', 403);
     if (closedAt(r.access_end_at)) return err('El acceso de este alumno ya terminó', 409);
@@ -2962,6 +3261,11 @@ async function pushTrained(req, env) {
     if (!endpoint || typeof endpoint !== 'string' || endpoint.length > 1024 || !pushHostAllowed(endpoint)) return err('Missing endpoint', 400);
     if (!validSessionDate(body.date)) return err('Fecha inválida', 400);
     const id = await sha256hex(endpoint);
+    if (doData(env)) {
+        const res = await callNotifier(env, 'counters', { op: 'tr-set', id, d: body.date, ttl: TRAINED_TTL });
+        if (!res || !res.ok) { console.error('[contadores] no se guardó "hoy ya entrené"', res && res.error); return err('No se pudo guardar. Probá de nuevo.', 503); }
+        return json({ ok: true });
+    }
     await env.BMOD_KV.put('pushtr:' + id, '1', { metadata: { d: body.date }, expirationTtl: TRAINED_TTL });
     return json({ ok: true });
 }
@@ -3198,12 +3502,30 @@ async function sendDueReminders(env, when = new Date()) {
 
     // Quién ya entrenó hoy: un solo list de las marcas (sin un get por suscripción).
     const trained = {};
-    let cursor;
-    do {
-        const res = await env.BMOD_KV.list({ prefix: 'pushtr:', cursor });
-        for (const k of res.keys) if (k.metadata && k.metadata.d) trained[k.name.slice(7)] = k.metadata.d;
-        cursor = res.list_complete ? undefined : res.cursor;
-    } while (cursor);
+    let legacyMarks = true;
+    if (doData(env)) {
+        // Las marcas viven en el objeto de contadores. Las de KV (de antes de este cambio) duran
+        // 3 días: se siguen mirando ese tiempo y después ya no se lista KV.
+        const res = await callNotifier(env, 'counters', { op: 'tr-list' });
+        if (res && res.ok) {
+            Object.assign(trained, res.marks || {});
+            legacyMarks = when.getTime() < (Number(res.since) || 0) + (TRAINED_TTL + 3600) * 1000;
+        } else {
+            console.error('[contadores] sin respuesta para "hoy ya entrené"', res && res.error);
+            // Se reintenta en la corrida que viene (el cron corre cada minuto). Sobre el final
+            // de la hora se manda igual: peor que un aviso de más es que no le llegue a nadie.
+            if (when.getUTCMinutes() < 50) return { sent: 0, due: due.length, note: 'contadores sin respuesta' };
+            legacyMarks = false;
+        }
+    }
+    if (legacyMarks) {
+        let cursor;
+        do {
+            const res = await env.BMOD_KV.list({ prefix: 'pushtr:', cursor });
+            for (const k of res.keys) if (k.metadata && k.metadata.d && !trained[k.name.slice(7)]) trained[k.name.slice(7)] = k.metadata.d;
+            cursor = res.list_complete ? undefined : res.cursor;
+        } while (cursor);
+    }
 
     let sent = 0, removed = 0, skipped = 0, failed = 0, tried = 0;
     const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
@@ -3255,7 +3577,7 @@ function track(env, req, e, n, extra) {
     if (!env.EVENTS || typeof env.EVENTS.writeDataPoint !== 'function') return;
     try {
         const ua = (req && req.headers.get('user-agent')) || '';
-        const country = (req && req.cf && req.cf.country) || '';
+        const country = (req && req.cf && req.cf.country) || (req && req.headers.get('x-bm-country')) || '';
         const server = !!(extra && extra.server);
         const os = server ? '' : /Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'ios' : 'otro';
         env.EVENTS.writeDataPoint({
@@ -3303,6 +3625,97 @@ async function adminStats(req, env, url) {
     return json({ ok: true, days, por_origen: porOrigen, por_dia: porDia, por_sistema: porSistema });
 }
 
+// ── Rutas del Coach ──
+// Las mismas de siempre. Con los datos en Durable Objects corren adentro del objeto del coach
+// (coachOp); sin ellos, acá mismo sobre KV. Devuelve null si ninguna coincide.
+async function coachRoutes(req, env, url, p, m) {
+    let mt;
+    if (p === '/api/routines' && m === 'POST') return await createRoutine(req, env, url);
+    if (p === '/api/routines' && m === 'GET') return await listRoutines(env, url);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'POST') return await assignSeat(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'DELETE') return await removeSeat(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'PUT') return await putReview(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'DELETE') return await deleteReview(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'DELETE') return await deleteRoutine(req, env, url, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos$/)) && m === 'POST') return await postVideo(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/terms$/)) && m === 'POST') return await postShareTerms(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/push$/)) && m === 'POST') return await postSharePush(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/leave$/)) && m === 'POST') return await postShareLeave(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/interest$/)) && m === 'POST') return await postShareInterest(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-auto$/)) && m === 'POST') return await postSharePremiumAuto(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
+    if (p === '/api/coach/config' && m === 'GET') return await getCoachConfig(env, url);
+    if (p === '/api/coach/config' && m === 'PUT') return await putCoachConfig(req, env, url);
+    if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
+    return null;
+}
+function coachRouteKind(p) {
+    if (p === '/api/routines' || p === '/api/coach/config' || /^\/api\/routines\/[a-f0-9-]+(\/|$)/.test(p)) return 'coach';
+    if (/^\/api\/shares\/[a-z0-9]+(\/|$)/.test(p)) return 'share';
+    return null;
+}
+// Le pasa el pedido al objeto del coach que corresponde. El coach sale del pedido (rutas del
+// coach) o del índice del link (rutas del alumno). Sin coach, la ruta responde acá mismo su
+// error de siempre (falta coach_id, link inexistente), sin tocar datos de ningún coach.
+const FORWARD_HEADERS = ['content-type', 'x-coach-id', 'user-agent', 'sec-ch-ua-mobile', 'sec-ch-ua-platform'];
+async function forwardToCoach(req, env, url, p, m, kind) {
+    let text = '';
+    if (m !== 'GET' && m !== 'HEAD') {
+        try { text = await req.text(); } catch { text = ''; }
+        if (text.length > MAX_BODY) throw new PayloadTooLarge();
+    }
+    let coachId = null, pre = null;
+    if (kind === 'coach') {
+        let body = null;
+        try { body = text ? JSON.parse(text) : null; } catch { body = null; }
+        // Igual que cada ruta: las GET leen coach_id de la dirección; el resto, header → body → dirección.
+        coachId = m === 'GET' ? url.searchParams.get('coach_id') : coachIdFrom(req, url, body);
+    } else {
+        const token = p.split('/')[3];
+        const raw = await env.BMOD_KV.get('token:' + token);
+        if (raw) {
+            try { coachId = JSON.parse(raw).coachId || null; pre = ['token:' + token, raw]; } catch { coachId = null; }
+        } else {
+            const mv = await kvGet(env, movedKey(token));   // link cambiado: el objeto del coach responde 410
+            if (mv && mv.coachId) coachId = mv.coachId;
+        }
+    }
+    if (!coachId || typeof coachId !== 'string') {
+        const again = new Request(req.url, { method: m, headers: req.headers, body: text || undefined });
+        return (await coachRoutes(again, env, url, p, m)) || err('Not found', 404);
+    }
+    const headers = {};
+    for (const h of FORWARD_HEADERS) { const v = req.headers.get(h); if (v) headers[h] = v; }
+    if (req.cf && req.cf.country) headers['x-bm-country'] = String(req.cf.country).slice(0, 2);
+    try {
+        const stub = env.NOTIFIER.get(env.NOTIFIER.idFromName('coach:' + coachId));
+        return await stub.fetch('https://notifier/op', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ op: 'c-http', coachId, method: m, path: p, search: url.search, headers, body: text, pre })
+        });
+    } catch (e) {
+        // Objeto sin responder (o tope diario de Durable Objects): la app lo toma como "sin conexión"
+        // y reintenta después (los entrenamientos del alumno quedan en cola).
+        console.error('[coach] objeto sin respuesta', p, (e && e.message) || e);
+        return err('Servicio ocupado. Probá de nuevo en un rato.', 503);
+    }
+}
+
 export default {
     async scheduled(controller, env, ctx) {
         ctx.waitUntil(sendDueReminders(env, new Date((controller && controller.scheduledTime) || Date.now())));
@@ -3312,7 +3725,6 @@ export default {
         const url = new URL(req.url);
         const p = url.pathname.replace(/\/+$/, '') || '/';
         const m = req.method;
-        let mt;
 
         // Tope de tamaño declarado (el real se mide en readBody) y rate limit por IP.
         const declared = parseInt(req.headers.get('content-length') || '0', 10) || 0;
@@ -3327,47 +3739,22 @@ export default {
         if (p === '/api/routines' && m === 'POST' && await rateLimited(env, 'RL_STRICT', 'r:' + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
+        // Con los datos del Coach en sus objetos, el Worker no toca esas keys de KV: si algo
+        // lo intenta, salta (en vez de leer una copia que puede estar vieja).
+        if (doData(env)) env = Object.assign(Object.create(env), { BMOD_KV: guardKV(env.BMOD_KV) });
 
         try {
             if (p === '/' || p === '/api/health') return json({ ok: true, service: 'berserkermod-api' });
 
             // Coach
-            if (p === '/api/routines' && m === 'POST') return await createRoutine(req, env, url);
-            if (p === '/api/routines' && m === 'GET') return await listRoutines(env, url);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'POST') return await assignSeat(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/premium$/)) && m === 'DELETE') return await removeSeat(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'PUT') return await putReview(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'DELETE') return await deleteReview(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'DELETE') return await deleteEval(req, env, url, mt[1], mt[2]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'GET') return await getRoutine(env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'PUT') return await updateRoutine(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)$/)) && m === 'DELETE') return await deleteRoutine(req, env, url, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/edits$/)) && m === 'POST') return await postEdit(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/sessions$/)) && m === 'POST') return await postShareSession(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/checkins$/)) && m === 'POST') return await postCheckin(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos$/)) && m === 'POST') return await postVideo(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/terms$/)) && m === 'POST') return await postShareTerms(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/push$/)) && m === 'POST') return await postSharePush(req, env, mt[1]);
+            // Coach: todo lo de un coach y sus alumnos se resuelve en el objeto de ese coach
+            const ckind = coachRouteKind(p);
+            if (ckind && doData(env)) return await forwardToCoach(req, env, url, p, m, ckind);
+            if (ckind) { const cr = await coachRoutes(req, env, url, p, m); if (cr) return cr; }
             if (p === '/api/push/rest' && m === 'POST') return await pushRest(req, env);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/report$/)) && m === 'POST') return await postShareReport(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/leave$/)) && m === 'POST') return await postShareLeave(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/interest$/)) && m === 'POST') return await postShareInterest(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-auto$/)) && m === 'POST') return await postSharePremiumAuto(req, env, mt[1]);
             if (p === '/api/transfer' && m === 'POST') return await postTransfer(req, env);
             if (p === '/api/transfer/claim' && m === 'POST') return await postTransferClaim(req, env);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'DELETE') return await deleteVideo(env, mt[1], mt[2]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/premium-claim$/)) && m === 'POST') return await claimSharePremium(req, env, mt[1]);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)\/intake$/)) && m === 'POST') return await postIntake(req, env, mt[1]);
             if (p === '/api/coach/bind' && m === 'POST') return await coachBind(req, env);
-            if (p === '/api/coach/config' && m === 'GET') return await getCoachConfig(env, url);
-            if (p === '/api/coach/config' && m === 'PUT') return await putCoachConfig(req, env, url);
-            if ((mt = p.match(/^\/api\/shares\/([a-z0-9]+)$/)) && m === 'GET') return await getShare(env, mt[1]);
 
             // Licencias
             if (p === '/api/license/activate' && m === 'POST') return await activateLicense(req, env);

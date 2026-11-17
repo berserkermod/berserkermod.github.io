@@ -29,7 +29,7 @@ export default [
                 crypto: 'readonly', fetch: 'readonly', Response: 'readonly', Request: 'readonly',
                 URL: 'readonly', URLSearchParams: 'readonly', btoa: 'readonly', atob: 'readonly',
                 Blob: 'readonly', TextEncoder: 'readonly', TextDecoder: 'readonly', console: 'readonly',
-                setTimeout: 'readonly', Date: 'readonly'
+                setTimeout: 'readonly', Date: 'readonly', AbortSignal: 'readonly'
             }
         },
         rules: {
