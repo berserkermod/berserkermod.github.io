@@ -14,6 +14,11 @@ on:
   schedule:
     - cron: '7,37 * * * *'
   workflow_dispatch:
+  # También corre cuando cambia este archivo: así cada ajuste del vigía se prueba en el
+  # momento (y la primera corrida no depende de que GitHub arranque el horario).
+  push:
+    branches: [main]
+    paths: ['.github/workflows/vigia.yml']
 
 permissions:
   contents: read
