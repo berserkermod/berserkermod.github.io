@@ -1,201 +1,129 @@
-# BERSERKERMOD API — Deploy del Worker (Cloudflare)
+# BERSERKERMOD API — Worker de Cloudflare
 
-Backend único de producción. Reemplaza a `serve.ps1` (que solo corría en tu
-máquina). Maneja:
+Backend único de producción (`berserkermod-api`, cuenta de BerserkerMOD). Maneja:
 
-- **Modo Coach**: crear rutinas, compartir por link/token, recibir ediciones del
-  alumno, marcarlas como revisadas (antes muerto en prod).
-- **Licencias**: códigos de activación (`BMOD-XXXX-XXXX`) + Mercado Pago.
-- **Oracle**: proxy a Anthropic con la API key del usuario (nunca se loguea).
-- **Errores**: ingest de los errores que captura la app (Fase 0).
+- **Licencias**: códigos `BMOD-XXXX-XXXX`, pruebas gratis, Mercado Pago (checkout +
+  webhook) y Google Play Billing (suscripciones dentro de la app de Play).
+- **Modo Coach**: rutinas, links de alumnos, entrenamientos, controles, videos,
+  evaluaciones, Premium del coach, huéspedes. Los datos de cada coach viven en su
+  **Durable Object** (`coach:{id}`), con copia a KV mientras `KV_MIRROR = "on"`.
+- **Avisos**: recordatorio diario (cron cada minuto, objeto `pushsubs`), fin del
+  descanso, recordatorio del control y resumen del coach (Durable Objects con alarma).
+- **IA** (Workers AI, gratis): Oracle, importar rutina desde PDF, fotos de comida, con
+  cuota diaria por licencia.
+- **Vigía**: registros del Worker, `/api/health/deep` y la tarea de GitHub
+  `.github/workflows/vigia.yml` (mail si algo falla).
 
-Todo el código fue testeado localmente: `npm test` → **43/43**.
-
----
-
-## 0. Requisitos (ya los tenés)
-
-- Node ≥ 20 y `npx` (tenés Node 24 ✓).
-- Cuenta de Cloudflare (ya creada ✓).
-
-Desde la carpeta `worker/`:
-
-```bash
-cd worker
-npm install        # baja wrangler local (opcional; podés usar npx)
-```
+Tests: `npm test` (desde esta carpeta) corre las tres tandas del Worker: datos en KV,
+datos en Durable Objects y la tanda específica del Coach.
 
 ---
 
-## 1. Login en Cloudflare
+## Publicar (cada vez)
+
+Siempre **el Worker primero y después la app** (push a GitHub Pages).
 
 ```bash
-npx wrangler login
+cd deploy/worker
+npm run ensayo     # hace todo menos publicar: para ver que el camino está limpio
+npm run deploy     # lo mismo y publica (pide escribir SI)
 ```
 
-Se abre el navegador, autorizás, y wrangler queda logueado en tu cuenta.
+`publicar.mjs` hace, en orden, y frena ante cualquier problema:
 
-## 2. Crear el KV namespace
+1. Que el código esté guardado en git (sin cambios sueltos en `worker/`).
+2. Las tres tandas de tests.
+3. Que wrangler esté en la cuenta de BerserkerMOD (`0a8cc9f61d77cd06dd7fb75d825e3aa1`).
+4. Copia de seguridad cifrada de KV y prueba de restauración (carpeta `copias-kv`,
+   al lado de `deploy`, **fuera del repo**).
+5. Anota la versión publicada (para volver atrás) y los nombres de las claves secretas.
+6. Ensayo de armado. 7. Publica. 8. Compara las claves, prueba rutas sin tocar datos
+   y escucha los registros ~75 s (incluye una corrida del cron).
+9. Deja una línea en `.publicaciones.log` (no va a git) y el comando para volver atrás.
+
+La versión de wrangler está fija (`wrangler@4.164.0`) para que una versión nueva de
+la herramienta no cambie nada sin aviso.
+
+Después: revisar que no se suban claves (`git diff`), `git push`, y mirar el CI.
+
+## Volver atrás
 
 ```bash
-npx wrangler kv namespace create BMOD_KV
+npx wrangler@4.164.0 rollback <id-de-la-versión-anterior>   # el script lo imprime
 ```
 
-Devuelve algo como:
+- Con `KV_MIRROR = "on"` KV tiene todo al día: el Worker anterior funciona.
+- Si después se vuelve a publicar el Worker nuevo, **subir `DATA_EPOCH`** (2, 3…): cada
+  objeto descarta lo suyo y vuelve a traer todo de KV.
+- No se puede volver atrás cruzando un cambio de clases de Durable Objects (por eso no
+  hay clases nuevas: todo usa `Notifier` con nombres de objeto distintos).
 
-```
-[[kv_namespaces]]
-binding = "BMOD_KV"
-id = "a1b2c3d4e5f6...."
-```
+## Variables importantes (`wrangler.toml`)
 
-Copiá ese **id** y pegalo en `wrangler.toml` reemplazando los dos
-`REEMPLAZAR_CON_EL_ID_DE_KV` (en `id` y en `preview_id`).
+| Variable | Qué hace |
+|----------|----------|
+| `DO_DATA` | `"on"`: datos del Coach, contadores y suscripciones en Durable Objects. `"off"`: todo en KV, como antes. |
+| `KV_MIRROR` | `"on"`: cada cambio se copia a KV (vuelta atrás posible). Apagarlo es sin vuelta atrás: solo con OK del dueño, tras dos semanas sin errores, con copia de KV **y de los Durable Objects** de ese día. |
+| `DATA_EPOCH` | Subirlo solo al republicar este Worker después de una vuelta atrás. |
+| `TESTERS_CLAIM_OPEN` / `_MAX` | Premium para testers de la prueba cerrada de Play. |
+| `*_PRICE_ARS_*` | Precios de Mercado Pago (en `"0"`, el plan desaparece). |
 
-## 3. Cargar los secrets
+Claves secretas (solo en Cloudflare, nunca en el repo): `LICENSE_SECRET` (firma las
+licencias: si se pierde o cambia, todas dejan de valer; hay una copia fuera del repo),
+`ADMIN_SECRET`, `MP_ACCESS_TOKEN`, `PLAY_SA_JSON`, `VAPID_PRIVATE_JWK`.
+Se cargan con `npx wrangler@4.164.0 secret put NOMBRE`.
+
+## Vigía y registros
+
+- `GET /api/health/deep`: 200 si KV y los Durable Objects responden y KV no llegó a su
+  tope en la última hora; 503 con el detalle si no.
+- Registros: panel de Cloudflare → Workers → berserkermod-api → Logs (3 días).
+- En vivo: `npx wrangler@4.164.0 tail berserkermod-api`.
+
+## Operación
 
 ```bash
-# Secreto para firmar las licencias (HMAC). Inventá una cadena larga y random.
-# Generá una con: node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"
-npx wrangler secret put LICENSE_SECRET
-
-# Secreto para el panel admin (generar/listar códigos y ver errores).
-npx wrangler secret put ADMIN_SECRET
-
-# (Opcional, cuando conectes Mercado Pago) Access Token de tu cuenta MP.
-npx wrangler secret put MP_ACCESS_TOKEN
+# errores que reportó la app
+curl https://berserkermod-api.berserkermod.workers.dev/api/admin/errors -H "x-admin-secret: …"
 ```
 
-> 🆓 **"Importar rutina desde PDF" NO necesita ningún secret.** Corre sobre
-> **Cloudflare Workers AI** (el binding `[ai]` ya está en `wrangler.toml`):
-> `env.AI.toMarkdown()` lee el PDF y un modelo Llama lo estructura. Es **gratis**
-> dentro del tier de Workers AI (10.000 neuronas/día, se reinician a las 00:00
-> UTC) — sin API key ni cuenta de terceros. Lo único: la primera vez puede que
-> Cloudflare te pida **activar Workers AI** en el dashboard (Dashboard → AI →
-> Workers AI). Si el binding `AI` no está, el importador devuelve 503.
+Los testers se ven con `marketing/ver-testers.cmd` (fuera del repo).
 
-> ⚠️ Guardá `LICENSE_SECRET` en un lugar seguro. Si lo cambiás, **todas las
-> licencias ya emitidas dejan de validar** (los usuarios tendrían que reactivar).
-
-## 4. Deploy
+**Anular una licencia a mano** (fraude): en la próxima revalidación (≤ 7 días) la app
+baja al usuario a la versión gratis. Ojo: en wrangler 4 los comandos de KV van al KV
+LOCAL salvo que se pida `--remote`.
 
 ```bash
-npx wrangler deploy
+npx wrangler@4.164.0 kv key get "code:BMOD-XXXX-XXXX" --binding BMOD_KV --remote
+# copiar el JSON, agregarle "revoked": true y volver a guardarlo:
+npx wrangler@4.164.0 kv key put "code:BMOD-XXXX-XXXX" '{…,"revoked":true}' --binding BMOD_KV --remote
 ```
 
-Al terminar imprime la URL del Worker, p.ej.:
+Las devoluciones y contracargos de Mercado Pago anulan el código solos (webhook), y
+los reembolsos de Google Play se detectan en la revisión semanal.
 
-```
-https://berserkermod-api.TU-SUBDOMINIO.workers.dev
-```
+## Mercado Pago
 
-**Copiá esa URL.**
+El checkout lo arma el Worker (`POST /api/checkout`): precio del servidor,
+`external_reference = "{coach|premium}_{1|3|6|12}m"` (+ `.{número}` si viene de la app)
+y `notification_url` al webhook. El webhook solo acepta pagos de la app (referencia,
+monto y moneda), no devuelve el código en la respuesta y responde 500 si algo falla
+de nuestro lado para que Mercado Pago reintente.
 
-## 5. Conectar la app con el Worker
+## Primera instalación (histórico, ya hecho)
 
-Dos opciones (elegí una):
-
-**A) Editar el HTML (definitivo, para todos los usuarios)**
-En `BERSERKERMOD.html` buscá `WORKER_API_BASE_DEFAULT` y reemplazá el
-placeholder por tu URL:
-
-```js
-const WORKER_API_BASE_DEFAULT = 'https://berserkermod-api.TU-SUBDOMINIO.workers.dev';
-```
-
-Después redeployá el HTML a GitHub Pages (copiar a `deploy/`, commit, push).
-La TWA toma la URL viva, así que no hay que resubir el AAB.
-
-**B) Probar rápido sin tocar código (solo tu dispositivo)**
-En la consola del navegador:
-
-```js
-localStorage.setItem('bm-api-base', 'https://berserkermod-api.TU-SUBDOMINIO.workers.dev');
-location.reload();
-```
-
-> Hasta que configures la URL, la app degrada con elegancia: el Coach, el Oracle
-> y la activación de códigos muestran "no se pudo conectar" en vez de romperse.
-
----
-
-## 6. Probar que anda
-
-```bash
-# ping
-curl https://berserkermod-api.TU-SUBDOMINIO.workers.dev/api/health
-# → {"ok":true,"service":"berserkermod-api"}
-
-# generar 3 códigos Coach (usá tu ADMIN_SECRET)
-curl -X POST https://berserkermod-api.TU-SUBDOMINIO.workers.dev/api/admin/codes \
-  -H "x-admin-secret: TU_ADMIN_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"count":3,"product":"coach"}'
-# → {"ok":true,"product":"coach","codes":["BMOD-XXXX-XXXX", ...]}
-```
-
-Esos códigos los podés activar en la app (Perfil → Activar código) para validar
-el flujo completo end-to-end.
-
----
-
-## 7. Mercado Pago (cuando quieras automatizar la venta)
-
-1. En tu panel de Mercado Pago → **Tus integraciones** → creá una aplicación.
-2. Copiá el **Access Token** de producción → `npx wrangler secret put MP_ACCESS_TOKEN`.
-3. En la preferencia de pago (checkout) configurá:
-   - `external_reference`: `"coach"` o `"premium"` (define qué desbloquea el código).
-   - `notification_url`: `https://berserkermod-api.TU-SUBDOMINIO.workers.dev/api/webhook/mercadopago`
-   - `back_urls.success`: la URL de la app, p.ej.
-     `https://berserkermod.github.io/BERSERKERMOD.html`
-     (Mercado Pago le agrega `?payment_id=...&status=approved` al volver, y la
-     app recupera el código y lo activa sola.)
-4. Flujo automático: pago aprobado → MP llama al webhook → el Worker genera un
-   código y lo guarda contra el `payment_id` → la app, al volver del redirect, lo
-   recupera (`/api/license/retrieve`) y activa Premium sin intervención tuya.
-
-> Probalo primero en el **sandbox** de Mercado Pago (credenciales de prueba)
-> antes de pasar a producción.
-
----
-
-## 8. Operación
-
-```bash
-# ver errores reportados por la app
-curl https://berserkermod-api.TU-SUBDOMINIO.workers.dev/api/admin/errors \
-  -H "x-admin-secret: TU_ADMIN_SECRET"
-
-# logs en vivo del Worker
-npx wrangler tail
-```
-
-### Revocar una licencia (anti-fraude)
-Marcá el código como revocado en KV; en la próxima revalidación (≤7 días) la app
-baja al usuario a free:
-
-```bash
-npx wrangler kv key put --binding BMOD_KV "code:BMOD-XXXX-XXXX" \
-  '{"product":"coach","used":true,"revoked":true}'
-```
-
----
+`wrangler login` → crear el KV `BMOD_KV` (id en `wrangler.toml`) → cargar las claves
+secretas → `wrangler deploy` → la URL del Worker quedó en `WORKER_API_BASE_DEFAULT` del
+HTML.
 
 ## Notas de diseño
 
-- **Licencias**: token tipo JWT-lite firmado con HMAC-SHA256. El cliente lee el
-  payload (para UX offline) pero **no puede forjarlo**. Revalida online cada 7
-  días; offline mantiene el acceso (gracia generosa: un usuario que pagó nunca
-  queda afuera sin internet).
-- **Cambio de teléfono**: un código se "mueve" al último dispositivo
-  (last-device-wins), con tope de 10 movimientos para frenar que circule entre
-  muchas personas. Así el upgrade de teléfono no bloquea a nadie.
-- **Trials**: 7 días Coach / 3 días Premium, atados al `deviceId` para que
-  reinstalar no resetee la prueba.
-- **Sync de salud**: `/api/health-data` viene **apagado** (`ENABLE_HEALTH_SYNC=false`)
-  a propósito — los datos de salud se quedan en el dispositivo (privacidad). Si
-  algún día querés sync server-side, poné la var en `true` y actualizá la
-  política de privacidad / Data Safety de Play.
-- **Sin secretos en el repo**: `LICENSE_SECRET`, `ADMIN_SECRET` y
-  `MP_ACCESS_TOKEN` viven solo en Cloudflare. `.dev.vars` (valores de prueba
-  local) está en `.gitignore`.
+- **Licencias**: token firmado con HMAC-SHA256. El cliente lee el contenido (para usar
+  la app sin internet) pero no puede falsificarlo. Revalida online cada 7 días; sin
+  internet mantiene el acceso.
+- **Cambio de teléfono**: un código pasa al último teléfono, con tope de 10 cambios.
+  Una compra de Google Play sirve en 2 teléfonos a la vez, con tope de 10 cambios.
+- **Pruebas gratis**: atadas al teléfono y con tope por red.
+- **Datos de salud**: `/api/health-data` está apagado (`ENABLE_HEALTH_SYNC=false`) a
+  propósito: se quedan en el teléfono.
+- **Sin secretos en el repo**: `.dev.vars` y las claves locales están en `.gitignore`.

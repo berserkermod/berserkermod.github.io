@@ -5,11 +5,12 @@
   "description": "BERSERKERMOD production API — licenses, coach backend, Oracle proxy, error ingest (Cloudflare Worker)",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "npx --yes wrangler@4.164.0 dev",
+    "deploy": "node publicar.mjs",
+    "ensayo": "node publicar.mjs --ensayo",
     "test": "node test/worker.test.mjs && node test/worker.test.mjs --do && node test/coach-data.test.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "4.164.0"
   }
 }
