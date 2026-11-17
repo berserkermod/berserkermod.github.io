@@ -1,0 +1,33 @@
+{
+  "version": "2-33",
+  "files": {
+    "core/calc.js": "976f66f996561234",
+    "core/i18n-data.js": "52021d40c84af771",
+    "fonts/inter-latin-ext.woff2": "34b9c504cab7a73e",
+    "fonts/inter-latin.woff2": "3100e775e8616cd2",
+    "icon-192.png": "483783ab174fdbcd",
+    "icon-512.png": "eb0721f167c1f15e",
+    "icon-maskable.png": "4760d97026657897",
+    "img/landing/coach.webp": "07822ab7e8baf314",
+    "img/landing/en/coach.webp": "5b7bc72f157867b9",
+    "img/landing/en/entreno.webp": "1850a615cabc6277",
+    "img/landing/en/inicio.webp": "3b3cf62b4358fc0b",
+    "img/landing/en/mapa.webp": "96889decb8336aeb",
+    "img/landing/en/nutricion.webp": "a3d09b74ca671479",
+    "img/landing/en/progresion.webp": "d07801a271bd88c1",
+    "img/landing/entreno.webp": "496b239e6559c251",
+    "img/landing/inicio.webp": "91de5eb3ca24770a",
+    "img/landing/mapa.webp": "4027ea563e759712",
+    "img/landing/nutricion.webp": "9c8889d2b35b90c3",
+    "img/landing/progresion.webp": "d830615d2cba99c7",
+    "img/landing/pt/coach.webp": "129cdf9e80916f7f",
+    "img/landing/pt/entreno.webp": "f6f32e2bb7ce9e40",
+    "img/landing/pt/inicio.webp": "9380719b43eb6c3d",
+    "img/landing/pt/mapa.webp": "bcd5a270c1d0074f",
+    "img/landing/pt/nutricion.webp": "804c2d3ba6aae24b",
+    "img/landing/pt/progresion.webp": "94809a4255800ca7",
+    "manifest.json": "89bee8d3bb62ab86",
+    "pdfjs/pdf.min.js": "978fd1b2d134a98e",
+    "pdfjs/pdf.worker.min.js": "38cde5311957b86b"
+  }
+}

@@ -2275,8 +2275,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-32"></script>
-    <script src="core/i18n-data.js?v=2-32"></script>
+    <script src="core/calc.js?v=2-33"></script>
+    <script src="core/i18n-data.js?v=2-33"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2444,7 +2444,7 @@
                 prog_recommend_free: "💡 ¡Subí el peso! Llevás {days} días con el mismo estímulo. Probá con {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueá todas las funciones del entrenador más inteligente.",
-                upgrade_cancel: "Ahora no", upgrade_coach_sub_app: "El modo Coach es parte del plan Coach. Si ya tenés tu código de Coach, activalo acá.", buy_plans_title: "Elegí tu plan", buy_per_month: "{price}/mes", buy_mp_btn: "Pagar con Mercado Pago", buy_mp_note: "Pago único por el período elegido, sin renovación automática. Tus datos nunca se borran.", buy_leave_title: "Vas a salir de la app", buy_leave_body: "Te llevamos a Mercado Pago para pagar {plan} ({price}). Cuando termines, volvés a BERSERKERMOD y se activa solo.", buy_leave_go: "Ir a Mercado Pago", buy_back: "Volver", buy_opening: "Abriendo Mercado Pago…", buy_err: "No se pudo abrir el pago. Probá de nuevo.", buy_prices_err: "No pudimos cargar los precios. Revisá tu conexión.", buy_have_code: "Tengo un código", buy_pending: "Tu pago está en proceso. Cuando se acredite, se activa solo al abrir la app.", buy_failed: "El pago no se completó. Podés intentarlo de nuevo cuando quieras.", buy_done_coach: "¡Modo Coach activado!", buy_ready_title: "Tu compra está lista", buy_code_keep: "Este es tu código de compra. Guardalo: te sirve si cambiás de teléfono.", buy_code_manual: "Activala con este código en Perfil → Activar código:", buy_back_app: "¿Pagaste desde la app instalada? Volvé a abrirla: se activa sola.", buy_copy: "Copiar código", buy_copied: "Código copiado", upgrade_coach_sub: "El modo Coach es parte del plan Coach: elegí tu plan o activá tu código de Coach.",
+                upgrade_cancel: "Ahora no", upgrade_coach_sub_app: "El modo Coach es parte del plan Coach. Si ya tenés tu código de Coach, activalo acá.", buy_plans_title: "Elegí tu plan", buy_per_month: "{price}/mes", buy_mp_btn: "Pagar con Mercado Pago", buy_mp_note: "Pago único por el período elegido, sin renovación automática. Tus datos nunca se borran.", buy_leave_title: "Vas a salir de la app", buy_leave_body: "Te llevamos a Mercado Pago para pagar {plan} ({price}). Cuando termines, volvés a BERSERKERMOD y se activa solo.", buy_leave_go: "Ir a Mercado Pago", buy_back: "Volver", buy_opening: "Abriendo Mercado Pago…", buy_err: "No se pudo abrir el pago. Probá de nuevo.", buy_prices_err: "No pudimos cargar los precios. Revisá tu conexión.", buy_have_code: "Tengo un código", buy_pending: "Tu pago está en proceso. Cuando se acredite, se activa solo al abrir la app.", buy_failed: "El pago no se completó. Podés intentarlo de nuevo cuando quieras.", buy_done_coach: "¡Modo Coach activado!", buy_ready_title: "Tu compra está lista", buy_code_keep: "Este es tu código de compra. Guardalo: te sirve si cambiás de teléfono.", buy_code_manual: "Activala con este código en Perfil → Activar código:", buy_back_app: "¿Pagaste desde la app instalada? Volvé a abrirla: se activa sola.", buy_copy: "Copiar código", buy_copied: "Código copiado", upd_ready: "Hay una versión nueva de la app.", upd_btn: "Actualizar", upgrade_coach_sub: "El modo Coach es parte del plan Coach: elegí tu plan o activá tu código de Coach.",
                 upgrade_feat_routines: "Rutinas ilimitadas", upgrade_feat_routines_d: "Creá tantas rutinas personalizadas como quieras",
                 upgrade_feat_stats: "Estadísticas completas", upgrade_feat_stats_d: "Mensual, trimestral y anual",
                 upgrade_feat_lang: "Todos los idiomas", upgrade_feat_lang_d: "Español, English y Português",
@@ -2886,7 +2886,7 @@
                 prog_recommend_free: "💡 Increase the weight! You've had the same stimulus for {days} days. Try {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Unlock all features of the smartest trainer.",
-                upgrade_cancel: "Not now", upgrade_coach_sub_app: "Coach mode is part of the Coach plan. If you already have your Coach code, activate it here.", buy_plans_title: "Choose your plan", buy_per_month: "{price}/mo", buy_mp_btn: "Pay with Mercado Pago", buy_mp_note: "One-time payment for the chosen period, no auto-renewal. Your data is never deleted.", buy_leave_title: "You're leaving the app", buy_leave_body: "We'll take you to Mercado Pago to pay for {plan} ({price}). When you're done, come back to BERSERKERMOD and it activates on its own.", buy_leave_go: "Go to Mercado Pago", buy_back: "Back", buy_opening: "Opening Mercado Pago…", buy_err: "Couldn't open the payment. Try again.", buy_prices_err: "We couldn't load the prices. Check your connection.", buy_have_code: "I have a code", buy_pending: "Your payment is being processed. Once it clears, it activates on its own when you open the app.", buy_failed: "The payment wasn't completed. You can try again anytime.", buy_done_coach: "Coach mode activated!", buy_ready_title: "Your purchase is ready", buy_code_keep: "This is your purchase code. Keep it: you'll need it if you change phones.", buy_code_manual: "Activate it with this code in Profile → Activate code:", buy_back_app: "Paid from the installed app? Open it again: it activates on its own.", buy_copy: "Copy code", buy_copied: "Code copied", upgrade_coach_sub: "Coach mode is part of the Coach plan: choose your plan or activate your Coach code.",
+                upgrade_cancel: "Not now", upgrade_coach_sub_app: "Coach mode is part of the Coach plan. If you already have your Coach code, activate it here.", buy_plans_title: "Choose your plan", buy_per_month: "{price}/mo", buy_mp_btn: "Pay with Mercado Pago", buy_mp_note: "One-time payment for the chosen period, no auto-renewal. Your data is never deleted.", buy_leave_title: "You're leaving the app", buy_leave_body: "We'll take you to Mercado Pago to pay for {plan} ({price}). When you're done, come back to BERSERKERMOD and it activates on its own.", buy_leave_go: "Go to Mercado Pago", buy_back: "Back", buy_opening: "Opening Mercado Pago…", buy_err: "Couldn't open the payment. Try again.", buy_prices_err: "We couldn't load the prices. Check your connection.", buy_have_code: "I have a code", buy_pending: "Your payment is being processed. Once it clears, it activates on its own when you open the app.", buy_failed: "The payment wasn't completed. You can try again anytime.", buy_done_coach: "Coach mode activated!", buy_ready_title: "Your purchase is ready", buy_code_keep: "This is your purchase code. Keep it: you'll need it if you change phones.", buy_code_manual: "Activate it with this code in Profile → Activate code:", buy_back_app: "Paid from the installed app? Open it again: it activates on its own.", buy_copy: "Copy code", buy_copied: "Code copied", upd_ready: "A new version of the app is available.", upd_btn: "Update", upgrade_coach_sub: "Coach mode is part of the Coach plan: choose your plan or activate your Coach code.",
                 upgrade_feat_routines: "Unlimited routines", upgrade_feat_routines_d: "Create as many custom routines as you want",
                 upgrade_feat_stats: "Full statistics", upgrade_feat_stats_d: "Monthly, quarterly and yearly",
                 upgrade_feat_lang: "All languages", upgrade_feat_lang_d: "Español, English & Português",
@@ -3329,7 +3329,7 @@
                 prog_recommend_free: "💡 Aumente o peso! Você tem o mesmo estímulo há {days} dias. Tente {newKg}{unit} (+{pct}%).",
                 tier_free: "FREE", tier_premium: "PREMIUM",
                 upgrade_title: "BERSERKER PREMIUM", upgrade_sub: "Desbloqueie todas as funções do treinador mais inteligente.",
-                upgrade_cancel: "Agora não", upgrade_coach_sub_app: "O modo Coach faz parte do plano Coach. Se você já tem seu código de Coach, ative aqui.", buy_plans_title: "Escolha seu plano", buy_per_month: "{price}/mês", buy_mp_btn: "Pagar com Mercado Pago", buy_mp_note: "Pagamento único pelo período escolhido, sem renovação automática. Seus dados nunca são apagados.", buy_leave_title: "Você vai sair do app", buy_leave_body: "Vamos te levar ao Mercado Pago para pagar {plan} ({price}). Quando terminar, volte ao BERSERKERMOD e ele é ativado sozinho.", buy_leave_go: "Ir ao Mercado Pago", buy_back: "Voltar", buy_opening: "Abrindo o Mercado Pago…", buy_err: "Não foi possível abrir o pagamento. Tente de novo.", buy_prices_err: "Não conseguimos carregar os preços. Verifique sua conexão.", buy_have_code: "Tenho um código", buy_pending: "Seu pagamento está em processamento. Quando for creditado, é ativado sozinho ao abrir o app.", buy_failed: "O pagamento não foi concluído. Você pode tentar de novo quando quiser.", buy_done_coach: "Modo Coach ativado!", buy_ready_title: "Sua compra está pronta", buy_code_keep: "Este é o seu código de compra. Guarde: serve se você trocar de celular.", buy_code_manual: "Ative com este código em Perfil → Ativar código:", buy_back_app: "Pagou pelo app instalado? Abra de novo: ele é ativado sozinho.", buy_copy: "Copiar código", buy_copied: "Código copiado", upgrade_coach_sub: "O modo Coach faz parte do plano Coach: escolha seu plano ou ative seu código de Coach.",
+                upgrade_cancel: "Agora não", upgrade_coach_sub_app: "O modo Coach faz parte do plano Coach. Se você já tem seu código de Coach, ative aqui.", buy_plans_title: "Escolha seu plano", buy_per_month: "{price}/mês", buy_mp_btn: "Pagar com Mercado Pago", buy_mp_note: "Pagamento único pelo período escolhido, sem renovação automática. Seus dados nunca são apagados.", buy_leave_title: "Você vai sair do app", buy_leave_body: "Vamos te levar ao Mercado Pago para pagar {plan} ({price}). Quando terminar, volte ao BERSERKERMOD e ele é ativado sozinho.", buy_leave_go: "Ir ao Mercado Pago", buy_back: "Voltar", buy_opening: "Abrindo o Mercado Pago…", buy_err: "Não foi possível abrir o pagamento. Tente de novo.", buy_prices_err: "Não conseguimos carregar os preços. Verifique sua conexão.", buy_have_code: "Tenho um código", buy_pending: "Seu pagamento está em processamento. Quando for creditado, é ativado sozinho ao abrir o app.", buy_failed: "O pagamento não foi concluído. Você pode tentar de novo quando quiser.", buy_done_coach: "Modo Coach ativado!", buy_ready_title: "Sua compra está pronta", buy_code_keep: "Este é o seu código de compra. Guarde: serve se você trocar de celular.", buy_code_manual: "Ative com este código em Perfil → Ativar código:", buy_back_app: "Pagou pelo app instalado? Abra de novo: ele é ativado sozinho.", buy_copy: "Copiar código", buy_copied: "Código copiado", upd_ready: "Há uma versão nova do app.", upd_btn: "Atualizar", upgrade_coach_sub: "O modo Coach faz parte do plano Coach: escolha seu plano ou ative seu código de Coach.",
                 upgrade_feat_routines: "Rotinas ilimitadas", upgrade_feat_routines_d: "Crie quantas rotinas personalizadas quiser",
                 upgrade_feat_stats: "Estatísticas completas", upgrade_feat_stats_d: "Mensal, trimestral e anual",
                 upgrade_feat_lang: "Todos os idiomas", upgrade_feat_lang_d: "Español, English e Português",
@@ -19139,12 +19139,35 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             } catch { /* never block boot */ }
         })();
 
+        // ── Versión nueva publicada con la app abierta (auditoría W-4) ──
+        // Una app instalada puede quedar días abierta en memoria con el HTML viejo. Al volver a
+        // primer plano (como mucho cada 30 min) se le pregunta al navegador si hay versión nueva;
+        // si la hay, el service worker nuevo toma el control y se avisa con un botón. No se
+        // recarga sola: puede estar en medio de un entrenamiento.
+        function watchSwUpdates(reg) {
+            const hadController = !!navigator.serviceWorker.controller;   // la primera instalación no es una actualización
+            let lastCheck = Date.now();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible' || Date.now() - lastCheck < 30 * 60000) return;
+                lastCheck = Date.now();
+                try { reg.update().catch(() => { }); } catch { }
+            });
+            navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) showUpdateBar(); });
+        }
+        function showUpdateBar() {
+            if ($('upd-bar')) return;
+            const bar = h('div', { id: 'upd-bar', role: 'status', style: { position: 'fixed', left: '12px', right: '12px', bottom: 'calc(84px + env(safe-area-inset-bottom))', zIndex: 1500, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 12px', background: 'var(--sf1)', border: '1px solid var(--accent)', borderRadius: '12px', fontSize: '13px', boxShadow: '0 6px 24px rgba(0,0,0,.4)' } },
+                h('span', {}, t('upd_ready')),
+                h('button', { className: 'btn btn-primary btn-sm', onclick: () => location.reload() }, t('upd_btn')));
+            document.body.appendChild(bar);
+        }
+
         // ── Service Worker registration ──
         // Only register on http(s):// (not file://) and only once. Errors are
         // swallowed so a failed SW registration never blocks the app boot.
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch((err) => {
+                navigator.serviceWorker.register('sw.js').then(watchSwUpdates).catch((err) => {
                     if (DEBUG_APP) console.warn('[SW] registration failed:', err && err.message);
                 });
                 syncSWPrefs();

@@ -3,8 +3,12 @@
 // so live sync / coach data stay fresh.
 
 // VERSION va también en la URL de core/calc.js en BERSERKERMOD.html (test/release.test.mjs lo chequea).
-const VERSION = '2-32';
+// Subirla cada vez que cambia un archivo que se sirve desde la caché (core/, íconos, fuentes,
+// img/, pdfjs/, manifest.json): si no, quien ya tiene la app sigue con el viejo para siempre.
+// test/release.test.mjs lo frena (guarda la huella de esos archivos en release-manifest.json).
+const VERSION = '2-33';
 const CACHE = 'berserkermod-v' + VERSION;
+const NET_TIMEOUT_MS = 3000;   // más que esto esperando la red, y hay copia: se muestra la copia
 // Paths are relative to the SW's scope so the same shell list works both on
 // local serve.ps1 (root scope) and on GitHub Pages subpath (/berserkermod/).
 const SHELL = [
@@ -21,10 +25,15 @@ const SHELL = [
     './fonts/inter-latin-ext.woff2'
 ];
 
+// Si la precarga falla (mala señal), esta versión no se instala: sigue la anterior con su
+// caché completa y el navegador reintenta más tarde. Antes el error se tragaba y la versión
+// nueva borraba la caché vieja quedando sin nada para abrir sin conexión.
+// cache: 'reload' saltea la caché HTTP del navegador (GitHub Pages la guarda 10 minutos):
+// si no, la versión nueva podía guardar archivos de la anterior.
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE)
-            .then((cache) => cache.addAll(SHELL).catch(() => {/* best-effort */}))
+            .then((cache) => cache.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' }))))
             .then(() => self.skipWaiting())
     );
 });
@@ -115,22 +124,33 @@ self.addEventListener('fetch', (event) => {
     // Never cache the API surface — coach data + health sync must be live.
     if (url.pathname.startsWith('/api/')) return;
 
-    // Network-first for HTML so the user always gets the latest version
-    // when online; falls back to cache (or app shell) when offline.
+    // HTML: primero la red, para tener siempre la última versión. Pero con señal mala (un
+    // gimnasio en un subsuelo) la red no falla: se cuelga. Si en NET_TIMEOUT_MS no respondió
+    // y hay una copia guardada, se muestra la copia y la red la actualiza por detrás.
     const isHtml = req.headers.get('accept')?.includes('text/html');
 
     if (isHtml) {
-        event.respondWith(
-            fetch(req)
-                .then((res) => {
-                    if (res.ok && url.origin === location.origin) {
-                        const clone = res.clone();
-                        caches.open(CACHE).then((c) => c.put(req, clone)).catch(() => {});
-                    }
-                    return res;
-                })
-                .catch(() => caches.match(req).then((r) => r || caches.match('./BERSERKERMOD.html') || caches.match('./index.html')))
-        );
+        const sameOrigin = url.origin === location.origin;
+        // La copia se guarda sin la parte de "?…" (links de alumno, vuelta del pago): una por página
+        const pageKey = url.origin + url.pathname;
+        const net = fetch(req);
+        event.waitUntil(net.then((res) => {
+            if (!res.ok || !sameOrigin) return;
+            const clone = res.clone();
+            return caches.open(CACHE).then((c) => c.put(pageKey, clone));
+        }).catch(() => {}));
+        event.respondWith((async () => {
+            const saved = sameOrigin ? ((await caches.match(req)) || (await caches.match(pageKey, { ignoreSearch: true }))) : null;
+            const shell = async () => saved || (await caches.match('./BERSERKERMOD.html', { ignoreSearch: true })) || (await caches.match('./index.html', { ignoreSearch: true }));
+            if (!saved) {
+                try { return await net; } catch { return (await shell()) || Response.error(); }
+            }
+            try {
+                const res = await Promise.race([net, new Promise((r) => setTimeout(() => r(null), NET_TIMEOUT_MS))]);
+                if (res && (res.ok || res.status < 500)) return res;
+            } catch { /* sin red */ }
+            return saved;
+        })());
         return;
     }
 
