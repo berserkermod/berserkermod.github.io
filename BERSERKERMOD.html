@@ -1941,6 +1941,14 @@
         .fv-kcal { width: 64px; flex-shrink: 0; text-align: right; font-size: 13px; font-weight: 800; color: var(--orange); }
         .fv-total { font-size: 14px; font-weight: 800; color: var(--accent); margin: 12px 0 10px; text-align: center; }
         .fv-label { font-size: 10px; color: var(--text3); font-weight: 700; letter-spacing: .06em; margin-bottom: 6px; }
+        .fv-thumb { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 14px; margin: 4px 0 12px; }
+        .fv-name-btn { background: none; border: none; padding: 0; color: var(--text); text-align: left; cursor: pointer; text-decoration: underline dotted var(--text3); text-underline-offset: 3px; font-family: inherit; }
+        .fv-ia { color: var(--orange); font-weight: 800; font-size: 10px; white-space: nowrap; }
+        .fv-extras { display: flex; flex-wrap: wrap; gap: 6px; }
+        .fv-extra { padding: 7px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; }
+        .fv-pick-list { display: flex; flex-direction: column; gap: 4px; max-height: 50vh; overflow-y: auto; }
+        .fv-pick { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--sf2); color: var(--text); text-align: left; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .fv-pick small { color: var(--text3); font-size: 11px; font-weight: 700; white-space: nowrap; }
         /* Peso corporal */
         .bw-spark { width: 100%; height: 56px; margin: 2px 0 10px; display: block; }
         .bw-dot { fill: var(--text3); opacity: .55; }
@@ -2015,6 +2023,11 @@
         .portion-presets { display: flex; gap: 6px; margin-bottom: 16px; }
         .portion-preset { flex: 1; padding: 7px 4px; border-radius: 10px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; }
         .portion-preset.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
+        .portion-house { display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .portion-house-chip { padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: var(--sf2); color: var(--text2); cursor: pointer; }
+        .portion-house-chip.active { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
+        .food-search-sec { font-size: 10px; font-weight: 800; letter-spacing: .06em; color: var(--text3); text-transform: uppercase; margin: 10px 2px 6px; }
+        .food-search-note { font-size: 11px; color: var(--text3); margin: 8px 2px; }
         .portion-macros { background: var(--sf2); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
         .portion-macros-kcal { font-size: 26px; font-weight: 900; color: var(--orange); text-align: center; margin-bottom: 10px; }
         .portion-macros-kcal small { font-size: 11px; color: var(--text3); font-weight: 700; margin-left: 4px; }
@@ -2132,11 +2145,12 @@
                 <div class="portion-name" id="portion-name">—<small id="portion-source"></small></div>
             </div>
             <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin-bottom:6px" data-i18n="portion_lbl">PORCIÓN</p>
+            <div class="portion-house" id="portion-house"></div>
             <div class="portion-input-row">
-                <button class="portion-btn" onclick="adjustPortion(-10)">−</button>
+                <button class="portion-btn" onclick="adjustPortion(-1)">−</button>
                 <input id="portion-grams" class="portion-input" type="number" value="100" oninput="recalcPortionMacros()" />
                 <span class="portion-unit">g</span>
-                <button class="portion-btn" onclick="adjustPortion(10)">+</button>
+                <button class="portion-btn" onclick="adjustPortion(1)">+</button>
             </div>
             <div class="portion-presets" id="portion-presets"></div>
             <p style="font-size:10px;color:var(--text3);font-weight:800;letter-spacing:.06em;margin:4px 0 6px" id="portion-meal-label" data-i18n="food_which_meal">¿A QUÉ COMIDA?</p>
@@ -2382,7 +2396,7 @@
                 dr_title: "COPIA EN GOOGLE DRIVE", dr_save: "Guardar copia en Drive", dr_restore: "Restaurar desde Drive", dr_last: "Última copia en Drive: {when}", dr_never: "Todavía no guardaste una copia en Drive.", dr_note: "Se guarda en una carpeta privada de tu Google Drive (no aparece entre tus archivos). Nuestro servidor no la ve. No incluye las fotos de progreso.", dr_busy_save: "Guardando en Drive…", dr_busy_read: "Buscando tu copia en Drive…", dr_saved: "✓ Copia guardada en Drive", dr_none: "Todavía no hay ninguna copia en tu Drive.", dr_err_closed: "Se cerró la ventana de Google sin dar permiso.", dr_err_blocked: "El navegador bloqueó la ventana de Google. Probá de nuevo.", dr_err: "No se pudo conectar con Google Drive. Revisá la conexión y probá de nuevo.", dr_more_title: "Tu copia en Drive tiene más entrenamientos", dr_more_msg: "La copia del {date} tiene {r} entrenamientos y este teléfono tiene {l}. Si guardás ahora, la reemplazás (la anterior queda guardada aparte).", dr_more_restore: "Restaurar la copia de Drive", dr_more_save: "Guardar igual",
                 theme_dark: "Oscuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DEL CUERPO", bm_this_week: "SERIES ESTA SEMANA", bm_per_week: "SERIES POR SEMANA (PROMEDIO)", bm_tap: "Tocá un músculo para ver sus series", bm_sets: "series", bm_lvl0: "Sin trabajar", bm_lvl1: "Poco (1-4)", bm_lvl2: "Medio (5-9)", bm_lvl3: "Ideal para crecer (10-20)", bm_lvl4: "Alto (+20)", bm_front: "FRENTE", bm_back: "ESPALDA", bm_unknown: "{n} series de ejercicios que no reconocemos no entran en el mapa.", mus_chest: "Pecho", mus_shoulders: "Hombros", mus_biceps: "Bíceps", mus_forearms: "Antebrazos", mus_abs: "Abdomen", mus_quads: "Cuádriceps", mus_traps: "Trapecio", mus_lats: "Dorsales", mus_triceps: "Tríceps", mus_lowback: "Lumbares", mus_glutes: "Glúteos", mus_hamstrings: "Isquios", mus_calves: "Gemelos", cal_title: "CONSTANCIA · ÚLTIMOS 6 MESES", cal_gym: "Pesas", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} días entrenados · {w} por semana en promedio", pg_title: "FOTOS DE PROGRESO", pg_teaser: "Compará tu cuerpo mes a mes con fotos y medidas. Todo queda solo en tu teléfono.", pg_add: "+ Agregar foto", pg_private: "Las fotos quedan solo en este teléfono: no se suben a ningún lado y no entran en el backup.", pg_unavailable: "No se pudieron guardar las fotos en este navegador.", pg_empty: "Sacate una foto hoy (misma luz y misma pose cada vez) y en unas semanas vas a ver el cambio.", pg_compare: "Comparar antes y después", pg_saved: "✓ Foto guardada", pg_before: "Antes", pg_after: "Después", pg_delete: "Borrar \"Después\"", pg_del_confirm: "¿Borrar esta foto? No se puede deshacer.", pg_close: "Cerrar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Cadera", ms_chest: "Pecho", ms_arm: "Brazo", ms_thigh: "Muslo", ms_since: "Cambio desde el {date}.", ms_save: "Guardar medidas", ms_saved: "✓ Medidas guardadas",
-                fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Es una estimación: revisá los gramos. Las fotos suelen quedarse cortas con el aceite y las salsas.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
+                fv_code: "Código", fv_label: "Tabla", fv_meal: "Foto del plato", fv_busy_label: "Leyendo la tabla nutricional…", fv_busy_meal: "Analizando el plato…", fv_label_default: "Producto escaneado", fv_label_source: "Tabla nutricional (IA)", fv_not_found: "Este producto no está en la base. Sacale una foto a la tabla nutricional y lo cargamos igual.", fv_not_found_btn: "🏷️ Escanear la tabla nutricional", fv_meal_title: "Estimación del plato", fv_meal_note: "Revisá los gramos y tocá un alimento para cambiarlo. Si lleva aceite o aderezo, sumalo abajo: es lo que más se escapa en una foto.", fv_add: "✓ Agregar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos agregados", fv_note_title: "¿Qué hay en el plato?", fv_note_ph: "Ej: milanesa de pollo frita, puré y ensalada", fv_note_hint: "Opcional, pero si lo contás la estimación es mucho más precisa.", fv_analyze: "Analizar", fv_ai_tag: "≈ IA", fv_ai_tip: "Valor estimado por la IA: este alimento no está en la base", fv_change: "Cambiar alimento", fv_add_food: "+ Agregar alimento", fv_extras: "¿LLEVA ALGO MÁS?", fv_x_oil: "Aceite (1 cda)", fv_x_butter: "Manteca", fv_x_mayo: "Mayonesa", fv_x_cheese: "Queso rallado", fv_x_dressing: "Aderezo", fv_pick_title: "Elegí el alimento", fv_pick_ph: "Buscar (ej: pollo, arroz, papa)", fv_pick_empty: "No lo encontré en la base.", fv_per100: "{k} kcal/100 g", food_sec_common: "Alimentos comunes", food_sec_off: "Productos envasados", food_n_results: "{n} resultados", food_off_fail_short: "No se pudieron buscar productos envasados (¿sin conexión?).", pu_grams: "Gramos", pu_ml: "Mililitros", pu_u: "unidad|unidades", pu_us: "unidad chica|unidades chicas", pu_um: "unidad mediana|unidades medianas", pu_ul: "unidad grande|unidades grandes", pu_porc: "porción|porciones", pu_plato: "plato|platos", pu_taza: "taza|tazas", pu_cda: "cucharada|cucharadas", pu_cdita: "cucharadita|cucharaditas", pu_reb: "rebanada|rebanadas", pu_feta: "feta|fetas", pu_vaso: "vaso|vasos", pu_lata: "lata|latas", pu_bot: "botella|botellas", pu_copa: "copa|copas", pu_pote: "pote|potes", pu_punado: "puñado|puñados", pu_bocha: "bocha|bochas", pu_pz: "pieza|piezas", pu_scoop: "medida|medidas", bw_title: "PESO CORPORAL", bw_save: "Guardar", bw_update: "Actualizar", bw_saved: "✓ Peso guardado", bw_trend: "Tendencia", bw_week: "{d} kg en 7 días", bw_hint: "Pesate en ayunas, 3 o 4 veces por semana: la tendencia filtra los cambios de agua y sal.", bw_hint_adaptive: "Con tus pesadas y lo que registrás, cada semana te proponemos ajustar las calorías a tu gasto real.", ci_title: "Ajuste semanal de calorías", ci_text: "Con tu peso y lo que registraste, tu gasto real ronda las {tdee} kcal (hasta ahora usábamos {cur}).", ci_detail: "Comiste en promedio {avg} kcal por día y tu peso de tendencia cambió {chg} kg en {days} días.", ci_target: "Tu objetivo pasa de {old} a {new} kcal/día.", ci_apply: "Aplicar", ci_skip: "Ahora no", ci_applied: "✓ Calorías ajustadas a tu gasto real", ci_from_data: "ajustado con tus datos", ci_reset: "Volver a la fórmula",
                 rest_go: "¡A la serie! 💪", set_done: "Serie hecha", rt_need_values: "Anotá kg y reps (0 kg si es con tu peso)", rt_draft_old: "Te quedó un entreno sin terminar del {date}", ss_badge: "SUPERSERIE", ss_link: "🔗 Unir en superserie", ss_linked: "🔗 Superserie · tocá para separar", ss_next: "Superserie → {ex}", wu_btn: "🔥 Calentamiento y discos", wu_bar_only: "Barra sola", wu_per_side: "por lado", wu_work: "Trabajo", wu_note: "No se anotan como series.", wu_note_bar: "No se anotan como series. Discos por lado con barra de {bar}.",
                 session_merge_title: "Ya entrenaste hoy", session_merge_msg: "Detectamos otra sesión registrada hoy. ¿Querés sumar estos ejercicios a la sesión anterior, o guardarla como una sesión aparte?", session_merge_yes: "➕ Sumar a la anterior", session_merge_no: "Guardar aparte", session_merged: "✓ Sumado a la sesión de hoy",
                 draft_title: "Sesión sin guardar", draft_msg: "Quedó una sesión de entrenamiento libre sin guardar ({ex} ejercicios · {sets} series). ¿Qué querés hacer?", draft_save: "💾 Guardar sesión", draft_continue: "▶ Seguir entrenando", draft_discard: "🗑 Eliminar", draft_discarded: "Sesión descartada",
@@ -2825,7 +2839,7 @@
                 dr_title: "GOOGLE DRIVE BACKUP", dr_save: "Back up to Drive", dr_restore: "Restore from Drive", dr_last: "Last Drive backup: {when}", dr_never: "You have not backed up to Drive yet.", dr_note: "Saved in a private folder in your Google Drive (it does not show among your files). Our server never sees it. Progress photos are not included.", dr_busy_save: "Saving to Drive…", dr_busy_read: "Looking for your Drive backup…", dr_saved: "✓ Backup saved to Drive", dr_none: "There is no backup in your Drive yet.", dr_err_closed: "The Google window was closed without granting access.", dr_err_blocked: "The browser blocked the Google window. Try again.", dr_err: "Could not connect to Google Drive. Check your connection and try again.", dr_more_title: "Your Drive backup has more workouts", dr_more_msg: "The backup from {date} has {r} workouts and this phone has {l}. Saving now replaces it (the previous one is kept separately).", dr_more_restore: "Restore the Drive backup", dr_more_save: "Save anyway",
                 theme_dark: "Dark", theme_light: "Light", theme_auto: "Automatic",
                 bm_title: "BODY MAP", bm_this_week: "SETS THIS WEEK", bm_per_week: "SETS PER WEEK (AVERAGE)", bm_tap: "Tap a muscle to see its sets", bm_sets: "sets", bm_lvl0: "Not trained", bm_lvl1: "Low (1-4)", bm_lvl2: "Medium (5-9)", bm_lvl3: "Ideal for growth (10-20)", bm_lvl4: "High (20+)", bm_front: "FRONT", bm_back: "BACK", bm_unknown: "{n} sets of exercises we do not recognize are not on the map.", mus_chest: "Chest", mus_shoulders: "Shoulders", mus_biceps: "Biceps", mus_forearms: "Forearms", mus_abs: "Abs", mus_quads: "Quads", mus_traps: "Traps", mus_lats: "Lats", mus_triceps: "Triceps", mus_lowback: "Lower back", mus_glutes: "Glutes", mus_hamstrings: "Hamstrings", mus_calves: "Calves", cal_title: "CONSISTENCY · LAST 6 MONTHS", cal_gym: "Weights", cal_cardio: "Cardio", cal_both: "Both", cal_summary: "{n} training days · {w} per week on average", pg_title: "PROGRESS PHOTOS", pg_teaser: "Compare your body month by month with photos and measurements. Everything stays on your phone.", pg_add: "+ Add photo", pg_private: "Photos stay only on this phone: they are not uploaded anywhere and are not included in the backup.", pg_unavailable: "Photos could not be saved in this browser.", pg_empty: "Take a photo today (same light and same pose every time) and in a few weeks you will see the change.", pg_compare: "Compare before and after", pg_saved: "✓ Photo saved", pg_before: "Before", pg_after: "After", pg_delete: "Delete \"After\"", pg_del_confirm: "Delete this photo? This cannot be undone.", pg_close: "Close", ms_title: "MEASUREMENTS (CM)", ms_waist: "Waist", ms_hips: "Hips", ms_chest: "Chest", ms_arm: "Arm", ms_thigh: "Thigh", ms_since: "Change since {date}.", ms_save: "Save measurements", ms_saved: "✓ Measurements saved",
-                fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "This is an estimate: check the grams. Photos tend to miss oil and sauces.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
+                fv_code: "Barcode", fv_label: "Label", fv_meal: "Meal photo", fv_busy_label: "Reading the nutrition label…", fv_busy_meal: "Analyzing the meal…", fv_label_default: "Scanned product", fv_label_source: "Nutrition label (AI)", fv_not_found: "This product is not in the database. Take a photo of the nutrition label and we will add it anyway.", fv_not_found_btn: "🏷️ Scan the nutrition label", fv_meal_title: "Meal estimate", fv_meal_note: "Check the grams and tap a food to change it. If it has oil or dressing, add it below: that is what photos miss the most.", fv_add: "✓ Add", fv_cancel: "Cancel", fv_meal_added: "{n} foods added", fv_note_title: "What's on the plate?", fv_note_ph: "E.g. fried breaded chicken, mashed potatoes and salad", fv_note_hint: "Optional, but telling us makes the estimate much more accurate.", fv_analyze: "Analyze", fv_ai_tag: "≈ AI", fv_ai_tip: "Estimated by the AI: this food is not in the database", fv_change: "Change food", fv_add_food: "+ Add food", fv_extras: "ANYTHING ELSE ON IT?", fv_x_oil: "Oil (1 tbsp)", fv_x_butter: "Butter", fv_x_mayo: "Mayo", fv_x_cheese: "Grated cheese", fv_x_dressing: "Dressing", fv_pick_title: "Pick the food", fv_pick_ph: "Search (e.g. chicken, rice, potato)", fv_pick_empty: "Not in the database.", fv_per100: "{k} kcal/100 g", food_sec_common: "Common foods", food_sec_off: "Packaged products", food_n_results: "{n} results", food_off_fail_short: "Couldn’t search packaged products (offline?).", pu_grams: "Grams", pu_ml: "Milliliters", pu_u: "piece|pieces", pu_us: "small piece|small pieces", pu_um: "medium piece|medium pieces", pu_ul: "large piece|large pieces", pu_porc: "serving|servings", pu_plato: "plate|plates", pu_taza: "cup|cups", pu_cda: "tablespoon|tablespoons", pu_cdita: "teaspoon|teaspoons", pu_reb: "slice|slices", pu_feta: "slice|slices", pu_vaso: "glass|glasses", pu_lata: "can|cans", pu_bot: "bottle|bottles", pu_copa: "wine glass|wine glasses", pu_pote: "tub|tubs", pu_punado: "handful|handfuls", pu_bocha: "scoop|scoops", pu_pz: "piece|pieces", pu_scoop: "scoop|scoops", bw_title: "BODY WEIGHT", bw_save: "Save", bw_update: "Update", bw_saved: "✓ Weight saved", bw_trend: "Trend", bw_week: "{d} kg in 7 days", bw_hint: "Weigh yourself fasted, 3 or 4 times a week: the trend filters out water and salt swings.", bw_hint_adaptive: "With your weigh-ins and what you log, every week we suggest adjusting your calories to your real expenditure.", ci_title: "Weekly calorie check-in", ci_text: "Based on your weight and what you logged, your real expenditure is about {tdee} kcal (we were using {cur}).", ci_detail: "You ate {avg} kcal per day on average and your trend weight changed {chg} kg in {days} days.", ci_target: "Your target goes from {old} to {new} kcal/day.", ci_apply: "Apply", ci_skip: "Not now", ci_applied: "✓ Calories adjusted to your real expenditure", ci_from_data: "adjusted with your data", ci_reset: "Back to the formula",
                 rest_go: "Next set! 💪", set_done: "Set done", rt_need_values: "Enter kg and reps (0 kg for bodyweight)", rt_draft_old: "You have an unfinished workout from {date}", ss_badge: "SUPERSET", ss_link: "🔗 Make superset", ss_linked: "🔗 Superset · tap to split", ss_next: "Superset → {ex}", wu_btn: "🔥 Warm-up & plates", wu_bar_only: "Empty bar", wu_per_side: "per side", wu_work: "Working", wu_note: "Not logged as sets.", wu_note_bar: "Not logged as sets. Plates per side on a {bar} bar.",
                 session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
@@ -3267,7 +3281,7 @@
                 dr_title: "BACKUP NO GOOGLE DRIVE", dr_save: "Salvar backup no Drive", dr_restore: "Restaurar do Drive", dr_last: "Último backup no Drive: {when}", dr_never: "Você ainda não salvou um backup no Drive.", dr_note: "Fica numa pasta privada do seu Google Drive (não aparece entre seus arquivos). Nosso servidor não vê. Não inclui as fotos de progresso.", dr_busy_save: "Salvando no Drive…", dr_busy_read: "Procurando seu backup no Drive…", dr_saved: "✓ Backup salvo no Drive", dr_none: "Ainda não há nenhum backup no seu Drive.", dr_err_closed: "A janela do Google foi fechada sem dar permissão.", dr_err_blocked: "O navegador bloqueou a janela do Google. Tente de novo.", dr_err: "Não foi possível conectar ao Google Drive. Verifique a conexão e tente de novo.", dr_more_title: "Seu backup no Drive tem mais treinos", dr_more_msg: "O backup de {date} tem {r} treinos e este celular tem {l}. Se salvar agora, ele é substituído (o anterior fica guardado à parte).", dr_more_restore: "Restaurar o backup do Drive", dr_more_save: "Salvar mesmo assim",
                 theme_dark: "Escuro", theme_light: "Claro", theme_auto: "Automático",
                 bm_title: "MAPA DO CORPO", bm_this_week: "SÉRIES NESTA SEMANA", bm_per_week: "SÉRIES POR SEMANA (MÉDIA)", bm_tap: "Toque um músculo para ver as séries", bm_sets: "séries", bm_lvl0: "Sem treino", bm_lvl1: "Pouco (1-4)", bm_lvl2: "Médio (5-9)", bm_lvl3: "Ideal para crescer (10-20)", bm_lvl4: "Alto (+20)", bm_front: "FRENTE", bm_back: "COSTAS", bm_unknown: "{n} séries de exercícios que não reconhecemos não entram no mapa.", mus_chest: "Peito", mus_shoulders: "Ombros", mus_biceps: "Bíceps", mus_forearms: "Antebraços", mus_abs: "Abdômen", mus_quads: "Quadríceps", mus_traps: "Trapézio", mus_lats: "Dorsais", mus_triceps: "Tríceps", mus_lowback: "Lombar", mus_glutes: "Glúteos", mus_hamstrings: "Posteriores", mus_calves: "Panturrilhas", cal_title: "CONSTÂNCIA · ÚLTIMOS 6 MESES", cal_gym: "Musculação", cal_cardio: "Cardio", cal_both: "Ambos", cal_summary: "{n} dias de treino · {w} por semana em média", pg_title: "FOTOS DE PROGRESSO", pg_teaser: "Compare seu corpo mês a mês com fotos e medidas. Tudo fica só no seu celular.", pg_add: "+ Adicionar foto", pg_private: "As fotos ficam só neste celular: não são enviadas a lugar nenhum e não entram no backup.", pg_unavailable: "Não foi possível salvar as fotos neste navegador.", pg_empty: "Tire uma foto hoje (mesma luz e mesma pose sempre) e em algumas semanas você vai ver a mudança.", pg_compare: "Comparar antes e depois", pg_saved: "✓ Foto salva", pg_before: "Antes", pg_after: "Depois", pg_delete: "Apagar \"Depois\"", pg_del_confirm: "Apagar esta foto? Não dá para desfazer.", pg_close: "Fechar", ms_title: "MEDIDAS (CM)", ms_waist: "Cintura", ms_hips: "Quadril", ms_chest: "Peito", ms_arm: "Braço", ms_thigh: "Coxa", ms_since: "Mudança desde {date}.", ms_save: "Salvar medidas", ms_saved: "✓ Medidas salvas",
-                fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "É uma estimativa: confira os gramas. As fotos costumam errar para menos com óleo e molhos.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
+                fv_code: "Código", fv_label: "Tabela", fv_meal: "Foto do prato", fv_busy_label: "Lendo a tabela nutricional…", fv_busy_meal: "Analisando o prato…", fv_label_default: "Produto escaneado", fv_label_source: "Tabela nutricional (IA)", fv_not_found: "Este produto não está na base. Tire uma foto da tabela nutricional e adicionamos mesmo assim.", fv_not_found_btn: "🏷️ Escanear a tabela nutricional", fv_meal_title: "Estimativa do prato", fv_meal_note: "Confira os gramas e toque em um alimento para trocá-lo. Se tiver óleo ou molho, adicione abaixo: é o que mais escapa numa foto.", fv_add: "✓ Adicionar", fv_cancel: "Cancelar", fv_meal_added: "{n} alimentos adicionados", fv_note_title: "O que tem no prato?", fv_note_ph: "Ex.: frango empanado frito, purê e salada", fv_note_hint: "Opcional, mas contando a estimativa fica muito mais precisa.", fv_analyze: "Analisar", fv_ai_tag: "≈ IA", fv_ai_tip: "Valor estimado pela IA: este alimento não está na base", fv_change: "Trocar alimento", fv_add_food: "+ Adicionar alimento", fv_extras: "TEM MAIS ALGUMA COISA?", fv_x_oil: "Óleo (1 colher)", fv_x_butter: "Manteiga", fv_x_mayo: "Maionese", fv_x_cheese: "Queijo ralado", fv_x_dressing: "Molho de salada", fv_pick_title: "Escolha o alimento", fv_pick_ph: "Buscar (ex.: frango, arroz, batata)", fv_pick_empty: "Não encontrei na base.", fv_per100: "{k} kcal/100 g", food_sec_common: "Alimentos comuns", food_sec_off: "Produtos embalados", food_n_results: "{n} resultados", food_off_fail_short: "Não foi possível buscar produtos embalados (sem conexão?).", pu_grams: "Gramas", pu_ml: "Mililitros", pu_u: "unidade|unidades", pu_us: "unidade pequena|unidades pequenas", pu_um: "unidade média|unidades médias", pu_ul: "unidade grande|unidades grandes", pu_porc: "porção|porções", pu_plato: "prato|pratos", pu_taza: "xícara|xícaras", pu_cda: "colher de sopa|colheres de sopa", pu_cdita: "colher de chá|colheres de chá", pu_reb: "fatia|fatias", pu_feta: "fatia|fatias", pu_vaso: "copo|copos", pu_lata: "lata|latas", pu_bot: "garrafa|garrafas", pu_copa: "taça|taças", pu_pote: "pote|potes", pu_punado: "punhado|punhados", pu_bocha: "bola|bolas", pu_pz: "peça|peças", pu_scoop: "scoop|scoops", bw_title: "PESO CORPORAL", bw_save: "Salvar", bw_update: "Atualizar", bw_saved: "✓ Peso salvo", bw_trend: "Tendência", bw_week: "{d} kg em 7 dias", bw_hint: "Pese-se em jejum, 3 ou 4 vezes por semana: a tendência filtra as variações de água e sal.", bw_hint_adaptive: "Com suas pesagens e o que você registra, toda semana sugerimos ajustar as calorias ao seu gasto real.", ci_title: "Ajuste semanal de calorias", ci_text: "Com seu peso e o que você registrou, seu gasto real fica em torno de {tdee} kcal (até agora usávamos {cur}).", ci_detail: "Você comeu em média {avg} kcal por dia e seu peso de tendência mudou {chg} kg em {days} dias.", ci_target: "Sua meta passa de {old} para {new} kcal/dia.", ci_apply: "Aplicar", ci_skip: "Agora não", ci_applied: "✓ Calorias ajustadas ao seu gasto real", ci_from_data: "ajustado com seus dados", ci_reset: "Voltar à fórmula",
                 rest_go: "Próxima série! 💪", set_done: "Série feita", rt_need_values: "Anote kg e reps (0 kg se for com o peso do corpo)", rt_draft_old: "Você tem um treino não finalizado de {date}", ss_badge: "SUPERSET", ss_link: "🔗 Juntar em superset", ss_linked: "🔗 Superset · toque para separar", ss_next: "Superset → {ex}", wu_btn: "🔥 Aquecimento e anilhas", wu_bar_only: "Barra vazia", wu_per_side: "por lado", wu_work: "Trabalho", wu_note: "Não contam como séries.", wu_note_bar: "Não contam como séries. Anilhas por lado com barra de {bar}.",
                 session_merge_title: "Você já treinou hoje", session_merge_msg: "Detectamos outra sessão registrada hoje. Quer somar estes exercícios à sessão anterior, ou salvar como uma sessão separada?", session_merge_yes: "➕ Somar à anterior", session_merge_no: "Salvar separado", session_merged: "✓ Somado à sessão de hoje",
                 draft_title: "Sessão não salva", draft_msg: "Ficou um treino livre não salvo ({ex} exercícios · {sets} séries). O que deseja fazer?", draft_save: "💾 Salvar sessão", draft_continue: "▶ Continuar treinando", draft_discard: "🗑 Descartar", draft_discarded: "Sessão descartada",
@@ -4790,7 +4804,7 @@
         // state. parseBackup also accepts the old {user, sessions, cardio}
         // format so backups exported before this existed still restore.
         const BACKUP_EXCLUDE = [
-            'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache',
+            'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache', 'bm-food-db',
             'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
             'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
             'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
@@ -14680,21 +14694,39 @@
         // ─────────────────────────────────────────
         // FOOD ADD MODAL v2 — tabs (saludables, buscar, mis alimentos, manual)
         // ─────────────────────────────────────────
-        let _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: null, meal: 1 };
+        let _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], dbResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: null, meal: 1 };
         let _portionMeal = 1;   // which "Comida 1-4" the portion modal will assign the food to
-        let _portionMode = 'g'; // 'g' | 'count' (eggs) | 'ml' (liquids) — drives the portion input
+        let _portionMode = 'g'; // 'g' | 'count' (eggs) | 'ml' (liquids) | 'hh' (porción casera) — drives the portion input
+        let _portionBase = 'g'; // unidad propia del alimento (g, count o ml): la del chip "Gramos"/"Mililitros"
+        let _portionHouse = -1; // porción casera elegida (índice en _portionFood.portions), -1 = unidad propia
 
+        // Gramos de UNA porción casera ([unidad, cantidad]): la cantidad va en ml si el alimento se toma.
+        function _houseGrams(q) {
+            const f = _portionFood || {};
+            return q[1] * (f.portionsMl ? (f.density || (f.unit && f.unit.density) || 1) : 1);
+        }
         // Convert the portion-modal input value (in its display unit) to grams for macros.
         function _portionToGrams(val) {
             const u = _portionFood && _portionFood.unit;
+            if (_portionMode === 'hh') { const q = _portionFood.portions[_portionHouse]; return q ? val * _houseGrams(q) : val; }
             if (_portionMode === 'count') return val * ((u && u.g) || 50);
             if (_portionMode === 'ml') return val * ((u && u.density) || 1);
             return val;
         }
+        // "unidad mediana" / "unidades medianas" según la cantidad (texto pu_<unidad> = "singular|plural").
+        function puLabel(key, qty) { const p = String(t('pu_' + key) || key).split('|'); return qty > 1 ? (p[1] || p[0]) : p[0]; }
+        // Porción con la que arranca: la mediana si hay (milanesa, bife), si no la primera
+        function defPortionIdx(u) { const i = (u || []).findIndex((q) => q[0] === 'um'); return i >= 0 ? i : 0; }
+        // 0.5 → "½", 1.5 → "1½", 2 → "2"
+        function fmtQty(n) {
+            const w = Math.floor(n), fr = Math.round((n - w) * 100) / 100;
+            if (fr === 0.5) return (w ? String(w) : '') + '½';
+            return String(Math.round(n * 100) / 100);
+        }
 
         function openAddFoodModal(prefill) {
             const keepMeal = _foodModal.meal || 1;   // preserve the meal chosen via the "+" per-section button
-            _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: prefill || null, meal: keepMeal };
+            _foodModal = { tab: 'healthy', cat: 'all', searchQuery: '', searchResults: [], dbResults: [], searchTimer: null, searchState: 'idle', pendingPrefill: prefill || null, meal: keepMeal };
             // If a prefill (eg from barcode scanner) is provided, go straight to portion modal
             if (prefill && prefill.name) {
                 openPortionModal({
@@ -14709,6 +14741,7 @@
                 return;
             }
             $('food-add-modal-v2').classList.add('show');
+            foodDbList();   // la base del servidor (porciones caseras y buscador); queda guardada una semana
             // Atajos con cámara: textos en el idioma del usuario y candado si no es Premium
             $('fq-scan-lbl').textContent = t('fv_code'); $('fq-label-lbl').textContent = t('fv_label'); $('fq-meal-lbl').textContent = t('fv_meal');
             document.querySelectorAll('.food-quick [data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = icoSvg(el.dataset.ico); });
@@ -14750,10 +14783,7 @@
             const filtered = _foodModal.cat === 'all' ? HEALTHY_FOODS : HEALTHY_FOODS.filter(f => f.cat === _foodModal.cat);
             const grid = h('div', { className: 'food-grid' });
             filtered.forEach(f => {
-                const card = h('div', { className: 'food-card', onclick: () => openPortionModal({
-                    name: foodName(f), kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
-                    icon: f.icon, source: 'Predeterminado', id: f.id, unit: f.unit
-                }) });
+                const card = h('div', { className: 'food-card', onclick: () => openHealthyFood(f) });
                 card.appendChild(h('div', { className: 'food-card-icon' }, f.icon));
                 card.appendChild(h('div', { className: 'food-card-name' }, foodName(f)));
                 card.appendChild(h('div', { className: 'food-card-kcal' }, f.kcal + ' ', h('small', {}, '/100g')));
@@ -14785,9 +14815,15 @@
 
         async function doFoodSearch(q) {
             const query = q.trim();
-            if (query.length < 2) { _foodModal.searchResults = []; _foodModal.searchState = 'idle'; updateSearchResultsUI(); return; }
+            if (query.length < 2) { _foodModal.searchResults = []; _foodModal.dbResults = []; _foodModal.searchState = 'idle'; updateSearchResultsUI(); return; }
 
-            // Cache hit
+            // 1) Nuestra base (USDA, en el idioma del usuario y con porciones caseras). Sin conexión y sin
+            //    copia guardada, los alimentos de la pestaña "Saludables".
+            const list = await foodDbList();
+            if (_foodModal.searchQuery.trim() !== query) return;   // ya tipeó otra cosa
+            _foodModal.dbResults = list.length ? searchFoodDb(list, query).slice(0, 8) : searchHealthyFoods(query);
+
+            // 2) Productos envasados (Open Food Facts). Cache hit
             const cacheKey = query.toLowerCase();
             if (state.foodSearchCache[cacheKey]) {
                 _foodModal.searchResults = state.foodSearchCache[cacheKey];
@@ -14815,15 +14851,17 @@
                         source: 'OpenFoodFacts'
                     }))
                     .slice(0, 10);
+                state.foodSearchCache[cacheKey] = results;
+                if (_foodModal.searchQuery.trim() !== query) return;   // llegó tarde: ya hay otra búsqueda
                 _foodModal.searchResults = results;
                 _foodModal.searchState = 'done';
-                state.foodSearchCache[cacheKey] = results;
                 // Limit cache size to avoid bloat
                 const keys = Object.keys(state.foodSearchCache);
                 if (keys.length > 50) { delete state.foodSearchCache[keys[0]]; }
                 saveFoodSearchCache();
             } catch (e) {
                 console.error('[Food] OpenFoodFacts error:', e);
+                if (_foodModal.searchQuery.trim() !== query) return;
                 _foodModal.searchResults = [];
                 _foodModal.searchState = 'error';
             }
@@ -14835,16 +14873,12 @@
             const results = $('food-search-results');
             if (!status || !results) return;
             results.innerHTML = '';
+            const st = _foodModal.searchState, db = _foodModal.dbResults || [], off = _foodModal.searchResults || [];
+            const spinner = () => h('div', { className: 'oracle-spinner', style: { width: '20px', height: '20px', borderWidth: '2px', margin: '8px auto' } });
 
-            if (_foodModal.searchState === 'idle' && !_foodModal.searchQuery) {
-                status.textContent = t('food_type2');
-                return;
-            }
-            if (_foodModal.searchState === 'loading') {
-                status.innerHTML = '<div class="oracle-spinner" style="width:20px;height:20px;border-width:2px;margin:8px auto"></div>';
-                return;
-            }
-            if (_foodModal.searchState === 'error') {
+            if (st === 'idle') { status.textContent = t('food_type2'); return; }
+            if (!db.length && st === 'loading') { status.textContent = ''; results.appendChild(spinner()); return; }
+            if (!db.length && st === 'error') {
                 status.textContent = '';
                 results.appendChild(h('div', { className: 'food-empty-state' },
                     h('div', { className: 'food-empty-state-icon' }, '⚠️'),
@@ -14852,7 +14886,7 @@
                     h('button', { className: 'btn btn-primary btn-sm', onclick: () => setFoodTab('manual') }, t('food_create_manual'))));
                 return;
             }
-            if (_foodModal.searchResults.length === 0) {
+            if (!db.length && !off.length) {
                 status.textContent = '';
                 results.appendChild(h('div', { className: 'food-empty-state' },
                     h('div', { className: 'food-empty-state-icon' }, '🔎'),
@@ -14861,8 +14895,26 @@
                 return;
             }
 
-            status.textContent = _foodModal.searchResults.length + ' resultados';
-            _foodModal.searchResults.forEach(r => {
+            status.textContent = st === 'loading' ? '' : t('food_n_results').replace('{n}', db.length + off.length);
+            if (db.length) {
+                results.appendChild(h('div', { className: 'food-search-sec' }, t('food_sec_common')));
+                db.forEach(f => {
+                    const row = h('div', { className: 'food-search-result', onclick: () => openDbFood(f) });
+                    row.appendChild(h('div', { className: 'food-search-result-icon' }, f.i || '🍽️'));
+                    const txt = h('div', { className: 'food-search-result-text' });
+                    txt.appendChild(h('div', { className: 'food-search-result-name' }, dbFoodName(f)));
+                    const q = Array.isArray(f.u) && f.u[defPortionIdx(f.u)];
+                    if (q) txt.appendChild(h('div', { className: 'food-search-result-brand' }, '1 ' + puLabel(q[0], 1) + ' · ' + q[1] + (f.d ? ' ml' : ' g')));
+                    row.appendChild(txt);
+                    row.appendChild(h('div', { className: 'food-search-result-macros' }, t('fv_per100').replace('{k}', f.kcal)));
+                    results.appendChild(row);
+                });
+            }
+            if (st === 'loading') { results.appendChild(spinner()); return; }
+            if (st === 'error') { results.appendChild(h('p', { className: 'food-search-note' }, t('food_off_fail_short'))); return; }
+            if (!off.length) return;
+            results.appendChild(h('div', { className: 'food-search-sec' }, t('food_sec_off')));
+            off.forEach(r => {
                 const row = h('div', { className: 'food-search-result', onclick: () => openPortionModal({
                     ...r, icon: '🛒'
                 }) });
@@ -14871,7 +14923,7 @@
                 txt.appendChild(h('div', { className: 'food-search-result-name' }, r.name));
                 if (r.brand) txt.appendChild(h('div', { className: 'food-search-result-brand' }, r.brand));
                 row.appendChild(txt);
-                row.appendChild(h('div', { className: 'food-search-result-macros' }, r.kcal_100g + ' kcal'));
+                row.appendChild(h('div', { className: 'food-search-result-macros' }, t('fv_per100').replace('{k}', r.kcal_100g)));
                 results.appendChild(row);
             });
         }
@@ -14969,32 +15021,18 @@
 
         function openPortionModal(food) {
             _portionFood = food;
-            _portionMode = (food.unit && food.unit.kind) || 'g';
+            // Porciones caseras de la base ([unidad, cantidad]); van en ml si el alimento se toma
+            food.portions = Array.isArray(food.portions) ? food.portions.filter((q) => Array.isArray(q) && q[1] > 0) : [];
+            if (!food.unit && food.density) food.unit = { kind: 'ml', density: food.density };
+            _portionBase = (food.unit && food.unit.kind) || 'g';
             $('portion-icon').textContent = food.icon || '🍽️';
             $('portion-name').firstChild.nodeValue = food.name;
             $('portion-source').textContent = food.source || '';
 
-            // Portion input mode: grams / units (eggs) / ml (liquids)
-            let presets, defVal, unitLbl;
-            if (_portionMode === 'count') { presets = [1, 2, 3, 4, 6]; defVal = 1; unitLbl = 'u'; }
-            else if (_portionMode === 'ml') { presets = [100, 200, 250, 330, 500]; defVal = 200; unitLbl = 'ml'; }
-            else { presets = [50, 100, 150, 200, 300]; defVal = 100; unitLbl = 'g'; }
+            // Arranca en la primera porción casera ("1 unidad mediana"); si no hay, en gramos/ml/unidades
+            if (food.portions.length) setPortionUnit(defPortionIdx(food.portions), 1);
+            else setPortionUnit(-1, _portionBase === 'count' ? 1 : (_portionBase === 'ml' ? 200 : 100));
 
-            $('portion-grams').value = defVal;
-            const unitEl = document.querySelector('#portion-modal .portion-unit');
-            if (unitEl) unitEl.textContent = unitLbl;
-
-            const presetsEl = $('portion-presets');
-            presetsEl.innerHTML = '';
-            presets.forEach(v => {
-                const btn = h('button', { className: 'portion-preset' + (v === defVal ? ' active' : ''), onclick: () => {
-                    $('portion-grams').value = v;
-                    [...presetsEl.children].forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    recalcPortionMacros();
-                } }, v + (unitLbl === 'g' ? 'g' : (' ' + unitLbl)));
-                presetsEl.appendChild(btn);
-            });
             // Meal selector (Comida 1-4) — defaults to whatever section the user added from
             _portionMeal = _foodModal.meal || 1;
             const mealLabelEl = $('portion-meal-label');
@@ -15016,16 +15054,75 @@
             $('portion-modal').classList.add('show');
         }
 
+        // Elige la unidad de la porción: idx -1 = la del alimento (g, ml o unidades); si no, una porción casera.
+        function setPortionUnit(idx, value) {
+            const f = _portionFood;
+            _portionHouse = (idx >= 0 && f.portions[idx]) ? idx : -1;
+            _portionMode = _portionHouse >= 0 ? 'hh' : _portionBase;
+            let presets, unitLbl;
+            if (_portionMode === 'hh') { const q = f.portions[_portionHouse]; presets = [0.5, 1, 1.5, 2, 3]; unitLbl = '× ' + q[1] + (f.portionsMl ? ' ml' : ' g'); }
+            else if (_portionMode === 'count') { presets = [1, 2, 3, 4, 6]; unitLbl = 'u'; }
+            else if (_portionMode === 'ml') { presets = [100, 200, 250, 330, 500]; unitLbl = 'ml'; }
+            else { presets = [50, 100, 150, 200, 300]; unitLbl = 'g'; }
+
+            $('portion-grams').value = value;
+            const unitEl = document.querySelector('#portion-modal .portion-unit');
+            if (unitEl) unitEl.textContent = unitLbl;
+
+            const presetsEl = $('portion-presets');
+            presetsEl.innerHTML = '';
+            presets.forEach(v => {
+                const txt = _portionMode === 'hh' ? fmtQty(v) : v + (unitLbl === 'g' ? 'g' : (' ' + unitLbl));
+                const btn = h('button', { className: 'portion-preset' + (v === value ? ' active' : ''), onclick: () => {
+                    $('portion-grams').value = v;
+                    [...presetsEl.children].forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    recalcPortionMacros();
+                } }, txt);
+                btn.dataset.v = v;
+                presetsEl.appendChild(btn);
+            });
+
+            // Chips: [Gramos] [Unidad mediana · 120 g] [Taza · 160 g] …
+            const houseEl = $('portion-house');
+            if (houseEl) {
+                houseEl.innerHTML = '';
+                houseEl.style.display = f.portions.length ? 'flex' : 'none';
+                if (f.portions.length) {
+                    const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+                    const base = _portionBase === 'ml' ? t('pu_ml') : (_portionBase === 'count' ? cap(puLabel('u', 2)) : t('pu_grams'));
+                    const chip = (i, txt) => houseEl.appendChild(h('button', { className: 'portion-house-chip' + (i === _portionHouse ? ' active' : ''), onclick: () => switchPortionUnit(i) }, txt));
+                    chip(-1, base);
+                    f.portions.forEach((q, i) => chip(i, cap(puLabel(q[0], 1)) + ' · ' + q[1] + (f.portionsMl ? ' ml' : ' g')));
+                }
+            }
+            recalcPortionMacros();
+        }
+
+        // Cambiar de unidad sin perder la cantidad: a gramos/ml pasa lo que ya había; a una porción, 1.
+        function switchPortionUnit(idx) {
+            if (!_portionFood || idx === _portionHouse) return;
+            const g = _portionToGrams(parseFloat($('portion-grams').value) || 0);
+            if (idx >= 0) { setPortionUnit(idx, 1); return; }
+            const u = _portionFood.unit;
+            let v;
+            if (_portionBase === 'count') v = Math.max(1, Math.round(g / ((u && u.g) || 50)));
+            else if (_portionBase === 'ml') v = Math.max(1, Math.round(g / ((u && u.density) || 1)));
+            else v = Math.max(1, Math.round(g));
+            setPortionUnit(-1, v);
+        }
+
         function closePortionModal() { $('portion-modal').classList.remove('show'); _portionFood = null; }
 
         function adjustPortion(delta) {
-            const step = _portionMode === 'count' ? 1 : (_portionMode === 'ml' ? 50 : 10);
+            const step = _portionMode === 'hh' ? 0.5 : (_portionMode === 'count' ? 1 : (_portionMode === 'ml' ? 50 : 10));
+            const min = _portionMode === 'hh' ? 0.5 : 1;
             const inp = $('portion-grams');
-            const newVal = Math.max(1, (parseFloat(inp.value) || 0) + Math.sign(delta) * step);
+            const newVal = Math.max(min, (parseFloat(inp.value) || 0) + Math.sign(delta) * step);
             inp.value = newVal;
             // Update active preset
             $('portion-presets').querySelectorAll('.portion-preset').forEach(b => {
-                b.classList.toggle('active', parseFloat(b.textContent) === newVal);
+                b.classList.toggle('active', parseFloat(b.dataset.v) === newVal);
             });
             recalcPortionMacros();
         }
@@ -15048,7 +15145,10 @@
             const g = _portionToGrams(val);
             const m = g / 100;
             const foodName = _portionFood.name; // capture before closePortionModal nulls it
-            const portionLabel = formatPortion(g, _portionFood.unit, state.lang);
+            const q = _portionMode === 'hh' && _portionFood.portions[_portionHouse];
+            const portionLabel = q
+                ? fmtQty(val) + ' ' + puLabel(q[0], val) + ' (' + Math.round(val * q[1]) + (_portionFood.portionsMl ? ' ml' : ' g') + ')'
+                : formatPortion(g, _portionFood.unit, state.lang);
             const entry = {
                 id: Date.now() + '', date: todayStr(),
                 name: foodName + ' · ' + portionLabel,
@@ -15225,8 +15325,37 @@
                 document.body.appendChild(_foodPhotoInput);
             }
             _foodPhotoInput.value = '';
-            _foodPhotoInput.onchange = () => { const f = _foodPhotoInput.files && _foodPhotoInput.files[0]; if (f) analyzeFoodPhoto(kind, f); };
+            _foodPhotoInput.onchange = () => {
+                const f = _foodPhotoInput.files && _foodPhotoInput.files[0];
+                if (!f) return;
+                if (kind === 'meal' && MEAL_NOTE_ON) openMealNote(f); else analyzeFoodPhoto(kind, f);
+            };
             _foodPhotoInput.click();
+        }
+        // Antes de analizar el plato: "¿qué hay?" (opcional). Contarlo baja mucho el error:
+        // la IA ya no adivina QUÉ es, solo cuánto hay (en las pruebas, la mitad del error).
+        // Paso "¿Qué hay en el plato?" antes de analizar la foto. Apagado hasta que el banco de pruebas
+        // muestre que ayuda: en las dos primeras pruebas la nota hacía que la IA se pasara con los gramos.
+        const MEAL_NOTE_ON = false;
+        function openMealNote(file) {
+            const url = URL.createObjectURL(file);
+            const ov = h('div', { className: 'fv-modal' });
+            const close = () => { ov.remove(); URL.revokeObjectURL(url); };
+            const inp = h('input', { className: 'input', type: 'text', maxLength: 200, placeholder: t('fv_note_ph'), style: { width: '100%', marginBottom: '6px' } });
+            const go = () => { const note = inp.value.trim(); close(); analyzeFoodPhoto('meal', file, note); };
+            inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+            const card = h('div', { className: 'fv-card' },
+                h('p', { className: 'fv-title' }, ico('utensils', 'ico-accent'), ' ' + t('fv_note_title')),
+                h('img', { src: url, alt: '', className: 'fv-thumb' }),
+                inp,
+                h('p', { className: 'fv-note' }, t('fv_note_hint')),
+                h('div', { style: { display: 'flex', gap: '8px' } },
+                    h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: close }, t('fv_cancel')),
+                    h('button', { className: 'btn btn-primary', style: { flex: 2 }, onclick: go }, t('fv_analyze'))));
+            ov.appendChild(card);
+            ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+            setTimeout(() => inp.focus(), 50);
         }
         // JPEG chico (lado mayor `max` px): la tabla necesita más resolución que el plato.
         async function photoToJpeg(file, max) {
@@ -15245,13 +15374,13 @@
             document.body.appendChild(ov);
             return ov;
         }
-        async function analyzeFoodPhoto(kind, file) {
+        async function analyzeFoodPhoto(kind, file, note) {
             const busy = showBusy(t(kind === 'meal' ? 'fv_busy_meal' : 'fv_busy_label'));
             try {
                 const image = await photoToJpeg(file, kind === 'meal' ? 1024 : 1280);
                 const resp = await fetch(getApiBase() + '/api/food-vision', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: localStorage.getItem('bm-license') || '', kind, image })
+                    body: JSON.stringify({ token: localStorage.getItem('bm-license') || '', kind, image, note: note || undefined })
                 });
                 const j = await resp.json().catch(() => ({}));
                 if (!resp.ok) throw new Error(j.error || ('HTTP ' + resp.status));
@@ -15270,34 +15399,164 @@
                 flash(String((e && e.message) || e).slice(0, 140), 'var(--orange)');
             }
         }
-        // Estimación del plato: cada alimento con sus gramos editables (los macros
-        // escalan) y se puede destildar lo que no corresponde antes de agregar.
+        // ── Base de alimentos del servidor (USDA, ~120 alimentos y platos comunes) ──
+        // La usa la revisión del plato para cambiar un alimento o agregar uno. Se guarda una semana.
+        let _foodDb = null;
+        const FOOD_DB_MIN_V = 2;   // copia guardada más vieja (sin porciones ni nombres en/pt) → se vuelve a pedir
+        async function foodDbList() {
+            if (_foodDb) return _foodDb;
+            try {
+                const c = JSON.parse(localStorage.getItem('bm-food-db') || 'null');
+                if (c && Array.isArray(c.items) && (c.v || 0) >= FOOD_DB_MIN_V && Date.now() - c.at < 7 * 86400000) { _foodDb = c.items; return _foodDb; }
+            } catch { }
+            try {
+                const r = await fetch(getApiBase() + '/api/foods');
+                const j = await r.json();
+                if (j && Array.isArray(j.items)) {
+                    _foodDb = j.items;
+                    try { localStorage.setItem('bm-food-db', JSON.stringify({ at: Date.now(), v: j.v, items: j.items })); } catch { }
+                }
+            } catch { }
+            return _foodDb || [];
+        }
+        function normFoodQ(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(); }
+        function dbFoodName(f) { return (state.lang === 'en' && f.ne) || (state.lang === 'pt' && f.np) || f.n; }
+        // Lo que se busca de cada alimento: sinónimos (es/en) + nombres en español, inglés y portugués
+        const _foodDbKeys = new WeakMap();
+        function dbFoodKeys(f) {
+            let k = _foodDbKeys.get(f);
+            if (!k) { k = (f.s || []).concat([normFoodQ(f.n), normFoodQ(f.ne), normFoodQ(f.np)].filter(Boolean)); _foodDbKeys.set(f, k); }
+            return k;
+        }
+        function searchFoodDb(list, q) {
+            const n = normFoodQ(q);
+            if (!n) return list.slice(0, 40);
+            return list.map((f) => {
+                let sc = 0;
+                for (const s of dbFoodKeys(f)) { if (s === n) sc = Math.max(sc, 4); else if (s.startsWith(n) || s.includes(' ' + n)) sc = Math.max(sc, 3); else if (s.includes(n)) sc = Math.max(sc, 2); }
+                if (sc && normFoodQ(dbFoodName(f)).startsWith(n)) sc += 0.5;   // primero lo que se llama así
+                return [sc, f];
+            }).filter((x) => x[0] > 0).sort((a, b) => b[0] - a[0]).slice(0, 40).map((x) => x[1]);
+        }
+        // Sin conexión y sin copia de la base: busca en los alimentos de la pestaña "Saludables"
+        function searchHealthyFoods(q) {
+            const n = normFoodQ(q);
+            return HEALTHY_FOODS.filter((f) => [f.name, f.en, f.pt].some((x) => normFoodQ(x).includes(n))).slice(0, 8)
+                .map((f) => ({ k: f.id, n: f.name, ne: f.en, np: f.pt, i: f.icon, kcal: f.kcal, p: f.protein, c: f.carbs, f: f.fat, hf: f }));
+        }
+        function openDbFood(f) {
+            if (f.hf) { openHealthyFood(f.hf); return; }
+            openPortionModal({ name: dbFoodName(f), kcal_100g: f.kcal, protein_100g: f.p, carbs_100g: f.c, fat_100g: f.f,
+                icon: f.i || '🍽️', source: 'USDA', id: 'db_' + f.k, portions: f.u, portionsMl: !!f.d, density: f.d });
+        }
+        // Alimentos de "Saludables" que también están en la base: toman sus porciones caseras
+        const HF_TO_DB = {
+            chicken_breast: 'pollo_pechuga', chicken_thigh: 'pollo_muslo', tuna_water: 'atun', salmon: 'salmon', shrimp: 'langostinos',
+            beef_lean: 'carne_magra', flank_steak: 'vacio', ground_beef_lean: 'carne_picada', pork_loin: 'cerdo_lomo', pork_shoulder: 'cerdo_bondiola',
+            beef_liver: 'higado', ham_lean: 'jamon', turkey: 'pavo', greek_yogurt: 'yogur_griego', whey: 'whey',
+            rice_brown: 'arroz_integral', rice_white: 'arroz_blanco', oats: 'avena', sweet_potato: 'batata', potato: 'papa_hervida',
+            bread_whole: 'pan_integral', pasta_whole: 'fideos', pasta_white: 'fideos', polenta: 'polenta', quinoa: 'quinoa',
+            lentils: 'lentejas', chickpeas: 'garbanzos', black_beans: 'porotos', peas: 'arvejas', corn: 'choclo',
+            broccoli: 'brocoli', cauliflower: 'coliflor', spinach: 'espinaca', chard: 'acelga', cabbage: 'repollo', tomato: 'tomate',
+            carrot: 'zanahoria', beet: 'remolacha', lettuce: 'lechuga', cucumber: 'pepino', pepper: 'morron', onion: 'cebolla',
+            pumpkin: 'calabaza', zucchini: 'zapallito', eggplant: 'berenjena', mushrooms: 'champinones', green_beans: 'chauchas',
+            apple: 'manzana', banana: 'banana', strawberry: 'frutilla', orange: 'naranja', tangerine: 'naranja', pear: 'pera',
+            grape: 'uva', kiwi: 'kiwi', mango: 'mango', pineapple: 'anana', blueberry: 'arandanos', watermelon: 'sandia',
+            melon: 'melon', peach: 'durazno', avocado: 'palta', almonds: 'almendras', peanuts: 'mani', walnuts: 'nueces',
+            cashews: 'castanas_caju', chia: 'chia', olives: 'aceitunas', olive_oil: 'aceite', hummus: 'hummus',
+            milk_skim: 'leche_descremada', milk_whole: 'leche', yogurt_natural: 'yogur', cottage: 'cottage',
+            cheese_fresh: 'queso_mozzarella', ricotta_light: 'ricota', port_salut_light: 'queso_maquina'
+        };
+        function openHealthyFood(f) {
+            const db = (_foodDb && HF_TO_DB[f.id]) ? _foodDb.find((x) => x.k === HF_TO_DB[f.id]) : null;
+            openPortionModal({ name: foodName(f), kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
+                icon: f.icon, source: 'Predeterminado', id: f.id, unit: f.unit,
+                portions: db && db.u, portionsMl: !!(db && db.d), density: db && db.d });
+        }
+        // Elegir un alimento de la base (buscador). onPick(f) con f = { k, n, kcal, p, c, f }.
+        async function openFoodDbPicker(onPick) {
+            const list = await foodDbList();
+            const ov = h('div', { className: 'fv-modal', style: { zIndex: 16600 } });
+            const close = () => ov.remove();
+            const inp = h('input', { className: 'input', type: 'search', placeholder: t('fv_pick_ph'), style: { width: '100%', marginBottom: '8px' } });
+            const res = h('div', { className: 'fv-pick-list' });
+            const paint = () => {
+                res.innerHTML = '';
+                const found = searchFoodDb(list, inp.value);
+                if (!found.length) { res.appendChild(h('p', { className: 'fv-note' }, t('fv_pick_empty'))); return; }
+                found.forEach((f) => res.appendChild(h('button', { className: 'fv-pick', onclick: () => { close(); onPick(f); } },
+                    h('span', {}, (f.i ? f.i + ' ' : '') + dbFoodName(f)), h('small', {}, t('fv_per100').replace('{k}', f.kcal)))));
+            };
+            inp.oninput = paint;
+            ov.appendChild(h('div', { className: 'fv-card' }, h('p', { className: 'fv-title' }, t('fv_pick_title')), inp, res,
+                h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: close }, t('fv_cancel'))));
+            ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+            paint();
+            setTimeout(() => inp.focus(), 50);
+        }
+        // Lo que más se escapa en una foto: un toque y queda sumado (valores del USDA por 100 g).
+        const MEAL_EXTRAS = [
+            { lbl: 'fv_x_oil', n: 'Aceite', g: 13, per100: { kcal: 900, protein: 0, carbs: 0, fat: 100 } },
+            { lbl: 'fv_x_butter', n: 'Manteca', g: 10, per100: { kcal: 717, protein: 0.8, carbs: 0.1, fat: 81.1 } },
+            { lbl: 'fv_x_mayo', n: 'Mayonesa', g: 15, per100: { kcal: 680, protein: 1, carbs: 0.6, fat: 74.8 } },
+            { lbl: 'fv_x_cheese', n: 'Queso rallado', g: 10, per100: { kcal: 420, protein: 28.4, carbs: 13.9, fat: 27.8 } },
+            { lbl: 'fv_x_dressing', n: 'Aderezo', g: 15, per100: { kcal: 240, protein: 0.4, carbs: 12.1, fat: 21.1 } }
+        ];
+        // Estimación del plato: cada alimento con sus gramos editables. Si el alimento está en la base
+        // (per100), los macros salen de ahí; si no ("≈ IA"), escalan con lo que estimó la IA. Se puede
+        // cambiar el alimento, agregar uno, sumar aceite o aderezo, y destildar lo que no corresponde.
         function openMealEstimate(items) {
             let meal = _foodModal.meal || 1;
             const rows = items.map(it => Object.assign({}, it, { g0: it.grams, on: true }));
             const ov = h('div', { className: 'fv-modal' });
             const card = h('div', { className: 'fv-card' });
             const close = () => ov.remove();
-            const k = (r) => (r.g0 ? r.grams / r.g0 : 0);
+            const val = (r, f) => {
+                if (r.per100) return (r.per100[f] || 0) * r.grams / 100;
+                return r.g0 ? r[f] * r.grams / r.g0 : 0;
+            };
             card.appendChild(h('p', { className: 'fv-title' }, ico('utensils', 'ico-accent'), ' ' + t('fv_meal_title')));
             card.appendChild(h('p', { className: 'fv-note' }, t('fv_meal_note')));
+            const list = h('div', {});
             const total = h('p', { className: 'fv-total' });
             const renderTotal = () => {
                 const on = rows.filter(r => r.on && r.grams > 0);
-                const sum = (f) => on.reduce((a, r) => a + r[f] * k(r), 0);
+                const sum = (f) => on.reduce((a, r) => a + val(r, f), 0);
                 total.textContent = Math.round(sum('kcal')) + ' kcal · ' + Math.round(sum('protein')) + 'g P · ' + Math.round(sum('carbs')) + 'g C · ' + Math.round(sum('fat')) + 'g G';
             };
-            rows.forEach(r => {
-                const row = h('div', { className: 'fv-row' });
-                const chk = h('input', { type: 'checkbox', className: 'fv-chk' }); chk.checked = true;
-                const kc = h('span', { className: 'fv-kcal' }, r.kcal + ' kcal');
-                const g = h('input', { type: 'number', inputmode: 'numeric', className: 'input fv-g', value: String(r.grams) });
-                chk.onchange = () => { r.on = chk.checked; row.classList.toggle('off', !r.on); renderTotal(); };
-                g.oninput = () => { r.grams = Math.max(0, parseFloat(g.value) || 0); kc.textContent = Math.round(r.kcal * k(r)) + ' kcal'; renderTotal(); };
-                row.appendChild(chk); row.appendChild(h('span', { className: 'fv-name' }, r.name));
-                row.appendChild(g); row.appendChild(h('span', { className: 'fv-unit' }, 'g')); row.appendChild(kc);
-                card.appendChild(row);
-            });
+            const fromDb = (f) => ({ name: dbFoodName(f), per100: { kcal: f.kcal, protein: f.p, carbs: f.c, fat: f.f }, src: 'base' });
+            // Al agregar un alimento, arranca con su porción casera (1 empanada = 85 g) en vez de 100 g
+            const firstGrams = (f) => (Array.isArray(f.u) && f.u.length) ? Math.round(f.u[defPortionIdx(f.u)][1] * (f.d || 1)) : 100;
+            const renderRows = () => {
+                list.innerHTML = '';
+                rows.forEach(r => {
+                    const row = h('div', { className: 'fv-row' + (r.on ? '' : ' off') });
+                    const chk = h('input', { type: 'checkbox', className: 'fv-chk' }); chk.checked = r.on;
+                    const kc = h('span', { className: 'fv-kcal' }, Math.round(val(r, 'kcal')) + ' kcal');
+                    const g = h('input', { type: 'number', inputmode: 'numeric', className: 'input fv-g', value: String(Math.round(r.grams)) });
+                    chk.onchange = () => { r.on = chk.checked; row.classList.toggle('off', !r.on); renderTotal(); };
+                    g.oninput = () => { r.grams = Math.max(0, parseFloat(g.value) || 0); kc.textContent = Math.round(val(r, 'kcal')) + ' kcal'; renderTotal(); };
+                    // Tocar el nombre: cambiar el alimento (los gramos quedan)
+                    const nameBtn = h('button', { className: 'fv-name fv-name-btn', title: t('fv_change'), onclick: () => openFoodDbPicker((f) => { Object.assign(r, fromDb(f)); renderRows(); renderTotal(); }) },
+                        r.name, r.src === 'ia' ? h('small', { className: 'fv-ia', title: t('fv_ai_tip') }, ' ' + t('fv_ai_tag')) : null);
+                    row.appendChild(chk); row.appendChild(nameBtn);
+                    row.appendChild(g); row.appendChild(h('span', { className: 'fv-unit' }, 'g')); row.appendChild(kc);
+                    list.appendChild(row);
+                });
+            };
+            renderRows();
+            card.appendChild(list);
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '8px' }, onclick: () => openFoodDbPicker((f) => {
+                const g0 = firstGrams(f);
+                rows.push(Object.assign({ grams: g0, g0, on: true }, fromDb(f))); renderRows(); renderTotal();
+            }) }, t('fv_add_food')));
+            card.appendChild(h('p', { className: 'fv-label', style: { marginTop: '12px' } }, t('fv_extras')));
+            const extras = h('div', { className: 'fv-extras' });
+            MEAL_EXTRAS.forEach((x) => extras.appendChild(h('button', { className: 'fv-extra', onclick: () => {
+                rows.push({ name: x.n, grams: x.g, g0: x.g, on: true, per100: x.per100, src: 'base' }); renderRows(); renderTotal();
+            } }, '+ ' + t(x.lbl))));
+            card.appendChild(extras);
             card.appendChild(total);
             card.appendChild(h('p', { className: 'fv-label' }, t('food_which_meal')));
             const mealSel = h('div', { className: 'portion-presets' });
@@ -15313,9 +15572,8 @@
                 if (!add.length) { close(); return; }
                 const d = todayStr(), base = Date.now();
                 add.forEach((r, i) => {
-                    const f = k(r);
                     state.foodLog.unshift({ id: base + '-' + i, date: d, name: r.name + ' · ' + Math.round(r.grams) + ' g', meal,
-                        kcal: Math.round(r.kcal * f), protein: +(r.protein * f).toFixed(1), carbs: +(r.carbs * f).toFixed(1), fat: +(r.fat * f).toFixed(1) });
+                        kcal: Math.round(val(r, 'kcal')), protein: +val(r, 'protein').toFixed(1), carbs: +val(r, 'carbs').toFixed(1), fat: +val(r, 'fat').toFixed(1) });
                 });
                 saveFoodLog(); close();
                 if (state.tab === 'home') renderHome();
