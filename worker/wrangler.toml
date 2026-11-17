@@ -66,7 +66,7 @@ PREMIUM_TITLE = "BERSERKERMOD - Premium"
 #   npx wrangler secret put VAPID_PRIVATE_JWK
 # Sin el secret, el cron no manda nada (no rompe).
 VAPID_PUBLIC_KEY = "BL9uLP_IGUJSeG40lB-aLQlvv2vFYuXb8qRAkwd7pO5_4yhp_3IwLQNGyWX1KW-RJL_k2bfuHuyMQfRqwUxr2zo"
-VAPID_SUBJECT = "mailto:tornatiezequiel0@gmail.com"
+VAPID_SUBJECT = "mailto:berserkermod3@gmail.com"
 
 # Google Play Billing (suscripcion Premium dentro de la TWA de Android).
 # PLAY_PACKAGE = applicationId de la app en Play. El secret PLAY_SA_JSON es el

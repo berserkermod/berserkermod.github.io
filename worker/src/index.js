@@ -2012,50 +2012,84 @@ async function createCheckout(req, env) {
 }
 
 // ── Mercado Pago webhook ─────────────────────────────────────────────
-// MP manda notificaciones de pago. Cuando un pago queda 'approved',
-// generamos un código y lo guardamos contra el payment id para que la app
-// lo recupere tras el redirect.
+// MP manda notificaciones de pago. Cuando un pago de la app queda 'approved',
+// generamos un código y lo guardamos contra el payment id (y el número de la
+// app) para que la app lo recupere tras el redirect.
+//
+// Reglas (auditoría 2026-11):
+// - MP solo reintenta si NO respondemos 2xx. Si algo falla de nuestro lado (consultar el
+//   pago, KV, el Durable Object) respondemos 500 y MP vuelve a avisar solo. Lo que no es
+//   nuestro, no existe o no está aprobado: 200 (no tiene sentido que reintente).
+// - Solo cuentan los pagos que salieron del checkout de la app ("{coach|premium}_{N}m"):
+//   la cuenta de MP también recibe transferencias y pagos que no tienen nada que ver.
+// - El código nunca viaja en la respuesta (MP no lo usa; cualquiera puede llamar acá).
+// - Un solo código por pago aunque lleguen dos avisos a la vez: decide el Durable Object
+//   del pago (consistente, a diferencia de KV).
+const MP_REF_RE = /^(coach|premium)_(1|3|6|12)m(?:\.([A-Za-z0-9_-]{16,64}))?$/;
 async function mercadoPagoWebhook(req, env, url) {
-    // Respondemos 200 rápido siempre (MP reintenta si no): el trabajo va adentro.
+    let paymentId = '';
+    const retry = (why) => {
+        console.error('[webhook mp] reintentar', paymentId, why);
+        return json({ ok: false, error: 'retry' }, 500);
+    };
     try {
         if (!env.MP_ACCESS_TOKEN) return json({ ok: true, note: 'MP no configurado' }, 200);
         const body = await readBody(req);
         const type = (body && (body.type || body.topic)) || url.searchParams.get('type') || url.searchParams.get('topic');
-        let paymentId = (body && body.data && body.data.id) || url.searchParams.get('data.id') || url.searchParams.get('id');
-        if (type !== 'payment' || !paymentId) return json({ ok: true, ignored: true }, 200);
+        paymentId = String((body && body.data && body.data.id) || url.searchParams.get('data.id') || url.searchParams.get('id') || '');
+        // Los números de pago de MP son solo dígitos (y así no se puede armar otra URL de la API).
+        if (type !== 'payment' || !/^\d{1,20}$/.test(paymentId)) return json({ ok: true, ignored: true }, 200);
 
         const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
             headers: { Authorization: `Bearer ${env.MP_ACCESS_TOKEN}` }
         });
-        if (!mpRes.ok) return json({ ok: true, note: 'payment lookup failed' }, 200);
+        if (mpRes.status === 404) return json({ ok: true, note: 'payment not found' }, 200);
+        if (!mpRes.ok) return retry('consulta del pago ' + mpRes.status);
         const payment = await mpRes.json();
         if (payment.status !== 'approved') return json({ ok: true, status: payment.status }, 200);
 
-        // idempotencia: si ya generamos código para este pago, no dupliques.
-        // paid:{id} es el marcador durable (90 días); payment:{id} es el ticket
-        // de retiro, que se acorta al primer retiro (ver retrieveCode).
-        const existing = await env.BMOD_KV.get(`paid:${paymentId}`);
-        if (existing) return json({ ok: true, code: existing, dup: true }, 200);
-
-        // producto desde external_reference: "{coach|premium}_{N}m" (por
-        // duración; N = 1|3|6|12). Legacy "coach"/"premium" a secas (preferencias
-        // viejas pendientes de pago) → se honra como vitalicio, que es lo que
-        // se compró en su momento.
+        // Producto desde external_reference: "{coach|premium}_{N}m" (N = 1|3|6|12), con el
+        // número de la app opcional. Cualquier otra cosa no salió de la app: se ignora.
         const extRef = String(payment.external_reference || '');
-        let product = 'coach', duration_days = null;
-        const pm = extRef.match(/^(coach|premium)_(1|3|6|12)m(?:\.([A-Za-z0-9_-]{16,64}))?$/);
-        if (pm) { product = pm[1]; duration_days = PLAN_DURATION_DAYS[Number(pm[2])] || null; }
-        else if (extRef === 'premium') product = 'premium';
+        const pm = extRef.match(MP_REF_RE);
+        if (!pm) { console.warn('[webhook mp] pago ajeno a la app', paymentId); return json({ ok: true, ignored: 'not_app' }, 200); }
+        const product = pm[1], months = Number(pm[2]);
+        const plan = planConfig(env, product, months);
+        // Precio y moneda: los fija nuestro checkout, así que esto es solo una red de seguridad.
+        // Margen de la mitad: si el precio sube mientras un pago en efectivo está pendiente,
+        // ese pago se honra igual.
+        const amount = Number(payment.transaction_amount);
+        if ((payment.currency_id && payment.currency_id !== plan.currency) || (plan.price > 0 && !(amount >= plan.price * 0.5))) {
+            console.error('[webhook mp] monto o moneda no coinciden', paymentId, payment.currency_id, amount, plan.price);
+            return json({ ok: true, ignored: 'amount' }, 200);
+        }
+
+        // idempotencia: paid:{id} es el marcador durable (90 días); payment:{id} es el ticket
+        // de retiro, que se acorta al primer retiro (ver retrieveCode).
+        if (await env.BMOD_KV.get(`paid:${paymentId}`)) return json({ ok: true, dup: true }, 200);
+
         let code = newCode();
         while (await kvGet(env, `code:${code}`)) code = newCode();
-        await kvPut(env, `code:${code}`, { product, duration_days, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: String(paymentId) });
+        let fresh = true;
+        if (env.NOTIFIER) {
+            const claim = await callNotifier(env, 'pay:' + paymentId, { op: 'pay-claim', code });
+            if (!claim || !claim.ok) return retry('pay-claim ' + (claim && claim.error));
+            if (claim.done) return json({ ok: true, dup: true }, 200);
+            fresh = claim.code === code;
+            code = claim.code;
+        }
+        // Si un aviso anterior ya escribió este código (y después falló), no se pisa: pudo activarse.
+        if (fresh || !(await kvGet(env, `code:${code}`))) {
+            await kvPut(env, `code:${code}`, { product, duration_days: PLAN_DURATION_DAYS[months] || null, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: paymentId });
+        }
         await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
         await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
-        if (pm && pm[3]) await kvPut(env, `buy:${pm[3]}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
-        track(env, req, 'paid', pm ? pm[1] + '_' + pm[2] + 'm' : extRef, { server: true });
-        return json({ ok: true, code }, 200);
+        if (pm[3]) await kvPut(env, `buy:${pm[3]}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
+        if (env.NOTIFIER) await callNotifier(env, 'pay:' + paymentId, { op: 'pay-done' });   // si falla, el próximo aviso rehace sin duplicar
+        track(env, req, 'paid', product + '_' + months + 'm', { server: true });
+        return json({ ok: true }, 200);
     } catch (e) {
-        return json({ ok: true, error: String(e && e.message) }, 200);
+        return retry(String((e && e.message) || e));
     }
 }
 
@@ -2644,8 +2678,28 @@ export class Notifier {
     }
     async alarm() {
         // Sin throw: una alarma que falla se reintenta sola y podría mandar el aviso dos veces.
-        try { await notifierAlarm(this.ctx.storage, this.env, Date.now()); } catch { /* el próximo se reprograma */ }
+        // Pero tampoco se puede quedar callada: si falló antes de programar la próxima, se
+        // reintenta más tarde (auditoría 2026-11, D-1).
+        try { await notifierAlarm(this.ctx.storage, this.env, Date.now()); }
+        catch (e) {
+            console.error('[notifier] alarma falló', (e && e.message) || e);
+            try { await notifierAlarmRetry(this.ctx.storage, Date.now()); } catch { /* sin más salida */ }
+        }
     }
+}
+// Reintento de una alarma que falló: 15 min, 30, 1 h, 2 h… hasta 6 h entre intentos, sin
+// rendirse. Solo si la falla fue ANTES de dejar programada la próxima (notifierAlarm la
+// programa apenas manda el aviso), así un error después de mandar no lo duplica. El fin del
+// descanso no se reintenta: ya pasó.
+async function notifierAlarmRetry(storage, now) {
+    const job = await storage.get('job');
+    if (!job || job.kind === 'rest') return null;
+    if (await storage.getAlarm()) return null;
+    const fails = (Number(job.fails) || 0) + 1;
+    const at = now + Math.min(15 * 60000 * 2 ** Math.min(fails - 1, 10), 6 * 3600000);
+    await storage.put('job', Object.assign({}, job, { fails }));
+    await storage.setAlarm(at);
+    return at;
 }
 async function callNotifier(env, name, body) {
     if (!env.NOTIFIER) return { ok: false, error: 'sin notifier' };
@@ -2691,6 +2745,55 @@ async function notifierOp(storage, env, b, now) {
             await storage.delete('job');
             await storage.deleteAlarm();
             return { ok: true };
+        // ── Un pago de Mercado Pago = un código (un objeto por pago: 'pay:{id}') ──
+        // El Durable Object atiende de a un pedido por vez y su almacenamiento es consistente:
+        // si llegan dos avisos del mismo pago a la vez, el segundo recibe el código del primero.
+        case 'pay-claim': {
+            const cur = await storage.get('pay');
+            if (cur) return { ok: true, code: cur.code, done: !!cur.done };
+            const code = String(b.code || '');
+            if (!/^BMOD-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return { ok: false, error: 'invalid' };
+            await storage.put('pay', { code, done: false, at: now });
+            return { ok: true, code, done: false };
+        }
+        case 'pay-done': {
+            const cur = await storage.get('pay');
+            if (cur && !cur.done) await storage.put('pay', Object.assign({}, cur, { done: true }));
+            return { ok: true };
+        }
+        // ── Cupo de testers (un solo objeto: 'testers') ──
+        // Antes el tope vivía en KV: con pedidos simultáneos se salteaba. Acá cuenta bien.
+        case 'tester-slot': {
+            const max = Number(b.max) || 0, ipMax = Number(b.ipMax) || 0;
+            const deviceId = String(b.deviceId || '').slice(0, 80);
+            if (!deviceId) return { ok: false, error: 'invalid' };
+            let n = await storage.get('n');
+            if (typeof n !== 'number') n = Math.max(0, Number(b.seed) || 0);   // arranca desde el contador viejo de KV
+            const devKey = 'dev:' + deviceId;
+            const prevDev = await storage.get(devKey);
+            if (prevDev) {
+                // Ya tiene lugar: si fue hace un momento, es el mismo reclamo repetido; si fue
+                // hace más, el intento anterior falló antes de guardarse y puede seguir sin contar de nuevo.
+                if (now - prevDev < 120000) return { ok: false, error: 'busy' };
+                await storage.put(devKey, now);
+                return { ok: true, n, again: true };
+            }
+            if (n >= max) return { ok: false, error: 'full', n };
+            const ipKey = typeof b.ipKey === 'string' && b.ipKey ? 'ip:' + b.ipKey.slice(0, 80) : null;
+            if (ipKey) {
+                let ipRec = await storage.get(ipKey);
+                if (ipRec && !(ipRec.exp > now)) ipRec = null;
+                if (ipRec && ipRec.n >= ipMax) return { ok: false, error: 'ip' };
+                await storage.put(ipKey, { n: (ipRec ? ipRec.n : 0) + 1, exp: ipRec ? ipRec.exp : now + (Number(b.ipTtl) || 0) * 1000 });
+            }
+            await storage.put(devKey, now);
+            await storage.put('n', n + 1);
+            return { ok: true, n: n + 1 };
+        }
+        case 'tester-count': {
+            const n = await storage.get('n');
+            return { ok: true, n: typeof n === 'number' ? n : null };
+        }
         default:
             return { ok: false, error: 'op' };
     }
@@ -2712,18 +2815,23 @@ async function notifierAlarm(storage, env, now) {
         const week = isoWeek(localParts(tz, new Date(now)).date);
         const done = !!r.last_checkin_at && isoWeek(localParts(tz, new Date(r.last_checkin_at)).date) === week;
         const paused = !!(r.profile && r.profile.status === 'pausado');
-        let sent = 0;
+        let sent = 0, dirty = false;
         if (!done && !paused && (r.push_subs || []).length) {
             const lang = r.push_lang || 'es';
             const res = await pushMany(env, r.push_subs, { title: 'BERSERKERMOD', body: pushText(lang, 'chk', { coach: r.coach_name || pushText(lang, 'coach') }), tag: 'bm-coach-chk', url: './BERSERKERMOD.html?r=' + r.share_token }, { ttl: 43200 });
             sent = res.sent;
             if (res.dead.length) {
                 r.push_subs = r.push_subs.filter((s) => !res.dead.includes(s.endpoint));
-                await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
+                dirty = true;
             }
         }
+        // Primero la próxima alarma (así, si después falla la limpieza, no se reintenta ni se duplica).
         const at = chkNextAt(r, now);
-        if (at) await storage.setAlarm(at); else await storage.delete('job');
+        if (at) {
+            await storage.setAlarm(at);
+            if (job.fails) await storage.put('job', { kind: 'chk', token: job.token });
+        } else await storage.delete('job');
+        if (dirty) await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
         return { kind: 'chk', sent, skipped: done || paused, next: at };
     }
     if (job.kind === 'digest') {
@@ -2744,16 +2852,18 @@ async function notifierAlarm(storage, env, now) {
             await storage.setAlarm(now + 2000);
             return { kind: 'digest', partial: true };
         }
-        let sent = 0;
+        let sent = 0, dead = [];
         if (count) {
             const lang = dg.lang || 'es';
             const list = names.join(', ') + (count > names.length ? pushText(lang, 'more', { n: count - names.length }) : '');
             const r2 = await pushMany(env, dg.subs, { title: 'BERSERKERMOD', body: pushText(lang, 'digest', { names: list }), tag: 'bm-coach-digest', url: './BERSERKERMOD.html' }, { ttl: 43200 });
             sent = r2.sent;
-            if (r2.dead.length) { dg.subs = dg.subs.filter((s) => !r2.dead.includes(s.endpoint)); await kvPut(env, `coachcfg:${job.coachId}`, cfg); }
+            dead = r2.dead;
         }
+        // Primero la próxima alarma (así, si después falla la limpieza, no se reintenta ni se duplica).
         await storage.put('job', { kind: 'digest', coachId: job.coachId });
         await storage.setAlarm(nextLocalTime(now, null, dg.hour, tz));
+        if (dead.length) { dg.subs = dg.subs.filter((s) => !dead.includes(s.endpoint)); await kvPut(env, `coachcfg:${job.coachId}`, cfg); }
         return { kind: 'digest', sent, count };
     }
     await storage.delete('job');
@@ -2820,7 +2930,7 @@ async function remindRoutine(req, env, url, id) {
     await kvPut(env, routineKey(coachId, id), r);
     return json({ ok: true, sent: res.sent, no_subs: res.no_subs });
 }
-Notifier._test = { encryptPushPayload, nextLocalTime, notifierAlarm, notifierOp, localParts };
+Notifier._test = { encryptPushPayload, nextLocalTime, notifierAlarm, notifierAlarmRetry, notifierOp, localParts };
 
 async function pushSubscribe(req, env) {
     const body = await readBody(req);
@@ -2911,19 +3021,36 @@ async function testersClaim(req, env) {
         return err('Código revocado', 403);
     }
 
-    // tope global
+    // tope global (lectura rápida en KV; el que decide de verdad es el Durable Object)
     const max = parseInt(env.TESTERS_CLAIM_MAX, 10) || TESTERS_CLAIM_MAX_DEFAULT;
     const counter = (await kvGet(env, 'testers:count')) || { n: 0 };
     if (counter.n >= max) return err('Cupo de testers completo', 409);
 
     // tope blando por IP (hash, no se guarda la IP)
     const ip = req.headers.get('CF-Connecting-IP') || '';
-    let ipKey = null;
-    if (ip) {
-        ipKey = 'tester-ip:' + await ipHash(ip);
-        const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
-        if (ipRec.n >= TESTERS_IP_MAX) return err('Demasiados reclamos desde esta red', 429);
-        await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TESTERS_IP_TTL });
+    const ipH = ip ? await ipHash(ip) : null;
+    let n;
+    if (env.NOTIFIER) {
+        // Tope global, por red y por teléfono en un solo lugar consistente: con pedidos
+        // simultáneos ya no se pasa del cupo (auditoría 2026-11, K-3).
+        const slot = await callNotifier(env, 'testers', { op: 'tester-slot', deviceId, ipKey: ipH, max, ipMax: TESTERS_IP_MAX, ipTtl: TESTERS_IP_TTL, seed: counter.n });
+        if (!slot || !slot.ok) {
+            const why = slot && slot.error;
+            if (why === 'full') return err('Cupo de testers completo', 409);
+            if (why === 'ip') return err('Demasiados reclamos desde esta red', 429);
+            if (why === 'busy') return err('Ya estamos procesando tu reclamo. Probá de nuevo en un minuto.', 429);
+            console.error('[testers] cupo no disponible', why);
+            return err('No se pudo reclamar ahora', 503);
+        }
+        n = slot.n;
+    } else {
+        if (ipH) {
+            const ipKey = 'tester-ip:' + ipH;
+            const ipRec = (await kvGet(env, ipKey)) || { n: 0 };
+            if (ipRec.n >= TESTERS_IP_MAX) return err('Demasiados reclamos desde esta red', 429);
+            await kvPut(env, ipKey, { n: ipRec.n + 1 }, { expirationTtl: TESTERS_IP_TTL });
+        }
+        n = counter.n + 1;
     }
 
     let code = newCode();
@@ -2934,7 +3061,7 @@ async function testersClaim(req, env) {
     };
     await kvPut(env, `code:${code}`, rec);
     await kvPut(env, `tester:${deviceId}`, { code, claimed_at: rec.created_at });
-    await kvPut(env, 'testers:count', { n: counter.n + 1 });
+    await kvPut(env, 'testers:count', { n });
     track(env, req, 'tester_claim', 'premium', { s: surfaceOf(body) });
     return issue(code, rec);
 }
@@ -2943,8 +3070,15 @@ async function testersClaim(req, env) {
 async function adminTesters(req, env) {
     if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
     const counter = (await kvGet(env, 'testers:count')) || { n: 0 };
+    // El número que vale es el del Durable Object (la copia en KV puede quedar uno abajo
+    // si dos reclamos terminan a la vez).
+    let count = counter.n;
+    if (env.NOTIFIER) {
+        const c = await callNotifier(env, 'testers', { op: 'tester-count' });
+        if (c && c.ok && typeof c.n === 'number') count = c.n;
+    }
     const claims = await listByPrefix(env, 'tester:');
-    return json({ ok: true, count: counter.n, open: String(env.TESTERS_CLAIM_OPEN || '') === 'true', claims });
+    return json({ ok: true, count, open: String(env.TESTERS_CLAIM_OPEN || '') === 'true', claims });
 }
 
 // ─────────────────────────────────────────────
@@ -3050,12 +3184,14 @@ async function sendDueReminders(env, when = new Date()) {
     // Una hora local por ZONA, no por suscripción: crear un Intl.DateTimeFormat
     // cuesta ~0,5 ms y el plan Free da 10 ms de CPU por corrida (con 200
     // suscriptores eran 75-200 ms; así queda en menos de 1 ms).
+    // Ojo: validTz también crea un Intl.DateTimeFormat, así que la zona se valida una vez
+    // por texto de zona y no por suscripción (antes, con ~60 suscripciones se pasaba de 10 ms).
     const clockByTz = {};
     for (const id of Object.keys(all.subs).sort()) {
         const s = all.subs[id];
         if (!s || !s.endpoint) continue;
-        const tz = validTz(s.tz) || DEFAULT_TZ;
-        const clock = clockByTz[tz] || (clockByTz[tz] = localClock(tz, when));
+        const raw = typeof s.tz === 'string' ? s.tz : '';
+        const clock = clockByTz[raw] || (clockByTz[raw] = localClock(validTz(raw) || DEFAULT_TZ, when));
         if (clock.hour === REMINDER_HOUR && s.sent !== clock.date) due.push({ id, date: clock.date });
     }
     if (!due.length) return { sent: 0, due: 0 };
@@ -3183,6 +3319,12 @@ export default {
         if (declared > (p === '/api/parse-routine' ? MAX_BODY_PDF : p === '/api/food-vision' ? MAX_BODY_IMG : p === '/api/transfer' ? XFER_MAX : MAX_BODY)) return err('Payload too large', 413);
         const strict = STRICT_ROUTES.includes(p) || p.startsWith('/api/admin/') || /\/(report|leave|new-link|interest|premium-auto)$/.test(p);
         if (await rateLimited(env, strict ? 'RL_STRICT' : 'RL_OPEN', (strict ? 's:' : 'o:') + clientIp(req))) {
+            return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
+        }
+        // Crear una rutina gasta 2 de las 1.000 escrituras diarias de KV y no pide licencia:
+        // 5 por minuto por IP, con su propio contador (un gimnasio que usa la IA no se lo
+        // come al coach). Antes entraban 60 por minuto (auditoría 2026-11, L-1).
+        if (p === '/api/routines' && m === 'POST' && await rateLimited(env, 'RL_STRICT', 'r:' + clientIp(req))) {
             return json({ error: 'Demasiadas solicitudes. Esperá un minuto y probá de nuevo.' }, 429, { 'Retry-After': '60' });
         }
 

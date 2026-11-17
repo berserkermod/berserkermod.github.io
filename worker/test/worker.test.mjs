@@ -914,13 +914,15 @@ let code, licToken;
     await call('POST', '/api/checkout', { product: 'premium', months: 1, nonce: 'x'.repeat(65) });
     ok('número de más de 64 → se ignora', sentPref.external_reference === 'premium_1m', sentPref.external_reference);
     globalThis.fetch = async (u) => {
-        if (String(u).includes('/v1/payments/555')) return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m.' + NONCE }), { status: 200 });
+        if (String(u).includes('/v1/payments/555')) return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m.' + NONCE, transaction_amount: 19500, currency_id: 'ARS' }), { status: 200 });
         return new Response('{}', { status: 404 });
     };
     const pendRef = await call('GET', '/api/license/retrieve?ref=' + NONCE);
     ok('retirar por número antes del pago → pending', pendRef.status === 200 && pendRef.body.status === 'pending', pendRef.body);
     const whApp = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '555' } });
-    ok('webhook con número → código de 3 meses', whApp.status === 200 && /^BMOD-/.test(whApp.body.code || ''), whApp.body);
+    const whAppRaw = JSON.stringify(whApp.body);
+    whApp.body.code = await env.BMOD_KV.get('paid:555');
+    ok('webhook con número → código de 3 meses (y el código NO viaja en la respuesta)', whApp.status === 200 && /^BMOD-/.test(whApp.body.code || '') && !whAppRaw.includes('BMOD-'), whAppRaw);
     const byRef = await call('GET', '/api/license/retrieve?ref=' + NONCE);
     ok('la app retira el código con su número', byRef.body.status === 'ready' && byRef.body.code === whApp.body.code, byRef.body);
     const byPay = await call('GET', '/api/license/retrieve?payment=555');
@@ -938,11 +940,12 @@ let code, licToken;
     // Webhook → código con duración → activación arranca el reloj
     globalThis.fetch = async (u) => {
         if (String(u).includes('/v1/payments/777')) {
-            return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m' }), { status: 200 });
+            return new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_3m', transaction_amount: 19500, currency_id: 'ARS' }), { status: 200 });
         }
         return new Response('{}', { status: 404 });
     };
     const wh = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '777' } });
+    wh.body.code = await env.BMOD_KV.get('paid:777');
     ok('webhook premium_3m → genera código', wh.status === 200 && /^BMOD-/.test(wh.body.code || ''), wh.body);
     const actDur = await call('POST', '/api/license/activate', { code: wh.body.code, deviceId: 'dur-dev' });
     const expMs = actDur.body.expiresAt ? new Date(actDur.body.expiresAt).getTime() - Date.now() : 0;
@@ -965,11 +968,12 @@ let code, licToken;
     // Coach por duración: webhook coach_12m → código que vence en ~366 días
     globalThis.fetch = async (u) => {
         if (String(u).includes('/v1/payments/888')) {
-            return new Response(JSON.stringify({ status: 'approved', external_reference: 'coach_12m' }), { status: 200 });
+            return new Response(JSON.stringify({ status: 'approved', external_reference: 'coach_12m', transaction_amount: 120000, currency_id: 'ARS' }), { status: 200 });
         }
         return new Response('{}', { status: 404 });
     };
     const whC = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
+    whC.body.code = await env.BMOD_KV.get('paid:888');
     const actC = await call('POST', '/api/license/activate', { code: whC.body.code, deviceId: 'coach-dur-dev' });
     const expC = actC.body.expiresAt ? new Date(actC.body.expiresAt).getTime() - Date.now() : 0;
     ok('coach 12m → producto coach, vence en ~366 días', actC.body.product === 'coach' && expC > 365 * 86400000 && expC < 367 * 86400000, actC.body);
@@ -1332,21 +1336,22 @@ let code, licToken;
     // Ticket de pago: durable paid:{id} + ticket payment:{id} con gracia tras el primer retiro
     env.MP_ACCESS_TOKEN = 'TEST-mp-token';
     const realFetch2 = globalThis.fetch;
-    globalThis.fetch = async (u) => String(u).includes('/v1/payments/888')
-        ? new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_1m' }), { status: 200 })
+    globalThis.fetch = async (u) => String(u).includes('/v1/payments/889')
+        ? new Response(JSON.stringify({ status: 'approved', external_reference: 'premium_1m', transaction_amount: 7500, currency_id: 'ARS' }), { status: 200 })
         : new Response('{}', { status: 404 });
-    const wh1 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
-    const ticketRaw = JSON.parse(await env.BMOD_KV.get('payment:888'));
-    ok('webhook escribe ticket JSON sin retirar + marcador paid', wh1.body.code && ticketRaw.code === wh1.body.code && ticketRaw.retrieved_at === null && (await env.BMOD_KV.get('paid:888')) === wh1.body.code, ticketRaw);
-    const r1 = await call('GET', '/api/license/retrieve?payment=888');
-    const r2 = await call('GET', '/api/license/retrieve?payment=888');
+    const wh1 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '889' } });
+    wh1.body.code = await env.BMOD_KV.get('paid:889');
+    const ticketRaw = JSON.parse(await env.BMOD_KV.get('payment:889'));
+    ok('webhook escribe ticket JSON sin retirar + marcador paid', wh1.body.code && ticketRaw.code === wh1.body.code && ticketRaw.retrieved_at === null && (await env.BMOD_KV.get('paid:889')) === wh1.body.code, ticketRaw);
+    const r1 = await call('GET', '/api/license/retrieve?payment=889');
+    const r2 = await call('GET', '/api/license/retrieve?payment=889');
     ok('retirar dos veces (refresh) devuelve el mismo código', r1.body.status === 'ready' && r1.body.code === wh1.body.code && r2.body.code === wh1.body.code, [r1.body, r2.body]);
-    const ticketAfter = JSON.parse(await env.BMOD_KV.get('payment:888'));
+    const ticketAfter = JSON.parse(await env.BMOD_KV.get('payment:889'));
     ok('el primer retiro marca retrieved_at (ticket pasa a gracia corta)', typeof ticketAfter.retrieved_at === 'string', ticketAfter);
-    const wh2 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '888' } });
-    ok('webhook repetido → mismo código (idempotente por paid:)', wh2.body.dup === true && wh2.body.code === wh1.body.code, wh2.body);
-    await env.BMOD_KV.delete('payment:888'); // simula el vencimiento de la gracia
-    const r3 = await call('GET', '/api/license/retrieve?payment=888');
+    const wh2 = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '889' } });
+    ok('webhook repetido → mismo código (idempotente por paid:)', wh2.body.dup === true && (await env.BMOD_KV.get('paid:889')) === wh1.body.code, wh2.body);
+    await env.BMOD_KV.delete('payment:889'); // simula el vencimiento de la gracia
+    const r3 = await call('GET', '/api/license/retrieve?payment=889');
     ok('vencida la gracia → pending (el código sigue en code:)', r3.body.status === 'pending' && !!(await env.BMOD_KV.get('code:' + wh1.body.code)), r3.body);
     await env.BMOD_KV.put('payment:legacy1', 'BMOD-LEGA-CY01');
     const rl = await call('GET', '/api/license/retrieve?payment=legacy1');
@@ -1886,7 +1891,9 @@ let code, licToken;
     // 8) Suscripción muerta, recordatorio sin avisos y apagar
     statusFor = () => 410;
     pushes = [];
-    res = await T.notifierAlarm(chkDO.storage, env, chkDO.storage.alarm);
+    // Una semana después de la próxima alarma: el control de arriba se mandó "esta semana" y,
+    // si hoy es lunes o martes, el próximo miércoles cae en la misma semana y (bien) no avisa.
+    res = await T.notifierAlarm(chkDO.storage, env, chkDO.storage.alarm + 7 * 86400000);
     const key = 'routine:' + C + ':' + r.id;
     let rec = JSON.parse(env.BMOD_KV._m.get(key));
     ok('suscripción muerta (410) → se borra y se apaga el recordatorio', pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined && chkDO.storage.alarm === firstAt + 7 * 86400000 || (pushes.length === 1 && rec.push_subs.length === 0 && chkDO.storage._m.get('job') === undefined), [pushes.length, rec.push_subs.length]);
@@ -1935,11 +1942,202 @@ let code, licToken;
     ok('el resumen nombra a quien hay que revisar (y no al recién llegado)', res.count === 1 && dgMsg && dgMsg.body.includes('Luz') && !dgMsg.body.includes('Nuevo'), dgMsg);
     const cfgG = await call('GET', '/api/coach/config?coach_id=' + CP);
     ok('la config del coach muestra el resumen sin exponer la suscripción', cfgG.body.digest.on === true && cfgG.body.digest.hour === 9 && !JSON.stringify(cfgG.body).includes('coach1'), cfgG.body);
+    // 11) Una falla momentánea no apaga el resumen para siempre (auditoría D-1)
+    const realGet = env.BMOD_KV.get;
+    env.BMOD_KV.get = async () => { throw new Error('KV GET failed: 429'); };
+    const tFail = Date.now();
+    dgDO.storage.alarm = null;   // como en Cloudflare: mientras corre, la alarma ya no figura como programada
+    await dgDO.obj.alarm();
+    const retryAt1 = dgDO.storage.alarm;
+    ok('si la alarma falla, se reintenta en ~15 minutos (no se pierde)', retryAt1 >= tFail + 15 * 60000 && retryAt1 < Date.now() + 15 * 60000 + 1000 && dgDO.storage._m.get('job').fails === 1, [retryAt1 - tFail, dgDO.storage._m.get('job')]);
+    dgDO.storage.alarm = null;
+    await dgDO.obj.alarm();
+    ok('si vuelve a fallar, espera el doble (30 minutos)', dgDO.storage.alarm - Date.now() > 29 * 60000 && dgDO.storage._m.get('job').fails === 2, dgDO.storage._m.get('job'));
+    env.BMOD_KV.get = realGet;
+    pushes = [];
+    res = await T.notifierAlarm(dgDO.storage, env, dgDO.storage.alarm);
+    ok('cuando KV vuelve, manda el resumen, borra la cuenta de fallas y vuelve a las 9 h', res.kind === 'digest' && pushes.length === 1 && !dgDO.storage._m.get('job').fails && T.localParts(BA, new Date(dgDO.storage.alarm)).hour === 9, [res, dgDO.storage._m.get('job')]);
+    // Falla DESPUÉS de mandar (al limpiar una suscripción muerta): no se reintenta, así no se duplica
+    statusFor = () => 410;
+    const realPut = env.BMOD_KV.put;
+    env.BMOD_KV.put = async (k, v, o) => { if (String(k).startsWith('coachcfg:')) throw new Error('KV PUT failed: 429'); return realPut.call(env.BMOD_KV, k, v, o); };
+    pushes = [];
+    dgDO.storage.alarm = null;
+    await dgDO.obj.alarm();
+    ok('si falla después de mandar, la próxima ya quedó programada (sin reintento ni aviso doble)', pushes.length === 1 && dgDO.storage.alarm > Date.now() && T.localParts(BA, new Date(dgDO.storage.alarm)).hour === 9 && !dgDO.storage._m.get('job').fails, [pushes.length, dgDO.storage.alarm, dgDO.storage._m.get('job')]);
+    env.BMOD_KV.put = realPut;
+    statusFor = () => 201;
+
     const dgOff = await call('PUT', '/api/coach/config', { coach_id: CP, digest: { on: false } });
     ok('apagar el resumen borra la alarma', dgOff.body.digest.on === false && dgDO.storage.alarm === null);
 
     globalThis.fetch = realFetch;
     delete env.NOTIFIER;
+}
+
+// ── Auditoría de infraestructura 2026-11: tanda 1 ──
+{
+    console.log('\nAuditoría 2026-11 (tanda 1): pagos, testers, cron, avisos, límites');
+    // Durable Objects de prueba que, como los de verdad, atienden de a un pedido por vez
+    const makeDONamespace = () => {
+        const dos = new Map();
+        const fakeStorage = () => {
+            const m = new Map();
+            const st = { _m: m, alarm: null, async get(k) { await null; return m.get(k); }, async put(k, v) { await null; m.set(k, JSON.parse(JSON.stringify(v))); }, async delete(k) { m.delete(k); }, async setAlarm(t) { st.alarm = Number(t); }, async getAlarm() { return st.alarm; }, async deleteAlarm() { st.alarm = null; } };
+            return st;
+        };
+        return {
+            _dos: dos,
+            idFromName: (name) => ({ name }),
+            get: (id) => {
+                if (!dos.has(id.name)) { const storage = fakeStorage(); dos.set(id.name, { storage, obj: new Notifier({ storage }, env), q: Promise.resolve() }); }
+                const d = dos.get(id.name);
+                return { fetch: (u, init) => { const run = d.q.then(() => d.obj.fetch(new Request(u, init))); d.q = run.catch(() => { }); return run; } };
+            }
+        };
+    };
+    const codesOfPayment = (id) => [...env.BMOD_KV._m.entries()].filter(([k, v]) => k.startsWith('code:') && JSON.parse(v).payment_id === id).map(([k]) => k.slice(5));
+
+    // ── Mercado Pago ──
+    env.MP_ACCESS_TOKEN = 'TEST-mp-token';
+    env.COACH_PRICE_ARS_12M = '120000'; env.PREMIUM_PRICE_ARS_1M = '7500';
+    const realFetch = globalThis.fetch;
+    const pays = {}; let mpStatus = 200, mpCalls = [];
+    globalThis.fetch = async (u) => {
+        const s = String(u); mpCalls.push(s);
+        const id = (s.match(/\/v1\/payments\/(.+)$/) || [])[1];
+        if (id && mpStatus !== 200) return new Response('{}', { status: mpStatus });
+        if (id && pays[id]) return new Response(JSON.stringify(pays[id]), { status: 200 });
+        return new Response('{}', { status: 404 });
+    };
+    const hook = (id) => call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id } });
+    const codesBefore = [...env.BMOD_KV._m.keys()].filter((k) => k.startsWith('code:')).length;
+    const codesNow = () => [...env.BMOD_KV._m.keys()].filter((k) => k.startsWith('code:')).length;
+
+    pays['2001'] = { status: 'approved', external_reference: '', transaction_amount: 10, currency_id: 'ARS', operation_type: 'money_transfer' };
+    let w = await hook('2001');
+    ok('P-2: transferencia o pago ajeno a la app → se ignora, sin código', w.status === 200 && w.body.ignored === 'not_app' && !(await env.BMOD_KV.get('paid:2001')) && codesNow() === codesBefore, w.body);
+    pays['2002'] = { status: 'approved', external_reference: 'coach', transaction_amount: 15000, currency_id: 'ARS' };
+    w = await hook('2002');
+    ok('P-2: la referencia vieja "coach" ya no regala un Coach vitalicio', w.body.ignored === 'not_app' && codesNow() === codesBefore, w.body);
+    pays['2003'] = { status: 'approved', external_reference: 'coach_12m', transaction_amount: 1, currency_id: 'ARS' };
+    w = await hook('2003');
+    ok('P-2: $1 con referencia de 12 meses → se ignora', w.body.ignored === 'amount' && codesNow() === codesBefore, w.body);
+    pays['2004'] = { status: 'approved', external_reference: 'premium_1m', transaction_amount: 7500, currency_id: 'USD' };
+    w = await hook('2004');
+    ok('P-2: otra moneda → se ignora', w.body.ignored === 'amount' && codesNow() === codesBefore, w.body);
+    pays['2005'] = { status: 'approved', external_reference: 'premium_1m', transaction_amount: 6000, currency_id: 'ARS' };
+    w = await hook('2005');
+    ok('precio que subió mientras el pago estaba pendiente (más de la mitad) → se honra', w.status === 200 && /^BMOD-/.test(await env.BMOD_KV.get('paid:2005') || ''), w.body);
+    mpCalls = [];
+    w = await call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id: '../checkout/preferences' } });
+    ok('número de pago que no es solo dígitos → se ignora sin consultar a MP', w.status === 200 && w.body.ignored === true && mpCalls.length === 0, [w.body, mpCalls]);
+    w = await hook('2999');
+    ok('pago que no existe en MP (404) → 200, no hace falta reintentar', w.status === 200 && w.body.note === 'payment not found', w.body);
+
+    pays['2006'] = { status: 'approved', external_reference: 'premium_1m', transaction_amount: 7500, currency_id: 'ARS' };
+    mpStatus = 503;
+    w = await hook('2006');
+    ok('P-1: MP no responde → 500 para que MP reintente (antes: 200 y el pago se perdía)', w.status === 500 && !(await env.BMOD_KV.get('paid:2006')), w);
+    mpStatus = 200;
+    const realPut = env.BMOD_KV.put;
+    env.BMOD_KV.put = async (k, v, o) => { if (String(k).startsWith('paid:')) throw new Error('KV PUT failed: 429 Too Many Requests'); return realPut.call(env.BMOD_KV, k, v, o); };
+    w = await hook('2006');
+    ok('P-1: KV sin cupo → 500 (MP reintenta)', w.status === 500 && w.body.error === 'retry' && !JSON.stringify(w.body).includes('KV'), w.body);
+    env.BMOD_KV.put = realPut;
+    w = await hook('2006');
+    ok('P-1: el reintento genera el código', w.status === 200 && /^BMOD-/.test(await env.BMOD_KV.get('paid:2006') || ''), w.body);
+
+    // Con el Durable Object (como en producción)
+    env.NOTIFIER = makeDONamespace();
+    pays['3001'] = { status: 'approved', external_reference: 'premium_1m.' + 'N'.repeat(20), transaction_amount: 7500, currency_id: 'ARS' };
+    const both = await Promise.all([hook('3001'), hook('3001')]);
+    const c3001 = codesOfPayment('3001');
+    const buy = JSON.parse(await env.BMOD_KV.get('buy:' + 'N'.repeat(20)));
+    ok('P-3: dos avisos del mismo pago a la vez → UN solo código', both.every((x) => x.status === 200) && c3001.length === 1 && (await env.BMOD_KV.get('paid:3001')) === c3001[0] && buy.code === c3001[0], [both.map((x) => x.body), c3001]);
+    ok('el objeto del pago queda marcado como terminado', env.NOTIFIER._dos.get('pay:3001').storage._m.get('pay').done === true);
+    w = await hook('3001');
+    ok('un tercer aviso, más tarde → dup, sin código nuevo', w.body.dup === true && codesOfPayment('3001').length === 1, w.body);
+
+    pays['3002'] = { status: 'approved', external_reference: 'premium_1m', transaction_amount: 7500, currency_id: 'ARS' };
+    env.BMOD_KV.put = async (k, v, o) => { if (String(k).startsWith('payment:')) throw new Error('KV PUT failed: 429'); return realPut.call(env.BMOD_KV, k, v, o); };
+    w = await hook('3002');
+    const first3002 = codesOfPayment('3002');
+    env.BMOD_KV.put = realPut;
+    // mientras tanto, alguien ya lo activó (no debería pasar sin ticket, pero no hay que pisarlo nunca)
+    const rec3002 = JSON.parse(await env.BMOD_KV.get('code:' + first3002[0]));
+    rec3002.used = true; rec3002.deviceId = 'tel-3002';
+    await env.BMOD_KV.put('code:' + first3002[0], JSON.stringify(rec3002));
+    await env.BMOD_KV.delete('paid:3002');
+    const w2 = await hook('3002');
+    const after3002 = JSON.parse(await env.BMOD_KV.get('code:' + first3002[0]));
+    ok('falla a mitad de camino → 500; el reintento usa el MISMO código y no pisa una activación', w.status === 500 && w2.status === 200 && codesOfPayment('3002').length === 1 && after3002.used === true && after3002.deviceId === 'tel-3002' && JSON.parse(await env.BMOD_KV.get('payment:3002')).code === first3002[0], [w.status, w2.status, after3002]);
+    globalThis.fetch = realFetch;
+    delete env.MP_ACCESS_TOKEN; delete env.COACH_PRICE_ARS_12M; delete env.PREMIUM_PRICE_ARS_1M;
+
+    // ── Testers: el tope cuenta bien con pedidos simultáneos (K-3) ──
+    const ANDROID = { 'user-agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/128.0 Mobile', 'sec-ch-ua-mobile': '?1', 'sec-ch-ua-platform': '"Android"' };
+    env.TESTERS_CLAIM_OPEN = 'true';
+    const startN = JSON.parse((await env.BMOD_KV.get('testers:count')) || '{"n":0}').n;
+    env.TESTERS_CLAIM_MAX = String(startN + 2);
+    const burst = await Promise.all([0, 1, 2, 3, 4, 5].map((i) => call('POST', '/api/testers/claim', { deviceId: 'burst' + i }, { 'CF-Connecting-IP': '10.0.0.' + i, ...ANDROID })));
+    const granted = burst.filter((x) => x.status === 200).length;
+    ok('6 reclamos simultáneos con 2 lugares libres → exactamente 2 (antes: los 6)', granted === 2 && burst.filter((x) => x.status === 409).length === 4, burst.map((x) => x.status));
+    ok('el contador de KV sigue al del Durable Object', JSON.parse(await env.BMOD_KV.get('testers:count')).n === startN + 2);
+    env.TESTERS_CLAIM_MAX = '1000';
+    const twice = await Promise.all([1, 2].map(() => call('POST', '/api/testers/claim', { deviceId: 'mismoTel' }, { 'CF-Connecting-IP': '10.1.0.1', ...ANDROID })));
+    ok('el mismo teléfono dos veces a la vez → un lugar, el otro pide esperar', twice.filter((x) => x.status === 200).length === 1 && twice.filter((x) => x.status === 429).length === 1 && JSON.parse(await env.BMOD_KV.get('testers:count')).n === startN + 3, twice.map((x) => [x.status, x.body]));
+    const again = await call('POST', '/api/testers/claim', { deviceId: 'mismoTel' }, { 'CF-Connecting-IP': '10.1.0.1', ...ANDROID });
+    ok('y después, el mismo teléfono recibe su mismo código', again.status === 200 && again.body.code === twice.find((x) => x.status === 200).body.code, again.body);
+    let lastIp;
+    for (let i = 0; i < 6; i++) lastIp = await call('POST', '/api/testers/claim', { deviceId: 'red' + i }, { 'CF-Connecting-IP': '10.2.0.9', ...ANDROID });
+    ok('el tope por red también vive en el Durable Object (6to → 429)', lastIp.status === 429, lastIp.body);
+    await env.BMOD_KV.put('testers:count', JSON.stringify({ n: 1 }));   // copia de KV atrasada
+    const admT = await call('GET', '/api/admin/testers', undefined, { 'x-admin-secret': 'test-admin' });
+    ok('el panel admin muestra el número del Durable Object, no la copia de KV', admT.body.count === startN + 3 + 5, [admT.body.count, startN]);
+    env.TESTERS_CLAIM_OPEN = 'false';
+    delete env.NOTIFIER;
+
+    // ── Cron: la zona horaria se valida una vez por zona, no por suscripción (L-2) ──
+    if (!env.VAPID_PRIVATE_JWK) {
+        const vk = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+        env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', vk.privateKey));
+        env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', vk.publicKey)).toString('base64url');
+    }
+    const savedAll = await env.BMOD_KV.get('push:all');
+    const zones = ['America/Argentina/Buenos_Aires', 'Europe/Madrid', 'America/Mexico_City', 'Zona/Inventada'];
+    const subs = {};
+    for (let i = 0; i < 1000; i++) subs['s' + i] = { endpoint: 'https://fcm.googleapis.com/fcm/send/cpu' + i, tz: zones[i % zones.length], sent: null };
+    await env.BMOD_KV.put('push:all', JSON.stringify({ subs }));
+    const RealDTF = Intl.DateTimeFormat;
+    let made = 0;
+    Intl.DateTimeFormat = function (...a) { made++; return new RealDTF(...a); };
+    Intl.DateTimeFormat.prototype = RealDTF.prototype;
+    const fetchCron = globalThis.fetch;
+    globalThis.fetch = async () => new Response('', { status: 201 });
+    const t0 = performance.now();
+    try {
+        const pend = [];
+        await worker.scheduled({ scheduledTime: Date.UTC(2026, 10, 18, 12, 0) }, env, { waitUntil: (p) => pend.push(p) });
+        await Promise.all(pend);
+    } finally { Intl.DateTimeFormat = RealDTF; globalThis.fetch = fetchCron; }
+    const ms = performance.now() - t0;
+    ok('L-2: 1.000 suscripciones en 4 zonas → a lo sumo 8 relojes creados (antes: más de 1.000)', made <= 8, made);
+    console.log('    (corrida del cron con 1.000 suscripciones en esta PC: ' + ms.toFixed(1) + ' ms)');
+    if (savedAll === null) await env.BMOD_KV.delete('push:all'); else await env.BMOD_KV.put('push:all', savedAll);
+
+    // ── Crear rutinas: 5 por minuto por IP, con su propio contador (L-1) ──
+    const hits = {};
+    const mkLimiter = (n) => ({ limit: async ({ key }) => { hits[key] = (hits[key] || 0) + 1; return { success: hits[key] <= n }; } });
+    env.RL_OPEN = mkLimiter(100); env.RL_STRICT = mkLimiter(1);
+    const IP = { 'CF-Connecting-IP': '11.11.11.11' };
+    const cr1 = await call('POST', '/api/routines', { coach_id: 'coachRL', name: 'A', plan: [{ day: 'A' }] }, IP);
+    const cr2 = await call('POST', '/api/routines', { coach_id: 'coachRL', name: 'B', plan: [{ day: 'B' }] }, IP);
+    ok('L-1: crear rutinas usa el límite estricto (2da en el minuto → 429)', cr1.status === 201 && cr2.status === 429, [cr1.status, cr2.status]);
+    const lst = await call('GET', '/api/routines?coach_id=coachRL', undefined, IP);
+    const errs = await call('POST', '/api/errors', { errors: [{ msg: 'x' }] }, IP);
+    ok('L-1: listar rutinas y las otras rutas estrictas no comparten ese contador', lst.status === 200 && errs.status === 200, [lst.status, errs.status]);
+    delete env.RL_OPEN; delete env.RL_STRICT;
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
