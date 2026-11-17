@@ -857,11 +857,15 @@ let code, licToken;
     const missing = await call('POST', '/api/food-vision', { token, kind: 'label' });
     ok('sin imagen → 400', missing.status === 400, missing.status);
 
-    // Cuota diaria: 15 por licencia (6 ya se usaron arriba; los 400 no cuentan).
+    // Cuota diaria: 15 por licencia. Solo cuentan las respuestas útiles de arriba: las que
+    // dieron 422 (la foto no servía) no se descuentan (auditoría L-5); los 400 tampoco.
+    const usedBefore = [lab, kj, crazy, none, meal, empty].filter((x) => x.status === 200).length;
+    ok('L-5: arriba hubo fotos que no sirvieron (422) y no se descontaron', [none, empty].every((x) => x.status === 422) && usedBefore < 6, usedBefore);
     reply = '{"items":[{"name":"Banana","grams":120,"kcal":105,"protein":1,"carbs":27,"fat":0}]}';
     const codes = [];
-    for (let i = 0; i < 10; i++) codes.push((await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG })).status);
-    ok('cuota: hasta 15 por día, la 16 → 429', codes.slice(0, 9).every(c => c === 200) && codes[9] === 429, codes);
+    const left = 15 - usedBefore;
+    for (let i = 0; i <= left; i++) codes.push((await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG })).status);
+    ok('cuota: hasta 15 respuestas útiles por día, la 16 → 429', codes.slice(0, left).every(c => c === 200) && codes[left] === 429, [usedBefore, codes]);
 
     delete env.AI;
 }
@@ -2301,6 +2305,9 @@ let code, licToken;
             env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', vk.publicKey)).toString('base64url');
         }
         env.BMOD_KV.get = async () => { throw new Error('KV GET failed: 429 Too Many Requests'); };
+        // Con los Durable Objects el cron no lee KV cada minuto: se fuerza que el objeto de
+        // suscripciones tenga que traer la lista de KV (como la primera vez después de publicar).
+        if (RUN_DO && ns._dos.get('pushsubs')) ns._dos.get('pushsubs').storage._m.delete('all');
         const pend = [];
         let threw = false;
         try { await worker.scheduled({ scheduledTime: Date.now() }, env, { waitUntil: (p) => pend.push(p) }); await Promise.all(pend); } catch { threw = true; }
@@ -2332,6 +2339,160 @@ let code, licToken;
         env.NOTIFIER = prevNS;
         if (!prevNS) delete env.NOTIFIER;
         T.resetKvNote();
+    }
+}
+
+// ── Auditoría 2026-11, tanda 4: reembolsos de MP (P-5), cuota de IA (L-5), avisos diarios (K-6) ──
+{
+    console.log('\nAuditoría 2026-11 (tanda 4): reembolsos, cuota de IA, suscripciones a avisos');
+    const prevNS = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const ns = env.NOTIFIER;
+    const realFetch = globalThis.fetch;
+    const realErr = console.error, realWarn = console.warn;
+    console.error = () => { }; console.warn = () => { };
+    try {
+        // ── P-5: devolución o contracargo anulan el código ──
+        env.MP_ACCESS_TOKEN = 'TEST-mp-token';
+        env.PREMIUM_PRICE_ARS_1M = '7500';
+        const pays = {};
+        globalThis.fetch = async (u) => {
+            const id = (String(u).match(/\/v1\/payments\/(\d+)$/) || [])[1];
+            if (id && pays[id]) return new Response(JSON.stringify(pays[id]), { status: 200 });
+            return new Response('{}', { status: 404 });
+        };
+        const hook = (id) => call('POST', '/api/webhook/mercadopago', { type: 'payment', data: { id } });
+        const approved = { status: 'approved', external_reference: 'premium_1m', transaction_amount: 7500, currency_id: 'ARS' };
+        pays['5001'] = Object.assign({}, approved);
+        await hook('5001');
+        const code5001 = await env.BMOD_KV.get('paid:5001');
+        const act = await call('POST', '/api/license/activate', { code: code5001, deviceId: 'refund-dev' });
+        let v = await call('POST', '/api/license/verify', { token: act.body.token });
+        ok('P-5: compra aprobada y activada → licencia válida', act.status === 200 && v.body.valid === true, [act.status, v.body]);
+        pays['5001'] = Object.assign({}, approved, { status: 'refunded', status_detail: 'refunded' });
+        let w = await hook('5001');
+        v = await call('POST', '/api/license/verify', { token: act.body.token });
+        const rec5001 = JSON.parse(await env.BMOD_KV.get('code:' + code5001));
+        ok('P-5: devolución → el código queda anulado y la licencia deja de valer', w.status === 200 && w.body.revoked === true && rec5001.revoked && rec5001.revoked_reason === 'mp_refund' && v.body.valid === false, [w.body, v.body]);
+        const again = await call('POST', '/api/license/activate', { code: code5001, deviceId: 'otro-tel' });
+        ok('P-5: y no se puede volver a activar en otro teléfono', again.status === 403, again.status);
+        w = await hook('5001');
+        ok('P-5: un aviso repetido de la devolución no hace nada más', w.status === 200 && w.body.already === true, w.body);
+
+        pays['5002'] = Object.assign({}, approved);
+        await hook('5002');
+        pays['5002'] = Object.assign({}, approved, { status: 'charged_back', status_detail: 'reimbursed' });
+        w = await hook('5002');
+        ok('P-5: contracargo resuelto a favor del vendedor ("reimbursed") → el código sigue', !JSON.parse(await env.BMOD_KV.get('code:' + await env.BMOD_KV.get('paid:5002'))).revoked, w.body);
+        pays['5003'] = Object.assign({}, approved);
+        await hook('5003');
+        pays['5003'] = Object.assign({}, approved, { status: 'charged_back', status_detail: 'settled' });
+        w = await hook('5003');
+        ok('P-5: contracargo perdido → código anulado', JSON.parse(await env.BMOD_KV.get('code:' + await env.BMOD_KV.get('paid:5003'))).revoked_reason === 'mp_chargeback', w.body);
+        pays['5999'] = Object.assign({}, approved, { status: 'refunded' });
+        w = await hook('5999');
+        ok('P-5: devolución de un pago que no generó código (o ajeno a la app) → no hace nada', w.status === 200 && w.body.note === 'sin código', w.body);
+        pays['5004'] = Object.assign({}, approved);
+        await hook('5004');
+        const code5004 = await env.BMOD_KV.get('paid:5004');
+        await env.BMOD_KV.delete('paid:5004');   // la marca venció (contracargo meses después)
+        pays['5004'] = Object.assign({}, approved, { status: 'refunded' });
+        w = await hook('5004');
+        ok('P-5: si la marca del pago ya venció, el código se encuentra en el objeto del pago', JSON.parse(await env.BMOD_KV.get('code:' + code5004)).revoked === true, w.body);
+        pays['5005'] = Object.assign({}, approved);
+        await hook('5005');
+        pays['5005'] = Object.assign({}, approved, { status: 'refunded' });
+        const realPut = env.BMOD_KV.put;
+        env.BMOD_KV.put = async (k, val, o) => { if (String(k).startsWith('code:')) throw new Error('KV PUT failed: 429 Too Many Requests'); return realPut.call(env.BMOD_KV, k, val, o); };
+        w = await hook('5005');
+        env.BMOD_KV.put = realPut;
+        ok('P-5: si no se puede anular (KV sin cupo) → 500 para que MP reintente', w.status === 500, w.status);
+        w = await hook('5005');
+        ok('P-5: y el reintento lo anula', w.body.revoked === true, w.body);
+        delete env.MP_ACCESS_TOKEN; delete env.PREMIUM_PRICE_ARS_1M;
+
+        // ── L-5: la cuota de IA cuenta solo respuestas útiles ──
+        const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+        const lic = (await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'ia-dev' })).body.token;
+        let aiMode = 'sin-cupo';
+        env.AI = {
+            run: async () => {
+                if (aiMode === 'sin-cupo') throw new Error('3036: Capacity temporarily exceeded: daily free allocation of 10,000 neurons exceeded');
+                if (aiMode === 'roto') throw new Error('upstream exploded at /internal/v4/models');
+                return { response: { insights: [{ icon: '💪', title: 'Bien', text: 'Seguí así' }] } };
+            }
+        };
+        const outs = [];
+        for (let i = 0; i < 25; i++) outs.push(await call('POST', '/api/oracle', { token: lic, prompt: 'x' }));
+        ok('L-5: sin neuronas en la cuenta → 503 con mensaje propio, sin el detalle interno', outs.every((o) => o.status === 503 && o.body.code === 'ai_daily_limit' && /21 h/.test(o.body.error) && !('detail' in o.body)), outs[0].body);
+        ok('L-5: 25 intentos fallidos no gastan la cuota (nunca 429)', !outs.some((o) => o.status === 429));
+        aiMode = 'roto';
+        const broken = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
+        ok('L-5: otro error de la IA → 502 sin el mensaje interno', broken.status === 502 && !JSON.stringify(broken.body).includes('internal'), broken.body);
+        aiMode = 'ok';
+        const good = [];
+        for (let i = 0; i < 21; i++) good.push((await call('POST', '/api/oracle', { token: lic, prompt: 'x' })).status);
+        ok('L-5: las 20 consultas que funcionan sí cuentan; la 21 → 429', good.slice(0, 20).every((s) => s === 200) && good[20] === 429, good);
+        delete env.AI;
+
+        // ── K-6: suscripciones al recordatorio en su objeto (con los datos en Durable Objects) ──
+        if (RUN_DO) {
+            if (!env.VAPID_PRIVATE_JWK) {
+                const vk = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+                env.VAPID_PRIVATE_JWK = JSON.stringify(await crypto.subtle.exportKey('jwk', vk.privateKey));
+                env.VAPID_PUBLIC_KEY = Buffer.from(await crypto.subtle.exportKey('raw', vk.publicKey)).toString('base64url');
+            }
+            const at18 = (tz) => {
+                const base = Date.UTC(2026, 10, 25);
+                for (let h = 0; h < 48; h++) {
+                    const t = new Date(base + h * 3600000);
+                    if (Number(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hourCycle: 'h23' }).format(t)) % 24 === 18) return t;
+                }
+                throw new Error('sin 18 h');
+            };
+            const pushes = {};
+            let delay = 0;
+            globalThis.fetch = async (u) => {
+                const s = String(u);
+                if (s.includes('/fcm/send/k6')) { pushes[s] = (pushes[s] || 0) + 1; if (delay) await new Promise((r) => setTimeout(r, delay)); return new Response('', { status: 201 }); }
+                return new Response('{}', { status: 404 });
+            };
+            const ep = (n) => 'https://fcm.googleapis.com/fcm/send/k6-' + n;
+            const sub = (n, tz) => call('POST', '/api/push/subscribe', { subscription: { endpoint: ep(n) }, lang: 'es', tz });
+            const cron = async (when) => { const w2 = []; await worker.scheduled({ scheduledTime: when.getTime() }, env, { waitUntil: (p) => w2.push(p) }); await Promise.all(w2); };
+            const mirror = async () => JSON.parse(await env.BMOD_KV.get('push:all')).subs;
+            const hasEp = (subs, n) => Object.values(subs).some((s) => s.endpoint === ep(n));
+
+            for (let i = 0; i < 12; i++) await sub('m' + i, 'Europe/Madrid');
+            const s0 = await sub('baja', 'Europe/Madrid');
+            ok('K-6: la suscripción se guarda en su objeto y se copia a push:all (para poder volver atrás)', s0.status === 200 && hasEp(await mirror(), 'm0') && hasEp(ns._dos.get('pushsubs').storage._m.get('all').subs, 'baja'), s0.body);
+            // Mientras el cron manda (lento), alguien se suscribe y otro se da de baja
+            delay = 25;
+            const running = cron(at18('Europe/Madrid'));
+            await new Promise((r) => setTimeout(r, 30));
+            const [alta, baja] = await Promise.all([sub('nueva', 'America/Bogota'), call('POST', '/api/push/unsubscribe', { endpoint: ep('baja') })]);
+            await running;
+            delay = 0;
+            const subsDO = ns._dos.get('pushsubs').storage._m.get('all').subs;
+            ok('K-6: un alta y una baja durante la corrida del cron no se pierden (antes el cron las pisaba)', alta.status === 200 && baja.status === 200 && hasEp(subsDO, 'nueva') && !hasEp(subsDO, 'baja') && hasEp(await mirror(), 'nueva') && !hasEp(await mirror(), 'baja'), Object.values(subsDO).map((s) => s.endpoint.slice(-8)));
+            const marked = Object.values(subsDO).filter((s) => /k6-m\d/.test(s.endpoint) && s.sent);
+            ok('K-6: y a los que les tocaba, el aviso les llegó y quedó anotado', marked.length === 12 && Object.keys(pushes).filter((k) => /k6-m\d/.test(k)).length === 12, marked.length);
+            // Dos corridas del cron a la vez: nadie recibe dos avisos
+            for (let i = 0; i < 8; i++) await sub('x' + i, 'America/Mexico_City');
+            delay = 15;
+            const tMx = at18('America/Mexico_City');
+            await Promise.all([cron(tMx), cron(tMx)]);
+            delay = 0;
+            const mx = Object.keys(pushes).filter((k) => /k6-x\d/.test(k));
+            ok('K-6: dos corridas del cron a la vez → cada uno recibe UN aviso', mx.length === 8 && mx.every((k) => pushes[k] === 1), mx.map((k) => pushes[k]));
+            await cron(new Date(tMx.getTime() + 60000));
+            ok('K-6: y la corrida siguiente no repite el aviso del día', mx.every((k) => pushes[k] === 1));
+        }
+    } finally {
+        console.error = realErr; console.warn = realWarn;
+        globalThis.fetch = realFetch;
+        env.NOTIFIER = prevNS;
+        if (!prevNS) delete env.NOTIFIER;
     }
 }
 

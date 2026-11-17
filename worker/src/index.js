@@ -60,7 +60,7 @@
 // pasajeros (aiq:, trial-ip:, pushtr:) pasan al objeto 'counters'.
 // =====================================================================
 
-import { CoachStore, coachKV, guardKV } from './coach-store.js';
+import { CoachStore, coachKV, guardKV, mirrorOn, dataEpoch } from './coach-store.js';
 
 const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // sin chars ambiguos (igual que serve.ps1)
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // mayúsculas, sin O/0/I/1
@@ -337,22 +337,53 @@ async function ipHash(ip) {
 }
 // Cuota diaria de IA por licencia (1 get + 1 put por llamada). La identidad es
 // el código de licencia o, en trials/Play, el deviceId del token.
-async function aiQuotaOk(env, payload, kind) {
+// Reserva un uso: { ok, undo }. undo() lo devuelve si la IA falló o no sirvió (auditoría L-5:
+// antes cada intento fallido se descontaba y se podía llegar al tope sin una sola respuesta).
+async function aiQuotaTake(env, payload, kind) {
     const id = (payload && (payload.code || payload.deviceId)) || 'anon';
     const key = `aiq:${new Date().toISOString().slice(0, 10)}:${id}`;
+    const free = { ok: true, undo: async () => { } };
     if (doData(env)) {
         // En el objeto de contadores: no gasta escrituras de KV y cuenta bien con pedidos a la vez.
         const res = await callNotifier(env, 'counters', { op: 'ctr-hit', key, field: kind, max: AI_QUOTA[kind], ttl: 2 * 86400 });
-        if (res && res.ok) return !!res.allowed;
+        if (res && res.ok) {
+            if (!res.allowed) return { ok: false };
+            return { ok: true, undo: async () => { await callNotifier(env, 'counters', { op: 'ctr-undo', key, field: kind }); } };
+        }
         // Sin contador no se le corta la IA a quien pagó: mejor regalar unas consultas.
         console.error('[contadores] sin respuesta: la IA sigue sin contar', kind, res && res.error);
-        return true;
+        return free;
     }
     const rec = (await kvGet(env, key)) || {};
-    if ((rec[kind] || 0) >= AI_QUOTA[kind]) return false;
+    if ((rec[kind] || 0) >= AI_QUOTA[kind]) return { ok: false };
     rec[kind] = (rec[kind] || 0) + 1;
     await kvPut(env, key, rec, { expirationTtl: 2 * 86400 });
-    return true;
+    return {
+        ok: true,
+        undo: async () => {
+            try {
+                const r = (await kvGet(env, key)) || {};
+                if ((r[kind] || 0) > 0) { r[kind]--; await kvPut(env, key, r, { expirationTtl: 2 * 86400 }); }
+            } catch { /* se pierde un uso, no más */ }
+        }
+    };
+}
+// Corre el trabajo de IA y, si no salió bien (error o respuesta inútil), devuelve el uso.
+async function aiCharged(quota, work) {
+    let resp;
+    try { resp = await work(); } catch (e) { resp = aiErrorResponse(e); }
+    if (!resp || resp.status >= 400) { try { await quota.undo(); } catch { /* sin más */ } }
+    return resp;
+}
+// Error de Workers AI → respuesta para la app, sin el detalle interno (queda en los registros).
+// Cupo diario de neuronas agotado (para toda la cuenta): mensaje propio con la hora en que vuelve.
+function aiErrorResponse(e, fallback) {
+    const msg = String((e && e.message) || e);
+    console.error('[ia] falló', msg.slice(0, 300));
+    if (/\b3036\b|daily free allocation|neurons/i.test(msg)) {
+        return json({ error: 'La IA llegó a su tope de hoy. Se renueva a las 21 h de Argentina (00:00 UTC).', code: 'ai_daily_limit' }, 503);
+    }
+    return json({ error: fallback || 'Error al contactar la IA. Probá de nuevo en un rato.' }, 502);
 }
 
 // =====================================================================
@@ -2110,6 +2141,25 @@ async function createCheckout(req, env) {
 // - Un solo código por pago aunque lleguen dos avisos a la vez: decide el Durable Object
 //   del pago (consistente, a diferencia de KV).
 const MP_REF_RE = /^(coach|premium)_(1|3|6|12)m(?:\.([A-Za-z0-9_-]{16,64}))?$/;
+// Devolución o contracargo de un pago de la app: se anula su código (auditoría P-5). El
+// código se busca en paid:{id} y, si esa marca ya venció, en el objeto del pago ('pay:{id}').
+// Si falla la escritura, tira error y el webhook responde 500 para que MP reintente.
+async function mpRevokeForPayment(env, paymentId, payment) {
+    const reason = payment.status === 'refunded' ? 'mp_refund' : 'mp_chargeback';
+    let code = await env.BMOD_KV.get(`paid:${paymentId}`);
+    if (!code && env.NOTIFIER) {
+        const c = await callNotifier(env, 'pay:' + paymentId, { op: 'pay-get' });
+        if (c && c.ok && c.code) code = c.code;
+    }
+    if (!code) return json({ ok: true, status: payment.status, note: 'sin código' }, 200);
+    const rec = await kvGet(env, `code:${code}`);
+    if (!rec || (rec.payment_id && String(rec.payment_id) !== paymentId)) return json({ ok: true, status: payment.status, note: 'sin código' }, 200);
+    if (rec.revoked) return json({ ok: true, status: payment.status, already: true }, 200);
+    rec.revoked = true; rec.revoked_at = nowISO(); rec.revoked_reason = reason;
+    await kvPut(env, `code:${code}`, rec);
+    console.warn('[webhook mp] código anulado', reason, paymentId);
+    return json({ ok: true, status: payment.status, revoked: true }, 200);
+}
 async function mercadoPagoWebhook(req, env, url) {
     let paymentId = '';
     const retry = async (why) => {
@@ -2131,6 +2181,11 @@ async function mercadoPagoWebhook(req, env, url) {
         if (mpRes.status === 404) return json({ ok: true, note: 'payment not found' }, 200);
         if (!mpRes.ok) return retry('consulta del pago ' + mpRes.status);
         const payment = await mpRes.json();
+        // Devolución total o contracargo perdido: el código de ese pago deja de valer (P-5).
+        // "reimbursed" = el contracargo se resolvió a favor del vendedor: no se anula.
+        if (payment.status === 'refunded' || (payment.status === 'charged_back' && payment.status_detail !== 'reimbursed')) {
+            return await mpRevokeForPayment(env, paymentId, payment);
+        }
         if (payment.status !== 'approved') return json({ ok: true, status: payment.status }, 200);
 
         // Producto desde external_reference: "{coach|premium}_{N}m" (N = 1|3|6|12), con el
@@ -2167,7 +2222,8 @@ async function mercadoPagoWebhook(req, env, url) {
         if (fresh || !(await kvGet(env, `code:${code}`))) {
             await kvPut(env, `code:${code}`, { product, duration_days: PLAN_DURATION_DAYS[months] || null, used: false, deviceId: null, expires_at: null, created_at: nowISO(), source: 'mercadopago', payment_id: paymentId });
         }
-        await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 90 * 86400 });
+        // 400 días: un contracargo puede llegar meses después del pago (P-5).
+        await env.BMOD_KV.put(`paid:${paymentId}`, code, { expirationTtl: 400 * 86400 });
         await kvPut(env, `payment:${paymentId}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
         if (pm[3]) await kvPut(env, `buy:${pm[3]}`, { code, retrieved_at: null }, { expirationTtl: PAYMENT_TICKET_TTL });
         if (env.NOTIFIER) await callNotifier(env, 'pay:' + paymentId, { op: 'pay-done' });   // si falla, el próximo aviso rehace sin duplicar
@@ -2214,35 +2270,39 @@ async function oracleProxy(req, env) {
     if (!env.AI) return err('Oracle no configurado (falta el binding AI)', 503);
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body.token) : null;
     if (!payload) return err('Función premium: activá tu código para usar el Oracle', 403);
-    if (!(await aiQuotaOk(env, payload, 'oracle'))) return err('Llegaste al límite diario del Oracle (' + AI_QUOTA.oracle + ' consultas). Mañana se renueva.', 429);
-    const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-    try {
-        const aiResp = await env.AI.run(model, {
-            messages: [{ role: 'user', content: String(body.prompt).slice(0, 8000) }],
-            max_tokens: 1024
-        });
-        // Igual que parse-routine: la respuesta puede venir como objeto ya parseado
-        // (70B) o como string con el JSON adentro.
-        const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
-        let parsed = null;
-        if (raw && typeof raw === 'object') parsed = raw;
-        else {
-            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
-            const m = txt.match(/\{[\s\S]*\}/);
-            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+    const quota = await aiQuotaTake(env, payload, 'oracle');
+    if (!quota.ok) return err('Llegaste al límite diario del Oracle (' + AI_QUOTA.oracle + ' consultas). Mañana se renueva.', 429);
+    // L-5: si la IA falla o no sirve, el uso se devuelve.
+    return aiCharged(quota, async () => {
+        const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+        try {
+            const aiResp = await env.AI.run(model, {
+                messages: [{ role: 'user', content: String(body.prompt).slice(0, 8000) }],
+                max_tokens: 1024
+            });
+            // Igual que parse-routine: la respuesta puede venir como objeto ya parseado
+            // (70B) o como string con el JSON adentro.
+            const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
+            let parsed = null;
+            if (raw && typeof raw === 'object') parsed = raw;
+            else {
+                const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+                const m = txt.match(/\{[\s\S]*\}/);
+                try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+            }
+            const insights = parsed && Array.isArray(parsed.insights) ? parsed.insights : null;
+            if (!insights) return err('La IA no devolvió un análisis válido, probá de nuevo', 422);
+            // Sanitizado: caps y solo los campos esperados.
+            const clean = insights.slice(0, 6).map((i) => ({
+                icon: String((i && i.icon) || '💡').slice(0, 8),
+                title: String((i && i.title) || '').slice(0, 80),
+                text: String((i && i.text) || '').slice(0, 400)
+            })).filter((i) => i.title || i.text);
+            return json({ ok: true, insights: clean });
+        } catch (e) {
+            return aiErrorResponse(e);
         }
-        const insights = parsed && Array.isArray(parsed.insights) ? parsed.insights : null;
-        if (!insights) return err('La IA no devolvió un análisis válido, probá de nuevo', 422);
-        // Sanitizado: caps y solo los campos esperados.
-        const clean = insights.slice(0, 6).map((i) => ({
-            icon: String((i && i.icon) || '💡').slice(0, 8),
-            title: String((i && i.title) || '').slice(0, 80),
-            text: String((i && i.text) || '').slice(0, 400)
-        })).filter((i) => i.title || i.text);
-        return json({ ok: true, insights: clean });
-    } catch (e) {
-        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
-    }
+    });
 }
 
 // ── Importar rutina desde PDF (Cloudflare Workers AI, gratis) ─────────
@@ -2342,75 +2402,79 @@ async function parseRoutine(req, env) {
     // Gate: solo licencias válidas (premium o coach).
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
-    if (!(await aiQuotaOk(env, payload, 'parse'))) return err('Llegaste al límite diario de importaciones (' + AI_QUOTA.parse + ' por día). Mañana se renueva.', 429);
+    const quota = await aiQuotaTake(env, payload, 'parse');
+    if (!quota.ok) return err('Llegaste al límite diario de importaciones (' + AI_QUOTA.parse + ' por día). Mañana se renueva.', 429);
+    // L-5: si la IA falla o no sirve, el uso se devuelve.
+    return aiCharged(quota, async () => {
 
-    // Aceptación única de la licencia del modelo de visión (Meta exige enviar
-    // 'agree' una vez por cuenta antes de usarlo). Gateado, se llama una sola vez.
-    if (body && body.agree_vision) {
-        try { const a = await env.AI.run(VISION_MODEL, { prompt: 'agree' }); return json({ ok: true, agreed: true, resp: a }); }
-        catch (e) { return json({ error: 'agree falló', detail: String((e && e.message) || e).slice(0, 300) }, 502); }
-    }
-
-    // Dos fuentes posibles: imágenes rasterizadas (PDF de diseño/imágenes) o el
-    // PDF crudo (texto). El cliente intenta texto primero y cae a imágenes si vuelve vacío.
-    let sourceText = '';
-    const images = (body && Array.isArray(body.images)) ? body.images.slice(0, 8) : null;
-    if (images && images.length) {
-        try {
-            const valid = images.filter((img) => typeof img === 'string' && img.length <= 4000000); // ~3 MB/imagen
-            // OCR de las páginas en paralelo (mucho más rápido que en serie).
-            const parts = await Promise.all(valid.map((img) => ocrImage(env, img).catch(() => '')));
-            // Marcamos cada página para que el estructurador separe días/sesiones.
-            sourceText = parts.map((tx, i) => '=== Página ' + (i + 1) + ' ===\n' + tx).join('\n\n');
-        } catch (e) {
-            return json({ error: 'No se pudieron leer las imágenes del PDF', detail: String((e && e.message) || e).slice(0, 200) }, 502);
+        // Aceptación única de la licencia del modelo de visión (Meta exige enviar
+        // 'agree' una vez por cuenta antes de usarlo). Gateado, se llama una sola vez.
+        if (body && body.agree_vision) {
+            try { const a = await env.AI.run(VISION_MODEL, { prompt: 'agree' }); return json({ ok: true, agreed: true, resp: a }); }
+            catch (e) { return aiErrorResponse(e, 'agree falló'); }
         }
-    } else {
-        let pdf = body && body.pdf_base64;
-        if (!pdf || typeof pdf !== 'string') return err('Falta el PDF', 400);
-        pdf = pdf.replace(/^data:application\/pdf;base64,/, '');
-        if (pdf.length > 9000000) return err('El PDF es demasiado grande (máx ~6 MB)', 413);
-        try {
-            const blob = new Blob([base64ToBytes(pdf)], { type: 'application/pdf' });
-            const docs = await env.AI.toMarkdown([{ name: 'rutina.pdf', blob }]);
-            const doc = Array.isArray(docs) ? docs[0] : docs;
-            sourceText = (doc && doc.data) || '';
-        } catch (e) {
-            return json({ error: 'No se pudo leer el PDF', detail: String((e && e.message) || e).slice(0, 200) }, 502);
-        }
-    }
 
-    // Debug gateado (solo si el caller manda debug:true): ver el texto crudo.
-    if (body && body.debug) return json({ ok: true, debug: true, src: images ? 'vision' : 'text', md_chars: sourceText.length, md_preview: sourceText.slice(0, 4000) });
-    if (!sourceText.trim()) return err('El PDF no tiene texto legible (¿es una imagen escaneada?)', 422);
-    sourceText = sourceText.slice(0, 24000); // acotamos lo que va al modelo
-
-    // Estructurar con el 70B (texto → JSON), igual para ambas fuentes.
-    const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
-    try {
-        const aiResp = await env.AI.run(model, {
-            messages: [
-                { role: 'system', content: PARSE_SYSTEM },
-                { role: 'user', content: 'Rutina (en texto/markdown):\n\n' + sourceText + '\n\nDevolvé SOLO el JSON.' }
-            ],
-            max_tokens: 4096
-        });
-        // Workers AI devuelve la respuesta como string (lo normal) o, según el
-        // modelo (ej. Llama 70B), como objeto JSON ya parseado. Normalizamos ambos.
-        const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
-        let parsed = null;
-        if (raw && typeof raw === 'object') {
-            parsed = raw;
+        // Dos fuentes posibles: imágenes rasterizadas (PDF de diseño/imágenes) o el
+        // PDF crudo (texto). El cliente intenta texto primero y cae a imágenes si vuelve vacío.
+        let sourceText = '';
+        const images = (body && Array.isArray(body.images)) ? body.images.slice(0, 8) : null;
+        if (images && images.length) {
+            try {
+                const valid = images.filter((img) => typeof img === 'string' && img.length <= 4000000); // ~3 MB/imagen
+                // OCR de las páginas en paralelo (mucho más rápido que en serie).
+                const parts = await Promise.all(valid.map((img) => ocrImage(env, img).catch(() => '')));
+                // Marcamos cada página para que el estructurador separe días/sesiones.
+                sourceText = parts.map((tx, i) => '=== Página ' + (i + 1) + ' ===\n' + tx).join('\n\n');
+            } catch (e) {
+                return aiErrorResponse(e, 'No se pudieron leer las imágenes del PDF');
+            }
         } else {
-            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
-            const m = txt.match(/\{[\s\S]*\}/);
-            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+            let pdf = body && body.pdf_base64;
+            if (!pdf || typeof pdf !== 'string') return err('Falta el PDF', 400);
+            pdf = pdf.replace(/^data:application\/pdf;base64,/, '');
+            if (pdf.length > 9000000) return err('El PDF es demasiado grande (máx ~6 MB)', 413);
+            try {
+                const blob = new Blob([base64ToBytes(pdf)], { type: 'application/pdf' });
+                const docs = await env.AI.toMarkdown([{ name: 'rutina.pdf', blob }]);
+                const doc = Array.isArray(docs) ? docs[0] : docs;
+                sourceText = (doc && doc.data) || '';
+            } catch (e) {
+                return aiErrorResponse(e, 'No se pudo leer el PDF');
+            }
         }
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return err('No se pudo interpretar la rutina del PDF', 422);
-        return json({ ok: true, routine: sanitizeParsedRoutine(parsed) });
-    } catch (e) {
-        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
-    }
+
+        // Debug gateado (solo si el caller manda debug:true): ver el texto crudo.
+        if (body && body.debug) return json({ ok: true, debug: true, src: images ? 'vision' : 'text', md_chars: sourceText.length, md_preview: sourceText.slice(0, 4000) });
+        if (!sourceText.trim()) return err('El PDF no tiene texto legible (¿es una imagen escaneada?)', 422);
+        sourceText = sourceText.slice(0, 24000); // acotamos lo que va al modelo
+
+        // Estructurar con el 70B (texto → JSON), igual para ambas fuentes.
+        const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+        try {
+            const aiResp = await env.AI.run(model, {
+                messages: [
+                    { role: 'system', content: PARSE_SYSTEM },
+                    { role: 'user', content: 'Rutina (en texto/markdown):\n\n' + sourceText + '\n\nDevolvé SOLO el JSON.' }
+                ],
+                max_tokens: 4096
+            });
+            // Workers AI devuelve la respuesta como string (lo normal) o, según el
+            // modelo (ej. Llama 70B), como objeto JSON ya parseado. Normalizamos ambos.
+            const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
+            let parsed = null;
+            if (raw && typeof raw === 'object') {
+                parsed = raw;
+            } else {
+                const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+                const m = txt.match(/\{[\s\S]*\}/);
+                try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+            }
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return err('No se pudo interpretar la rutina del PDF', 422);
+            return json({ ok: true, routine: sanitizeParsedRoutine(parsed) });
+        } catch (e) {
+            return aiErrorResponse(e);
+        }
+    });
 }
 
 // ── Comida por foto (Workers AI, visión) ─────────────────────────────
@@ -2477,30 +2541,34 @@ async function foodVision(req, env) {
     const kind = body && body.kind === 'meal' ? 'meal' : 'label';
     const img = body && typeof body.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
     if (!img || img.length > 1400000 || !/^[A-Za-z0-9+/]+=*$/.test(img)) return err('Falta la foto o no es válida', 400);
-    if (!(await aiQuotaOk(env, payload, 'food'))) return err('Llegaste al límite diario de fotos (' + AI_QUOTA.food + '). Mañana se renueva.', 429);
-    try {
-        const r = await env.AI.run(VISION_MODEL, {
-            messages: [{ role: 'user', content: [
-                { type: 'text', text: kind === 'meal' ? MEAL_PROMPT : LABEL_PROMPT },
-                { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + img } }
-            ] }],
-            max_tokens: 800,
-            temperature: 0.1
-        });
-        const raw = r ? (r.response != null ? r.response : r.text) : null;
-        let parsed = null;
-        if (raw && typeof raw === 'object') parsed = raw;
-        else {
-            const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
-            const m = txt.match(/\{[\s\S]*\}/);
-            try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+    const quota = await aiQuotaTake(env, payload, 'food');
+    if (!quota.ok) return err('Llegaste al límite diario de fotos (' + AI_QUOTA.food + '). Mañana se renueva.', 429);
+    // L-5: si la IA falla o no sirve, el uso se devuelve.
+    return aiCharged(quota, async () => {
+        try {
+            const r = await env.AI.run(VISION_MODEL, {
+                messages: [{ role: 'user', content: [
+                    { type: 'text', text: kind === 'meal' ? MEAL_PROMPT : LABEL_PROMPT },
+                    { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + img } }
+                ] }],
+                max_tokens: 800,
+                temperature: 0.1
+            });
+            const raw = r ? (r.response != null ? r.response : r.text) : null;
+            let parsed = null;
+            if (raw && typeof raw === 'object') parsed = raw;
+            else {
+                const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+                const m = txt.match(/\{[\s\S]*\}/);
+                try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
+            }
+            const clean = sanitizeFoodVision(kind, parsed);
+            if (!clean) return err(kind === 'meal' ? 'No pude reconocer comida en la foto. Probá con el plato entero y buena luz.' : 'No pude leer la tabla nutricional. Probá con la tabla entera, derecha y con buena luz.', 422);
+            return json(Object.assign({ ok: true, kind }, clean));
+        } catch (e) {
+            return aiErrorResponse(e);
         }
-        const clean = sanitizeFoodVision(kind, parsed);
-        if (!clean) return err(kind === 'meal' ? 'No pude reconocer comida en la foto. Probá con el plato entero y buena luz.' : 'No pude leer la tabla nutricional. Probá con la tabla entera, derecha y con buena luz.', 422);
-        return json(Object.assign({ ok: true, kind }, clean));
-    } catch (e) {
-        return json({ error: 'Error al contactar la IA', detail: String((e && e.message) || e).slice(0, 200) }, 502);
-    }
+    });
 }
 
 // ── Observabilidad ───────────────────────────────────────────────────
@@ -2866,7 +2934,10 @@ export class Notifier {
             if (out.kvError) await noteKvLimit(this.env, out.kvError);
             return body.op === 'c-run' ? jsonResp({ ok: true, result: out.result === undefined ? null : out.result }) : out.resp;
         }
-        return jsonResp(await this.lock(() => notifierOp(this.ctx.storage, this.env, body, Date.now())));
+        const res = await this.lock(() => notifierOp(this.ctx.storage, this.env, body, Date.now()));
+        // Una copia a KV que falló adentro de la fila (p. ej. push:all): señal para el vigía.
+        if (res && res.kvError) await noteKvLimit(this.env, res.kvError);
+        return jsonResp(res);
     }
     async alarm() {
         // Sin throw: una alarma que falla se reintenta sola y podría mandar el aviso dos veces.
@@ -3044,6 +3115,17 @@ async function notifierOp(storage, env, b, now) {
             await storage.put(key, { f, exp: rec ? rec.exp : now + ttl * 1000 });
             return { ok: true, allowed: true, n: n + 1 };
         }
+        // Devolver un uso (la IA falló o no sirvió: auditoría L-5).
+        case 'ctr-undo': {
+            const key = String(b.key || ''), field = String(b.field || 'n');
+            if (!COUNTER_PREFIXES.some((p) => key.startsWith(p)) || key.length > 200) return { ok: false, error: 'invalid' };
+            const rec = await storage.get(key);
+            if (!rec || !(rec.exp > now)) return { ok: true, n: 0 };
+            const f = Object.assign({}, rec.f);
+            f[field] = Math.max(0, (Number(f[field]) || 0) - 1);
+            await storage.put(key, { f, exp: rec.exp });
+            return { ok: true, n: f[field] };
+        }
         // "Hoy ya entrené": una marca por suscripción, que vence sola.
         case 'tr-set': {
             const id = String(b.id || '');
@@ -3115,6 +3197,13 @@ async function notifierOp(storage, env, b, now) {
             await storage.put('pay', { code, done: false, at: now });
             return { ok: true, code, done: false };
         }
+        case 'pay-get': {
+            const cur = await storage.get('pay');
+            return { ok: true, code: cur ? cur.code : null };
+        }
+        // ── Suscripciones al recordatorio diario (un solo objeto: 'pushsubs'; auditoría K-6) ──
+        case 'ps-put': case 'ps-del': case 'ps-due': case 'ps-mark':
+            return await pushSubsOp(storage, env, b, now);
         case 'pay-done': {
             const cur = await storage.get('pay');
             if (cur && !cur.done) await storage.put('pay', Object.assign({}, cur, { done: true }));
@@ -3322,6 +3411,14 @@ async function pushSubscribe(req, env) {
     if (!sub || typeof sub.endpoint !== 'string' || sub.endpoint.length > 1024) return err('Missing subscription', 400);
     if (!pushHostAllowed(sub.endpoint)) return err('Servicio de notificaciones no soportado', 400);
     const id = await sha256hex(sub.endpoint);
+    if (doData(env)) {
+        // En el objeto 'pushsubs' (auditoría K-6): el cron ya no puede pisar esta alta.
+        const r = await callNotifier(env, 'pushsubs', { op: 'ps-put', id, endpoint: sub.endpoint, lang: body.lang, tz: body.tz });
+        if (r && r.ok) return json({ ok: true });
+        if (r && r.error === 'full') return err('Cupo de recordatorios completo', 409);
+        console.error('[avisos] no se guardó la suscripción', r && r.error);
+        return err('No se pudo guardar. Probá de nuevo.', 503);
+    }
     const all = (await kvGet(env, 'push:all')) || { subs: {} };
     if (!all.subs[id] && Object.keys(all.subs).length >= PUSH_MAX) return err('Cupo de recordatorios completo', 409);
     const prev = all.subs[id] || {};
@@ -3360,6 +3457,12 @@ async function pushUnsubscribe(req, env) {
     const endpoint = body && body.endpoint;
     if (!endpoint || typeof endpoint !== 'string' || endpoint.length > 1024) return err('Missing endpoint', 400);
     const id = await sha256hex(endpoint);
+    if (doData(env)) {
+        const r = await callNotifier(env, 'pushsubs', { op: 'ps-del', id });
+        if (r && r.ok) return json({ ok: true });
+        console.error('[avisos] no se borró la suscripción', r && r.error);
+        return err('No se pudo guardar. Probá de nuevo.', 503);
+    }
     const all = (await kvGet(env, 'push:all')) || { subs: {} };
     if (all.subs[id]) { delete all.subs[id]; await kvPut(env, 'push:all', all); }
     return json({ ok: true });
@@ -3664,22 +3767,124 @@ async function vapidJwt(env, audience) {
 // cada corrida manda como mucho PUSH_BATCH: wrangler.toml dispara el cron cada
 // minuto (60 × 40 = 2.400 por hora y zona, más que PUSH_MAX) y lo resuelto queda
 // en sent = día local. Sin nadie a las 18 locales, la corrida lee una key y termina.
-async function sendDueReminders(env, when = new Date()) {
-    if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
-    const all = (await kvGet(env, 'push:all')) || { subs: {} };
+// A quién le toca el recordatorio en `when` (las REMINDER_HOUR locales y todavía no se le
+// mandó hoy). skipLeasedAt: no devolver los que otra corrida apartó hace un momento.
+// Una hora local por ZONA, no por suscripción: crear un Intl.DateTimeFormat cuesta
+// ~0,1-0,5 ms y el plan Free da 10 ms de CPU por corrida. Ojo: validTz también crea uno,
+// así que la zona se valida una vez por texto de zona (auditoría L-2).
+function dueSubs(subs, when, skipLeasedAt) {
     const due = [];
-    // Una hora local por ZONA, no por suscripción: crear un Intl.DateTimeFormat
-    // cuesta ~0,5 ms y el plan Free da 10 ms de CPU por corrida (con 200
-    // suscriptores eran 75-200 ms; así queda en menos de 1 ms).
-    // Ojo: validTz también crea un Intl.DateTimeFormat, así que la zona se valida una vez
-    // por texto de zona y no por suscripción (antes, con ~60 suscripciones se pasaba de 10 ms).
     const clockByTz = {};
-    for (const id of Object.keys(all.subs).sort()) {
-        const s = all.subs[id];
+    for (const id of Object.keys(subs).sort()) {
+        const s = subs[id];
         if (!s || !s.endpoint) continue;
+        if (skipLeasedAt && s.lease && s.lease > skipLeasedAt) continue;
         const raw = typeof s.tz === 'string' ? s.tz : '';
         const clock = clockByTz[raw] || (clockByTz[raw] = localClock(validTz(raw) || DEFAULT_TZ, when));
-        if (clock.hour === REMINDER_HOUR && s.sent !== clock.date) due.push({ id, date: clock.date });
+        if (clock.hour === REMINDER_HOUR && s.sent !== clock.date) due.push({ id, date: clock.date, endpoint: s.endpoint });
+    }
+    return due;
+}
+
+// Suscripciones al recordatorio diario en el objeto 'pushsubs' (auditoría K-6). Antes vivían
+// en una key de KV que reescribían el cron y las altas y bajas: si coincidían, una pisaba a
+// la otra (y KV puede leer una copia de hasta un minuto atrás). El objeto atiende de a un
+// pedido por vez. Mismo formato que push:all y en UNA fila: el cron la lee cada minuto (una
+// fila, no una por suscripción). Con KV_MIRROR prendido, cada cambio se copia a push:all para
+// poder volver a publicar un Worker anterior. Devuelve kvError si la copia falló (vigía).
+async function pushSubsLoad(storage, env) {
+    const epoch = dataEpoch(env);
+    const cur = await storage.get('all');
+    if (cur && cur.epoch === epoch) return cur;
+    // Primera vez, o volver a publicar después de una vuelta atrás: se trae de KV.
+    const kv = (await kvGet(env, 'push:all')) || { subs: {} };
+    const all = { epoch, subs: (kv && kv.subs) || {} };
+    await storage.put('all', all);
+    return all;
+}
+async function pushSubsSave(storage, env, all, mirror) {
+    if (mirror && mirrorOn(env)) {
+        try {
+            const subs = {};
+            for (const [id, s] of Object.entries(all.subs)) { const c = Object.assign({}, s); delete c.lease; subs[id] = c; }
+            await kvPut(env, 'push:all', { subs });
+            delete all.mirrorPending;
+        } catch (e) {
+            const msg = String((e && e.message) || e).slice(0, 200);
+            console.error('[avisos] copia de push:all a KV pendiente', msg);
+            all.mirrorPending = true;
+            await storage.put('all', all);
+            return msg;
+        }
+    }
+    await storage.put('all', all);
+    return null;
+}
+async function pushSubsOp(storage, env, b, now) {
+    const all = await pushSubsLoad(storage, env);
+    const id = String(b.id || '');
+    switch (b.op) {
+        case 'ps-put': {
+            const endpoint = String(b.endpoint || '');
+            if (!/^[a-f0-9]{64}$/.test(id) || !endpoint || endpoint.length > 1024 || !pushHostAllowed(endpoint)) return { ok: false, error: 'invalid' };
+            if (!all.subs[id] && Object.keys(all.subs).length >= PUSH_MAX) return { ok: false, error: 'full' };
+            const prev = all.subs[id] || {};
+            all.subs[id] = {
+                endpoint,
+                lang: (b.lang === 'en' || b.lang === 'pt') ? b.lang : 'es',
+                tz: validTz(b.tz) || prev.tz || null,
+                sent: prev.sent || null,                        // re-suscribirse no repite el aviso del día
+                created_at: prev.created_at || nowISO()
+            };
+            return { ok: true, kvError: await pushSubsSave(storage, env, all, true) };
+        }
+        case 'ps-del': {
+            if (!all.subs[id]) return { ok: true };
+            delete all.subs[id];
+            return { ok: true, kvError: await pushSubsSave(storage, env, all, true) };
+        }
+        case 'ps-due': {
+            // at: la hora del cron. Los que se devuelven quedan apartados `lease` ms: si una
+            // corrida tarda (servicio de avisos lento), la siguiente no les manda otro aviso.
+            const at = Number(b.at) || now;
+            const lease = Math.min(Math.max(Number(b.lease) || 300000, 60000), 3600000);
+            const due = dueSubs(all.subs, new Date(at), at);
+            let kvError = null;
+            if (due.length) {
+                for (const d of due) all.subs[d.id].lease = at + lease;
+                kvError = await pushSubsSave(storage, env, all, !!all.mirrorPending);
+            } else if (all.mirrorPending) kvError = await pushSubsSave(storage, env, all, true);
+            return { ok: true, due, kvError };
+        }
+        case 'ps-mark': {
+            const sent = b.sent && typeof b.sent === 'object' ? b.sent : {};
+            const dead = Array.isArray(b.dead) ? b.dead : [];
+            const release = Array.isArray(b.release) ? b.release : [];
+            let changed = false, mirror = false;
+            for (const [sid, d] of Object.entries(sent)) {
+                const s = all.subs[sid];
+                if (s && typeof d === 'string') { s.sent = d.slice(0, 10); delete s.lease; changed = mirror = true; }
+            }
+            for (const sid of dead) if (all.subs[sid]) { delete all.subs[sid]; changed = mirror = true; }
+            for (const sid of release) if (all.subs[sid] && all.subs[sid].lease) { delete all.subs[sid].lease; changed = true; }
+            if (!changed) return { ok: true };
+            return { ok: true, kvError: await pushSubsSave(storage, env, all, mirror || !!all.mirrorPending) };
+        }
+    }
+    return { ok: false, error: 'op' };
+}
+
+async function sendDueReminders(env, when = new Date()) {
+    if (!env.VAPID_PRIVATE_JWK || !env.VAPID_PUBLIC_KEY) return { sent: 0, note: 'VAPID sin configurar' };
+    const viaDO = doData(env);
+    let all = null, due;
+    if (viaDO) {
+        const r = await callNotifier(env, 'pushsubs', { op: 'ps-due', at: when.getTime(), lease: 5 * 60000 });
+        if (!r || !r.ok) throw new Error('pushsubs sin respuesta: ' + (r && r.error));   // lo registra el cron
+        due = r.due || [];
+    } else {
+        all = (await kvGet(env, 'push:all')) || { subs: {} };
+        due = dueSubs(all.subs, when, 0);
     }
     if (!due.length) return { sent: 0, due: 0 };
 
@@ -3697,7 +3902,10 @@ async function sendDueReminders(env, when = new Date()) {
             console.error('[contadores] sin respuesta para "hoy ya entrené"', res && res.error);
             // Se reintenta en la corrida que viene (el cron corre cada minuto). Sobre el final
             // de la hora se manda igual: peor que un aviso de más es que no le llegue a nadie.
-            if (when.getUTCMinutes() < 50) return { sent: 0, due: due.length, note: 'contadores sin respuesta' };
+            if (when.getUTCMinutes() < 50) {
+                if (viaDO) await callNotifier(env, 'pushsubs', { op: 'ps-mark', release: due.map((d) => d.id) });
+                return { sent: 0, due: due.length, note: 'contadores sin respuesta' };
+            }
             legacyMarks = false;
         }
     }
@@ -3711,28 +3919,37 @@ async function sendDueReminders(env, when = new Date()) {
     }
 
     let sent = 0, removed = 0, skipped = 0, failed = 0, tried = 0;
+    const sentMap = {}, dead = [], release = [];
     const jwtByOrigin = {}; // un JWT VAPID por servicio de push (casi todos son FCM)
     for (const d of due) {
-        const s = all.subs[d.id];
-        if (trained[d.id] === d.date) { s.sent = d.date; skipped++; continue; }   // ya entrenó: hoy no
-        if (tried >= PUSH_BATCH) break;
+        if (trained[d.id] === d.date) { sentMap[d.id] = d.date; skipped++; continue; }   // ya entrenó: hoy no
+        if (tried >= PUSH_BATCH) { release.push(d.id); continue; }   // los sigue la corrida que viene
         tried++;
         try {
-            const origin = new URL(s.endpoint).origin;
+            const origin = new URL(d.endpoint).origin;
             if (!jwtByOrigin[origin]) jwtByOrigin[origin] = await vapidJwt(env, origin);
-            const resp = await fetch(s.endpoint, {
+            const resp = await fetch(d.endpoint, {
                 method: 'POST',
                 headers: { TTL: '3600', Authorization: 'vapid t=' + jwtByOrigin[origin] + ', k=' + env.VAPID_PUBLIC_KEY }
             });
-            if (resp.status === 404 || resp.status === 410) { delete all.subs[d.id]; removed++; }
-            else if (resp.status < 400) { s.sent = d.date; sent++; }
+            if (resp.status === 404 || resp.status === 410) { dead.push(d.id); removed++; }
+            else if (resp.status < 400) { sentMap[d.id] = d.date; sent++; }
             // Otro error (p. ej. 403 por clave VAPID vieja): hoy no se reintenta.
             // Si no, 40 suscripciones rotas ocuparían el lote de cada corrida y
             // las que vienen detrás nunca recibirían el aviso.
-            else { s.sent = d.date; failed++; }
-        } catch { /* push service caído → la próxima corrida de esta hora reintenta */ }
+            else { sentMap[d.id] = d.date; failed++; }
+        } catch { release.push(d.id); /* push service caído → la próxima corrida de esta hora reintenta */ }
     }
-    if (sent || removed || skipped || failed) await kvPut(env, 'push:all', all);
+    if (viaDO) {
+        if (sent || removed || skipped || failed || release.length) {
+            const m = await callNotifier(env, 'pushsubs', { op: 'ps-mark', sent: sentMap, dead, release });
+            if (!m || !m.ok) console.error('[cron] no se pudo anotar a quién se le mandó el recordatorio', m && m.error);
+        }
+    } else if (sent || removed || skipped || failed) {
+        for (const [id, date] of Object.entries(sentMap)) if (all.subs[id]) all.subs[id].sent = date;
+        for (const id of dead) delete all.subs[id];
+        await kvPut(env, 'push:all', all);
+    }
     return { sent, removed, skipped, failed, due: due.length };
 }
 
