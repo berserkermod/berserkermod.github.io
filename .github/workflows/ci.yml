@@ -3,6 +3,10 @@ name: CI
 # Corre en cada push y PR a main. Si algo se pone rojo, te enterás antes de
 # que llegue a los usuarios (la app es single-file y se sirve directo desde
 # este repo vía GitHub Pages).
+#
+# Corre `npm test` entero (la lista vive en package.json): así ninguna tanda
+# queda afuera. test/ci-coverage.test.mjs falla si aparece un *.test.mjs que
+# esa cadena no corre.
 on:
   push:
     branches: [main]
@@ -14,23 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Historial completo: worker/test/coach-data.test.mjs saca el Worker
+          # publicado antes (git show) para comparar respuestas y la vuelta atrás.
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+          cache: npm
 
       - name: Install dev deps (ESLint)
-        run: npm install
+        run: npm ci
 
       - name: Lint (core + worker)
         run: npm run lint
 
-      - name: Business-logic tests (core/calc)
-        run: npm run test:calc
-
-      - name: i18n key parity (ES/EN/PT)
-        run: npm run test:i18n
-
-      - name: Worker tests (licenses + coach + oracle + errors)
-        run: npm run test:worker
+      - name: Todas las tandas de tests (app, idiomas, publicación, Worker en KV y en Durable Objects)
+        run: npm test
