@@ -1893,6 +1893,12 @@ async function verifyLicenseHandler(req, env) {
             return json({ valid: false, reason: 'device_mismatch' }, 200);
         }
     }
+    // Compra de Google Play: el teléfono sigue entre los de esa compra y, una vez por semana,
+    // Google confirma que sigue activa (reembolso o suspensión → no válida). Auditoría P-6/P-7.
+    if (payload.product === 'premium_play' && typeof payload.pt === 'string' && payload.pt) {
+        const why = await playLicenseCheck(env, payload);
+        if (why) return json({ valid: false, reason: why }, 200);
+    }
     return json({ valid: true, product: payload.product, tier: payload.tier, expiresAt: payload.exp ? new Date(payload.exp).toISOString() : null });
 }
 
@@ -3058,6 +3064,17 @@ async function notifierOp(storage, env, b, now) {
             }
             return { ok: true, marks, since };
         }
+        // ── Acknowledge de Google Play pendiente (un objeto por compra: 'playack:{huella}') ──
+        // Lo reintenta la alarma hasta que Google lo acepte o pasen los 3 días (auditoría P-8).
+        case 'play-ack': {
+            const pt = String(b.pt || ''), sku = String(b.sku || '');
+            if (!pt || pt.length > 1024 || !PLAY_SKUS.includes(sku)) return { ok: false, error: 'invalid' };
+            const prev = await storage.get('job');
+            if (prev && prev.kind === 'play-ack') return { ok: true, already: true };
+            await storage.put('job', { kind: 'play-ack', pt, sku, until: Math.min(Number(b.until) || 0, now + PLAY_ACK_WINDOW_MS) });
+            await storage.setAlarm(now + 5 * 60000);
+            return { ok: true };
+        }
         // ── Señales para el vigía (objeto 'counters') ──
         // Se escriben solo cuando algo falla (nunca en un pedido normal) y las lee
         // /api/health/deep, que consulta una tarea de GitHub cada 30 minutos (auditoría M-1).
@@ -3155,6 +3172,22 @@ const DIGEST_PAGE = 40;   // alumnos por corrida del resumen (list + 40 gets + a
 async function notifierAlarm(storage, env, now) {
     const job = await storage.get('job');
     if (!job) return { none: true };
+    if (job.kind === 'play-ack') {
+        // Si falla tira error: Notifier.alarm lo reintenta (15 min, 30, 1 h… hasta cada 6 h).
+        if (now > job.until) {
+            await storage.delete('job');
+            console.error('[play] no se pudo confirmar la compra en los 3 días: Google la reembolsa', job.sku);
+            return { kind: 'play-ack', gaveUp: true };
+        }
+        const got = await playFetchSub(env, job.pt);
+        if (got.status === 'gone') { await storage.delete('job'); return { kind: 'play-ack', gone: true }; }
+        if (got.status !== 'ok') throw new Error('play-ack: Google no respondió (' + got.code + ')');
+        const ent = playEntitlement(got.sub, now);
+        if (!ent.ackPending) { await storage.delete('job'); return { kind: 'play-ack', done: true }; }
+        if (!(await playAck(env, job.pt, ent.sku || job.sku))) throw new Error('play-ack: Google rechazó el acknowledge');
+        await storage.delete('job');
+        return { kind: 'play-ack', acked: true };
+    }
     if (job.kind === 'rest') {
         await storage.delete('job');
         const res = await pushMany(env, [job.sub], { title: 'BERSERKERMOD', body: pushText(job.lang, 'rest'), tag: 'bm-rest', url: './BERSERKERMOD.html' }, { ttl: 120, urgency: 'high' });
@@ -3440,13 +3473,31 @@ async function adminTesters(req, env) {
 // ─────────────────────────────────────────────
 // GOOGLE PLAY BILLING — suscripción Premium comprada DENTRO de la TWA.
 // El cliente manda {sku, purchaseToken, deviceId}; acá se verifica contra la
-// API de Google Play (service account, JWT RS256), se hace acknowledge (sin
-// eso Google devuelve la plata a los 3 días) y se emite una licencia normal
-// con exp = fin del período. La renovación es transparente: Google renueva,
-// el cliente re-verifica al abrir y recibe el exp nuevo.
+// API de Google Play (service account, JWT RS256, API subscriptionsv2), se hace
+// acknowledge (sin eso Google devuelve la plata a los 3 días) y se emite una
+// licencia normal con exp = fin del período. La renovación es transparente:
+// Google renueva, el cliente re-verifica al abrir y recibe el exp nuevo.
 // Secrets/vars: PLAY_SA_JSON (service account, secret) + PLAY_PACKAGE (var).
+//
+// Auditoría 2026-11 (tanda 3):
+//   P-6  Una compra sirve en hasta 2 teléfonos a la vez (celular + tablet de la misma
+//        cuenta de Google). Un teléfono nuevo reemplaza al que hace más que no se usa,
+//        hasta PLAY_MOVES_MAX cambios (como un código). Registro: play:{huella del token}.
+//   P-7  La revisión semanal de la app (/api/license/verify) le vuelve a preguntar a
+//        Google cada PLAY_RECHECK_MS: un reembolso o una suscripción suspendida corta
+//        el Premium en la semana, no al fin del período.
+//   P-8  Si el acknowledge falla, el objeto 'playack:{huella}' lo reintenta solo durante
+//        los 3 días que da Google (15 min, 30, 1 h… hasta cada 6 h).
+//   P-9  Se usa purchases.subscriptionsv2 (la API vieja de suscripciones está en retiro).
 // ─────────────────────────────────────────────
 const PLAY_SKUS = ['premium_1m', 'premium_3m', 'premium_6m', 'premium_12m'];
+const PLAY_DEVICES_MAX = 2;
+const PLAY_MOVES_MAX = 10;
+const PLAY_RECHECK_MS = 6 * 86400000;
+const PLAY_ACK_WINDOW_MS = 3 * 86400000;
+// Con acceso hasta lineItems[].expiryTime: activa, en período de gracia o cancelada (sigue
+// hasta el fin de lo pagado). Suspendida, pausada, vencida o pendiente de pago: sin acceso.
+const PLAY_OK_STATES = ['SUBSCRIPTION_STATE_ACTIVE', 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD', 'SUBSCRIPTION_STATE_CANCELED'];
 
 let _playToken = { v: null, exp: 0 }; // cache del access token (por isolate)
 async function playAccessToken(env) {
@@ -3475,6 +3526,49 @@ async function playAccessToken(env) {
     _playToken = { v: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
     return _playToken.v;
 }
+function playBase(env) {
+    return 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/' + encodeURIComponent(env.PLAY_PACKAGE) + '/purchases/';
+}
+// Huella del token de compra (para el registro play:{…}; el token no se guarda en KV).
+async function playHash(purchaseToken) {
+    const d = await crypto.subtle.digest('SHA-256', enc.encode('play:' + purchaseToken));
+    return b64urlFromBytes(new Uint8Array(d)).slice(0, 32);
+}
+// Consulta la suscripción a Google: { status: 'ok', sub } | { status: 'gone' } | { status: 'error', code }.
+async function playFetchSub(env, purchaseToken) {
+    let access;
+    try { access = await playAccessToken(env); } catch { return { status: 'error', code: 'oauth' }; }
+    let r;
+    try { r = await fetch(playBase(env) + 'subscriptionsv2/tokens/' + encodeURIComponent(purchaseToken), { headers: { Authorization: 'Bearer ' + access } }); }
+    catch { return { status: 'error', code: 'fetch' }; }
+    if (r.status === 404 || r.status === 400 || r.status === 410) return { status: 'gone' };
+    if (!r.ok) return { status: 'error', code: r.status };
+    return { status: 'ok', sub: await r.json() };
+}
+// Qué dice Google de esa suscripción: si da acceso, hasta cuándo y de qué plan.
+function playEntitlement(sub, now) {
+    const items = Array.isArray(sub && sub.lineItems) ? sub.lineItems : [];
+    const li = items.find((x) => x && PLAY_SKUS.includes(x.productId)) || null;
+    const expMs = li && li.expiryTime ? Date.parse(li.expiryTime) || 0 : 0;
+    const state = String((sub && sub.subscriptionState) || '');
+    return {
+        ok: !!li && PLAY_OK_STATES.includes(state) && expMs > now,
+        expMs, sku: li ? li.productId : null, state,
+        pending: state === 'SUBSCRIPTION_STATE_PENDING',
+        ackPending: (sub && sub.acknowledgementState) === 'ACKNOWLEDGEMENT_STATE_PENDING'
+    };
+}
+async function playAck(env, purchaseToken, sku) {
+    try {
+        const access = await playAccessToken(env);
+        const r = await fetch(playBase(env) + 'subscriptions/' + encodeURIComponent(sku) + '/tokens/' + encodeURIComponent(purchaseToken) + ':acknowledge', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
+            body: '{}'
+        });
+        return r.ok;
+    } catch { return false; }
+}
 
 async function playVerify(req, env) {
     if (!env.LICENSE_SECRET) return err('Server not configured (LICENSE_SECRET)', 500);
@@ -3485,35 +3579,72 @@ async function playVerify(req, env) {
     const deviceId = body && String(body.deviceId || '').trim();
     if (!PLAY_SKUS.includes(sku)) return err('SKU inválido', 400);
     if (!purchaseToken || !deviceId) return err('Missing purchaseToken or deviceId', 400);
+    if (purchaseToken.length > 1024 || deviceId.length > 80) return err('Datos inválidos', 400);
 
-    let access;
-    try { access = await playAccessToken(env); } catch { return err('No se pudo autenticar con Google Play', 502); }
+    const got = await playFetchSub(env, purchaseToken);
+    if (got.status === 'gone') return err('Compra no encontrada', 404);
+    if (got.status !== 'ok') return got.code === 'oauth' ? err('No se pudo autenticar con Google Play', 502) : err('Error consultando Google Play', 502);
+    const now = Date.now();
+    const ent = playEntitlement(got.sub, now);
+    if (ent.pending) return err('Pago pendiente', 403);
+    if (!ent.ok) return err('Suscripción vencida', 403);
 
-    const base = 'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/' +
-        encodeURIComponent(env.PLAY_PACKAGE) + '/purchases/subscriptions/' +
-        encodeURIComponent(sku) + '/tokens/' + encodeURIComponent(purchaseToken);
-    const vr = await fetch(base, { headers: { Authorization: 'Bearer ' + access } });
-    if (vr.status === 404 || vr.status === 400) return err('Compra no encontrada', 404);
-    if (!vr.ok) return err('Error consultando Google Play', 502);
-    const sub = await vr.json();
-
-    const expMs = Number(sub.expiryTimeMillis || 0);
-    if (!expMs || expMs < Date.now()) return err('Suscripción vencida', 403);
-    if (sub.paymentState === 0) return err('Pago pendiente', 403);
-
-    if (sub.acknowledgementState === 0) {
-        // best-effort: si falla, el próximo verify lo reintenta (hay 3 días)
-        await fetch(base + ':acknowledge', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
-            body: '{}'
-        }).catch(() => { });
+    // P-6: la compra queda atada a este teléfono (hasta 2 a la vez)
+    const ph = await playHash(purchaseToken);
+    let rec = null;
+    try { rec = await kvGet(env, `play:${ph}`); } catch (e) { console.error('[play] no se pudo leer el registro', String((e && e.message) || e).slice(0, 160)); }
+    const devices = rec && Array.isArray(rec.devices) ? rec.devices.slice() : [];
+    let changed = !rec;
+    if (!devices.some((d) => d.id === deviceId)) {
+        let moves = (rec && rec.moves) || 0;
+        if (devices.length >= PLAY_DEVICES_MAX) {
+            if (moves >= PLAY_MOVES_MAX) return err('Esta compra ya se usó en demasiados teléfonos. Escribinos y lo resolvemos.', 409);
+            devices.sort((a, b) => (a.at < b.at ? -1 : 1)).shift();   // sale el que hace más que no se usa
+            moves++;
+        }
+        devices.push({ id: deviceId, at: nowISO() });
+        rec = Object.assign({ first_at: nowISO() }, rec || {}, { devices, moves });
+        changed = true;
+    }
+    if (rec.ended) { delete rec.ended; changed = true; }   // Google la vuelve a dar por activa
+    if (changed) {
+        rec.sku = ent.sku; rec.checked_at = nowISO();
+        if (got.sub.testPurchase) rec.test = true;
+        // El registro es para frenar el abuso: si KV falla, la compra legítima sigue igual.
+        try { await kvPut(env, `play:${ph}`, rec); } catch (e) { console.error('[play] no se pudo guardar el registro', String((e && e.message) || e).slice(0, 160)); }
     }
 
+    // P-8: acknowledge; si falla, lo reintenta el servidor solo (Google da 3 días)
+    if (ent.ackPending && !(await playAck(env, purchaseToken, ent.sku))) {
+        console.error('[play] acknowledge falló; queda para reintentar', ph);
+        const q = await callNotifier(env, 'playack:' + ph, { op: 'play-ack', pt: purchaseToken, sku: ent.sku, until: now + PLAY_ACK_WINDOW_MS });
+        if (!q || !q.ok) console.error('[play] no se pudo programar el reintento del acknowledge', q && q.error);
+    }
+
+    // pt: el token de compra viaja en la licencia (el teléfono ya lo tiene) para que la
+    // revisión semanal pueda volver a preguntarle a Google sin guardarlo en el servidor.
     const token = await signLicense(env.LICENSE_SECRET, {
-        product: 'premium_play', tier: 'premium', deviceId, play_sku: sku, iat: Date.now(), exp: expMs
+        product: 'premium_play', tier: 'premium', deviceId, play_sku: ent.sku, pt: purchaseToken, iat: now, exp: ent.expMs
     });
-    return json({ ok: true, token, product: 'premium_play', tier: 'premium', expiresAt: new Date(expMs).toISOString() });
+    return json({ ok: true, token, product: 'premium_play', tier: 'premium', expiresAt: new Date(ent.expMs).toISOString() });
+}
+
+// P-6 y P-7: lo que /api/license/verify chequea de una licencia de Play. Devuelve el motivo
+// para darla por no válida, o null. Si Google no responde, la licencia se mantiene.
+async function playLicenseCheck(env, payload) {
+    const ph = await playHash(payload.pt);
+    const rec = await kvGet(env, `play:${ph}`);
+    if (rec && Array.isArray(rec.devices) && payload.deviceId && !rec.devices.some((d) => d.id === payload.deviceId)) return 'device_mismatch';
+    if (rec && rec.ended) return 'play_inactive';
+    const last = rec ? Date.parse(rec.checked_at || rec.first_at || '') || 0 : 0;
+    if (!env.PLAY_SA_JSON || !env.PLAY_PACKAGE || Date.now() - last < PLAY_RECHECK_MS) return null;
+    const got = await playFetchSub(env, payload.pt);
+    if (got.status === 'error') return null;
+    const ent = got.status === 'ok' ? playEntitlement(got.sub, Date.now()) : { ok: false, state: 'NOT_FOUND' };
+    const next = Object.assign({ first_at: nowISO(), devices: payload.deviceId ? [{ id: payload.deviceId, at: nowISO() }] : [], moves: 0, sku: payload.play_sku || null }, rec || {}, { checked_at: nowISO() });
+    if (!ent.ok) next.ended = ent.state || 'inactive';
+    try { await kvPut(env, `play:${ph}`, next); } catch (e) { console.error('[play] no se pudo guardar la revisión', String((e && e.message) || e).slice(0, 160)); }
+    return ent.ok ? null : 'play_inactive';
 }
 
 // JWT ES256 para VAPID: aud = origin del push service, exp 12h.

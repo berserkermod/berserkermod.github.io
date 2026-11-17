@@ -1161,49 +1161,151 @@ let code, licToken;
         '\n-----END PRIVATE KEY-----\n';
     env.PLAY_SA_JSON = JSON.stringify({ client_email: 'sa@test.iam.gserviceaccount.com', private_key: pem });
     env.PLAY_PACKAGE = 'io.github.berserkermod.twa';
+    const prevNS = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const ns = env.NOTIFIER;
+    const realErr = console.error;
+    console.error = () => { };
 
     const g1 = await call('POST', '/api/play/verify', { sku: 'hackeado', purchaseToken: 'tok', deviceId: 'dev1' });
     ok('sku inválido → 400', g1.status === 400, g1.status);
 
+    // Google simulado con la API subscriptionsv2 (P-9)
     const realFetch = globalThis.fetch;
-    let ackCalled = 0; let oauthBody = null;
+    let ackCalls = 0, ackFail = false, oauthBody = null, urls = [];
     const future = Date.now() + 31 * 86400000;
+    const ACKED = 'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED', PEND = 'ACKNOWLEDGEMENT_STATE_PENDING';
+    const v2 = (state, expMs, ack = PEND, productId = 'premium_12m') => ({
+        kind: 'androidpublisher#subscriptionPurchaseV2', subscriptionState: state, acknowledgementState: ack,
+        lineItems: [{ productId, expiryTime: new Date(expMs).toISOString(), autoRenewingPlan: { autoRenewEnabled: state === 'SUBSCRIPTION_STATE_ACTIVE' } }]
+    });
+    const subs = {
+        tokOK: v2('SUBSCRIPTION_STATE_ACTIVE', future),
+        tokVencido: v2('SUBSCRIPTION_STATE_EXPIRED', Date.now() - 1000, ACKED),
+        tokPendiente: v2('SUBSCRIPTION_STATE_PENDING', future, ACKED),
+        tokCancelada: v2('SUBSCRIPTION_STATE_CANCELED', future, ACKED),
+        tokGracia: v2('SUBSCRIPTION_STATE_IN_GRACE_PERIOD', future, ACKED),
+        tokSuspendida: v2('SUBSCRIPTION_STATE_ON_HOLD', future, ACKED),
+        tokOtroProducto: v2('SUBSCRIPTION_STATE_ACTIVE', future, ACKED, 'coach_vip')
+    };
     globalThis.fetch = async (u, opts) => {
-        const url = String(u);
+        const url = String(u); urls.push(url);
         if (url.includes('oauth2.googleapis.com/token')) {
             oauthBody = opts.body;
             return new Response(JSON.stringify({ access_token: 'ya29.test', expires_in: 3600 }), { status: 200 });
         }
-        if (url.includes(':acknowledge')) { ackCalled++; return new Response('{}', { status: 200 }); }
-        if (url.includes('/purchases/subscriptions/premium_12m/tokens/tokOK')) {
-            return new Response(JSON.stringify({ expiryTimeMillis: String(future), paymentState: 1, acknowledgementState: 0 }), { status: 200 });
+        if (url.includes(':acknowledge')) {
+            ackCalls++;
+            if (ackFail) return new Response('{}', { status: 500 });
+            const tk = decodeURIComponent((url.match(/\/tokens\/([^/:]+):acknowledge$/) || [])[1] || '');
+            if (subs[tk] && typeof subs[tk] === 'object') subs[tk].acknowledgementState = ACKED;
+            return new Response('', { status: 200 });
         }
-        if (url.includes('/tokens/tokVencido')) {
-            return new Response(JSON.stringify({ expiryTimeMillis: String(Date.now() - 1000), paymentState: 1, acknowledgementState: 1 }), { status: 200 });
+        const m = url.match(/\/purchases\/subscriptionsv2\/tokens\/([^/?]+)$/);
+        if (m) {
+            const s = subs[decodeURIComponent(m[1])];
+            if (s === undefined) return new Response('{}', { status: 404 });
+            if (typeof s === 'number') return new Response('{}', { status: s });
+            return new Response(JSON.stringify(s), { status: 200 });
         }
-        if (url.includes('/tokens/tokPendiente')) {
-            return new Response(JSON.stringify({ expiryTimeMillis: String(future), paymentState: 0, acknowledgementState: 1 }), { status: 200 });
-        }
-        if (url.includes('/tokens/tokNoExiste')) return new Response('{}', { status: 404 });
         return new Response('{}', { status: 500 });
     };
+    const verify = (token, deviceId) => call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: token, deviceId });
+    const lic = (token) => call('POST', '/api/license/verify', { token });
+    const hashOf = async (pt) => Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('play:' + pt))).toString('base64url').slice(0, 32);
+    const recOf = async (pt) => JSON.parse(await env.BMOD_KV.get('play:' + await hashOf(pt)));
+    const backdate = async (pt, days) => { const r = await recOf(pt); r.checked_at = new Date(Date.now() - days * 86400000).toISOString(); await env.BMOD_KV.put('play:' + await hashOf(pt), JSON.stringify(r)); };
 
-    const g2 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokOK', deviceId: 'devPlay' });
+    const g2 = await verify('tokOK', 'devPlay');
     ok('suscripción válida → licencia premium_play', g2.status === 200 && g2.body.ok && g2.body.tier === 'premium' && g2.body.product === 'premium_play', g2.body);
-    ok('exp = fin del período que informa Google', new Date(g2.body.expiresAt).getTime() === future, g2.body.expiresAt);
-    ok('acknowledge llamado (sin ack Google reembolsa a los 3 días)', ackCalled === 1, ackCalled);
+    ok('exp = fin del período que informa Google (lineItems[].expiryTime)', Math.abs(new Date(g2.body.expiresAt).getTime() - future) < 1000, g2.body.expiresAt);
+    ok('acknowledge llamado (sin ack Google reembolsa a los 3 días)', ackCalls === 1, ackCalls);
     ok('OAuth con grant jwt-bearer (RS256)', oauthBody && String(oauthBody).includes('jwt-bearer'), oauthBody && String(oauthBody).slice(0, 50));
-    const v = await call('POST', '/api/license/verify', { token: g2.body.token });
+    ok('P-9: consulta la API subscriptionsv2 y no la vieja', urls.some((x) => x.includes('/purchases/subscriptionsv2/tokens/tokOK')) && !urls.some((x) => /\/purchases\/subscriptions\/[^/]+\/tokens\/[^:]+$/.test(x)), urls.filter((x) => x.includes('purchases')));
+    let v = await lic(g2.body.token);
     ok('el token Play verifica válido en /api/license/verify', v.status === 200 && v.body.valid === true, v.body);
+    ok('el registro de la compra no guarda el token de compra', ![...env.BMOD_KV._m.entries()].some(([k, val]) => k.startsWith('play:') && String(val).includes('tokOK')));
 
-    const g3 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokVencido', deviceId: 'devPlay' });
+    const g3 = await verify('tokVencido', 'devPlay');
     ok('suscripción vencida → 403', g3.status === 403, g3.status);
-    const g4 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokPendiente', deviceId: 'devPlay' });
-    ok('pago pendiente → 403', g4.status === 403, g4.status);
-    const g5 = await call('POST', '/api/play/verify', { sku: 'premium_12m', purchaseToken: 'tokNoExiste', deviceId: 'devPlay' });
+    const g4 = await verify('tokPendiente', 'devPlay');
+    ok('pago pendiente → 403 "Pago pendiente"', g4.status === 403 && g4.body.error === 'Pago pendiente', g4.body);
+    const g5 = await verify('tokNoExiste', 'devPlay');
     ok('compra inexistente → 404', g5.status === 404, g5.status);
+    const g6 = await verify('tokCancelada', 'devPlay');
+    ok('cancelada pero dentro del período pagado → sigue con Premium', g6.status === 200, g6.body);
+    const g7 = await verify('tokGracia', 'devPlay');
+    ok('en período de gracia (pago demorado) → sigue con Premium', g7.status === 200, g7.body);
+    const g8 = await verify('tokSuspendida', 'devPlay');
+    ok('suspendida (on hold) → 403', g8.status === 403, g8.status);
+    const g9 = await verify('tokOtroProducto', 'devPlay');
+    ok('compra de un producto que no es Premium → 403', g9.status === 403, g9.status);
 
+    // P-6: una compra, hasta 2 teléfonos a la vez
+    const t2 = await verify('tokOK', 'devPlay2');
+    ok('P-6: el mismo usuario en un segundo teléfono (tablet) → ok', t2.status === 200 && (await recOf('tokOK')).devices.length === 2, t2.body);
+    v = await lic(g2.body.token);
+    ok('P-6: el primero sigue válido', v.body.valid === true, v.body);
+    const t3 = await verify('tokOK', 'devPlay3');
+    v = await lic(g2.body.token);
+    ok('P-6: un tercer teléfono reemplaza al más viejo, que deja de valer', t3.status === 200 && v.body.valid === false && v.body.reason === 'device_mismatch', [t3.status, v.body]);
+    let last;
+    for (let i = 1; i <= 10; i++) last = await verify('tokOK', 'devCopia' + i);
+    ok('P-6: pasarle la compra a otros teléfonos tiene tope (10 cambios → 409)', last.status === 409 && (await recOf('tokOK')).moves === 10, [last.status, last.body]);
+
+    // P-7: la revisión semanal le vuelve a preguntar a Google
+    subs.tokReemb = v2('SUBSCRIPTION_STATE_ACTIVE', future, ACKED);
+    const r1 = await verify('tokReemb', 'devR');
+    subs.tokReemb = v2('SUBSCRIPTION_STATE_EXPIRED', Date.now() - 1000, ACKED);   // Google reembolsó y revocó
+    v = await lic(r1.body.token);
+    ok('P-7: revisada hace menos de 6 días → no le pregunta a Google', v.body.valid === true, v.body);
+    await backdate('tokReemb', 7);
+    v = await lic(r1.body.token);
+    ok('P-7: a la semana le pregunta a Google y detecta el reembolso', v.body.valid === false && v.body.reason === 'play_inactive', v.body);
+    ok('P-7: queda anotado (las próximas no consultan a Google)', (await recOf('tokReemb')).ended === 'SUBSCRIPTION_STATE_EXPIRED');
+    const r2 = await verify('tokReemb', 'devR');
+    ok('P-7: y volver a verificar la compra también da 403', r2.status === 403, r2.status);
+    subs.tokCaida = v2('SUBSCRIPTION_STATE_ACTIVE', future, ACKED);
+    const c1 = await verify('tokCaida', 'devC');
+    subs.tokCaida = 503;   // Google no responde
+    await backdate('tokCaida', 7);
+    v = await lic(c1.body.token);
+    ok('P-7: si Google no responde, el Premium se mantiene (no se castiga al que pagó)', v.body.valid === true, v.body);
+    subs.tokVuelve = v2('SUBSCRIPTION_STATE_ACTIVE', future, ACKED);
+    const b1 = await verify('tokVuelve', 'devV');
+    subs.tokVuelve = v2('SUBSCRIPTION_STATE_ON_HOLD', future, ACKED);
+    await backdate('tokVuelve', 7);
+    v = await lic(b1.body.token);
+    subs.tokVuelve = v2('SUBSCRIPTION_STATE_ACTIVE', future, ACKED);   // pagó y Google la reactiva
+    const b2 = await verify('tokVuelve', 'devV');
+    v = await lic(b2.body.token);
+    ok('P-7: suspendida → sin Premium; cuando paga y Google la reactiva, vuelve', b2.status === 200 && v.body.valid === true && !(await recOf('tokVuelve')).ended, [b2.status, v.body]);
+
+    // P-8: si el acknowledge falla, lo reintenta el servidor solo
+    ackFail = true; ackCalls = 0;
+    subs.tokAck = v2('SUBSCRIPTION_STATE_ACTIVE', future, PEND);
+    const a1 = await verify('tokAck', 'devA');
+    const ackName = 'playack:' + await hashOf('tokAck');
+    const ackDO = ns._dos.get(ackName);
+    ok('P-8: el acknowledge falla pero la compra sale igual y queda programado el reintento', a1.status === 200 && ackDO && ackDO.storage._m.get('job').kind === 'play-ack' && ackDO.storage.alarm > Date.now(), [a1.status, ackDO && ackDO.storage._m.get('job')]);
+    await ns.fire(ackName, true);
+    ok('P-8: si vuelve a fallar, reintenta más tarde (no se rinde)', ackDO.storage._m.get('job') && ackDO.storage._m.get('job').fails === 1 && ackDO.storage.alarm - Date.now() > 14 * 60000, ackDO.storage._m.get('job'));
+    ackFail = false;
+    await ns.fire(ackName, true);
+    ok('P-8: cuando Google lo acepta, queda confirmado y se borra la tarea', subs.tokAck.acknowledgementState === ACKED && ackDO.storage._m.get('job') === undefined, subs.tokAck.acknowledgementState);
+    ackFail = true;
+    subs.tokAck2 = v2('SUBSCRIPTION_STATE_ACTIVE', future, PEND);
+    await verify('tokAck2', 'devA2');
+    const ack2 = ns._dos.get('playack:' + await hashOf('tokAck2'));
+    const job2 = ack2.storage._m.get('job'); job2.until = Date.now() - 1; ack2.storage._m.set('job', job2);
+    await ns.fire('playack:' + await hashOf('tokAck2'), true);
+    ok('P-8: pasados los 3 días deja de intentar (Google ya la reembolsó)', ack2.storage._m.get('job') === undefined);
+    ackFail = false;
+
+    console.error = realErr;
     globalThis.fetch = realFetch;
+    env.NOTIFIER = prevNS;
+    if (!prevNS) delete env.NOTIFIER;
     delete env.PLAY_SA_JSON; delete env.PLAY_PACKAGE;
 }
 
