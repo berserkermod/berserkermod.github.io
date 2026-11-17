@@ -846,11 +846,88 @@ let code, licToken;
         { name: 'Algo', grams: 0, kcal: 10 }
     ].concat(Array.from({ length: 10 }, (_, i) => ({ name: 'Extra ' + i, grams: 10, kcal: 5, protein: 0, carbs: 1, fat: 0 }))) });
     const meal = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
-    ok('plato → items saneados (sin nombre o sin gramos afuera, máx 8)', meal.status === 200 && meal.body.kind === 'meal' && meal.body.items.length === 6 && meal.body.items[0].name === 'Milanesa de carne' && meal.body.items[1].grams === 200, meal.body);
+    ok('plato → items saneados (sin nombre o sin gramos afuera, máx 10)', meal.status === 200 && meal.body.kind === 'meal' && meal.body.items.length === 8 && meal.body.items[0].name === 'Milanesa de carne' && meal.body.items[1].grams === 200, meal.body);
     ok('el plato usa el pedido de estimación', /nutricionista/.test(lastReq.opts.messages[0].content[0].text));
+    // Mejora 2026-11: los macros salen de la base del USDA cuando el alimento está ahí
+    const mil = meal.body.items[0];
+    ok('base: "Milanesa de carne" 180 g → macros de la base (238 kcal/100 g), no los de la IA', mil.src === 'base' && mil.food === 'milanesa_carne' && mil.kcal === Math.round(238 * 1.8) && mil.per100 && mil.per100.kcal === 238, mil);
+    reply = JSON.stringify({ items: [
+        { name: 'Pechuga de pollo a la plancha', grams: 150, kcal: 999, protein: 1, carbs: 99, fat: 50 },
+        { name: 'Milanesa de pollo', grams: 200, kcal: 300, protein: 20, carbs: 20, fat: 10 },
+        { name: 'grilled chicken', grams: 100, kcal: 1, protein: 1, carbs: 1, fat: 1 },
+        { name: 'Ceviche de corvina', grams: 100, kcal: 200, protein: 9, carbs: 30, fat: 4 },
+        { name: 'Aceite de oliva', grams: 10, kcal: 20, protein: 0, carbs: 0, fat: 2 }
+    ] });
+    const g2 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG, note: 'Pollo con "ensalada"' + String.fromCharCode(10) + 'mixta' });
+    const [pech, milp, grill, sushi, oil] = g2.body.items || [];
+    ok('base: pechuga 150 g → 248 kcal y 46,5 g de proteína (USDA), ignora lo que inventó la IA', pech && pech.src === 'base' && pech.kcal === 248 && pech.protein === 46.5 && pech.carbs === 0, pech);
+    ok('base: gana el nombre más específico ("milanesa de pollo" sobre "pollo")', milp && milp.food === 'milanesa_pollo', milp);
+    ok('base: reconoce nombres en inglés', grill && grill.food === 'pollo_pechuga', grill);
+    ok('base: un alimento que no está queda con lo que estimó la IA, marcado así', sushi && sushi.src === 'ia' && sushi.kcal === 200 && !sushi.food, sushi);
+    ok('base: el aceite que se ve cuenta con sus calorías reales (10 g → 90 kcal)', oil && oil.food === 'aceite' && oil.kcal === 90 && oil.fat === 10, oil);
+    const ptxt = lastReq.opts.messages[0].content[0].text;
+    ok('el texto del usuario llega a la IA, limpio (sin comillas ni saltos de línea)', ptxt.includes('"Pollo con ensalada mixta"'), ptxt.slice(-200));
+    // Nombres compuestos: manda el alimento que va primero; los platos mixtos no se anclan
+    reply = JSON.stringify({ items: [
+        { name: 'Atún en aceite', grams: 80, kcal: 150, protein: 20, carbs: 0, fat: 8 },
+        { name: 'Penne con carne y brócoli', grams: 350, kcal: 600, protein: 35, carbs: 60, fat: 20 },
+        { name: 'Ensalada de lechuga y tomate', grams: 100, kcal: 40, protein: 1, carbs: 5, fat: 2 },
+        { name: 'Pan de lentejas', grams: 50, kcal: 120, protein: 5, carbs: 20, fat: 2 }
+    ] });
+    const g4 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    const [atun, penne, ens, panl] = g4.body.items || [];
+    ok('base: "Atún en aceite" es atún, no 80 g de aceite', atun && atun.food === 'atun', atun);
+    ok('base: un plato mixto ("Penne con carne y brócoli") queda con lo que estimó la IA', penne && penne.src === 'ia' && penne.kcal === 600, penne);
+    ok('base: "Ensalada de lechuga y tomate" es la ensalada (no se corta por la "y")', ens && ens.food === 'ensalada_mixta', ens);
+    ok('base: "Pan de lentejas" es pan', panl && panl.food === 'pan', panl);
+    // Base v2: platos argentinos y bebidas; un plato con nombre propio gana aunque lleve "con"
+    reply = JSON.stringify({ items: [
+        { name: 'Choripán', grams: 180, kcal: 400, protein: 15, carbs: 30, fat: 25 },
+        { name: 'Arroz con pollo', grams: 300, kcal: 450, protein: 25, carbs: 50, fat: 12 },
+        { name: 'Pan de hamburguesa', grams: 60, kcal: 160, protein: 5, carbs: 30, fat: 2 },
+        { name: 'Fideos con salsa de tomate', grams: 300, kcal: 350, protein: 10, carbs: 60, fat: 6 },
+        { name: 'Batido de proteína', grams: 300, kcal: 120, protein: 24, carbs: 3, fat: 1 },
+        { name: 'Vaso de gaseosa', grams: 200, kcal: 80, protein: 0, carbs: 20, fat: 0 }
+    ] });
+    const g7 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    const [chori, arrp, panh, fsal, batp, gas] = g7.body.items || [];
+    ok('base v2: "Choripán" es el choripán (chorizo con pan), no solo el chorizo', chori && chori.food === 'choripan', chori);
+    ok('base v2: "Arroz con pollo" es el plato, no se descarta por el "con"', arrp && arrp.food === 'arroz_pollo' && arrp.src === 'base', arrp);
+    ok('base v2: "Pan de hamburguesa" es pan', panh && panh.food === 'pan', panh);
+    ok('base v2: "Fideos con salsa de tomate" es el plato', fsal && fsal.food === 'fideos_salsa', fsal);
+    ok('base v2: "Batido de proteína" es el batido con agua, no 300 g de proteína en polvo', batp && batp.food === 'batido_proteina' && batp.kcal < 200, batp);
+    ok('base v2: reconoce bebidas ("Vaso de gaseosa")', gas && gas.food === 'gaseosa' && gas.kcal === 84, gas);
+    // Aceite de cocción que no se ve: 4 % de lo cocinado (plancha, horno…), salvo que ya haya aceite
+    reply = JSON.stringify({ items: [
+        { name: 'Pechuga de pollo a la plancha', grams: 150, kcal: 250, protein: 40, carbs: 0, fat: 5 },
+        { name: 'Papas al horno', grams: 100, kcal: 120, protein: 2, carbs: 20, fat: 4 },
+        { name: 'Ensalada mixta', grams: 80, kcal: 20, protein: 1, carbs: 4, fat: 0 }
+    ] });
+    const g5 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    const oilRow = (g5.body.items || []).find((i) => i.estimated);
+    ok('aceite de cocción: 4 % de lo cocinado (250 g → 10 g, 90 kcal), como renglón aparte y marcado', oilRow && oilRow.grams === 10 && oilRow.kcal === 90 && oilRow.fat === 10 && oilRow.food === 'aceite' && g5.body.items.length === 4, g5.body.items);
+    reply = JSON.stringify({ items: [
+        { name: 'Pechuga de pollo a la plancha', grams: 150, kcal: 250, protein: 40, carbs: 0, fat: 5 },
+        { name: 'Aceite de oliva', grams: 10, kcal: 90, protein: 0, carbs: 0, fat: 10 }
+    ] });
+    const g6 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    ok('aceite de cocción: si la IA ya puso aceite, no se suma otro', !(g6.body.items || []).some((i) => i.estimated) && g6.body.items.length === 2, g6.body.items);
+    reply = JSON.stringify({ items: [{ name: 'Arroz blanco', grams: 160, kcal: 1, protein: 1, carbs: 1, fat: 1 }] });
+    const g3 = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
+    ok('sin texto del usuario, el pedido no menciona ninguno', !/El usuario contó/.test(lastReq.opts.messages[0].content[0].text));
     reply = '{"items":[]}';
     const empty = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
     ok('foto sin comida → 422', empty.status === 422, empty.status);
+
+    // Lista pública de la base (buscador manual y revisión del plato)
+    const fl = await call('GET', '/api/foods');
+    const fitems = (fl.body && fl.body.items) || [];
+    const byK = Object.fromEntries(fitems.map((x) => [x.k, x]));
+    ok('/api/foods: versión 2 con ~200 alimentos', fl.status === 200 && fl.body.v === 2 && fitems.length >= 190, fl.status + ' ' + fitems.length);
+    ok('/api/foods: cada alimento trae nombre en es/en/pt, ícono, sinónimos y macros', fitems.every((x) => x.k && x.n && x.ne && x.np && x.i && Array.isArray(x.s) && x.s.length && typeof x.kcal === 'number' && typeof x.p === 'number'), fitems.find((x) => !(x.ne && x.np && x.i)));
+    ok('/api/foods: porciones caseras válidas ([unidad, cantidad > 0])', fitems.every((x) => !x.u || x.u.every((q) => Array.isArray(q) && typeof q[0] === 'string' && q[1] > 0)) && fitems.filter((x) => x.u).length >= 190);
+    ok('/api/foods: la milanesa trae unidad chica/mediana/grande; la gaseosa va en ml (densidad)', JSON.stringify(byK.milanesa_carne && byK.milanesa_carne.u) === '[["us",80],["um",120],["ul",180]]' && byK.gaseosa && byK.gaseosa.d > 1 && !byK.pan.d, [byK.milanesa_carne, byK.gaseosa]);
+    ok('/api/foods: no manda datos internos (id del USDA)', fitems.every((x) => !('fdc' in x)));
 
     const bad = await call('POST', '/api/food-vision', { token, kind: 'label', image: 'data:image/jpeg;base64,<script>' });
     ok('imagen que no es base64 → 400', bad.status === 400, bad.status);
@@ -859,8 +936,8 @@ let code, licToken;
 
     // Cuota diaria: 15 por licencia. Solo cuentan las respuestas útiles de arriba: las que
     // dieron 422 (la foto no servía) no se descuentan (auditoría L-5); los 400 tampoco.
-    const usedBefore = [lab, kj, crazy, none, meal, empty].filter((x) => x.status === 200).length;
-    ok('L-5: arriba hubo fotos que no sirvieron (422) y no se descontaron', [none, empty].every((x) => x.status === 422) && usedBefore < 6, usedBefore);
+    const usedBefore = [lab, kj, crazy, none, meal, g2, g3, g4, g5, g6, g7, empty].filter((x) => x.status === 200).length;
+    ok('L-5: arriba hubo fotos que no sirvieron (422) y no se descontaron', [none, empty].every((x) => x.status === 422), usedBefore);
     reply = '{"items":[{"name":"Banana","grams":120,"kcal":105,"protein":1,"carbs":27,"fat":0}]}';
     const codes = [];
     const left = 15 - usedBefore;

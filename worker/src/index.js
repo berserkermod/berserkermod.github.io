@@ -61,6 +61,7 @@
 // =====================================================================
 
 import { CoachStore, coachKV, guardKV, mirrorOn, dataEpoch } from './coach-store.js';
+import { FOOD_DB } from './food-db.js';
 
 const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'; // sin chars ambiguos (igual que serve.ps1)
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // mayúsculas, sin O/0/I/1
@@ -391,6 +392,42 @@ async function aiCharged(quota, work) {
     try { resp = await work(); } catch (e) { resp = aiErrorResponse(e); }
     if (!resp || resp.status >= 400) { try { await quota.undo(); } catch { /* sin más */ } }
     return resp;
+}
+// Opciones por familia de modelo. Los modelos que "piensan" (DeepSeek, Qwen, Inkling) lo traen
+// prendido por defecto: se apaga (si no, gastan miles de tokens por foto) y se pide JSON.
+// reasoning ('low'|'high') solo lo usa el banco de pruebas.
+function visionOpts(model, reasoning) {
+    if (!/deepseek|qwen|inkling|kimi|glm/i.test(model)) return {};
+    const think = reasoning === 'low' || reasoning === 'high';
+    return {
+        chat_template_kwargs: { enable_thinking: think },
+        reasoning_effort: think ? reasoning : 'none',
+        response_format: { type: 'json_object' },
+        max_tokens: think ? 3000 : 900
+    };
+}
+// Respuesta de Workers AI → objeto JSON. Los modelos devuelven { response } (Llama), { text } o el
+// formato de OpenAI ({ choices: [{ message: { content } }] }); algunos "piensan" antes
+// (<think>…</think>). Se toma el primer objeto JSON del texto que queda.
+function aiJson(r) {
+    if (!r) return null;
+    let raw = r.response != null ? r.response : (r.text != null ? r.text : null);
+    if (raw == null && Array.isArray(r.choices) && r.choices[0] && r.choices[0].message) raw = r.choices[0].message.content;
+    if (raw && typeof raw === 'object') return raw;
+    let txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
+    txt = txt.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```(?:json)?/gi, '');
+    const start = txt.indexOf('{');
+    if (start < 0) return null;
+    // El objeto que empieza en la primera llave, contando llaves (no el último "}" del texto).
+    let depth = 0, inStr = false, esc = false;
+    for (let i = start; i < txt.length; i++) {
+        const c = txt[i];
+        if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+        if (c === '"') inStr = true;
+        else if (c === '{') depth++;
+        else if (c === '}' && --depth === 0) { try { return JSON.parse(txt.slice(start, i + 1)); } catch { return null; } }
+    }
+    return null;
 }
 // Error de Workers AI → respuesta para la app, sin el detalle interno (queda en los registros).
 // Cupo diario de neuronas agotado (para toda la cuenta): mensaje propio con la hora en que vuelve.
@@ -2543,16 +2580,95 @@ const LABEL_PROMPT = [
     '- Copiá los números tal como están escritos. No inventes: si un dato no se lee, poné null.',
     '- Si en la foto no hay una tabla nutricional, devolvé {"error":"no_label"}.'
 ].join('\n');
-const MEAL_PROMPT = [
-    'Sos nutricionista. Mirá la foto del plato y estimá qué comida hay y en qué cantidad.',
-    'Devolvé SOLO un objeto JSON, sin texto extra:',
-    '{"items": [{"name": string, "grams": number, "kcal": number, "protein": number, "carbs": number, "fat": number}]}',
-    'Reglas:',
-    '- Nombres cortos en español rioplatense (ej. "Milanesa de carne", "Puré de papa", "Ensalada de lechuga y tomate").',
-    '- grams = cantidad estimada de esa porción en el plato; kcal y macros son de ESA cantidad (no por 100 g).',
-    '- Contá el aceite, la manteca y las salsas que se vean: son las calorías que más se escapan.',
-    '- Como máximo 8 items. Si en la foto no hay comida, devolvé {"items": []}.'
-].join('\n');
+// Foto del plato (2026-11, mejora de precisión). La IA identifica los alimentos y estima los
+// gramos; las calorías y los macros salen de la base del USDA (food-db.js) cuando el alimento
+// está ahí, y solo si no está se usa lo que estimó la IA. Ver groundMealItems.
+function mealPrompt(note) {
+    const lines = [
+        'Sos nutricionista. Mirá la foto del plato. Primero identificá cada alimento por separado y después estimá cuántos gramos hay de cada uno.',
+        'Devolvé SOLO un objeto JSON, sin texto extra:',
+        '{"items": [{"name": string, "grams": number, "kcal": number, "protein": number, "carbs": number, "fat": number}]}',
+        'Reglas para los nombres:',
+        '- Nombre genérico en español rioplatense, con la forma de cocción si se ve: "Pechuga de pollo a la plancha", "Papas fritas", "Arroz blanco", "Brócoli hervido", "Salmón al horno", "Milanesa de carne", "Huevos revueltos".',
+        '- Un item por alimento: no juntes en un solo item cosas distintas (la ensalada va aparte del pollo).',
+        'Reglas para los gramos (lo más importante):',
+        '- Usá referencias de tamaño: un plato playo mide unos 26 cm, un plato de postre 20 cm, un bowl 15 cm; un tenedor mide 19 cm. Fijate qué parte del plato ocupa cada alimento y qué altura tiene.',
+        '- Medí cada porción por lo que se ve (superficie y altura), no por lo que suele servirse: las porciones de la foto pueden ser chicas. Referencias de densidad: una taza de arroz o fideos cocidos pesa 160 g, una cucharada de aceite 13 g, un huevo 50 g.',
+        '- Las IA suelen pasarse con los gramos: si dudás entre dos cantidades, elegí la menor.',
+        '- grams = cantidad de esa porción en el plato; kcal y macros son de ESA cantidad (no por 100 g).',
+        'Grasas (las calorías que más se escapan):',
+        '- Si ves aceite (brillo, charco en el plato), aderezo, manteca, mayonesa, queso derretido o salsa, ponelos como items aparte con sus gramos (ej. "Aceite de oliva" 10 g).',
+        '- Si algo está frito o salteado y brilla, sumá el aceite que absorbió como item "Aceite".',
+        '- Como máximo 10 items. Si en la foto no hay comida, devolvé {"items": []}.'
+    ];
+    // La nota dice QUÉ es, no CUÁNTO: en el banco de pruebas, al nombrar alimentos la IA les ponía una porción entera a cada uno.
+    if (note) lines.push('El usuario contó qué hay en el plato: "' + note + '". Sirve solo para saber QUÉ es cada cosa que ves (por ejemplo, si la milanesa es de pollo o de carne). No cambia CUÁNTO hay: los gramos salen únicamente de la foto, con las mismas reglas. No agregues un alimento porque esté nombrado si no se ve; si se ve poco, ponele pocos gramos. Que nombre varios alimentos no quiere decir que haya una porción entera de cada uno.');
+    return lines.join('\n');
+}
+// Lo que el usuario escribió sobre el plato: texto corto, sin saltos de línea ni comillas.
+function cleanMealNote(v) {
+    if (typeof v !== 'string') return '';
+    let out = '';
+    for (const ch of v.slice(0, 400)) out += (ch.charCodeAt(0) < 32 || '"“”«»\\'.includes(ch)) ? ' ' : ch;
+    return out.replace(/\s+/g, ' ').trim().slice(0, 200);
+}
+// ── Base de alimentos (USDA) para la foto del plato ──
+const FOOD_DB_VERSION = 2;   // subirlo cuando cambie food-db.js (la app vuelve a pedir la lista)
+function normFoodName(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9ñ]+/g, ' ').replace(/ñ/g, 'n').trim();
+}
+// El alimento de la base que corresponde a un nombre. En español lo que define el alimento va
+// primero ("Atún en aceite" es atún, "Pan de lentejas" es pan): gana el que aparece antes en el
+// nombre y, a igual posición, el sinónimo más largo ("milanesa de pollo" sobre "milanesa").
+// Si el nombre junta varios alimentos ("Penne con carne y brócoli"), no se ancla: es un plato
+// mixto y la base no sabe las proporciones. null en esos casos y si no hay ninguno.
+const MIXED_RE = /\b(con|y|with|and)\b/;
+function matchFood(name) {
+    const norm = normFoodName(name);
+    const n = ' ' + norm + ' ';
+    if (norm.length < 2) return null;
+    const found = [];
+    for (const f of FOOD_DB) {
+        for (const s of f.s) {   // del más largo al más corto: el primero que aparece es el mejor de ese alimento
+            const i = n.indexOf(' ' + s + ' ');
+            if (i >= 0) { found.push({ i, len: s.length, f }); break; }
+        }
+    }
+    if (!found.length) return null;
+    found.sort((a, b) => a.i - b.i || b.len - a.len);
+    const head = found[0];
+    // ¿Otro alimento distinto que no esté contenido en el principal? ("pechuga de pollo" contiene "pollo")
+    const others = found.filter((x) => x.f.k !== head.f.k && !(x.i >= head.i && x.i + x.len <= head.i + head.len));
+    if (others.length && MIXED_RE.test(norm)) return null;
+    return head.f;
+}
+// Aceite de cocción que no se ve. En el banco de pruebas (30 platos pesados de Nutrition5k), a la
+// estimación le faltaban ~10 g de grasa por plato: sumar el 4 % del peso de lo cocinado a la
+// plancha, salteado o al horno deja el sesgo de calorías en ~0 (de −8 %). Lo frito ya trae su
+// aceite en la base, y si la IA ya puso aceite o manteca no se suma (no contarlo dos veces).
+// Va como un renglón visible y editable: el usuario lo saca si cocinó sin aceite.
+const COOKED_RE = /\b(plancha|salteado|salteada|salteados|salteadas|asado|asada|asados|asadas|horno|grillado|grillada|grillados|dorado|dorada|dorados|sauteed|roasted|grilled|seared|parrilla)\b/;
+const FAT_RE = /\b(aceite|manteca|mayonesa|aderezo|vinagreta|oil|butter|dressing|mayonnaise)\b/;
+const COOKING_OIL_PCT = 4;
+function cookingOil(items) {
+    if (items.some((i) => FAT_RE.test(normFoodName(i.name)))) return null;
+    const cooked = items.filter((i) => COOKED_RE.test(normFoodName(i.name))).reduce((a, i) => a + i.grams, 0);
+    const grams = Math.round(cooked * COOKING_OIL_PCT / 100);
+    if (grams < 2) return null;
+    return { name: 'Aceite de cocción (estimado)', grams, kcal: grams * 9, protein: 0, carbs: 0, fat: grams, src: 'base', food: 'aceite', per100: { kcal: 900, protein: 0, carbs: 0, fat: 100 }, estimated: true };
+}
+// Reemplaza los macros que inventó la IA por los de la base cuando el alimento está ahí.
+function groundMealItems(items) {
+    return items.map((it) => {
+        const f = matchFood(it.name);
+        if (!f) return Object.assign({}, it, { src: 'ia' });
+        const k = it.grams / 100;
+        return Object.assign({}, it, {
+            kcal: Math.round(f.kcal * k), protein: Math.round(f.p * k * 10) / 10, carbs: Math.round(f.c * k * 10) / 10, fat: Math.round(f.f * k * 10) / 10,
+            src: 'base', food: f.k, per100: { kcal: f.kcal, protein: f.p, carbs: f.c, fat: f.f }
+        });
+    });
+}
 
 function sanitizeFoodVision(kind, p) {
     const num = (v, max) => { const n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) && n >= 0 && n <= max ? n : null; };
@@ -2560,7 +2676,7 @@ function sanitizeFoodVision(kind, p) {
     const str = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
     if (!p || typeof p !== 'object') return null;
     if (kind === 'meal') {
-        const items = (Array.isArray(p.items) ? p.items : []).slice(0, 8).map((i) => {
+        const items = (Array.isArray(p.items) ? p.items : []).slice(0, 10).map((i) => {
             const name = str(i && i.name, 60), grams = num(i && i.grams, 2000), kcal = num(i && i.kcal, 3000);
             if (!name || !grams || kcal == null) return null;
             return { name, grams: Math.round(grams), kcal: Math.round(kcal), protein: r1(num(i.protein, 300) || 0), carbs: r1(num(i.carbs, 500) || 0), fat: r1(num(i.fat, 300) || 0) };
@@ -2592,28 +2708,32 @@ async function foodVision(req, env) {
     if (!img || img.length > 1400000 || !/^[A-Za-z0-9+/]+=*$/.test(img)) return err('Falta la foto o no es válida', 400);
     const quota = await aiQuotaTake(env, payload, 'food');
     if (!quota.ok) return err('Llegaste al límite diario de fotos (' + AI_QUOTA.food + '). Mañana se renueva.', 429);
+    // Banco de pruebas de comida (solo con FOOD_BENCH = "1", que en producción no existe): permite
+    // elegir el modelo por pedido y devuelve los tokens gastados. Ver bench-comida/ (fuera del repo).
+    const bench = String(env.FOOD_BENCH || '') === '1';
+    const model = (bench && typeof body.model === 'string' && /^@cf\/[\w.\-/]+$/.test(body.model)) ? body.model : (env.FOOD_VISION_MODEL || VISION_MODEL);
     // L-5: si la IA falla o no sirve, el uso se devuelve.
     return aiCharged(quota, async () => {
         try {
-            const r = await env.AI.run(VISION_MODEL, {
+            const r = await env.AI.run(model, Object.assign({
                 messages: [{ role: 'user', content: [
-                    { type: 'text', text: kind === 'meal' ? MEAL_PROMPT : LABEL_PROMPT },
+                    { type: 'text', text: kind === 'meal' ? mealPrompt(cleanMealNote(body.note)) : LABEL_PROMPT },
                     { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + img } }
                 ] }],
                 max_tokens: 800,
                 temperature: 0.1
-            });
-            const raw = r ? (r.response != null ? r.response : r.text) : null;
-            let parsed = null;
-            if (raw && typeof raw === 'object') parsed = raw;
-            else {
-                const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
-                const m = txt.match(/\{[\s\S]*\}/);
-                try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
-            }
+            }, visionOpts(model, bench ? body.reasoning : null)));
+            const parsed = aiJson(r);
             const clean = sanitizeFoodVision(kind, parsed);
+            if (clean && kind === 'meal') {
+                clean.items = groundMealItems(clean.items);
+                const oil = cookingOil(clean.items);
+                if (oil) clean.items.push(oil);
+            }
             if (!clean) return err(kind === 'meal' ? 'No pude reconocer comida en la foto. Probá con el plato entero y buena luz.' : 'No pude leer la tabla nutricional. Probá con la tabla entera, derecha y con buena luz.', 422);
-            return json(Object.assign({ ok: true, kind }, clean));
+            const out = Object.assign({ ok: true, kind }, clean);
+            if (bench) { out.usage = (r && r.usage) || null; out.model = model; out.raw = parsed; }
+            return json(out);
         } catch (e) {
             return aiErrorResponse(e);
         }
@@ -4253,6 +4373,9 @@ export default {
             if (p === '/api/oracle' && m === 'POST') return await oracleProxy(req, env);
             if (p === '/api/parse-routine' && m === 'POST') return await parseRoutine(req, env);
             if (p === '/api/food-vision' && m === 'POST') return await foodVision(req, env);
+            // Base de alimentos (USDA) para la pantalla de revisión del plato: elegir el alimento
+            // correcto o agregar uno. No usa IA ni KV; la app la guarda y la pide una vez por semana.
+            if (p === '/api/foods' && m === 'GET') return json({ v: FOOD_DB_VERSION, items: FOOD_DB.map((f) => ({ k: f.k, n: f.n, ne: f.ne, np: f.np, i: f.i, s: f.s, kcal: f.kcal, p: f.p, c: f.c, f: f.f, u: f.u, d: f.d })) });
 
             // Push (recordatorio diario)
             if (p === '/api/push/subscribe' && m === 'POST') return await pushSubscribe(req, env);
