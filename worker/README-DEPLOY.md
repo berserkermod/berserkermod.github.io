@@ -127,3 +127,6 @@ HTML.
 - **Datos de salud**: `/api/health-data` está apagado (`ENABLE_HEALTH_SYNC=false`) a
   propósito: se quedan en el teléfono.
 - **Sin secretos en el repo**: `.dev.vars` y las claves locales están en `.gitignore`.
+- **KV de prueba aparte**: `preview_id` apunta a `BMOD_KV_preview` (vacío), no a producción.
+  `wrangler dev` en local usa ese KV de prueba; los comandos `kv … --local` que tengan que
+  ver lo mismo que el Worker local van con `--preview`. Nunca igualar `preview_id` con `id`.

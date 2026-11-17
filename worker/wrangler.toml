@@ -103,12 +103,13 @@ TESTERS_CLAIM_MAX = "25"
 # permiso "Account Analytics: Read"):  npx wrangler secret put CF_ANALYTICS_TOKEN
 CF_ACCOUNT_ID = "0a8cc9f61d77cd06dd7fb75d825e3aa1"
 
-# KV: pegá el id que devuelve `wrangler kv namespace create BMOD_KV`.
-# El preview_id es para `wrangler dev`; podés usar el mismo id o crear otro.
+# KV de producción (id) y KV de prueba (preview_id, "BMOD_KV_preview", creado el 17-nov-2026).
+# Antes el de prueba era el mismo de producción: cualquier `wrangler dev --remote` o comando
+# de KV con --preview tocaba los datos reales (auditoría S-2). No volver a igualarlos.
 [[kv_namespaces]]
 binding = "BMOD_KV"
 id = "032b05ee75684a44bd0cfaa036d2c7be"
-preview_id = "032b05ee75684a44bd0cfaa036d2c7be"
+preview_id = "1d10c247919b42ec841a12f9d59941e8"
 
 # Workers AI: motor gratuito del "Importar rutina desde PDF". No necesita id ni
 # secret — con declarar el binding alcanza. La app lo usa para convertir el PDF a
