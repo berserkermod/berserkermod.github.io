@@ -10012,7 +10012,12 @@
         }
         function restPushCancel() {
             if (!_restPushAt) return;
+            const at = _restPushAt;
             _restPushAt = 0;
+            // Si el descanso ya terminó, el servidor ya mandó el aviso: no queda nada que cancelar.
+            // Es lo más común (se vuelve a la app cuando llega el aviso) y era la mitad de los
+            // pedidos de este aviso (auditoría L-4). 3 s de margen por si el reloj está corrido.
+            if (Date.now() >= at + 3000) return;
             if (!_pushSubCache || noBackendInProd()) return;
             fetch(getApiBase() + '/api/push/rest', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
