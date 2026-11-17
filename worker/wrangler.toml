@@ -24,9 +24,12 @@ LANDING_URL = "https://berserkermod.github.io/"
 # src/coach-store.js). Sin clase nueva: usan la de los avisos (Notifier).
 #   DO_DATA    "on": todo lo de cada coach vive en su objeto. "off": como antes, en KV.
 #   KV_MIRROR  "on": cada cambio se copia también a KV con el formato de siempre, así se
-#              puede volver al Worker anterior publicándolo. Apagarlo ("off") es el paso
-#              sin vuelta atrás: solo con OK del dueño, tras dos semanas sin errores en los
-#              registros y con una copia de KV hecha ese día.
+#              puede volver al Worker anterior publicándolo. "weekly": los cambios se juntan
+#              y se copian una vez por semana (los borrados, en el momento): ~5 veces menos
+#              escrituras y la copia de seguridad semanal de KV sigue cubriendo al Coach
+#              (con hasta una semana de atraso). "off": sin copia; KV deja de tener los datos
+#              del Coach y la copia de seguridad ya no los cubre. Cambiar de "on" a otro valor
+#              solo con OK del dueño, tras dos semanas sin errores y con copia de KV del día.
 #   DATA_EPOCH subirlo (2, 3…) SOLO al volver a publicar este Worker después de haber vuelto
 #              al anterior: cada objeto descarta lo suyo y vuelve a traer todo de KV.
 DO_DATA = "on"

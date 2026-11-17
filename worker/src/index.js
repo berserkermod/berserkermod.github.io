@@ -368,6 +368,23 @@ async function aiQuotaTake(env, payload, kind) {
         }
     };
 }
+// K-5: la IA no acepta licencias que dejaron de valer aunque la firma siga bien: código
+// anulado (devolución, contracargo, baja del coach) o pasado a otro teléfono, o compra de
+// Google Play terminada o usada en otro teléfono. Una lectura de KV por consulta.
+async function licenseStillValid(env, payload) {
+    if (payload.code) {
+        const rec = await kvGet(env, `code:${payload.code}`);
+        if (!rec || rec.revoked) return false;
+        if (rec.deviceId && payload.deviceId && rec.deviceId !== payload.deviceId) return false;
+    }
+    if (payload.product === 'premium_play' && typeof payload.pt === 'string' && payload.pt) {
+        const rec = await kvGet(env, `play:${await playHash(payload.pt)}`);
+        if (rec && (rec.ended || (Array.isArray(rec.devices) && payload.deviceId && !rec.devices.some((d) => d.id === payload.deviceId)))) return false;
+    }
+    return true;
+}
+const LICENSE_GONE_MSG = 'Tu plan ya no está activo en este teléfono. Revisalo en Perfil.';
+const INTERNAL_ERR_MSG = 'Error interno del servidor. Probá de nuevo en un rato.';
 // Corre el trabajo de IA y, si no salió bien (error o respuesta inútil), devuelve el uso.
 async function aiCharged(quota, work) {
     let resp;
@@ -1238,6 +1255,7 @@ async function postSharePremiumAuto(req, env, token) {
 // teléfono (modelo, iOS, pantalla, zona horaria y red); si algo no coincide, hace falta el
 // código de 6 dígitos que se ve en Safari (3 intentos). Sin pase, el código solo alcanza (plan B).
 const XFER_TTL = 1800, XFER_MAX = 8 * 1024 * 1024, XFER_TRIES = 3;
+const XFER_LIVE_MAX = 30;   // copias por media hora para toda la app (L-6)
 function xferFp(fp) {
     const f = fp && typeof fp === 'object' ? fp : {};
     const v = ['os', 'dev', 'scr', 'dpr', 'tz'].map((k) => String(f[k] == null ? '' : f[k]).slice(0, 40));
@@ -1257,6 +1275,13 @@ async function postTransfer(req, env) {
     const code = body && /^\d{6}$/.test(String(body.code || '')) ? String(body.code) : '';
     if (!data || !wrap || wrap.length > 2000 || !code) return err('Copia inválida', 400);
     if (await env.BMOD_KV.get(`xcode:${code}`)) return json({ error: 'Código en uso', code_taken: true }, 409);
+    // L-6: tope global de copias vivas (cada una puede pesar 8 MB y vive 30 min): sin esto, unas
+    // pocas IP podían llenar el GB gratis de KV. 30 por media hora alcanza de sobra hoy.
+    if (doData(env)) {
+        const hit = await callNotifier(env, 'counters', { op: 'ctr-hit', key: 'xf:' + Math.floor(Date.now() / (XFER_TTL * 1000)), field: 'n', max: XFER_LIVE_MAX, ttl: XFER_TTL * 2 });
+        if (hit && hit.ok && !hit.allowed) return err('Hay muchas copias en curso. Probá de nuevo en unos minutos.', 503);
+        if (!hit || !hit.ok) console.error('[contadores] sin respuesta: la copia sale sin contar', hit && hit.error);
+    }
     const id = newShareToken() + newShareToken();
     const exp = Math.floor(Date.now() / 1000) + XFER_TTL;
     const rec = { data, wrap, fp: xferFp(body.fp), ip: await ipHash(ipPrefix(clientIp(req))), ch: await sha256b64(id + ':' + code), tries: 0, exp };
@@ -1999,7 +2024,10 @@ async function retrieveCode(env, url) {
 async function adminCreateCodes(req, env) {
     if (!env.ADMIN_SECRET || req.headers.get('x-admin-secret') !== env.ADMIN_SECRET) return err('Unauthorized', 401);
     const body = await readBody(req);
-    const count = Math.min(Math.max(parseInt(body && body.count, 10) || 1, 1), 100);
+    // Hasta 20 por pedido (L-7): cada código es una lectura y una escritura, y un pedido que se
+    // corta a mitad de camino dejaría códigos creados que nunca se devuelven. El script de
+    // marketing ya pide de a 20.
+    const count = Math.min(Math.max(parseInt(body && body.count, 10) || 1, 1), 20);
     const product = body && ['coach', 'premium'].includes(body.product) ? body.product : 'coach';
     const expires_at = body && body.expires_at ? body.expires_at : null;
     const months = body && PLAN_MONTHS.includes(Number(body.months)) ? Number(body.months) : null;
@@ -2270,6 +2298,7 @@ async function oracleProxy(req, env) {
     if (!env.AI) return err('Oracle no configurado (falta el binding AI)', 503);
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body.token) : null;
     if (!payload) return err('Función premium: activá tu código para usar el Oracle', 403);
+    if (!(await licenseStillValid(env, payload))) return err(LICENSE_GONE_MSG, 403);   // K-5
     const quota = await aiQuotaTake(env, payload, 'oracle');
     if (!quota.ok) return err('Llegaste al límite diario del Oracle (' + AI_QUOTA.oracle + ' consultas). Mañana se renueva.', 429);
     // L-5: si la IA falla o no sirve, el uso se devuelve.
@@ -2402,6 +2431,7 @@ async function parseRoutine(req, env) {
     // Gate: solo licencias válidas (premium o coach).
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para importar rutinas', 403);
+    if (!(await licenseStillValid(env, payload))) return err(LICENSE_GONE_MSG, 403);   // K-5
     const quota = await aiQuotaTake(env, payload, 'parse');
     if (!quota.ok) return err('Llegaste al límite diario de importaciones (' + AI_QUOTA.parse + ' por día). Mañana se renueva.', 429);
     // L-5: si la IA falla o no sirve, el uso se devuelve.
@@ -2538,6 +2568,7 @@ async function foodVision(req, env) {
     const body = await readBody(req, MAX_BODY_IMG);
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.token) : null;
     if (!payload) return err('Función premium: activá tu código para analizar fotos de comida', 403);
+    if (!(await licenseStillValid(env, payload))) return err(LICENSE_GONE_MSG, 403);   // K-5
     const kind = body && body.kind === 'meal' ? 'meal' : 'label';
     const img = body && typeof body.image === 'string' ? body.image.replace(/^data:image\/\w+;base64,/, '') : '';
     if (!img || img.length > 1400000 || !/^[A-Za-z0-9+/]+=*$/.test(img)) return err('Falta la foto o no es válida', 400);
@@ -2925,11 +2956,19 @@ export class Notifier {
                 console.error('[coach] pedido falló', body.op, body.path || body.fn, (e && e.message) || e);
                 await noteKvLimit(this.env, (e && e.message) || e);   // ya fuera de la fila
                 if (body.op === 'c-run') return jsonResp({ ok: false, error: String((e && e.message) || e) });
-                return e instanceof PayloadTooLarge ? err('Payload too large', 413) : err('Internal error: ' + String(e && e.message), 500);
+                return e instanceof PayloadTooLarge ? err('Payload too large', 413) : err(INTERNAL_ERR_MSG, 500);   // S-3: el detalle queda en el registro
             }
             // Avisos a otros objetos (recordatorio, resumen): después de soltar la fila, así
             // este objeto nunca espera a otro con la fila tomada.
-            for (const fx of out.after) { try { await fx(); } catch (e) { console.error('[coach] aviso posterior falló', (e && e.message) || e); } }
+            // callNotifier no tira error: devuelve { ok: false }. Un reintento y, si sigue fallando,
+            // queda en el registro (antes se perdía sin rastro: auditoría D-2).
+            for (const fx of out.after) {
+                try {
+                    let r = await fx();
+                    if (r && r.ok === false) r = await fx();
+                    if (r && r.ok === false) console.error('[coach] aviso posterior no quedó programado', r.error);
+                } catch (e) { console.error('[coach] aviso posterior falló', (e && e.message) || e); }
+            }
             // El espejo a KV falló adentro de la fila (el pedido salió bien): señal para el vigía.
             if (out.kvError) await noteKvLimit(this.env, out.kvError);
             return body.op === 'c-run' ? jsonResp({ ok: true, result: out.result === undefined ? null : out.result }) : out.resp;
@@ -2982,7 +3021,7 @@ async function coachOp(storage, env, b) {
 }
 // Mantenimiento con la alarma del objeto: copias a KV que quedaron pendientes (objeto de un
 // coach) y limpieza de contadores vencidos (objeto 'counters').
-const COUNTER_PREFIXES = ['aiq:', 'tip:', 'tr:'];
+const COUNTER_PREFIXES = ['aiq:', 'tip:', 'tr:', 'xf:'];
 
 // ═════════ Vigía (auditoría M-1) ═════════
 // Lo que hoy fallaría en silencio deja una señal que ve /api/health/deep:
@@ -3384,8 +3423,11 @@ async function postSharePush(req, env, token) {
     await kvPut(env, routineKey(idx.coachId, idx.routineId), r);
     // El horario se calcula acá, con el registro recién guardado (antes el objeto del aviso
     // lo volvía a leer de KV, que puede devolver una copia vieja).
-    const sync = await callNotifier(env, 'chk:' + token, { op: 'chk-set', token, at: chkNextAt(r, Date.now()) });
-    return json({ ok: true, on: r.push_subs.length > 0, next: (sync && sync.next) || null, chk_remind: chkRemindOf(r) });
+    const op = { op: 'chk-set', token, at: chkNextAt(r, Date.now()) };
+    let sync = await callNotifier(env, 'chk:' + token, op);
+    if (!sync || sync.ok === false) sync = await callNotifier(env, 'chk:' + token, op);   // D-2: un reintento
+    if (!sync || sync.ok === false) console.error('[avisos] el recordatorio del control no quedó programado', token, sync && sync.error);
+    return json({ ok: true, on: r.push_subs.length > 0, next: (sync && sync.ok !== false && sync.next) || null, chk_remind: chkRemindOf(r) });
 }
 // POST /api/routines/{id}/remind — el coach le recuerda el control al alumno ahora
 async function remindRoutine(req, env, url, id) {
@@ -4205,7 +4247,7 @@ export default {
             const msg = String((e && e.message) || e);
             console.error('[worker] error', m, p, msg.slice(0, 300));
             await noteKvLimit(env, msg);
-            return err('Internal error: ' + String(e && e.message), 500);
+            return err(INTERNAL_ERR_MSG, 500);   // S-3: el detalle queda en el registro, no le llega al usuario
         }
     }
 };

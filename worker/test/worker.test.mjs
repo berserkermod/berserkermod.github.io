@@ -2496,5 +2496,123 @@ let code, licToken;
     }
 }
 
+// ── Auditoría 2026-11, tanda 5: K-5, S-3, L-6, L-7, D-2 ──
+{
+    console.log('\nAuditoría 2026-11 (tanda 5): licencias anuladas, errores internos, topes, avisos');
+    const prevNS = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const ns = env.NOTIFIER;
+    const realErr = console.error;
+    const logged = [];
+    console.error = (...a) => { logged.push(a.join(' ')); };
+    try {
+        // K-5: la IA no acepta una licencia cuyo código fue anulado o pasó a otro teléfono
+        env.AI = { run: async () => ({ response: { insights: [{ icon: '💡', title: 'Ok', text: 'ok' }] } }) };
+        const g = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+        const code = g.body.codes[0];
+        const lic = (await call('POST', '/api/license/activate', { code, deviceId: 'k5-dev' })).body.token;
+        let o = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
+        ok('K-5: con el código vigente la IA responde', o.status === 200, o.body);
+        await call('POST', '/api/license/activate', { code, deviceId: 'k5-otro-tel' });   // el código pasa a otro teléfono
+        o = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
+        ok('K-5: si el código pasó a otro teléfono, la licencia vieja ya no usa la IA', o.status === 403 && /no está activo/.test(o.body.error), o.body);
+        const rec = JSON.parse(await env.BMOD_KV.get('code:' + code)); rec.revoked = true;
+        await env.BMOD_KV.put('code:' + code, JSON.stringify(rec));
+        const lic2 = (await call('POST', '/api/license/activate', { code: (await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' })).body.codes[0], deviceId: 'k5-dev2' })).body.token;
+        const c2 = JSON.parse(Buffer.from(lic2.split('.')[0], 'base64url').toString()).code;
+        const r2 = JSON.parse(await env.BMOD_KV.get('code:' + c2)); r2.revoked = true; await env.BMOD_KV.put('code:' + c2, JSON.stringify(r2));
+        const foods = await call('POST', '/api/food-vision', { token: lic2, kind: 'label', image: 'iVBORw0KGgo=' });
+        ok('K-5: código anulado (devolución, baja) → tampoco fotos de comida', foods.status === 403, foods.body);
+        delete env.AI;
+
+        // S-3: un error interno no le muestra el detalle al usuario (queda en el registro)
+        const realGet = env.BMOD_KV.get;
+        env.BMOD_KV.get = async () => { throw new Error('detalle-secreto-del-servidor en /internal'); };
+        const e500 = await call('POST', '/api/license/activate', { code: 'BMOD-AAAA-BBBB', deviceId: 's3-dev' });
+        env.BMOD_KV.get = realGet;
+        ok('S-3: error interno → mensaje genérico, sin el detalle', e500.status === 500 && !JSON.stringify(e500.body).includes('detalle-secreto') && /Probá de nuevo/.test(e500.body.error), e500.body);
+        ok('S-3: y el detalle queda en el registro del Worker', logged.some((l) => l.includes('detalle-secreto')));
+
+        // L-7: hasta 20 códigos por pedido
+        const many = await call('POST', '/api/admin/codes', { count: 50, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+        ok('L-7: pedir 50 códigos de una vez → se crean 20', many.status === 200 && many.body.codes.length === 20, many.body.codes && many.body.codes.length);
+
+        // L-6: tope global de copias Safari → app vivas (con el objeto de contadores)
+        if (RUN_DO) {
+            const bucket = 'xf:' + Math.floor(Date.now() / 1800000);
+            const six = () => String(100000 + Math.floor(Math.random() * 899999));
+            const first = await call('POST', '/api/transfer', { data: 'x', wrap: 'w', code: six() });   // crea el objeto de contadores si hace falta
+            const ctr = ns._dos.get('counters');
+            ctr.storage._m.set(bucket, { f: { n: 30 }, exp: Date.now() + 3600000 });
+            const c6 = six();
+            const t = await call('POST', '/api/transfer', { data: 'x', wrap: 'w', code: c6 });
+            ok('L-6: llegado el tope de copias en curso → 503 con explicación (no se guarda nada)', first.status === 201 && t.status === 503 && /muchas copias/.test(t.body.error) && !(await env.BMOD_KV.get('xcode:' + c6)), [first.status, t.body]);
+            ctr.storage._m.delete(bucket);
+        }
+
+        // D-2: si programar el recordatorio del control falla, se reintenta y, si no, queda registrado
+        const R = (await call('POST', '/api/routines', { coach_id: 'coachD2-' + Date.now(), name: 'P', plan: [{ day: 'A' }], alumno_name: 'D2' })).body;
+        const key = Buffer.from(new Uint8Array(65).fill(4)).toString('base64url'), auth = Buffer.from(new Uint8Array(16).fill(7)).toString('base64url');
+        const sub = { endpoint: 'https://fcm.googleapis.com/fcm/send/d2-' + Date.now(), keys: { p256dh: key, auth } };
+        const realNsGet = ns.get;
+        let fails = 1;
+        ns.get = (id) => (String(id.name).startsWith('chk:') && fails-- > 0 ? { fetch: async () => { throw new Error('objeto caído un momento'); } } : realNsGet.call(ns, id));
+        const p1 = await call('POST', '/api/shares/' + R.share_token + '/push', { subscription: sub, tz: 'America/Argentina/Buenos_Aires' });
+        const chk = ns._dos.get('chk:' + R.share_token);
+        ok('D-2: una falla momentánea al programar el recordatorio → se reintenta y queda programado', p1.status === 200 && chk && chk.storage._m.get('job') && chk.storage.alarm > Date.now(), [p1.body, chk && chk.storage._m.get('job')]);
+        fails = 2; logged.length = 0;
+        const p2 = await call('POST', '/api/shares/' + R.share_token + '/push', { subscription: sub, tz: 'America/Argentina/Buenos_Aires' });
+        ok('D-2: si sigue fallando, queda en el registro (antes se perdía sin rastro)', p2.status === 200 && logged.some((l) => /no quedó programado/.test(l)), logged.slice(-2));
+        ns.get = realNsGet;
+    } finally {
+        console.error = realErr;
+        env.NOTIFIER = prevNS;
+        if (!prevNS) delete env.NOTIFIER;
+    }
+}
+
+// ── Espejo semanal (KV_MIRROR = "weekly"): la copia de KV cubre a los Durable Objects ──
+if (RUN_DO) {
+    console.log('\nEspejo semanal del Coach (KV_MIRROR = "weekly")');
+    const ns = env.NOTIFIER;
+    const prevMirror = env.KV_MIRROR;
+    env.KV_MIRROR = 'weekly';
+    const realErr = console.error; console.error = () => { };
+    try {
+        const C = 'coachSemanal-' + Date.now();
+        const today = new Date().toISOString().slice(0, 10);
+        const r = (await call('POST', '/api/routines', { coach_id: C, name: 'P', plan: [{ day: 'A' }], alumno_name: 'Sem' })).body;
+        const obj = ns._dos.get('coach:' + C);
+        ok('semanal: un alumno nuevo se copia a KV en el momento (el panel todavía lista desde KV)', !!(await env.BMOD_KV.get('routine:' + C + ':' + r.id)));
+        await call('POST', '/api/shares/' + r.share_token + '/sessions', { date: today, exercises: [] });
+        const rt = obj.storage._m.get('mq:retry');
+        ok('semanal: el entrenamiento queda en el objeto, todavía no en KV, con la copia programada a 7 días', !(await env.BMOD_KV.get('sessions:' + r.id)) && obj.storage._m.has('sessions:' + r.id) && rt && rt.at - Date.now() > 6.9 * 86400000 && obj.storage.alarm <= rt.at, rt);
+        await call('POST', '/api/shares/' + r.share_token + '/checkins', { weight: 70 });
+        ok('semanal: más cambios en la semana no adelantan la copia', obj.storage._m.get('mq:retry').at === rt.at);
+        rt.at = Date.now() - 1; obj.storage._m.set('mq:retry', rt);
+        await ns.fire('coach:' + C, true);
+        ok('semanal: al llegar la semana se copia todo a KV y queda al día', !!(await env.BMOD_KV.get('sessions:' + r.id)) && !!(await env.BMOD_KV.get('checkins:' + r.id)) && !obj.storage._m.has('mq:retry') && ![...obj.storage._m.keys()].some((k) => k.startsWith('mq:')), [...obj.storage._m.keys()].filter((k) => k.startsWith('mq:')));
+        await call('POST', '/api/shares/' + r.share_token + '/sessions', { date: today, exercises: [{ name: 'Press', sets: [{ kg: 50, reps: 5 }] }] });
+        env.KV_MIRROR = 'on';
+        await call('GET', '/api/shares/' + r.share_token);
+        ok('al volver al espejo inmediato, lo que quedó juntado sale enseguida', /Press/.test(await env.BMOD_KV.get('sessions:' + r.id) || ''));
+        env.KV_MIRROR = 'weekly';
+        const realDel = env.BMOD_KV.delete;
+        let failDel = true;
+        env.BMOD_KV.delete = async (k) => { if (failDel && String(k).startsWith('sessions:')) throw new Error('KV DELETE failed: 429 Too Many Requests'); return realDel.call(env.BMOD_KV, k); };
+        const del = await call('DELETE', '/api/routines/' + r.id + '?coach_id=' + C, undefined, { 'x-coach-id': C });
+        const rt2 = obj.storage._m.get('mq:retry');
+        ok('semanal: una baja borra de KV en el momento; si un borrado falla, se reintenta en segundos (no en una semana)', del.status === 200 && !(await env.BMOD_KV.get('routine:' + C + ':' + r.id)) && rt2 && rt2.at - Date.now() < 60000, [del.status, rt2]);
+        failDel = false;
+        env.BMOD_KV.delete = realDel;
+        rt2.at = Date.now() - 1; obj.storage._m.set('mq:retry', rt2);
+        await ns.fire('coach:' + C, true);
+        ok('semanal: y el reintento termina de borrar', !(await env.BMOD_KV.get('sessions:' + r.id)));
+    } finally {
+        console.error = realErr;
+        if (prevMirror === undefined) delete env.KV_MIRROR; else env.KV_MIRROR = prevMirror;
+    }
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

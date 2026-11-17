@@ -36,6 +36,12 @@ const RETRY_STEPS = [5000, 60000, 600000, 3600000, 6 * 3600000];
 const PUT_CHUNK = 120;   // el almacenamiento admite hasta 128 filas por llamada
 
 export function mirrorOn(env) { return String((env && env.KV_MIRROR) || 'on') !== 'off'; }
+// KV_MIRROR = "weekly": los cambios se juntan y se copian a KV una vez por semana (los
+// borrados, en el momento). KV queda con hasta una semana de atraso: alcanza para que la
+// copia de seguridad semanal de KV cubra los datos del Coach, gastando ~5 veces menos
+// escrituras que el espejo inmediato.
+export function mirrorWeekly(env) { return String((env && env.KV_MIRROR) || '') === 'weekly'; }
+const WEEK_MS = 7 * 86400000;
 export function dataEpoch(env) { return String((env && env.DATA_EPOCH) || '1'); }
 // ¿Es una key con datos de un coach? (para avisar si algo las toca por fuera de su objeto)
 export function isCoachKey(key) { return COACH_KEY_RE.test(String(key)); }
@@ -196,7 +202,24 @@ export class CoachStore {
         if (dels.length) ops.push(this.storage.delete(dels));
         await Promise.all(ops);
         this.w.clear();
+        if (mirrorWeekly(this.env)) {
+            // Semanal: ahora solo lo que no puede esperar (borrados y altas que el panel todavía
+            // lista desde KV); el resto queda anotado y sale en la copia de la semana.
+            const urgent = dirty.filter((row) => puts['mq:' + row] === 'd' || puts['mq:' + row] === 'P');
+            if (urgent.length) await this.flush(urgent);
+            if (dirty.length > urgent.length) await this.scheduleWeekly(Date.now());
+            return;
+        }
         await this.flush(dirty);
+    }
+    // Programa la copia semanal (si no hay una antes).
+    async scheduleWeekly(now) {
+        const prev = await this.storage.get('mq:retry');
+        if (prev && prev.at <= now + WEEK_MS) return;
+        const at = now + WEEK_MS;
+        await this.storage.put('mq:retry', { n: 0, at });
+        const alarm = await this.storage.getAlarm();
+        if (!alarm || alarm > at) await this.storage.setAlarm(at);
     }
 
     // ── Espejo a KV ──
@@ -223,7 +246,9 @@ export class CoachStore {
     }
     async scheduleRetry(now) {
         const prev = await this.storage.get('mq:retry');
-        if (prev && prev.at > now) return;   // ya hay un reintento programado: una falla más por tanda, no por pedido
+        // Ya hay un reintento programado: una falla más por tanda, no por pedido. Pero si lo
+        // que hay es la copia semanal (días), un borrado que falló no puede esperar tanto.
+        if (prev && prev.at > now && prev.at - now <= RETRY_STEPS[RETRY_STEPS.length - 1]) return;
         const n = ((prev && prev.n) || 0) + 1;
         const at = now + RETRY_STEPS[Math.min(n - 1, RETRY_STEPS.length - 1)];
         await this.storage.put('mq:retry', { n, at });
@@ -233,7 +258,8 @@ export class CoachStore {
     // Copias que quedaron pendientes: se reintentan cuando toca (al llegar un pedido o con la alarma).
     async retryPending(now = Date.now()) {
         const rt = await this.storage.get('mq:retry');
-        if (!rt || now < rt.at) return;
+        // Si el espejo volvió a inmediato, lo que quedó juntado de la semana sale ya.
+        if (!rt || (now < rt.at && (mirrorWeekly(this.env) || rt.at - now <= RETRY_STEPS[RETRY_STEPS.length - 1]))) return;
         const rows = [...(await this.storage.list({ prefix: 'mq:', limit: 40 })).keys()].filter((k) => k !== 'mq:retry').map((k) => k.slice(3));
         if (!rows.length) { await this.storage.delete('mq:retry'); return; }
         if (!(await this.flush(rows, now))) return;   // KV sigue sin responder: flush() ya anotó el próximo intento

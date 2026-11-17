@@ -63,7 +63,7 @@ npx wrangler@4.164.0 rollback <id-de-la-versión-anterior>   # el script lo impr
 | Variable | Qué hace |
 |----------|----------|
 | `DO_DATA` | `"on"`: datos del Coach, contadores y suscripciones en Durable Objects. `"off"`: todo en KV, como antes. |
-| `KV_MIRROR` | `"on"`: cada cambio se copia a KV (vuelta atrás posible). Apagarlo es sin vuelta atrás: solo con OK del dueño, tras dos semanas sin errores, con copia de KV **y de los Durable Objects** de ese día. |
+| `KV_MIRROR` | `"on"`: cada cambio se copia a KV (vuelta atrás posible). `"weekly"`: se copia una vez por semana (los borrados, en el momento); ~5 veces menos escrituras y la copia de seguridad de KV sigue cubriendo al Coach, con hasta una semana de atraso. `"off"`: sin copia (la copia de seguridad deja de cubrir al Coach). Cambiarlo solo con OK del dueño, tras dos semanas sin errores y con copia de KV de ese día. |
 | `DATA_EPOCH` | Subirlo solo al republicar este Worker después de una vuelta atrás. |
 | `TESTERS_CLAIM_OPEN` / `_MAX` | Premium para testers de la prueba cerrada de Play. |
 | `*_PRICE_ARS_*` | Precios de Mercado Pago (en `"0"`, el plan desaparece). |
