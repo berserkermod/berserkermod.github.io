@@ -2571,6 +2571,42 @@ let code, licToken;
     }
 }
 
+// ── K-2: dos teléfonos activan el mismo código a la vez ──
+{
+    console.log('\nK-2: activación simultánea del mismo código');
+    const prevNS = env.NOTIFIER;
+    if (!env.NOTIFIER) env.NOTIFIER = makeDONamespace(Notifier, env);
+    const ns = env.NOTIFIER;
+    try {
+        const code = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 3 }, { 'x-admin-secret': 'test-admin' })).body.codes[0];
+        const [a, b] = await Promise.all([
+            call('POST', '/api/license/activate', { code, deviceId: 'k2-tel-A' }),
+            call('POST', '/api/license/activate', { code, deviceId: 'k2-tel-B' })
+        ]);
+        const claim = ns._dos.get('act:' + code).storage._m.get('act');
+        const rec = JSON.parse(await env.BMOD_KV.get('code:' + code));
+        ok('K-2: los dos reciben licencia con el MISMO vencimiento (el reloj arranca una sola vez)', a.status === 200 && b.status === 200 && a.body.expiresAt === b.body.expiresAt && !!a.body.expiresAt, [a.body.expiresAt, b.body.expiresAt]);
+        ok('K-2: el segundo cuenta como cambio de teléfono (decide el objeto del código)', ['k2-tel-A', 'k2-tel-B'].includes(claim.deviceId) && rec.used === true && rec.expires_at === a.body.expiresAt, [claim, rec.rebinds]);
+        const loser = claim.deviceId === 'k2-tel-A' ? 'k2-tel-B' : 'k2-tel-A';
+        const again = await call('POST', '/api/license/activate', { code, deviceId: loser });
+        ok('K-2: después, todo sigue la regla de siempre (último teléfono, mismo vencimiento)', again.status === 200 && again.body.expiresAt === a.body.expiresAt, again.body);
+
+        // Código de Coach: celular y tablet a la vez, cada uno con su panel → los dos terminan en el mismo
+        const coachCode = (await call('POST', '/api/admin/codes', { count: 1, product: 'coach', months: 1 }, { 'x-admin-secret': 'test-admin' })).body.codes[0];
+        const PA = 'aaaaaaaa-1111-4111-8111-000000000001', PB = 'bbbbbbbb-2222-4222-8222-000000000002';
+        const [c1, c2] = await Promise.all([
+            call('POST', '/api/license/activate', { code: coachCode, deviceId: 'k2-celu', coach_id: PA }),
+            call('POST', '/api/license/activate', { code: coachCode, deviceId: 'k2-tablet', coach_id: PB })
+        ]);
+        ok('K-2: código de Coach en dos aparatos a la vez → el mismo panel de alumnos en los dos', c1.status === 200 && c2.status === 200 && c1.body.coach_id && c1.body.coach_id === c2.body.coach_id, [c1.body.coach_id, c2.body.coach_id]);
+        const c3 = await call('POST', '/api/license/activate', { code: coachCode, deviceId: 'k2-otro', coach_id: 'cccccccc-3333-4333-8333-000000000003' });
+        ok('K-2: y un tercer aparato después también recibe ese panel', c3.body.coach_id === c1.body.coach_id, c3.body.coach_id);
+    } finally {
+        env.NOTIFIER = prevNS;
+        if (!prevNS) delete env.NOTIFIER;
+    }
+}
+
 // ── Espejo semanal (KV_MIRROR = "weekly"): la copia de KV cubre a los Durable Objects ──
 if (RUN_DO) {
     console.log('\nEspejo semanal del Coach (KV_MIRROR = "weekly")');

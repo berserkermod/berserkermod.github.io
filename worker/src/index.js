@@ -1830,14 +1830,33 @@ async function activateLicense(req, env) {
     if (!rec) return err('Código inválido', 404);
     if (rec.revoked) return err('Código revocado', 403);
     if (rec.expires_at && new Date(rec.expires_at).getTime() < Date.now()) return err('Código vencido', 403);
-    if (!rec.used) {
+
+    // K-2: la primera activación (y el panel de un código de Coach) la decide el objeto del
+    // código ('act:{código}'), que atiende de a un pedido por vez. Con dos teléfonos a la vez
+    // (o una lectura vieja de KV) ya no quedan dos "primeras" activaciones con vencimientos
+    // distintos ni dos paneles de alumnos. Solo en la primera vez: después manda KV.
+    const panelWant = validPanelId(body && body.coach_id);
+    let claim = null;
+    if (env.NOTIFIER && (!rec.used || (rec.product === 'coach' && !rec.panel_id && panelWant))) {
+        claim = await callNotifier(env, 'act:' + code, { op: 'act-claim', deviceId, panel: rec.product === 'coach' ? panelWant : null });
+        if (!claim || !claim.ok) { console.error('[licencias] sin objeto del código: se activa como antes', claim && claim.error); claim = null; }
+    }
+    if (!rec.used && claim && claim.deviceId !== deviceId) {
+        // Otro teléfono lo activó hace un momento: para este es un cambio de teléfono.
+        rec.used = true;
+        if (rec.duration_days && !rec.expires_at) rec.expires_at = new Date(claim.at + rec.duration_days * 86400000).toISOString();
+        rec.rebinds = (rec.rebinds || 0) + 1;
+        rec.deviceId = deviceId; rec.activated_at = nowISO();
+        await kvPut(env, `code:${code}`, rec);
+    } else if (!rec.used) {
         // primera activación. Si el código es por duración (premium 1/3/6/12
         // meses), el reloj arranca ACÁ — no en la compra — y queda fijado en el
         // código: re-activar o cambiar de teléfono no lo extiende.
-        rec.used = true; rec.deviceId = deviceId; rec.activated_at = nowISO();
+        const at = claim ? claim.at : Date.now();
+        rec.used = true; rec.deviceId = deviceId; rec.activated_at = new Date(at).toISOString();
         track(env, req, 'activate', rec.product || 'premium', { s: surfaceOf(body) });
         if (rec.duration_days && !rec.expires_at) {
-            rec.expires_at = new Date(Date.now() + rec.duration_days * 86400000).toISOString();
+            rec.expires_at = new Date(at + rec.duration_days * 86400000).toISOString();
         }
         await kvPut(env, `code:${code}`, rec);
     } else if (rec.deviceId && rec.deviceId !== deviceId) {
@@ -1859,9 +1878,8 @@ async function activateLicense(req, env) {
 
     // Código de Coach: el panel de alumnos queda atado al código. La primera vez se anota
     // el panel del teléfono; en un teléfono nuevo, el mismo código devuelve ese panel.
-    const panelWant = validPanelId(body && body.coach_id);
     if (rec.product === 'coach' && !rec.panel_id && panelWant) {
-        rec.panel_id = panelWant;
+        rec.panel_id = (claim && claim.panel) || panelWant;   // K-2: gana el primer panel
         await kvPut(env, `code:${code}`, rec);
     }
 
@@ -3235,6 +3253,16 @@ async function notifierOp(storage, env, b, now) {
             if (!/^BMOD-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return { ok: false, error: 'invalid' };
             await storage.put('pay', { code, done: false, at: now });
             return { ok: true, code, done: false };
+        }
+        // ── Primera activación de un código (un objeto por código: 'act:{código}'; auditoría K-2) ──
+        case 'act-claim': {
+            const deviceId = String(b.deviceId || '').slice(0, 80);
+            if (!deviceId) return { ok: false, error: 'invalid' };
+            const panel = validPanelId(b.panel);
+            let cur = await storage.get('act');
+            if (!cur) { cur = { deviceId, panel: panel || null, at: now }; await storage.put('act', cur); }
+            else if (!cur.panel && panel) { cur = Object.assign({}, cur, { panel }); await storage.put('act', cur); }
+            return { ok: true, deviceId: cur.deviceId, panel: cur.panel, at: cur.at };
         }
         case 'pay-get': {
             const cur = await storage.get('pay');
