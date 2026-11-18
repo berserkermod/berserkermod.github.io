@@ -8380,7 +8380,8 @@
             }
             if (cardioDone.length) { state.cardioSessions.unshift(...cardioDone); saveCardio(); }
             if (validSets === 0) {
-                // Día de solo cardio: no se guarda una sesión de pesas vacía
+                // Día de solo cardio: no se guarda una sesión de pesas vacía, pero al coach le llega igual
+                sendRoutineToCoach(activeCoachRoutine(), coachSessionPayload({ date: rs.date || todayStr(), day: rs.dayName || '' }));
                 state.routineSession = {};
                 clearRoutineDraft(); stopRestTimer(); setWorkoutAwake(false);
                 state.activeRoutineIdx++;
@@ -8408,15 +8409,20 @@
             saveWorkoutSession(sess, (saved, merged) => {
                 flash(merged ? t('session_merged') : t('routines_saved_ok'));
                 openShareModal(saved);
-                if (coachR && coachR.coach && !coachR.coach.gone && !coachR.coach.closed && !noBackendInProd()) {
-                    if (termsAccepted()) sendCoachSession(coachR.coach.token, coachSessionPayload(saved)).then(ok => { if (ok) setTimeout(() => flash(t('coach_sent')), 2200); });
-                    else {   // queda en cola hasta que acepte los términos
-                        const q = coachOutbox().filter(x => !(x.token === coachR.coach.token && x.payload.date === saved.date));
-                        q.push({ token: coachR.coach.token, payload: coachSessionPayload(saved) });
-                        saveCoachOutbox(q);
-                    }
-                }
+                sendRoutineToCoach(coachR, coachSessionPayload(saved));
             });
+        }
+
+        // Manda al coach lo que hizo el alumno con la rutina que le armó (o lo deja en cola hasta que
+        // acepte los términos). Va una sesión por día: el Worker pisa la anterior de esa fecha.
+        function sendRoutineToCoach(coachR, payload) {
+            if (!(coachR && coachR.coach && !coachR.coach.gone && !coachR.coach.closed && !noBackendInProd())) return;
+            if (termsAccepted()) sendCoachSession(coachR.coach.token, payload).then(ok => { if (ok) setTimeout(() => flash(t('coach_sent')), 2200); });
+            else {   // queda en cola hasta que acepte los términos
+                const q = coachOutbox().filter(x => !(x.token === coachR.coach.token && x.payload.date === payload.date));
+                q.push({ token: coachR.coach.token, payload });
+                saveCoachOutbox(q);
+            }
         }
 
         // ─────────────────────────────────────────
@@ -16638,9 +16644,15 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
         // otra del mismo día, va completa). El coach ve kg: si la app está en lbs, se convierte.
         function coachSessionPayload(sess) {
             const toKg = (v) => state.unit === 'lbs' ? Math.round((Number(v) || 0) * 0.453592 * 10) / 10 : (Number(v) || 0);
+            // El cardio que anotó en la rutina ese día (cinta, bici, remo…): minutos y km, como en el link
+            const cardio = (state.cardioSessions || []).filter(c => c && c.fromRoutine && c.date === sess.date).map(c => {
+                const e = { name: String(c.customName || sportOf(c.sport).name).slice(0, 60), kind: 'cardio', min: Math.max(1, Math.round((Number(c.duration) || 0) / 60)) };
+                if (Number(c.distance) > 0) e.km = Number(c.distance);
+                return e;
+            });
             return {
                 date: sess.date, day_name: sess.day || '',
-                exercises: (sess.exercises || []).map(e => ({ name: e.exercise, sets: (e.sets || []).map(x => ({ kg: toKg(x.kg), reps: Number(x.reps) || 0 })) }))
+                exercises: (sess.exercises || []).map(e => ({ name: e.exercise, sets: (e.sets || []).map(x => ({ kg: toKg(x.kg), reps: Number(x.reps) || 0 })) })).concat(cardio)
             };
         }
         // Baja los cambios del coach (como mucho cada 6 h, o ya con force) y reintenta envíos
