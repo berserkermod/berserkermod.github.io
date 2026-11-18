@@ -854,6 +854,15 @@
             color: #fff
         }
 
+        .timer-btn-discard {
+            background: var(--sf2);
+            color: var(--text3);
+            border: 1px solid var(--border)
+        }
+
+        .cardio-lvl-hint { font-size: 11px; color: var(--text3); text-align: center; margin-top: 6px; line-height: 1.4; }
+        .cardio-hist-row { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border: none; border-bottom: 1px solid var(--border); background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+
         /* MOTIVATION */
         .quote-card {
             padding: 24px 20px;
@@ -2289,8 +2298,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-33"></script>
-    <script src="core/i18n-data.js?v=2-33"></script>
+    <script src="core/calc.js?v=2-34"></script>
+    <script src="core/i18n-data.js?v=2-34"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2419,7 +2428,7 @@
                 train_day: "DÍA DE ENTRENAMIENTO", train_exercise: "EJERCICIO", train_sel_ph: "Seleccionar ejercicio...", train_log: "REGISTRAR SERIE", train_prev: "Anterior: ",
                 train_weight: "PESO", train_add_series: "AGREGAR SERIE", train_session: "SESIÓN", train_finish_btn: "✓ FINALIZAR",
                 cardio_start: "INICIAR", cardio_pause: "PAUSA", cardio_stop: "DETENER", cardio_intensity_label: "INTENSIDAD",
-                cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_saved: "✅ Cardio guardado",
+                cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_low_hint: "Baja: podés charlar sin problema.", cardio_med_hint: "Media: podés hablar, pero no cantar.", cardio_high_hint: "Alta: solo te salen frases cortas.", cardio_discard: "Descartar", cardio_discard_confirm: "¿Descartar este cardio sin guardarlo?", cardio_long_confirm: "Este cardio lleva {h} h. ¿Lo guardo así? Si te olvidaste de pararlo, tocá Cancelar, descartalo y cargalo a mano.", cardio_manual_max: "Máximo 600 minutos por sesión.", cardio_bad_date: "Elegí la fecha de hoy o una anterior.", cardio_date: "Fecha", cardio_edit_hint: "Tocá una sesión para corregirla o borrarla.", cardio_edit_save: "Guardar", cardio_edit_saved: "Cardio actualizado", cardio_delete: "Borrar", cardio_delete_confirm: "¿Borrar esta sesión de cardio?", cardio_deleted: "Sesión borrada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cw_rule: "Como recomienda la OMS, los minutos intensos (correr, HIIT, soga…) cuentan doble y lo muy suave (como yoga o pilates) no suma a esta meta.", bal_maint_note: "Mantenimiento sin tu cardio habitual (~{avg} kcal por día): el cardio de hoy se descuenta aparte, así no se cuenta dos veces.", cardio_saved: "✅ Cardio guardado",
                 prof_personal: "DATOS PERSONALES", prof_weight: "Peso", prof_height: "Altura", prof_age: "Edad", prof_sex: "Sexo", prof_days: "Días/sem", prof_routine: "Rutina",
                 lic_no_server: "No se pudo conectar con el servidor. Probá de nuevo más tarde.", lic_active: "Premium activo", lic_active_sub: "Tenés acceso completo a todas las funciones.", lic_trial_left: "Prueba gratuita: te quedan {n} días.", lic_unlock_title: "Desbloqueá Premium", lic_unlock_sub: "Ingresá tu código de activación o probá gratis.", lic_activate_btn: "Activar código", lic_activated: "¡Premium activado!", lic_try_free: "Probar gratis", lic_trial_started: "Prueba iniciada: {n} días gratis", lic_expires: "Premium hasta el {date} · quedan {n} días.",
                 play_month: "1 mes", play_months: "{n} meses",
@@ -2442,7 +2451,7 @@
                 watch_last_paired: "Último: ", watch_reconnect: "Reconectar",
                 watch_last_reading: "Última lectura", watch_no_reading: "Sin lecturas todavía",
                 watch_device_label: "DISPOSITIVO CONECTADO", watch_edit_max_hr: "Editar HR máx",
-                watch_max_hr_prompt: "Tu frecuencia cardíaca máxima (default 220 − edad)",
+                watch_max_hr_prompt: "Tu frecuencia cardíaca máxima (si no la sabés: 208 − 0,7 × edad)",
                 watch_max_hr_invalid: "Valor inválido. Tiene que estar entre 100 y 240.",
                 watch_max_hr_saved: "HR máx actualizado",
                 hr_zone_0: "Reposo", hr_zone_1: "Recuperación", hr_zone_2: "Aerobic base",
@@ -2861,7 +2870,7 @@
                 train_day: "TRAINING DAY", train_exercise: "EXERCISE", train_sel_ph: "Select exercise...", train_log: "LOG SET", train_prev: "Previous: ",
                 train_weight: "WEIGHT", train_add_series: "ADD SET", train_session: "SESSION", train_finish_btn: "✓ FINISH",
                 cardio_start: "START", cardio_pause: "PAUSE", cardio_stop: "STOP", cardio_intensity_label: "INTENSITY",
-                cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_saved: "✅ Cardio saved",
+                cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_low_hint: "Low: you can chat comfortably.", cardio_med_hint: "Medium: you can talk, but not sing.", cardio_high_hint: "High: you can only say a few words.", cardio_discard: "Discard", cardio_discard_confirm: "Discard this cardio without saving it?", cardio_long_confirm: "This cardio has been running for {h} h. Save it as is? If you forgot to stop it, tap Cancel, discard it and add it manually.", cardio_manual_max: "Maximum 600 minutes per session.", cardio_bad_date: "Pick today or an earlier date.", cardio_date: "Date", cardio_edit_hint: "Tap a session to fix or delete it.", cardio_edit_save: "Save", cardio_edit_saved: "Cardio updated", cardio_delete: "Delete", cardio_delete_confirm: "Delete this cardio session?", cardio_deleted: "Session deleted", cardio_show_all: "Show all ({n})", cardio_show_less: "Show less", cw_rule: "As the WHO recommends, vigorous minutes (running, HIIT, jump rope…) count double and very light activity (like yoga or pilates) doesn't count toward this goal.", bal_maint_note: "Maintenance without your usual cardio (~{avg} kcal a day): today's cardio is subtracted separately so it isn't counted twice.", cardio_saved: "✅ Cardio saved",
                 prof_personal: "PERSONAL DATA", prof_weight: "Weight", prof_height: "Height", prof_age: "Age", prof_sex: "Sex", prof_days: "Days/week", prof_routine: "Routine",
                 lic_no_server: "Couldn't reach the server. Try again later.", lic_active: "Premium active", lic_active_sub: "You have full access to every feature.", lic_trial_left: "Free trial: {n} days left.", lic_unlock_title: "Unlock Premium", lic_unlock_sub: "Enter your activation code or try it free.", lic_activate_btn: "Activate code", lic_activated: "Premium activated!", lic_try_free: "Try for free", lic_trial_started: "Trial started: {n} free days", lic_expires: "Premium until {date} · {n} days left.",
                 play_month: "1 month", play_months: "{n} months",
@@ -2884,7 +2893,7 @@
                 watch_last_paired: "Last: ", watch_reconnect: "Reconnect",
                 watch_last_reading: "Last reading", watch_no_reading: "No readings yet",
                 watch_device_label: "CONNECTED DEVICE", watch_edit_max_hr: "Edit max HR",
-                watch_max_hr_prompt: "Your maximum heart rate (default 220 − age)",
+                watch_max_hr_prompt: "Your maximum heart rate (if you don't know it: 208 − 0.7 × age)",
                 watch_max_hr_invalid: "Invalid value. Must be between 100 and 240.",
                 watch_max_hr_saved: "Max HR updated",
                 hr_zone_0: "Resting", hr_zone_1: "Recovery", hr_zone_2: "Aerobic base",
@@ -3304,7 +3313,7 @@
                 train_day: "DIA DE TREINO", train_exercise: "EXERCÍCIO", train_sel_ph: "Selecionar exercício...", train_log: "REGISTRAR SÉRIE", train_prev: "Anterior: ",
                 train_weight: "PESO", train_add_series: "ADICIONAR SÉRIE", train_session: "SESSÃO", train_finish_btn: "✓ FINALIZAR",
                 cardio_start: "INICIAR", cardio_pause: "PAUSAR", cardio_stop: "PARAR", cardio_intensity_label: "INTENSIDADE",
-                cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_saved: "✅ Cardio salvo",
+                cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_low_hint: "Baixa: dá para conversar tranquilo.", cardio_med_hint: "Média: dá para falar, mas não para cantar.", cardio_high_hint: "Alta: só saem frases curtas.", cardio_discard: "Descartar", cardio_discard_confirm: "Descartar este cardio sem salvar?", cardio_long_confirm: "Este cardio já tem {h} h. Salvar assim? Se você esqueceu de parar, toque em Cancelar, descarte e adicione manualmente.", cardio_manual_max: "Máximo de 600 minutos por sessão.", cardio_bad_date: "Escolha hoje ou uma data anterior.", cardio_date: "Data", cardio_edit_hint: "Toque numa sessão para corrigir ou apagar.", cardio_edit_save: "Salvar", cardio_edit_saved: "Cardio atualizado", cardio_delete: "Apagar", cardio_delete_confirm: "Apagar esta sessão de cardio?", cardio_deleted: "Sessão apagada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cw_rule: "Como recomenda a OMS, os minutos intensos (corrida, HIIT, pular corda…) contam em dobro e o muito leve (como ioga ou pilates) não soma para esta meta.", bal_maint_note: "Manutenção sem o seu cardio habitual (~{avg} kcal por dia): o cardio de hoje é descontado à parte, para não contar duas vezes.", cardio_saved: "✅ Cardio salvo",
                 prof_personal: "DADOS PESSOAIS", prof_weight: "Peso", prof_height: "Altura", prof_age: "Idade", prof_sex: "Sexo", prof_days: "Dias/sem", prof_routine: "Rotina",
                 lic_no_server: "Não foi possível conectar ao servidor. Tente mais tarde.", lic_active: "Premium ativo", lic_active_sub: "Você tem acesso completo a todos os recursos.", lic_trial_left: "Teste grátis: faltam {n} dias.", lic_unlock_title: "Desbloqueie o Premium", lic_unlock_sub: "Insira seu código de ativação ou teste grátis.", lic_activate_btn: "Ativar código", lic_activated: "Premium ativado!", lic_try_free: "Testar grátis", lic_trial_started: "Teste iniciado: {n} dias grátis", lic_expires: "Premium até {date} · faltam {n} dias.",
                 play_month: "1 mês", play_months: "{n} meses",
@@ -3327,7 +3336,7 @@
                 watch_last_paired: "Último: ", watch_reconnect: "Reconectar",
                 watch_last_reading: "Última leitura", watch_no_reading: "Sem leituras ainda",
                 watch_device_label: "DISPOSITIVO CONECTADO", watch_edit_max_hr: "Editar FC máx",
-                watch_max_hr_prompt: "Sua frequência cardíaca máxima (padrão 220 − idade)",
+                watch_max_hr_prompt: "Sua frequência cardíaca máxima (se não souber: 208 − 0,7 × idade)",
                 watch_max_hr_invalid: "Valor inválido. Deve estar entre 100 e 240.",
                 watch_max_hr_saved: "FC máx atualizada",
                 hr_zone_0: "Repouso", hr_zone_1: "Recuperação", hr_zone_2: "Base aeróbica",
@@ -3753,37 +3762,43 @@
             "CORE": ["Plancha", "Plancha Lateral", "Crunch Clásico", "Crunch en Polea", "Elevación de Piernas Tumbado", "Elevación de Rodillas Colgado", "Elevación de Piernas Colgado", "Russian Twist", "Ab Wheel Rollout", "Dead Bug", "Dragon Flag"],
             "FULL BODY": ["Sentadilla", "Press Banca", "Peso Muerto", "Press Militar", "Dominadas", "Remo Barra", "Hip Thrust", "Curl Bíceps", "Pushdown"]
         };
-        // MET = costo metabólico base del deporte. kcal = MET × factor_intensidad × peso(kg) × horas.
-        // Los MET están tomados del Compendium of Physical Activities (valores de intensidad media).
+        // MET por nivel [baja, media, alta] del Compendio de Actividades Físicas 2024 (Herrmann et
+        // al., J Sport Health Sci 2024; pacompendium.com), con el código de cada valor. kcal activas =
+        // (MET − 1) × kg × horas (cardioKcal en core/calc.js). La app arranca siempre en "media": antes
+        // el nivel alto se ponía solo (×1,3) sobre MET que ya eran de esfuerzo intenso y el boxeo usaba
+        // el valor "en el ring" (12,8): las calorías salían 25 % a 3 veces más altas.
+        // est. = sin valor medido en el Compendio para ese nivel (punto medio o actividad parecida).
+        // met = el del nivel medio (lo usa el catálogo de ejercicios).
         const SPORTS = [
-            { id: "running", name: "Running", met: 9.8, icon: "🏃" },
-            { id: "cycling", name: "Ciclismo", met: 7.5, icon: "🚴" },
-            { id: "walking", name: "Caminata", met: 3.8, icon: "🚶" },
-            { id: "boxing", name: "Boxeo", met: 12.8, icon: "🥊" },
-            { id: "swimming", name: "Natación", met: 8.0, icon: "🏊" },
-            { id: "jumprope", name: "Saltar Cuerda", met: 11.0, icon: "⏭" },
-            { id: "hiit", name: "HIIT", met: 12.0, icon: "⚡" },
-            { id: "football", name: "Fútbol", met: 7.0, icon: "⚽" },
-            { id: "basketball", name: "Basketball", met: 8.0, icon: "🏀" },
-            { id: "rowing", name: "Remo", met: 7.0, icon: "🚣" },
-            { id: "tennis", name: "Tenis", met: 7.3, icon: "🎾" },
-            { id: "martial", name: "Artes Marciales", met: 10.3, icon: "🥋" },
-            { id: "padel", name: "Pádel", met: 7.0, icon: "🎾" },
-            { id: "spinning", name: "Spinning", met: 8.5, icon: "🚲" },
-            { id: "elliptical", name: "Elíptica", met: 5.0, icon: "🌀" },
-            { id: "stairs", name: "Escaladora", met: 9.0, icon: "🪜" },
-            { id: "crossfit", name: "CrossFit", met: 8.0, icon: "🏋️" },
-            { id: "functional", name: "Funcional", met: 6.0, icon: "💪" },
-            { id: "dancing", name: "Baile", met: 5.5, icon: "💃" },
-            { id: "hiking", name: "Senderismo", met: 6.0, icon: "🥾" },
-            { id: "volleyball", name: "Vóley", met: 4.0, icon: "🏐" },
-            { id: "skating", name: "Patín", met: 7.0, icon: "🛼" },
-            { id: "climbing", name: "Escalada", met: 8.0, icon: "🧗" },
-            { id: "surfing", name: "Surf", met: 5.0, icon: "🏄" },
-            { id: "yoga", name: "Yoga", met: 3.0, icon: "🧘" },
-            { id: "pilates", name: "Pilates", met: 3.5, icon: "🤸" },
-            { id: "other", name: "Otro", met: 6.0, icon: "➕" }
+            { id: "running", name: "Running", mets: [7.5, 9.3, 11.8], icon: "🏃" },        // 12020 trote, 12050 ~9,7 km/h, 12080 ~12 km/h
+            { id: "cycling", name: "Ciclismo", mets: [5.8, 8.0, 10.0], icon: "🚴" },       // 01019 ~15 km/h, 01030 19-22, 01040 23-25
+            { id: "walking", name: "Caminata", mets: [3.0, 3.8, 4.8], icon: "🚶" },        // 17170 4 km/h, 17190 4,5-5,5, 17200 5,6-6,3 (rápida)
+            { id: "boxing", name: "Boxeo", mets: [5.8, 7.8, 10.8], icon: "🥊" },           // 15110 bolsa, 15120 sparring, 15118 bolsa rápida
+            { id: "swimming", name: "Natación", mets: [5.8, 8.0, 9.8], icon: "🏊" },       // 18240 libre lento, 18290 crol medio, 18230 libre rápido
+            { id: "jumprope", name: "Saltar Cuerda", mets: [8.3, 11.0, 12.3], icon: "⏭" }, // 15552 lento, 02068 general, 15550 rápido
+            { id: "hiit", name: "HIIT", mets: [7.0, 9.0, 11.0], icon: "⚡" },              // 02210 moderado, est., 02214 vigoroso
+            { id: "football", name: "Fútbol", mets: [7.0, 8.3, 9.5], icon: "⚽" },         // 15610 recreativo, est., 15605 competitivo
+            { id: "basketball", name: "Basketball", mets: [6.0, 7.5, 8.0], icon: "🏀" },   // 15050 sin partido, 15055 general, 15040 partido
+            { id: "rowing", name: "Remo", mets: [5.0, 7.3, 11.0], icon: "🚣" },            // 02071 <100 W, 02070 general, 02073 150-199 W
+            { id: "tennis", name: "Tenis", mets: [4.5, 6.8, 8.0], icon: "🎾" },            // 15685 dobles, 15675 general, 15690 singles
+            { id: "martial", name: "Artes Marciales", mets: [5.3, 7.8, 10.3], icon: "🥋" },// 15425 lento, est., 15430 ritmo moderado
+            { id: "padel", name: "Pádel", mets: [5.0, 6.0, 7.5], icon: "🎾" },             // est.: el Compendio no lo tiene (paleta recreativa 15500 = 6,0)
+            { id: "spinning", name: "Spinning", mets: [6.8, 9.0, 10.8], icon: "🚲" },      // 01200 fija general, 01270 clase de spinning, 01236 200-229 W
+            { id: "elliptical", name: "Elíptica", mets: [4.0, 5.0, 9.0], icon: "🌀" },     // est., 02048 moderada, 02049 vigorosa
+            { id: "stairs", name: "Escaladora", mets: [7.0, 9.3, 11.0], icon: "🪜" },      // est., 02065 general, est.
+            { id: "crossfit", name: "CrossFit", mets: [5.0, 7.5, 11.0], icon: "🏋️" },      // 02008 bootcamp, 02040 circuito vigoroso, 02214 HIIT vigoroso
+            { id: "functional", name: "Funcional", mets: [3.5, 5.0, 7.5], icon: "💪" },    // 02034, 02035, 02040 (circuito suave, moderado, vigoroso)
+            { id: "dancing", name: "Baile", mets: [3.0, 5.5, 7.3], icon: "💃" },           // 03040 lento, 03030 rápido, 03029 aeróbico
+            { id: "hiking", name: "Senderismo", mets: [3.8, 6.0, 7.8], icon: "🥾" },       // 17081 tranquilo, 17080 campo traviesa, 17012 con mochila
+            { id: "volleyball", name: "Vóley", mets: [3.0, 4.0, 6.0], icon: "🏐" },        // 15720 recreativo, 15710 general, 15711 competitivo
+            { id: "skating", name: "Patín", mets: [7.0, 7.5, 9.8], icon: "🛼" },           // 15590, 15591 recreativo, 15592 entrenamiento
+            { id: "climbing", name: "Escalada", mets: [5.8, 8.0, 10.5], icon: "🧗" },      // 15537 fácil, 15533 general, 15536 difícil
+            { id: "surfing", name: "Surf", mets: [3.0, 4.0, 5.0], icon: "🏄" },            // Compendio 2011 (3,0 general, 5,0 competitivo); medio est.
+            { id: "yoga", name: "Yoga", mets: [2.3, 2.7, 4.0], icon: "🧘" },               // 02150 hatha, 02185 vinyasa, 02160 power
+            { id: "pilates", name: "Pilates", mets: [1.8, 2.8, 3.5], icon: "🤸" },         // 02103 mat, 02105 general, est.
+            { id: "other", name: "Otro", mets: [4.0, 5.5, 7.5], icon: "➕" }               // est.
         ];
+        SPORTS.forEach(sp => { sp.met = sp.mets[1]; });
 
         // Unified exercise catalog (strength from EX_DB + cardio from SPORTS).
         // Dedupe by lowercased name, keep first occurrence (so EMPUJES wins over later groups).
@@ -4310,7 +4325,7 @@
             exListOpen: false, exSearch: '',
             histFilter: 'TODOS', histExpanded: null,
             statsGroup: '', statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
-            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioIntensity: 1, cardioOtherName: '',
+            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioLevel: 1, cardioStartTime: 0, cardioOtherName: '', cardioHistAll: false,
             restInterval: null, restEnd: null, restTotal: 90, restAlerted: false,
             editSessId: null, editData: null,
             activeRoutineIdx: 0, routineSession: {},
@@ -4330,6 +4345,7 @@
             try { state.user = JSON.parse(localStorage.getItem('bm-user')); } catch { state.user = null; }
             try { state.sessions = JSON.parse(localStorage.getItem('bm-sessions') || '[]'); } catch { state.sessions = []; }
             try { state.cardioSessions = JSON.parse(localStorage.getItem('bm-cardio') || '[]'); } catch { state.cardioSessions = []; }
+            loadCardioRun();
             try { state.customEx = JSON.parse(localStorage.getItem('bm-custom') || '[]'); } catch { state.customEx = []; }
             try { state.customRoutines = JSON.parse(localStorage.getItem('bm-routines') || '[]'); } catch { state.customRoutines = []; }
             try { state.foodLog = JSON.parse(localStorage.getItem('bm-food') || '[]'); } catch { state.foodLog = []; }
@@ -4445,6 +4461,26 @@
         }
         function saveSessions() { try { localStorage.setItem('bm-sessions', JSON.stringify(state.sessions)); } catch { } }
         function saveCardio() { try { localStorage.setItem('bm-cardio', JSON.stringify(state.cardioSessions)); } catch { } }
+        // Cronómetro de cardio en curso: se guarda en el teléfono para que no se pierda si el sistema
+        // cierra la app en medio de la sesión (pasa seguido con la pantalla apagada).
+        function saveCardioRun() {
+            try {
+                if (!state.cardioSport || (!state.cardioRunning && !(state.cardioTimer > 0))) { localStorage.removeItem('bm-cardio-run'); return; }
+                localStorage.setItem('bm-cardio-run', JSON.stringify({ sport: state.cardioSport, level: state.cardioLevel, running: state.cardioRunning, start: state.cardioStartTime, timer: state.cardioTimer, other: state.cardioOtherName || '' }));
+            } catch { }
+        }
+        function loadCardioRun() {
+            try {
+                const r = JSON.parse(localStorage.getItem('bm-cardio-run') || 'null');
+                if (!r || !r.sport) return;
+                state.cardioSport = r.sport;
+                state.cardioLevel = [0, 1, 2].includes(r.level) ? r.level : 1;
+                state.cardioOtherName = r.other || '';
+                state.cardioRunning = !!r.running && r.start > 0;
+                state.cardioStartTime = state.cardioRunning ? r.start : 0;
+                state.cardioTimer = state.cardioRunning ? Math.max(0, Math.floor((Date.now() - r.start) / 1000)) : Math.max(0, r.timer | 0);
+            } catch { }
+        }
         function saveCustom() { try { localStorage.setItem('bm-custom', JSON.stringify(state.customEx)); } catch { } }
         function saveRoutines() { try { localStorage.setItem('bm-routines', JSON.stringify(state.customRoutines)); } catch { } }
         function saveTier() { try { localStorage.setItem('bm-tier', state.tier); } catch { } }
@@ -4806,7 +4842,7 @@
         const BACKUP_EXCLUDE = [
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache', 'bm-food-db',
             'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
-            'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline',
+            'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline', 'bm-health-sync-queue', 'bm-cardio-run',
             'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
             'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code',
@@ -5486,6 +5522,20 @@
             const today = todayStr();
             return (state.cardioSessions || []).filter(s => s.date === today).reduce((a, s) => a + (s.calories || 0), 0);
         }
+        // Cardio promedio por día que ya viene adentro del gasto real (ajuste semanal): el que se
+        // guardó al aplicarlo o, si es de antes, el de los últimos 21 días. 0 si no hay gasto real.
+        function adaptiveCardioAvg() {
+            const u = state.user;
+            if (!u || !(u.tdeeAdaptive > 0)) return 0;
+            return u.tdeeCardioAvg != null ? Number(u.tdeeCardioAvg) || 0 : cardioDailyAvg(state.cardioSessions, todayStr(), 21);
+        }
+        // Mantenimiento para el balance del día. Con el gasto real se le resta ese cardio promedio y el
+        // de hoy se descuenta aparte: así no se cuenta dos veces. 0 = el de siempre (fórmula).
+        function balanceMaintenance() {
+            const u = state.user;
+            if (!u || !(u.tdeeAdaptive > 0)) return 0;
+            return Math.max(0, Math.round(u.tdeeAdaptive - adaptiveCardioAvg()));
+        }
 
         // calcDailyBalance → core/calc.js
 
@@ -5496,7 +5546,7 @@
             const consumed = (typeof todayFoodEntries === 'function')
                 ? todayFoodEntries().reduce((a, e) => a + (e.kcal || 0), 0) : 0;
             if (state.user && consumed > 0) {
-                const bal = calcDailyBalance(state.user, consumed, todayCardioBurned());
+                const bal = calcDailyBalance(state.user, consumed, todayCardioBurned(), balanceMaintenance());
                 if (!bal.aligned) {
                     flash('🔥 ' + cals + ' kcal · ⚠️ ' + t('bal_s_' + bal.status) + ' ' + (bal.diff >= 0 ? '+' : '') + bal.diff, 'var(--orange)');
                     return;
@@ -10098,13 +10148,14 @@
         });
 
         // CARDIO
-        // Meta semanal de cardio para perder grasa y resistencia: minutos de esta semana
-        // (lunes a domingo) contra la meta de cardioWeek() en core/calc.js, que arranca en
-        // 150 min y sube de a poco con el promedio de las últimas 4 semanas, hasta 300.
+        // Meta semanal de cardio para perder grasa y resistencia: minutos equivalentes de esta semana
+        // (lunes a domingo) contra la meta de cardioWeek() en core/calc.js, que arranca en 150 min y
+        // sube de a poco con el promedio de las últimas 4 semanas, hasta 300. Como la OMS, el minuto
+        // vigoroso (6 MET o más) vale doble y el muy suave (menos de 3 MET) no cuenta.
         function cardioWeekCard(withButton) {
             const u = state.user;
             if (!u || (u.goal !== 'fat_loss' && u.goal !== 'endurance')) return null;
-            const cw = cardioWeek(state.cardioSessions || [], todayStr());
+            const cw = cardioWeek(state.cardioSessions || [], todayStr(), { weightOf: (s) => cardioMinuteWeight(sessMet(s)) });
             const c = h('div', { className: 'card fade-in cw-card' + (cw.done ? ' done' : '') });
             c.appendChild(h('p', { className: 'label' }, ico('target'), t('cw_title')));
             c.appendChild(h('div', { className: 'cw-top' },
@@ -10116,12 +10167,32 @@
                 : (cw.daysLeft === 1 ? t('cw_left_today') : t('cw_left').replace('{days}', cw.daysLeft)).replace('{min}', cw.remaining);
             c.appendChild(h('p', { className: 'cw-msg' }, msg));
             c.appendChild(h('p', { className: 'cw-hint' }, t(u.goal === 'fat_loss' ? 'cw_hint_fat' : 'cw_hint_end')));
+            c.appendChild(h('p', { className: 'cw-hint' }, t('cw_rule')));
             if (withButton) c.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', onclick: () => switchTab('cardio') }, t('cw_log')));
             return c;
         }
 
+        const CARDIO_MAX_MIN = 600;        // tope de una sesión cargada a mano o corregida
+        const CARDIO_LONG_S = 4 * 3600;    // con el cronómetro, más de 4 h pide confirmar (¿se olvidó de pararlo?)
+        function sportOf(id) { return SPORTS.find(s => s.id === id) || { id, name: id || 'Cardio', icon: '🏃', mets: [4.0, 5.5, 7.5] }; }
+        // MET de un deporte en un nivel (0 baja, 1 media, 2 alta)
+        function sportMet(id, level) { return sportOf(id).mets[[0, 1, 2].includes(level) ? level : 1]; }
+        // MET con el que se guardó la sesión; las de antes de nov 2026 no lo traen → el nivel medio
+        function sessMet(s) { return Number(s && s.met) > 0 ? Number(s.met) : sportMet(s && s.sport, 1); }
+        function cardioLevelLabel(lv) { return t(['cardio_low', 'cardio_med', 'cardio_high'][lv]); }
+
+        function ensureCardioTick() {
+            if (state.cardioRunning && !state.cardioInterval) {
+                state.cardioInterval = setInterval(() => {
+                    state.cardioTimer = Math.floor((Date.now() - state.cardioStartTime) / 1000);
+                    renderCardioTimer();
+                }, 1000);
+            }
+        }
+
         function renderCardio() {
             const v = $('view-cardio'); v.innerHTML = '';
+            ensureCardioTick();
             const cwCard = cardioWeekCard(false);
             if (cwCard) v.appendChild(cwCard);
 
@@ -10133,10 +10204,10 @@
                 grid.appendChild(h('button', {
                     className: 'sport-card' + (state.cardioSport === sp.id ? ' active' : ''),
                     onclick: () => {
+                        if (state.cardioSport === sp.id) return;
                         state.cardioSport = sp.id;
-                        if (sp.met < 6) state.cardioIntensity = 0.8;
-                        else if (sp.met < 9) state.cardioIntensity = 1.0;
-                        else state.cardioIntensity = 1.3;
+                        state.cardioLevel = 1;   // siempre arranca en "media": la alta se elige a propósito
+                        saveCardioRun();
                         renderCardio();
                     }
                 },
@@ -10146,7 +10217,7 @@
 
             // Timer
             if (state.cardioSport) {
-                const sport = SPORTS.find(s => s.id === state.cardioSport);
+                const met = sportMet(state.cardioSport, state.cardioLevel);
                 const tc = h('div', { className: 'card card-accent fade-in' });
 
                 // Custom name input for the "Otro" generic sport
@@ -10155,14 +10226,14 @@
                         className: 'input', placeholder: t('cardio_other_name'), value: state.cardioOtherName || '',
                         style: { marginBottom: '12px', textAlign: 'center', fontWeight: 700 }
                     });
-                    oni.oninput = e => { state.cardioOtherName = e.target.value; };
+                    oni.oninput = e => { state.cardioOtherName = e.target.value; saveCardioRun(); };
                     tc.appendChild(oni);
                 }
 
                 const mins = Math.floor(state.cardioTimer / 60), secs = state.cardioTimer % 60;
                 tc.appendChild(h('p', { className: 'timer-display' },
                     String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0')));
-                const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, state.cardioTimer);
+                const cals = cardioKcal(met, 1, state.user.weight, state.cardioTimer);
                 tc.appendChild(h('p', { className: 'timer-cals' }, '🔥 ' + cals + ' kcal'));
 
                 const controls = h('div', { className: 'timer-controls' });
@@ -10174,62 +10245,75 @@
                 if (state.cardioTimer > 0) {
                     controls.appendChild(h('button', { className: 'timer-btn timer-btn-stop', onclick: stopCardio }, '⏹'));
                 }
+                if (!state.cardioRunning && state.cardioTimer > 0) {
+                    controls.appendChild(h('button', { className: 'timer-btn timer-btn-discard', title: t('cardio_discard'), 'aria-label': t('cardio_discard'), onclick: discardCardio }, '✕'));
+                }
                 tc.appendChild(controls);
 
-                // Intensity (clickable — affects the kcal estimate)
+                // Intensidad (cambia el MET del Compendio) con la prueba del habla para elegirla bien
                 tc.appendChild(h('p', { className: 'label', style: { marginTop: '16px' } }, t('cardio_intensity')));
                 const intRow = h('div', { className: 'pills', style: { justifyContent: 'center' } });
-                const intensities = [{ label: t('cardio_low'), val: 0.8 }, { label: t('cardio_med'), val: 1.0 }, { label: t('cardio_high'), val: 1.3 }];
-                intensities.forEach(({ label, val }) => {
+                [0, 1, 2].forEach(lv => {
+                    const on = state.cardioLevel === lv;
                     intRow.appendChild(h('button', {
-                        className: 'pill' + (state.cardioIntensity === val ? ' active' : ''),
-                        style: { fontSize: '11px', opacity: state.cardioIntensity === val ? '1' : '0.5', borderStyle: state.cardioIntensity === val ? 'solid' : 'dashed' },
-                        onclick: () => { state.cardioIntensity = val; renderCardio(); }
-                    }, label));
+                        className: 'pill' + (on ? ' active' : ''),
+                        style: { fontSize: '11px', opacity: on ? '1' : '0.5', borderStyle: on ? 'solid' : 'dashed' },
+                        onclick: () => { state.cardioLevel = lv; saveCardioRun(); renderCardio(); }
+                    }, cardioLevelLabel(lv)));
                 });
                 tc.appendChild(intRow);
+                tc.appendChild(h('p', { className: 'cardio-lvl-hint' }, t(['cardio_low_hint', 'cardio_med_hint', 'cardio_high_hint'][state.cardioLevel] || 'cardio_med_hint')));
 
-                // Manual entry — for when the user forgot to start the timer
+                // Manual entry — for when the user forgot to start the timer (también días anteriores)
                 tc.appendChild(h('p', { className: 'label', style: { marginTop: '18px' } }, t('cardio_manual_title')));
                 const manualRow = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } });
                 const minInp = h('input', {
-                    id: 'cardio-manual-min', className: 'input', type: 'number', inputmode: 'numeric',
-                    placeholder: t('cardio_manual_min'), style: { flex: 1, textAlign: 'center', fontWeight: 700 }
+                    id: 'cardio-manual-min', className: 'input', type: 'number', inputmode: 'numeric', min: '1', max: String(CARDIO_MAX_MIN),
+                    placeholder: t('cardio_manual_min'), style: { flex: 1, minWidth: 0, textAlign: 'center', fontWeight: 700 }
                 });
                 minInp.addEventListener('keydown', e => { if (e.key === 'Enter') addManualCardio(); });
+                const dateInp = h('input', {
+                    id: 'cardio-manual-date', className: 'input', type: 'date', value: todayStr(), max: todayStr(),
+                    'aria-label': t('cardio_date'), style: { flex: 1.3, minWidth: 0, textAlign: 'center' }
+                });
                 manualRow.appendChild(minInp);
-                manualRow.appendChild(h('button', {
-                    className: 'btn btn-secondary btn-sm', style: { whiteSpace: 'nowrap', padding: '10px 14px' },
+                manualRow.appendChild(dateInp);
+                tc.appendChild(manualRow);
+                tc.appendChild(h('button', {
+                    className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '8px' },
                     onclick: addManualCardio
                 }, '+ ' + t('cardio_manual_add')));
-                tc.appendChild(manualRow);
                 tc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginTop: '6px', lineHeight: 1.4 } }, t('cardio_manual_hint')));
 
                 v.appendChild(tc);
             }
 
-            // Cardio History
-            const recent = state.cardioSessions.slice(0, 10);
+            // Cardio History: por fecha (lo más nuevo arriba); tocar una sesión la corrige o la borra
+            const all = (state.cardioSessions || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || ((Number(b.id) || 0) - (Number(a.id) || 0)));
+            const recent = all.slice(0, state.cardioHistAll ? 100 : 10);
             if (recent.length) {
                 const hc = h('div', { className: 'card fade-in' });
                 hc.appendChild(h('p', { className: 'label' }, t('stats_hist') || 'HISTORIAL'));
+                hc.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', marginBottom: '4px' } }, t('cardio_edit_hint')));
                 recent.forEach(s => {
-                    const sp = SPORTS.find(x => x.id === s.sport) || { icon: '🏃', name: s.sport };
-                    const item = h('div', {
-                        style: {
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '10px 0', borderBottom: '1px solid var(--border)'
-                        }
-                    });
-                    const left = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } });
+                    const sp = sportOf(s.sport);
+                    const item = h('button', { className: 'cardio-hist-row', onclick: () => openCardioEdit(s) });
+                    const left = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 } });
                     left.appendChild(h('span', { style: { fontSize: '20px' } }, sp.icon));
-                    const info = h('div', {});
+                    const info = h('div', { style: { minWidth: 0 } });
                     info.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 700 } }, (s.customName || sp.name) + (s.manual ? ' ✍️' : '')));
-                    info.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, s.date + ' · ' + Math.floor(s.duration / 60) + t('train_min')));
+                    const lvTxt = [0, 1, 2].includes(s.level) ? ' · ' + cardioLevelLabel(s.level) : '';
+                    info.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, s.date + ' · ' + Math.floor((s.duration || 0) / 60) + t('train_min') + lvTxt));
                     left.appendChild(info); item.appendChild(left);
-                    item.appendChild(h('span', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--orange)' } }, s.calories + ' kcal'));
+                    item.appendChild(h('span', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--orange)', flexShrink: 0 } }, (s.calories || 0) + ' kcal'));
                     hc.appendChild(item);
                 });
+                if (all.length > 10) {
+                    hc.appendChild(h('button', {
+                        className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '10px' },
+                        onclick: () => { state.cardioHistAll = !state.cardioHistAll; renderCardio(); }
+                    }, state.cardioHistAll ? t('cardio_show_less') : t('cardio_show_all').replace('{n}', all.length)));
+                }
                 v.appendChild(hc);
             }
         }
@@ -10237,57 +10321,131 @@
         function startCardio() {
             state.cardioRunning = true;
             state.cardioStartTime = Date.now() - (state.cardioTimer * 1000);
-            state.cardioInterval = setInterval(() => {
-                state.cardioTimer = Math.floor((Date.now() - state.cardioStartTime) / 1000);
-                renderCardioTimer();
-            }, 1000);
+            ensureCardioTick();
+            saveCardioRun();
             renderCardio();
         }
         function pauseCardio() {
-            state.cardioRunning = false; clearInterval(state.cardioInterval); renderCardio();
+            if (state.cardioRunning) state.cardioTimer = Math.floor((Date.now() - state.cardioStartTime) / 1000);
+            state.cardioRunning = false; clearInterval(state.cardioInterval); state.cardioInterval = null;
+            saveCardioRun(); renderCardio();
         }
         function stopCardio() {
-            state.cardioRunning = false; clearInterval(state.cardioInterval);
+            if (state.cardioRunning) state.cardioTimer = Math.floor((Date.now() - state.cardioStartTime) / 1000);
+            // ¿Se olvidó de pararlo? Con más de 4 h, pregunta; si cancela queda en pausa para descartarlo o corregirlo
+            if (state.cardioTimer > CARDIO_LONG_S && !confirm(t('cardio_long_confirm').replace('{h}', Math.round(state.cardioTimer / 360) / 10))) { pauseCardio(); return; }
+            state.cardioRunning = false; clearInterval(state.cardioInterval); state.cardioInterval = null;
             if (state.cardioTimer > 0) {
-                const sport = SPORTS.find(s => s.id === state.cardioSport);
-                const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, state.cardioTimer);
+                const met = sportMet(state.cardioSport, state.cardioLevel);
+                const cals = cardioKcal(met, 1, state.user.weight, state.cardioTimer);
                 const sess = {
                     id: Date.now(), date: todayStr(), sport: state.cardioSport,
-                    duration: state.cardioTimer, calories: cals
+                    duration: state.cardioTimer, calories: cals, met, level: state.cardioLevel
                 };
                 if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
                 state.cardioSessions.unshift(sess);
                 saveCardio(); flashCardioResult(cals); pushTrainedToday();
             }
-            state.cardioTimer = 0; renderCardio();
+            state.cardioTimer = 0; state.cardioStartTime = 0;
+            saveCardioRun(); renderCardio();
+        }
+        // Tirar el cronómetro sin guardar (por ejemplo, si quedó corriendo de más y prefiere cargarlo a mano)
+        function discardCardio() {
+            if (state.cardioTimer > 60 && !confirm(t('cardio_discard_confirm'))) return;
+            state.cardioRunning = false; clearInterval(state.cardioInterval); state.cardioInterval = null;
+            state.cardioTimer = 0; state.cardioStartTime = 0;
+            saveCardioRun(); renderCardio();
         }
 
-        // Manual cardio entry — computes kcal from sport MET × intensity × weight × minutes.
-        // For when the user forgot to start the chronometer. Counts in stats like any session.
+        // Manual cardio entry — kcal con el MET del Compendio para el deporte y el nivel elegidos.
+        // Para cuando se olvidó del cronómetro; se puede cargar un día anterior. Cuenta como cualquier sesión.
         function addManualCardio() {
             if (!state.cardioSport || !state.user) return;
-            const inp = $('cardio-manual-min');
+            const inp = $('cardio-manual-min'), dInp = $('cardio-manual-date');
             const minutes = parseFloat(inp && inp.value) || 0;
             if (minutes <= 0) { flash(t('cardio_manual_invalid'), 'var(--orange)'); return; }
-            const sport = SPORTS.find(s => s.id === state.cardioSport);
-            const cals = cardioKcal(sport.met, state.cardioIntensity, state.user.weight, minutes * 60);
+            if (minutes > CARDIO_MAX_MIN) { flash(t('cardio_manual_max'), 'var(--orange)'); return; }
+            const date = (dInp && dInp.value) || todayStr();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayStr()) { flash(t('cardio_bad_date'), 'var(--orange)'); return; }
+            const met = sportMet(state.cardioSport, state.cardioLevel);
+            const cals = cardioKcal(met, 1, state.user.weight, minutes * 60);
             const sess = {
-                id: Date.now(), date: todayStr(), sport: state.cardioSport,
-                duration: Math.round(minutes * 60), calories: cals, manual: true
+                id: Date.now(), date, sport: state.cardioSport,
+                duration: Math.round(minutes * 60), calories: cals, met, level: state.cardioLevel, manual: true
             };
             if (state.cardioSport === 'other' && (state.cardioOtherName || '').trim()) sess.customName = state.cardioOtherName.trim();
             state.cardioSessions.unshift(sess);
-            saveCardio(); pushTrainedToday();
-            flashCardioResult(cals);
+            saveCardio();
+            if (date === todayStr()) { pushTrainedToday(); flashCardioResult(cals); }
+            else flash('🔥 ' + cals + ' ' + t('cardio_cals_burned'), 'var(--orange)');
             renderCardio();
         }
+
+        // Corregir o borrar una sesión. Si solo cambia la fecha, las kcal quedan como estaban; si cambian
+        // los minutos o el nivel, se recalculan con los MET del Compendio y el peso actual.
+        function openCardioEdit(s) {
+            if (!s || !state.user) return;
+            const sp = sportOf(s.sport);
+            const lv0 = [0, 1, 2].includes(s.level) ? s.level : 1;
+            let level = lv0, levelTouched = false;
+            const ov = h('div', { className: 'fv-modal' });
+            const close = () => ov.remove();
+            const card = h('div', { className: 'fv-card' });
+            card.appendChild(h('p', { className: 'fv-title' }, sp.icon + ' ' + (s.customName || sp.name)));
+            const dateInp = h('input', { className: 'input', type: 'date', value: s.date || todayStr(), max: todayStr(), style: { width: '100%' } });
+            const minInp = h('input', { className: 'input', type: 'number', inputmode: 'numeric', min: '1', max: String(CARDIO_MAX_MIN), value: String(Math.round((s.duration || 0) / 60)), style: { width: '100%' } });
+            card.appendChild(h('p', { className: 'label', style: { marginTop: '6px' } }, t('cardio_date')));
+            card.appendChild(dateInp);
+            card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_manual_min')));
+            card.appendChild(minInp);
+            card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_intensity')));
+            const pills = h('div', { className: 'pills' });
+            const paintPills = () => {
+                pills.innerHTML = '';
+                [0, 1, 2].forEach(lv => pills.appendChild(h('button', {
+                    className: 'pill' + (level === lv ? ' active' : ''),
+                    onclick: () => { level = lv; levelTouched = true; paintPills(); }
+                }, cardioLevelLabel(lv))));
+            };
+            paintPills();
+            card.appendChild(pills);
+            const save = () => {
+                const minutes = parseFloat(minInp.value) || 0;
+                if (minutes <= 0) { flash(t('cardio_manual_invalid'), 'var(--orange)'); return; }
+                if (minutes > CARDIO_MAX_MIN) { flash(t('cardio_manual_max'), 'var(--orange)'); return; }
+                const date = dateInp.value;
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayStr()) { flash(t('cardio_bad_date'), 'var(--orange)'); return; }
+                const dur = Math.round(minutes * 60);
+                if (dur !== s.duration || (levelTouched && level !== s.level) || ([0, 1, 2].includes(s.level) && level !== s.level)) {
+                    const met = sportMet(s.sport, level);
+                    Object.assign(s, { duration: dur, level, met, calories: cardioKcal(met, 1, state.user.weight, dur) });
+                }
+                s.date = date;
+                saveCardio(); close(); renderCardio();
+                flash('✓ ' + t('cardio_edit_saved'));
+            };
+            const del = () => {
+                if (!confirm(t('cardio_delete_confirm'))) return;
+                state.cardioSessions = state.cardioSessions.filter(x => x !== s);
+                saveCardio(); close(); renderCardio();
+                flash(t('cardio_deleted'), 'var(--orange)');
+            };
+            card.appendChild(h('div', { style: { display: 'flex', gap: '8px', marginTop: '14px' } },
+                h('button', { className: 'btn btn-secondary', style: { flex: 1, color: 'var(--red)' }, onclick: del }, t('cardio_delete')),
+                h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: close }, t('fv_cancel')),
+                h('button', { className: 'btn btn-primary', style: { flex: 1.4 }, onclick: save }, t('cardio_edit_save'))));
+            ov.appendChild(card);
+            ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+        }
+
         function renderCardioTimer() {
             const tc = document.querySelector('.timer-display');
             if (!tc) return;
             const m = Math.floor(state.cardioTimer / 60), s = state.cardioTimer % 60;
             tc.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-            const sport = SPORTS.find(sp => sp.id === state.cardioSport);
-            const cals = Math.round(sport.met * state.cardioIntensity * state.user.weight * (state.cardioTimer / 3600));
+            // Mismo cálculo que al guardar (calorías activas): antes acá se mostraban las brutas
+            const cals = cardioKcal(sportMet(state.cardioSport, state.cardioLevel), 1, state.user.weight, state.cardioTimer);
             const calEl = document.querySelector('.timer-cals');
             if (calEl) calEl.textContent = '🔥 ' + cals + ' kcal';
         }
@@ -11107,7 +11265,7 @@
                 nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: u.tdeeAdaptive ? '4px' : '16px' } }, 'TDEE: ' + tdee + ' kcal' + (u.tdeeAdaptive ? ' (' + t('ci_from_data') + ')' : '') + ' · Ajuste: ' + (adj > 0 ? '+' : '') + adj));
                 if (u.tdeeAdaptive) {
                     nc.appendChild(h('button', { style: { fontSize: '11px', color: 'var(--text3)', background: 'none', border: 'none', textDecoration: 'underline', padding: 0, marginBottom: '14px', cursor: 'pointer' }, onclick: () => {
-                        delete u.tdeeAdaptive; u.tdeeCheckin = todayStr(); saveUser(); renderProfile();
+                        delete u.tdeeAdaptive; delete u.tdeeCardioAvg; u.tdeeCheckin = todayStr(); saveUser(); renderProfile();
                     } }, t('ci_reset')));
                 }
 
@@ -11633,7 +11791,7 @@
 
         function computeHrZone(bpm) {
             const age = (state.user && state.user.age) ? Number(state.user.age) : 30;
-            const max = state.hrZones.maxHr || (220 - age);
+            const max = state.hrZones.maxHr || maxHrEstimate(age);
             const pct = bpm / max;
             if (pct < 0.50) return 0;
             if (pct < 0.60) return 1;
@@ -11645,7 +11803,7 @@
 
         function hrMaxValue() {
             const age = (state.user && state.user.age) ? Number(state.user.age) : 30;
-            return state.hrZones.maxHr || (220 - age);
+            return state.hrZones.maxHr || maxHrEstimate(age);
         }
 
         function showHrWidget() {
@@ -12116,6 +12274,11 @@
             // If the endpoint is unreachable (offline, server down, deploy without
             // backend), snapshots fall into the local offline queue automatically.
             let endpoint = '/api/health-data';
+            // APAGADO (nov 2026): todavía no hay servidor para esto (la Etapa 2 nativa no existe) y la
+            // dirección relativa, en producción, mandaba entrenamientos y calorías a GitHub Pages cada
+            // 6 horas. No sale nada del teléfono hasta que exista un servidor propio y la política de
+            // privacidad lo cuente.
+            const SYNC_ENABLED = false;
 
             const INITIAL_BACKFILL_DAYS = 30;
             const QUEUE_MAX_SNAPSHOTS = 7;                            // 7 days max in queue
@@ -12266,6 +12429,7 @@
              * Returns { flushed: <n>, offline?: boolean, error?: string }
              */
             async function flushQueue() {
+                if (!SYNC_ENABLED) { saveQueue([]); return { flushed: 0, disabled: true }; }
                 const q = loadQueue();
                 if (!q.length) return { flushed: 0 };
                 if (typeof navigator !== 'undefined' && navigator.onLine === false) return { flushed: 0, offline: true };
@@ -12289,6 +12453,7 @@
              * @returns {Promise<SyncResult>}
              */
             async function syncHealthData(opts) {
+                if (!SYNC_ENABLED) { saveQueue([]); return { ok: true, disabled: true, syncedDays: 0, queued: 0 }; }
                 if (inFlight) {
                     log('skip — sync already in flight');
                     return inFlight;
@@ -12378,6 +12543,7 @@
             // ── Auto-sync wiring (PWA equivalent of BackgroundFetch / WorkManager) ──
             function startAutoSync() {
                 stopAutoSync();
+                if (!SYNC_ENABLED) return;
                 autoSyncTimer = setInterval(() => {
                     syncHealthData({ background: true }).catch(() => { });
                 }, SYNC_INTERVAL_MS);
@@ -13164,9 +13330,9 @@
                 function x(ts) { return PAD_L + ((ts - minTs) / tsSpan) * (W - PAD_L - PAD_R); }
                 function y(bpm) { return PAD_T + (1 - (bpm - minBpm) / bpmSpan) * (H - PAD_T - PAD_B); }
 
-                // HR zones (based on user.age or override). maxHr default 220-age.
+                // HR zones (based on user.age or override). maxHr por defecto: Tanaka (208 − 0,7 × edad).
                 const userAge = (state.user && state.user.age) || 30;
-                const maxHr = (state.hrZones && state.hrZones.maxHr) || (220 - userAge);
+                const maxHr = (state.hrZones && state.hrZones.maxHr) || maxHrEstimate(userAge);
                 const zones = [
                     { pct: 0.50, color: 'var(--text3)' },
                     { pct: 0.60, color: 'var(--accent)' },
@@ -14649,7 +14815,7 @@
             const consumedToday = entries.reduce((a, e) => a + (e.kcal || 0), 0);
             const burnedToday = todayCardioBurned();
             if (state.user && (entries.length || burnedToday > 0)) {
-                const bal = calcDailyBalance(state.user, consumedToday, burnedToday);
+                const bal = calcDailyBalance(state.user, consumedToday, burnedToday, balanceMaintenance());
                 const statusColor = bal.status === 'surplus' ? 'var(--blue)' : (bal.status === 'deficit' ? 'var(--orange)' : 'var(--accent)');
 
                 const balSec = h('div', { style: { marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)' } });
@@ -14668,6 +14834,8 @@
                     statsRow.appendChild(cell);
                 });
                 balSec.appendChild(statsRow);
+                const cAvg = Math.round(adaptiveCardioAvg());
+                if (cAvg > 0) balSec.appendChild(h('p', { style: { fontSize: '10px', color: 'var(--text3)', lineHeight: 1.4, marginBottom: '8px' } }, t('bal_maint_note').replace('{avg}', cAvg)));
 
                 // Status chip
                 const chip = h('div', { style: { display: 'inline-block', padding: '4px 12px', borderRadius: '999px', background: 'var(--sf2)', border: '1px solid ' + statusColor, marginBottom: '8px' } });
@@ -15673,7 +15841,7 @@
             card.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 800, color: 'var(--accent)', marginBottom: '12px' } }, t('ci_target').replace('{old}', oldT).replace('{new}', newT)));
             const btns = h('div', { style: { display: 'flex', gap: '8px' } });
             btns.appendChild(h('button', { className: 'btn btn-secondary', style: { flex: 1 }, onclick: () => { u.tdeeCheckin = todayStr(); saveUser(); renderHome(); } }, t('ci_skip')));
-            btns.appendChild(h('button', { className: 'btn btn-primary', style: { flex: 2 }, onclick: () => { u.tdeeAdaptive = a.tdee; u.tdeeCheckin = todayStr(); saveUser(); flash(t('ci_applied')); renderHome(); } }, t('ci_apply')));
+            btns.appendChild(h('button', { className: 'btn btn-primary', style: { flex: 2 }, onclick: () => { u.tdeeAdaptive = a.tdee; u.tdeeCardioAvg = cardioDailyAvg(state.cardioSessions, todayStr(), 21); u.tdeeCheckin = todayStr(); saveUser(); flash(t('ci_applied')); renderHome(); } }, t('ci_apply')));
             card.appendChild(btns);
             container.appendChild(card);
         }

@@ -283,6 +283,35 @@ console.log('Meta semanal de cardio');
     ok('semanas sin cardio cuentan como 0 en el promedio', cardioWeek([S('2026-10-26', 400)], today).target === 150);
     ok('meta cumplida', cardioWeek([S('2026-11-03', 160)], today).done === true);
     ok('lunes quedan 7 días; domingo, 1', cardioWeek([], '2026-11-02').daysLeft === 7 && cardioWeek([], '2026-11-08').daysLeft === 1);
+    // Minutos equivalentes (OMS): vigoroso vale doble, liviano no cuenta
+    const W = calc.cardioMinuteWeight;
+    ok('peso del minuto: <3 MET 0, 3-5,9 MET 1, ≥6 MET 2', W(2.3) === 0 && W(3) === 1 && W(5.9) === 1 && W(6) === 2 && W(9.3) === 2 && W() === 0);
+    const M = (date, min, met) => ({ date, duration: min * 60, met });
+    const eq = cardioWeek([M('2026-11-02', 30, 9.3), M('2026-11-03', 40, 3.8), M('2026-11-04', 60, 2.3)], today, { weightOf: (x) => W(x.met) });
+    ok('30 min corriendo (×2) + 40 caminando (×1) + 60 de yoga (×0) = 100 min equivalentes', eq.minutes === 100 && eq.remaining === 50, eq);
+    ok('sin weightOf, todo vale 1 (como antes)', cardioWeek([M('2026-11-02', 30, 9.3)], today).minutes === 30);
+}
+
+console.log('Cardio de todos los días (para no contarlo dos veces con el gasto real)');
+{
+    const avg = calc.cardioDailyAvg;
+    const C = (date, calories) => ({ date, calories });
+    ok('promedio de los 21 días anteriores, días sin cardio = 0 (2 × 420 / 21 = 40)', avg([C('2026-11-01', 420), C('2026-10-20', 420)], '2026-11-04', 21) === 40);
+    ok('no cuenta hoy ni lo anterior a la ventana', avg([C('2026-11-04', 900), C('2026-10-13', 900)], '2026-11-04', 21) === 0);
+    ok('sin sesiones o sin fecha → 0', avg([], '2026-11-04') === 0 && avg(null, '2026-11-04') === 0 && avg([C('2026-11-01', 100)]) === 0);
+    const u = { weight: 70, height: 175, age: 30, sex: 'male', goal: 'fat_loss', days: 4, tdeeAdaptive: 2500 };
+    const normal = calcDailyBalance(u, 2000, 400);
+    const fixed = calcDailyBalance(u, 2000, 400, 2500 - 150);
+    ok('balance: sin mantenimiento aparte usa el gasto real (2500)', normal.maintenance === 2500);
+    ok('balance: con el mantenimiento sin el cardio de siempre (2350), el cardio de hoy no se cuenta dos veces', fixed.maintenance === 2350 && fixed.diff === 2000 - 400 - 2350, fixed);
+    ok('balance: mantenimiento 0 o vacío → el de siempre', calcDailyBalance(u, 2000, 0, 0).maintenance === 2500);
+}
+
+console.log('Frecuencia cardíaca máxima (Tanaka)');
+{
+    const mx = calc.maxHrEstimate;
+    ok('208 − 0,7 × edad: 20 → 194, 40 → 180, 60 → 166', mx(20) === 194 && mx(40) === 180 && mx(60) === 166);
+    ok('sin edad usa 30 años (187)', mx() === 187 && mx(0) === 187);
 }
 
 console.log('Registro del período');

@@ -86,8 +86,11 @@
     // Balance energético diario: neto = consumido − quemado (cardio), clasificado
     // contra el mantenimiento (TDEE) y contra lo que pide el objetivo. BAND evita
     // el parpadeo cerca de la línea de mantenimiento.
-    function calcDailyBalance(u, consumed, burned) {
-        var maintenance = maintenanceOf(u);
+    // maint (opcional): mantenimiento a usar. Con el gasto real del ajuste semanal, la app
+    // pasa ese gasto MENOS el cardio promedio que ya trae adentro: si no, el cardio de hoy
+    // se contaría dos veces (una en el gasto real y otra acá).
+    function calcDailyBalance(u, consumed, burned, maint) {
+        var maintenance = maint > 0 ? Math.round(maint) : maintenanceOf(u);
         var net = Math.round(consumed - burned);
         var diff = net - maintenance;
         var BAND = 100;
@@ -422,9 +425,12 @@
     // (ACSM 2009) y es el piso de la OMS 2020. Después sube de a poco: 10 % más que el
     // promedio de las 4 semanas completas anteriores, en pasos de 10 min, hasta 300.
     // sessions: [{ date: 'YYYY-MM-DD', duration: segundos }], today: 'YYYY-MM-DD'.
+    // opts.weightOf(sesión) → cuánto vale cada minuto (por defecto 1). La app usa
+    // cardioMinuteWeight: como la OMS, el minuto vigoroso vale doble y el liviano no cuenta.
     // Devuelve { minutes, target, remaining, done, daysLeft (contando hoy), avgPrev }.
     function cardioWeek(sessions, today, opts) {
         var o = opts || {}, lo = o.min || 150, hi = o.max || 300;
+        var weightOf = typeof o.weightOf === 'function' ? o.weightOf : function () { return 1; };
         var t = dayNum(today);
         // dayNum('1970-01-01') es 1 (redondea al mediodía) y fue jueves: (n + 2) % 7 = 0 el lunes
         var monday = function (n) { return n - ((n + 2) % 7); };
@@ -433,8 +439,9 @@
             if (!s || !s.date || !(s.duration > 0)) return;
             var n = dayNum(s.date);
             if (n > t) return;
-            var w = monday(n);
-            byWeek[w] = (byWeek[w] || 0) + s.duration / 60;
+            var w = monday(n), k = Number(weightOf(s));
+            if (!(k > 0)) return;
+            byWeek[w] = (byWeek[w] || 0) + s.duration / 60 * k;
         });
         var sum = 0;
         for (var k = 1; k <= 4; k++) sum += byWeek[cur - 7 * k] || 0;
@@ -445,6 +452,37 @@
             minutes: minutes, target: target, remaining: Math.max(0, target - minutes),
             done: minutes >= target, daysLeft: 7 - ((t + 2) % 7), avgPrev: Math.round(avg)
         };
+    }
+
+    // Cuánto vale un minuto de cardio para la meta semanal, según su MET (OMS 2020: 150-300
+    // min moderados o 75-150 vigorosos, o una combinación equivalente). Moderado = 3 a <6 MET
+    // (vale 1); vigoroso = 6 MET o más (vale 2); liviano, menos de 3 MET (yoga, pilates,
+    // caminar despacio), no cuenta para la meta aeróbica.
+    function cardioMinuteWeight(met) {
+        var m = Number(met) || 0;
+        return m >= 6 ? 2 : (m >= 3 ? 1 : 0);
+    }
+
+    // Promedio de kcal de cardio por día en los `days` días ANTERIORES a `today` (los días sin
+    // cardio cuentan como 0). Es el cardio que ya viene adentro del gasto real del ajuste semanal,
+    // que mira los 21 días anteriores. sessions: [{ date, calories }].
+    function cardioDailyAvg(sessions, today, days) {
+        var d = days || 21, end = dayNum(today), start = end - d, sum = 0;
+        if (!today) return 0;
+        (sessions || []).forEach(function (s) {
+            if (!s || !s.date || !(s.calories > 0)) return;
+            var n = dayNum(s.date);
+            if (n >= start && n < end) sum += s.calories;
+        });
+        return Math.round(sum / d);
+    }
+
+    // Frecuencia cardíaca máxima estimada (Tanaka, Monahan y Seals 2001): 208 − 0,7 × edad.
+    // Menos sesgada que 220 − edad, que se queda corta en mayores; las dos erran ±7-12 lpm,
+    // por eso el usuario puede poner la suya.
+    function maxHrEstimate(age) {
+        var a = Number(age) > 0 ? Number(age) : 30;
+        return Math.round(208 - 0.7 * a);
     }
 
     // Series para precargar al registrar: las de la última vez que hizo ese
@@ -507,6 +545,9 @@
         exerciseTrend: exerciseTrend,
         prefillSets: prefillSets,
         cardioWeek: cardioWeek,
+        cardioMinuteWeight: cardioMinuteWeight,
+        cardioDailyAvg: cardioDailyAvg,
+        maxHrEstimate: maxHrEstimate,
         sessionPerf: sessionPerf,
         performanceSignals: performanceSignals,
         planMuscleSets: planMuscleSets,
