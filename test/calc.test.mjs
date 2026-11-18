@@ -307,6 +307,33 @@ console.log('Cardio de todos los días (para no contarlo dos veces con el gasto 
     ok('balance: mantenimiento 0 o vacío → el de siempre', calcDailyBalance(u, 2000, 0, 0).maintenance === 2500);
 }
 
+console.log('Cardio: velocidad, esfuerzo, carga, totales y récords');
+{
+    const sp = calc.cardioMetFromSpeed;
+    ok('correr a 9,9 km/h → 9,3 MET (Compendio 12050); entre puntos interpola', sp('running', 9.9) === 9.3 && sp('running', 10.35) === 9.9, sp('running', 10.35));
+    ok('extremos: no se pasa del primero ni del último punto', sp('running', 3) === 6.5 && sp('running', 40) === 23.0 && sp('walking', 2) === 3.0 && sp('cycling', 50) === 16.8);
+    ok('caminar 5 km/h → 3,8; bici 20,9 km/h → 8,0', sp('walking', 5) === 3.8 && sp('cycling', 20.9) === 8.0);
+    ok('deporte sin tabla o sin velocidad → null', sp('boxing', 10) === null && sp('running', 0) === null && sp('running') === null);
+    const R = calc.sessionRpe, L = calc.sessionLoad;
+    ok('esfuerzo: el anotado; si no, por nivel (3/5/7) o por MET', R({ rpe: 8 }) === 8 && R({ level: 0 }) === 3 && R({ level: 2 }) === 7 && R({ met: 2.5 }) === 3 && R({ met: 9.3 }) === 7 && R({}) === 5 && R({ rpe: 11, level: 1 }) === 5);
+    ok('carga = esfuerzo × minutos (6 × 45 = 270)', L({ rpe: 6, duration: 2700 }) === 270);
+    const S = (date, min, extra) => Object.assign({ date, duration: min * 60, sport: 'running' }, extra || {});
+    const list = [S('2026-11-16', 30, { distance: 5, calories: 300, rpe: 6 }), S('2026-11-18', 45, { distance: 7.2, calories: 450, rpe: 5 }), S('2026-11-10', 60, { calories: 500, level: 1 }), S('2026-10-02', 20, { calories: 100 })];
+    const tot = calc.cardioTotals(list, '2026-11-16', '2026-11-22');
+    ok('totales de la semana: 2 sesiones, 75 min, 12,2 km, 750 kcal, carga 405', tot.count === 2 && tot.minutes === 75 && tot.km === 12.2 && tot.kcal === 750 && tot.load === 405, tot);
+    const wk = calc.cardioWeeks(list, '2026-11-18', 3);
+    ok('semanas: de la más vieja a la actual, empiezan el lunes', wk.length === 3 && wk[2].start === '2026-11-16' && wk[1].start === '2026-11-09' && wk[2].minutes === 75 && wk[1].minutes === 60 && wk[0].minutes === 0, wk.map((x) => x.start + ':' + x.minutes));
+    const mo = calc.cardioMonths(list, '2026-11-18', 3);
+    ok('meses: sep, oct, nov 2026 (cruza el año bien)', mo.map((x) => x.month).join() === '2026-09,2026-10,2026-11' && mo[1].minutes === 20 && mo[2].minutes === 135 && calc.cardioMonths([], '2026-01-10', 2)[0].month === '2025-12');
+    const trendList = [S('2026-11-17', 60, { rpe: 7 }), S('2026-11-08', 40, { rpe: 5 }), S('2026-11-01', 40, { rpe: 5 }), S('2026-10-25', 40, { rpe: 5 })];
+    const tr = calc.cardioLoadTrend(trendList, '2026-11-18');
+    ok('carga de 7 días (420) contra el promedio de las 4 semanas anteriores (600 / 4 = 150)', tr.acute === 420 && tr.avg === 150 && tr.weeks === 3 && tr.pct === 180, tr);
+    ok('sin historia previa no hay porcentaje', calc.cardioLoadTrend([S('2026-11-17', 30)], '2026-11-18').pct === null);
+    const rec = calc.cardioRecords([S('2026-11-01', 30, { distance: 5 }), S('2026-11-08', 52, { distance: 10 }), S('2026-11-12', 60, { distance: 10.5 }), S('2026-11-15', 25, { distance: 5 }), { date: '2026-11-15', duration: 3600, sport: 'cycling', distance: 25 }, { date: '2026-11-16', duration: 1800, sport: 'boxing' }]);
+    ok('récords de correr: más larga 10,5 km y 60 min; mejor ritmo 5 km 5:00 (25 min); 10 km 5:12', rec.running.km.value === 10.5 && rec.running.min.value === 60 && rec.running.pace5.value === 5 && rec.running.pace5.date === '2026-11-15' && rec.running.pace10.value === 5.2, rec.running);
+    ok('bici: velocidad en 20 km o más (25 km/h); boxeo solo la sesión más larga', rec.cycling.speed20.value === 25 && rec.boxing.min.value === 30 && !rec.boxing.km);
+}
+
 console.log('Frecuencia cardíaca máxima (Tanaka)');
 {
     const mx = calc.maxHrEstimate;

@@ -477,6 +477,116 @@
         return Math.round(sum / d);
     }
 
+    // ── Cardio: velocidad, esfuerzo, carga, totales y récords ──────────────
+    // MET según la velocidad (km/h), del Compendio de Actividades Físicas 2024 (cada rango en mph
+    // pasado a km/h por su punto medio; se interpola entre puntos y no se pasa de los extremos).
+    // Solo correr, caminar y bici al aire libre: ahí la distancia estima mejor que el nivel elegido.
+    var SPEED_METS = {
+        // 12028, 12029, 12030, 12045, 12050, 12060, 12070, 12080, 12090, 12100, 12110, 12115, 12120, 12130, 12132, 12134, 12135
+        running: [[6.6, 6.5], [7.3, 7.8], [8.2, 8.5], [9.1, 9.0], [9.9, 9.3], [10.8, 10.5], [11.3, 11.0], [12.1, 11.8], [12.9, 12.0],
+            [13.8, 12.5], [14.5, 13.0], [15.2, 14.8], [16.1, 14.8], [17.7, 16.8], [19.3, 18.5], [20.9, 19.8], [22.5, 23.0]],
+        // 17170, 17190, 17200, 17220, 17230
+        walking: [[4.0, 3.0], [5.0, 3.8], [6.0, 4.8], [6.8, 5.5], [7.6, 7.0]],
+        // 01018, 01019, 01020, 01030, 01040, 01050, 01060
+        cycling: [[8.9, 3.5], [15.1, 5.8], [17.7, 6.8], [20.9, 8.0], [24.1, 10.0], [28.2, 12.0], [32.2, 16.8]]
+    };
+    function cardioMetFromSpeed(sport, kmh) {
+        var tb = SPEED_METS[sport], v = Number(kmh);
+        if (!tb || !(v > 0)) return null;
+        if (v <= tb[0][0]) return tb[0][1];
+        for (var i = 1; i < tb.length; i++) {
+            if (v <= tb[i][0]) {
+                var a = tb[i - 1], b = tb[i];
+                return Math.round((a[1] + (b[1] - a[1]) * (v - a[0]) / (b[0] - a[0])) * 10) / 10;
+            }
+        }
+        return tb[tb.length - 1][1];
+    }
+
+    // Esfuerzo 1-10 de una sesión (escala CR-10): el que anotó o, si no, uno típico de su nivel
+    // (baja 3, media 5, alta 7) o de su MET.
+    function sessionRpe(s) {
+        var r = Number(s && s.rpe);
+        if (r >= 1 && r <= 10) return Math.round(r);
+        if (s && [0, 1, 2].indexOf(s.level) >= 0) return [3, 5, 7][s.level];
+        var m = Number(s && s.met) || 0;
+        return m > 0 ? (m < 3 ? 3 : (m < 6 ? 5 : 7)) : 5;
+    }
+    // Carga de una sesión (método de Foster, 2001; validado en decenas de estudios, Haddad 2017):
+    // esfuerzo × minutos, en unidades arbitrarias.
+    function sessionLoad(s) { return Math.round(sessionRpe(s) * ((Number(s && s.duration) || 0) / 60)); }
+
+    function isoOfDay(n) { return new Date((n - 1) * DAY_MS).toISOString().slice(0, 10); }
+
+    // Totales de cardio entre dos fechas (incluidas): { count, minutes, km, kcal, load }.
+    // sessions: [{ date, duration (s), distance (km), calories, rpe, level, met }].
+    function cardioTotals(sessions, from, to) {
+        var a = dayNum(from), b = dayNum(to), r = { count: 0, minutes: 0, km: 0, kcal: 0, load: 0 };
+        (sessions || []).forEach(function (s) {
+            if (!s || !s.date || !(s.duration > 0)) return;
+            var n = dayNum(s.date);
+            if (n < a || n > b) return;
+            r.count++; r.minutes += s.duration / 60; r.km += Number(s.distance) || 0;
+            r.kcal += Number(s.calories) || 0; r.load += sessionLoad(s);
+        });
+        r.minutes = Math.round(r.minutes); r.km = Math.round(r.km * 10) / 10; r.kcal = Math.round(r.kcal);
+        return r;
+    }
+    // Últimas n semanas (lunes a domingo), de la más vieja a la actual: [{ start, ...totales }].
+    function cardioWeeks(sessions, today, n) {
+        var tn = dayNum(today), mon = tn - ((tn + 2) % 7), out = [];
+        for (var k = (n || 8) - 1; k >= 0; k--) {
+            var st = mon - 7 * k, r = cardioTotals(sessions, isoOfDay(st), isoOfDay(st + 6));
+            r.start = isoOfDay(st); out.push(r);
+        }
+        return out;
+    }
+    // Últimos n meses calendario, del más viejo al actual: [{ month: 'YYYY-MM', ...totales }].
+    function cardioMonths(sessions, today, n) {
+        var y = +String(today).slice(0, 4), m = +String(today).slice(5, 7), out = [];
+        for (var k = (n || 6) - 1; k >= 0; k--) {
+            var yy = y, mm = m - k;
+            while (mm < 1) { mm += 12; yy--; }
+            var ms = yy + '-' + (mm < 10 ? '0' : '') + mm, last = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+            var r = cardioTotals(sessions, ms + '-01', ms + '-' + (last < 10 ? '0' : '') + last);
+            r.month = ms; out.push(r);
+        }
+        return out;
+    }
+    // Carga de los últimos 7 días contra el promedio semanal de las 4 semanas anteriores (días 8 a
+    // 35). weeks = cuántas de esas semanas tuvieron cardio; pct = cuánto más (o menos) que el promedio.
+    function cardioLoadTrend(sessions, today) {
+        var tn = dayNum(today), acute = cardioTotals(sessions, isoOfDay(tn - 6), today).load, sum = 0, weeks = 0;
+        for (var k = 1; k <= 4; k++) {
+            var w = cardioTotals(sessions, isoOfDay(tn - 6 - 7 * k), isoOfDay(tn - 7 * k)).load;
+            sum += w; if (w > 0) weeks++;
+        }
+        var avg = Math.round(sum / 4);
+        return { acute: acute, avg: avg, weeks: weeks, pct: avg > 0 ? Math.round((acute / avg - 1) * 100) : null };
+    }
+    // Récords por deporte: { [sport]: { min, km, pace5, pace10, speed20 } }, cada uno { value, date }.
+    // min = sesión más larga; km = distancia más larga; pace5 / pace10 = mejor ritmo (min/km, menos
+    // es mejor) corriendo 5 o 10 km o más; speed20 = mejor velocidad (km/h) en bici en 20 km o más.
+    function cardioRecords(sessions) {
+        var rec = {};
+        (sessions || []).forEach(function (s) {
+            if (!s || !s.sport || !(s.duration > 0)) return;
+            var r = rec[s.sport] || (rec[s.sport] = {}), min = s.duration / 60, km = Number(s.distance) || 0;
+            var better = function (key, v, lower) {
+                var cur = r[key];
+                if (!cur || (lower ? v < cur.value : v > cur.value)) r[key] = { value: v, date: s.date };
+            };
+            better('min', Math.round(min), false);
+            if (km > 0) {
+                better('km', Math.round(km * 100) / 100, false);
+                if (s.sport === 'running' && km >= 5) better('pace5', Math.round(min / km * 100) / 100, true);
+                if (s.sport === 'running' && km >= 10) better('pace10', Math.round(min / km * 100) / 100, true);
+                if (s.sport === 'cycling' && km >= 20) better('speed20', Math.round(km / (min / 60) * 10) / 10, false);
+            }
+        });
+        return rec;
+    }
+
     // Frecuencia cardíaca máxima estimada (Tanaka, Monahan y Seals 2001): 208 − 0,7 × edad.
     // Menos sesgada que 220 − edad, que se queda corta en mayores; las dos erran ±7-12 lpm,
     // por eso el usuario puede poner la suya.
@@ -548,6 +658,14 @@
         cardioMinuteWeight: cardioMinuteWeight,
         cardioDailyAvg: cardioDailyAvg,
         maxHrEstimate: maxHrEstimate,
+        cardioMetFromSpeed: cardioMetFromSpeed,
+        sessionRpe: sessionRpe,
+        sessionLoad: sessionLoad,
+        cardioTotals: cardioTotals,
+        cardioWeeks: cardioWeeks,
+        cardioMonths: cardioMonths,
+        cardioLoadTrend: cardioLoadTrend,
+        cardioRecords: cardioRecords,
         sessionPerf: sessionPerf,
         performanceSignals: performanceSignals,
         planMuscleSets: planMuscleSets,
