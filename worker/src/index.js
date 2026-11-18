@@ -2456,6 +2456,10 @@ function base64ToBytes(b64) {
 // Modelo de visión para PDFs de imágenes/diseño (el cliente rasteriza las
 // páginas con PDF.js y manda los PNG/JPEG acá). OCR puro: transcribe el texto.
 const VISION_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+// Foto del plato: Mistral Small 3.1. En el banco de 30 platos (18-nov-2026) dio el mismo error que Scout
+// en calorías (32 % contra 31 %), las mismas neuronas y 4,5 s por foto contra 14-26 s (picos de 49 s).
+// La tabla nutricional sigue con Scout: no se probó con Mistral.
+const MEAL_VISION_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 const OCR_PROMPT = [
     'Sos un OCR. Transcribí EXACTAMENTE el texto que VES en esta imagen, palabra por palabra,',
     'en orden de lectura (arriba→abajo, izquierda→derecha, columna por columna).',
@@ -2711,7 +2715,8 @@ async function foodVision(req, env) {
     // Banco de pruebas de comida (solo con FOOD_BENCH = "1", que en producción no existe): permite
     // elegir el modelo por pedido y devuelve los tokens gastados. Ver bench-comida/ (fuera del repo).
     const bench = String(env.FOOD_BENCH || '') === '1';
-    const model = (bench && typeof body.model === 'string' && /^@cf\/[\w.\-/]+$/.test(body.model)) ? body.model : (env.FOOD_VISION_MODEL || VISION_MODEL);
+    const model = (bench && typeof body.model === 'string' && /^@cf\/[\w.\-/]+$/.test(body.model)) ? body.model
+        : (kind === 'meal' ? (env.MEAL_VISION_MODEL || MEAL_VISION_MODEL) : (env.FOOD_VISION_MODEL || VISION_MODEL));
     // L-5: si la IA falla o no sirve, el uso se devuelve.
     return aiCharged(quota, async () => {
         try {

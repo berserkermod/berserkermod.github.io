@@ -848,6 +848,7 @@ let code, licToken;
     const meal = await call('POST', '/api/food-vision', { token, kind: 'meal', image: IMG });
     ok('plato → items saneados (sin nombre o sin gramos afuera, máx 10)', meal.status === 200 && meal.body.kind === 'meal' && meal.body.items.length === 8 && meal.body.items[0].name === 'Milanesa de carne' && meal.body.items[1].grams === 200, meal.body);
     ok('el plato usa el pedido de estimación', /nutricionista/.test(lastReq.opts.messages[0].content[0].text));
+    ok('el plato va a Mistral Small (más rápido, mismo error en el banco); la tabla sigue con Scout', /mistral-small/.test(lastReq.model), lastReq.model);
     // Mejora 2026-11: los macros salen de la base del USDA cuando el alimento está ahí
     const mil = meal.body.items[0];
     ok('base: "Milanesa de carne" 180 g → macros de la base (238 kcal/100 g), no los de la IA', mil.src === 'base' && mil.food === 'milanesa_carne' && mil.kcal === Math.round(238 * 1.8) && mil.per100 && mil.per100.kcal === 238, mil);
