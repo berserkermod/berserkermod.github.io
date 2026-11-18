@@ -15334,9 +15334,9 @@
         }
         // Antes de analizar el plato: "¿qué hay?" (opcional). Contarlo baja mucho el error:
         // la IA ya no adivina QUÉ es, solo cuánto hay (en las pruebas, la mitad del error).
-        // Paso "¿Qué hay en el plato?" antes de analizar la foto. Apagado hasta que el banco de pruebas
-        // muestre que ayuda: en las dos primeras pruebas la nota hacía que la IA se pasara con los gramos.
-        const MEAL_NOTE_ON = false;
+        // Paso "¿Qué hay en el plato?" antes de analizar la foto (opcional para el usuario). Con el texto
+        // nuevo del servidor ("dice QUÉ es, no CUÁNTO") la nota ya no infla los gramos en el banco de pruebas.
+        const MEAL_NOTE_ON = true;
         function openMealNote(file) {
             const url = URL.createObjectURL(file);
             const ov = h('div', { className: 'fv-modal' });
