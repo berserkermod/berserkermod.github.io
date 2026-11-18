@@ -334,6 +334,29 @@ console.log('Cardio: velocidad, esfuerzo, carga, totales y récords');
     ok('bici: velocidad en 20 km o más (25 km/h); boxeo solo la sesión más larga', rec.cycling.speed20.value === 25 && rec.boxing.min.value === 30 && !rec.boxing.km);
 }
 
+console.log('Planes de running guiados');
+{
+    const P = calc.RUN_PLANS, runMin = (x) => calc.runSessionRunSec(x) / 60, totMin = (x) => calc.runSessionSec(x) / 60;
+    ok('dos planes de 8 semanas y 3 sesiones por semana', ['5k', '10k'].every((id) => P[id].weeks.length === 8 && P[id].weeks.every((w) => w.length === 3)));
+    const r5 = P['5k'].weeks.map((w) => runMin(w[0]));
+    ok('0 a 5 km: el trote va de 8 a 30 min', r5[0] === 8 && r5[7] === 30, r5);
+    ok('0 a 5 km: nunca sube más de 25 % por semana (Nielsen 2014: >30 % = más lesiones)', r5.every((m, i) => i === 0 || m <= r5[i - 1] * 1.25), r5);
+    ok('0 a 5 km: la última semana son 30 min seguidos (un solo tramo de trote)', calc.runSegments(P['5k'].weeks[7][0]).filter((x) => x[0] !== 'walk').length === 1);
+    const tw10 = P['10k'].weeks.map((w) => w.reduce((a, x) => a + totMin(x), 0));
+    ok('5 a 10 km: el volumen semanal nunca sube más de 30 % y la semana 4 es más liviana', tw10.every((m, i) => i === 0 || m <= tw10[i - 1] * 1.3) && tw10[3] < tw10[2], tw10);
+    ok('5 a 10 km: la larga llega a 65 min', totMin(P['10k'].weeks[7][2]) === 65);
+    const easyShare = P['10k'].weeks.flat().reduce((a, x) => a + calc.runSegments(x).filter((g) => g[0] === 'easy' || g[0] === 'jog').reduce((b, g) => b + g[1], 0), 0) / P['10k'].weeks.flat().reduce((a, x) => a + calc.runSessionSec(x), 0);
+    ok('5 a 10 km: al menos 80 % del tiempo es suave', easyShare >= 0.8, Math.round(easyShare * 100));
+    const s1 = P['5k'].weeks[0][0], segs = calc.runSegments(s1);
+    ok('semana 1: 5 min caminando + 8 × (1 trote + 1:30 caminata) + 5 min = 30 min y 18 tramos', segs.length === 18 && calc.runSessionSec(s1) === 1800 && segs[1][0] === 'jog');
+    ok('MET de la sesión ponderado por tiempo (semana 1: 8 min a 7,5 y 22 a 3,8 → 4,8)', calc.runSessionMet(s1) === 4.8, calc.runSessionMet(s1));
+    const at = calc.runSegmentAt;
+    ok('tramo actual: a los 0 s el primero (le quedan 300 s); a los 300 s el segundo; a los 359 s le queda 1 s', at(segs, 0).idx === 0 && at(segs, 0).left === 300 && at(segs, 300).idx === 1 && at(segs, 359).left === 1);
+    ok('al pasar el total: terminado', at(segs, 1800).done && at(segs, 99999).idx === 18 && !at(segs, 1799).done);
+    ok('próxima sesión: la primera sin hacer; null al terminar; plan desconocido null', JSON.stringify(calc.runPlanNext('5k', [])) === '{"week":1,"day":1}' && JSON.stringify(calc.runPlanNext('5k', ['1-1', '1-3'])) === '{"week":1,"day":2}' && calc.runPlanNext('5k', Array.from({ length: 24 }, (_, i) => (Math.floor(i / 3) + 1) + '-' + (i % 3 + 1))) === null && calc.runPlanNext('x', []) === null);
+    ok('sesión por semana y día; fuera de rango null', calc.runPlanSession('10k', 6, 2).block[0][0] === 'tempo' && calc.runPlanSession('10k', 9, 1) === null);
+}
+
 console.log('Frecuencia cardíaca máxima (Tanaka)');
 {
     const mx = calc.maxHrEstimate;

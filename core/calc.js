@@ -587,6 +587,89 @@
         return rec;
     }
 
+    // ── Planes de running guiados ─────────────────────────────────────────
+    // Cada sesión: calentamiento (warm) + `reps` veces un bloque de tramos + vuelta a la calma (cool).
+    // Tramo = [tipo, segundos]. MET de cada tipo (Compendio 2024): caminar firme 3,8 (17190), trote
+    // suave 7,5 (12020), correr suave 8,5 (12030, ~8 km/h), a ritmo 10,5 (12060), rápido 11,0 (12070).
+    var RUN_KIND_MET = { walk: 3.8, jog: 7.5, easy: 8.5, tempo: 10.5, fast: 11.0 };
+    var RS = function (warm, reps, block, cool) { return { warm: warm, reps: reps, block: block, cool: cool }; };
+    var WALK5 = ['walk', 300];
+    // De 0 a 5 km: 8 semanas, 3 sesiones iguales por semana. El tiempo trotando sube de 8 a 30 min
+    // sin pasar de +25 % por semana: subir más de ~30 % por semana se asoció a más lesiones en
+    // corredores novatos (Nielsen et al., J Orthop Sports Phys Ther 2014).
+    var PLAN_5K = [
+        RS(WALK5, 8, [['jog', 60], ['walk', 90]], WALK5),     //  8 min trotando
+        RS(WALK5, 5, [['jog', 120], ['walk', 120]], WALK5),   // 10
+        RS(WALK5, 4, [['jog', 180], ['walk', 90]], WALK5),    // 12
+        RS(WALK5, 3, [['jog', 300], ['walk', 120]], WALK5),   // 15
+        RS(WALK5, 3, [['jog', 360], ['walk', 90]], WALK5),    // 18
+        RS(WALK5, 2, [['jog', 660], ['walk', 120]], WALK5),   // 22
+        RS(WALK5, 2, [['jog', 780], ['walk', 90]], WALK5),    // 26
+        RS(WALK5, 1, [['jog', 1800]], WALK5)                  // 30 seguidos
+    ].map(function (x) { return [x, x, x]; });
+    // De 5 a 10 km: 8 semanas, 3 salidas (suave, calidad, larga), la mayor parte suave (como el 80/20
+    // de los corredores de fondo, Seiler 2010), semana 4 más liviana y la larga llega a 65 min (~10 km).
+    var EASY = function (min) { return RS(null, 1, [['easy', min * 60]], null); };
+    var INT = function (reps, fast, rec) { return RS(['easy', 600], reps, [['fast', fast * 60], ['jog', rec * 60]], ['easy', 300]); };
+    var TEMPO = function (min) { return RS(['easy', 600], 1, [['tempo', min * 60]], ['easy', 300]); };
+    var PLAN_10K = [
+        [EASY(25), INT(4, 2, 2), EASY(35)],
+        [EASY(28), INT(5, 2, 2), EASY(40)],
+        [EASY(30), INT(4, 3, 2), EASY(45)],
+        [EASY(25), INT(3, 3, 2), EASY(40)],   // más liviana
+        [EASY(30), INT(5, 3, 2), EASY(50)],
+        [EASY(32), TEMPO(15), EASY(55)],
+        [EASY(35), TEMPO(20), EASY(60)],
+        [EASY(30), INT(4, 3, 2), EASY(65)]
+    ];
+    var RUN_PLANS = { '5k': { id: '5k', weeks: PLAN_5K, next: '10k' }, '10k': { id: '10k', weeks: PLAN_10K } };
+
+    // Tramos de una sesión, en orden: [[tipo, segundos], ...]
+    function runSegments(sess) {
+        var out = [];
+        if (!sess) return out;
+        if (sess.warm) out.push(sess.warm);
+        for (var r = 0; r < (sess.reps || 1); r++) (sess.block || []).forEach(function (b) { out.push(b); });
+        if (sess.cool) out.push(sess.cool);
+        return out;
+    }
+    function runSessionSec(sess) { return runSegments(sess).reduce(function (a, x) { return a + x[1]; }, 0); }
+    // Segundos corriendo (todo lo que no es caminar)
+    function runSessionRunSec(sess) { return runSegments(sess).reduce(function (a, x) { return a + (x[0] === 'walk' ? 0 : x[1]); }, 0); }
+    // MET promedio de la sesión, ponderado por tiempo (para las kcal: mezcla trote y caminata)
+    function runSessionMet(sess) {
+        var tot = runSessionSec(sess);
+        if (!tot) return 0;
+        var w = runSegments(sess).reduce(function (a, x) { return a + (RUN_KIND_MET[x[0]] || 0) * x[1]; }, 0);
+        return Math.round(w / tot * 10) / 10;
+    }
+    // En qué tramo va a los `elapsed` segundos: { idx, left (s que le quedan), done }
+    function runSegmentAt(segs, elapsed) {
+        var t0 = 0, e = Math.max(0, Number(elapsed) || 0);
+        for (var i = 0; i < (segs || []).length; i++) {
+            if (e < t0 + segs[i][1]) return { idx: i, left: t0 + segs[i][1] - e, done: false };
+            t0 += segs[i][1];
+        }
+        return { idx: (segs || []).length, left: 0, done: true };
+    }
+    // Próxima sesión del plan (la primera que no está hecha): { week, day } desde 1, o null si terminó.
+    // done: ['1-1', '1-2', ...] (semana-sesión).
+    function runPlanNext(planId, done) {
+        var plan = RUN_PLANS[planId], set = {};
+        if (!plan) return null;
+        (done || []).forEach(function (k) { set[k] = true; });
+        for (var w = 0; w < plan.weeks.length; w++) {
+            for (var d = 0; d < plan.weeks[w].length; d++) {
+                if (!set[(w + 1) + '-' + (d + 1)]) return { week: w + 1, day: d + 1 };
+            }
+        }
+        return null;
+    }
+    function runPlanSession(planId, week, day) {
+        var plan = RUN_PLANS[planId];
+        return plan && plan.weeks[week - 1] ? plan.weeks[week - 1][day - 1] || null : null;
+    }
+
     // Frecuencia cardíaca máxima estimada (Tanaka, Monahan y Seals 2001): 208 − 0,7 × edad.
     // Menos sesgada que 220 − edad, que se queda corta en mayores; las dos erran ±7-12 lpm,
     // por eso el usuario puede poner la suya.
@@ -666,6 +749,15 @@
         cardioMonths: cardioMonths,
         cardioLoadTrend: cardioLoadTrend,
         cardioRecords: cardioRecords,
+        RUN_PLANS: RUN_PLANS,
+        RUN_KIND_MET: RUN_KIND_MET,
+        runSegments: runSegments,
+        runSessionSec: runSessionSec,
+        runSessionRunSec: runSessionRunSec,
+        runSessionMet: runSessionMet,
+        runSegmentAt: runSegmentAt,
+        runPlanNext: runPlanNext,
+        runPlanSession: runPlanSession,
         sessionPerf: sessionPerf,
         performanceSignals: performanceSignals,
         planMuscleSets: planMuscleSets,

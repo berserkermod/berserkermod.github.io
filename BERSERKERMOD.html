@@ -885,6 +885,35 @@
         .cr-what { font-size: 13px; font-weight: 700; }
         .cr-sub { font-size: 11px; color: var(--text3); }
         .cr-row b { font-size: 14px; font-weight: 900; color: var(--accent); flex-shrink: 0; }
+        .rp-opt { border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .rp-name { font-size: 15px; font-weight: 900; }
+        .rp-desc { font-size: 12px; color: var(--text2); line-height: 1.5; margin: 4px 0 10px; }
+        .rp-week { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+        .rp-sum { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 12px; }
+        .rp-bar { height: 6px; background: var(--sf2); border-radius: 999px; overflow: hidden; margin: 8px 0; }
+        .rp-bar > div { height: 100%; background: var(--accent); }
+        .rp-links { display: flex; justify-content: space-between; margin-top: 10px; }
+        .rp-link { background: none; border: none; color: var(--text3); text-decoration: underline; font-size: 12px; cursor: pointer; padding: 0; }
+        .rp-row { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; color: var(--text2); line-height: 1.45; padding: 6px 0; }
+        .rp-row.next { color: var(--text); font-weight: 700; }
+        .rp-chk { width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; background: var(--sf2); color: var(--text3); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+        .rp-row.next .rp-chk { background: var(--accent); color: #0A0A0B; }
+        .rg-ov { position: fixed; inset: 0; z-index: 16500; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 64px 20px calc(24px + env(safe-area-inset-bottom)); text-align: center; gap: 6px; }
+        .rg-top { position: absolute; top: calc(16px + env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); }
+        .rg-voice { background: none; border: 1px solid var(--border); color: var(--text2); border-radius: 999px; padding: 4px 10px; font-size: 11px; cursor: pointer; flex-shrink: 0; }
+        .rg-kind { font-size: 30px; font-weight: 900; letter-spacing: .02em; text-transform: uppercase; color: var(--accent); }
+        .rg-kind[data-k="walk"] { color: var(--blue); }
+        .rg-kind[data-k="tempo"], .rg-kind[data-k="fast"] { color: var(--orange); }
+        .rg-hint { font-size: 14px; color: var(--text2); }
+        .rg-time { font-size: 84px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; margin: 10px 0; }
+        .rg-next { font-size: 14px; color: var(--text3); }
+        .rg-bar { width: 100%; max-width: 420px; height: 8px; background: var(--sf2); border-radius: 999px; overflow: hidden; margin-top: 18px; }
+        .rg-fill { height: 100%; background: var(--accent); }
+        .rg-tot { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
+        .rg-ctrls { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
+        .rg-btn { min-width: 96px; padding: 14px 14px; border-radius: 14px; border: 1px solid var(--border); background: var(--sf2); color: var(--text); font-weight: 800; font-size: 14px; cursor: pointer; }
+        .rg-btn.main { background: var(--accent); color: #0A0A0B; border-color: var(--accent); }
+        .rg-tip { font-size: 11px; color: var(--text3); margin-top: 18px; max-width: 320px; line-height: 1.4; }
         .cardio-hist-row { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border: none; border-bottom: 1px solid var(--border); background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
 
         /* MOTIVATION */
@@ -2322,8 +2351,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-35"></script>
-    <script src="core/i18n-data.js?v=2-35"></script>
+    <script src="core/calc.js?v=2-36"></script>
+    <script src="core/i18n-data.js?v=2-36"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2452,7 +2481,7 @@
                 train_day: "DÍA DE ENTRENAMIENTO", train_exercise: "EJERCICIO", train_sel_ph: "Seleccionar ejercicio...", train_log: "REGISTRAR SERIE", train_prev: "Anterior: ",
                 train_weight: "PESO", train_add_series: "AGREGAR SERIE", train_session: "SESIÓN", train_finish_btn: "✓ FINALIZAR",
                 cardio_start: "INICIAR", cardio_pause: "PAUSA", cardio_stop: "DETENER", cardio_intensity_label: "INTENSIDAD",
-                cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_low_hint: "Baja: podés charlar sin problema.", cardio_med_hint: "Media: podés hablar, pero no cantar.", cardio_high_hint: "Alta: solo te salen frases cortas.", cardio_discard: "Descartar", cardio_discard_confirm: "¿Descartar este cardio sin guardarlo?", cardio_long_confirm: "Este cardio lleva {h} h. ¿Lo guardo así? Si te olvidaste de pararlo, tocá Cancelar, descartalo y cargalo a mano.", cardio_manual_max: "Máximo 600 minutos por sesión.", cardio_bad_date: "Elegí la fecha de hoy o una anterior.", cardio_date: "Fecha", cardio_edit_hint: "Tocá una sesión para corregirla o borrarla.", cardio_edit_save: "Guardar", cardio_edit_saved: "Cardio actualizado", cardio_delete: "Borrar", cardio_delete_confirm: "¿Borrar esta sesión de cardio?", cardio_deleted: "Sesión borrada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cardio_dist: "Distancia (km)", cardio_dist_ph: "Opcional", cardio_pace: "Ritmo", cardio_speed: "Velocidad", cardio_effort: "¿Qué tan duro fue? (1 a 10)", rpe_words: "Muy suave|Muy suave|Suave|Suave|Moderado|Moderado|Duro|Duro|Muy duro|Máximo", cardio_by_pace: "con tu ritmo", cardio_long_warn: "Son más de 4 horas: si te olvidaste de pararlo, corregí los minutos.", cardio_bad_dist: "Revisá la distancia (hasta 300 km).", cardio_sum_title: "TU CARDIO", cardio_sum_week: "Semana", cardio_sum_month: "Mes", cardio_sum_sessions: "Sesiones", cardio_sum_min: "Minutos", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min respecto de la anterior", cardio_load_line: "Carga de los últimos 7 días: {n} (tu promedio semanal: {avg}). Es el esfuerzo de 1 a 10 por los minutos.", cardio_load_high: "Subiste {pct} % de golpe. Subir muy rápido aumenta el riesgo de lesión: si algo te molesta, bajá un cambio.", cardio_rec_title: "RÉCORDS", cardio_rec_km: "Distancia más larga", cardio_rec_pace5: "Mejor ritmo en 5 km o más", cardio_rec_pace10: "Mejor ritmo en 10 km o más", cardio_rec_speed20: "Mejor velocidad en 20 km o más", cardio_rec_min: "Sesión más larga", cardio_new_record: "🏆 ¡Nuevo récord! {r}", cardio_tip_title: "CARDIO Y MÚSCULO", cardio_tip_body: "El cardio no te saca músculo ni fuerza máxima (meta-análisis de 2022). Para cuidar la potencia, hacelo después de las pesas o en otro día. Si te preocupa, la bici parece interferir un poco menos que correr.", cardio_tip_ok: "Entendido", rt_cardio_hint: "Anotá los minutos (y los km si querés) y tocá ✓: se suma a tu cardio de la semana.", rt_cardio_need_min: "Anotá los minutos", rt_cardio_saved: "🏃 Cardio guardado ({n})", cw_rule: "Como recomienda la OMS, los minutos intensos (correr, HIIT, soga…) cuentan doble y lo muy suave (como yoga o pilates) no suma a esta meta.", bal_maint_note: "Mantenimiento sin tu cardio habitual (~{avg} kcal por día): el cardio de hoy se descuenta aparte, así no se cuenta dos veces.", cardio_saved: "✅ Cardio guardado",
+                cardio_low: "Baja", cardio_med: "Media", cardio_high: "Alta", cardio_low_hint: "Baja: podés charlar sin problema.", cardio_med_hint: "Media: podés hablar, pero no cantar.", cardio_high_hint: "Alta: solo te salen frases cortas.", cardio_discard: "Descartar", cardio_discard_confirm: "¿Descartar este cardio sin guardarlo?", cardio_long_confirm: "Este cardio lleva {h} h. ¿Lo guardo así? Si te olvidaste de pararlo, tocá Cancelar, descartalo y cargalo a mano.", cardio_manual_max: "Máximo 600 minutos por sesión.", cardio_bad_date: "Elegí la fecha de hoy o una anterior.", cardio_date: "Fecha", cardio_edit_hint: "Tocá una sesión para corregirla o borrarla.", cardio_edit_save: "Guardar", cardio_edit_saved: "Cardio actualizado", cardio_delete: "Borrar", cardio_delete_confirm: "¿Borrar esta sesión de cardio?", cardio_deleted: "Sesión borrada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cardio_dist: "Distancia (km)", cardio_dist_ph: "Opcional", cardio_pace: "Ritmo", cardio_speed: "Velocidad", cardio_effort: "¿Qué tan duro fue? (1 a 10)", rpe_words: "Muy suave|Muy suave|Suave|Suave|Moderado|Moderado|Duro|Duro|Muy duro|Máximo", cardio_by_pace: "con tu ritmo", cardio_long_warn: "Son más de 4 horas: si te olvidaste de pararlo, corregí los minutos.", cardio_bad_dist: "Revisá la distancia (hasta 300 km).", cardio_sum_title: "TU CARDIO", cardio_sum_week: "Semana", cardio_sum_month: "Mes", cardio_sum_sessions: "Sesiones", cardio_sum_min: "Minutos", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min respecto de la anterior", cardio_load_line: "Carga de los últimos 7 días: {n} (tu promedio semanal: {avg}). Es el esfuerzo de 1 a 10 por los minutos.", cardio_load_high: "Subiste {pct} % de golpe. Subir muy rápido aumenta el riesgo de lesión: si algo te molesta, bajá un cambio.", cardio_rec_title: "RÉCORDS", cardio_rec_km: "Distancia más larga", cardio_rec_pace5: "Mejor ritmo en 5 km o más", cardio_rec_pace10: "Mejor ritmo en 10 km o más", cardio_rec_speed20: "Mejor velocidad en 20 km o más", cardio_rec_min: "Sesión más larga", cardio_new_record: "🏆 ¡Nuevo récord! {r}", cardio_tip_title: "CARDIO Y MÚSCULO", cardio_tip_body: "El cardio no te saca músculo ni fuerza máxima (meta-análisis de 2022). Para cuidar la potencia, hacelo después de las pesas o en otro día. Si te preocupa, la bici parece interferir un poco menos que correr.", cardio_tip_ok: "Entendido", rt_cardio_hint: "Anotá los minutos (y los km si querés) y tocá ✓: se suma a tu cardio de la semana.", rt_cardio_need_min: "Anotá los minutos", rt_cardio_saved: "🏃 Cardio guardado ({n})", rplan_title: "PLANES DE RUNNING", rplan_intro: "Planes guiados de 8 semanas: la app te va diciendo cuándo correr y cuándo caminar, con voz, pitido y vibración.", rplan_show: "Ver los planes", rplan_hide: "Ocultar", rplan_5k_name: "De 0 a 5 km", rplan_5k_desc: "Para empezar de cero. 3 salidas por semana alternando trote y caminata, hasta correr 30 minutos seguidos.", rplan_10k_name: "De 5 a 10 km", rplan_10k_desc: "Si ya corrés 30 minutos seguidos. 3 salidas por semana (suave, de calidad y larga) hasta unos 65 minutos, cerca de 10 km.", rplan_start_plan: "Empezar este plan", rplan_free_week: "La primera semana es gratis; el plan completo es Premium.", rplan_locked_sub: "Los planes de running completos son Premium. La primera semana es gratis para que lo pruebes.", rplan_week_of: "Semana {w} de {n}", rplan_session_of: "sesión {d} de {n}", rplan_next: "PRÓXIMA SESIÓN", rplan_go: "▶ Empezar la sesión", rplan_view: "Ver el plan", rplan_quit: "Dejar el plan", rplan_quit_confirm: "¿Dejar el plan? Se pierde el avance.", rplan_done_title: "¡Terminaste el plan! 🎉", rplan_done_next: "Seguir con De 5 a 10 km", rplan_choose_other: "Elegir otro plan", rplan_completed: "🎉 ¡Terminaste el plan {plan}!", rplan_kind_walk: "Caminá", rplan_kind_jog: "Trotá suave", rplan_kind_easy: "Corré suave", rplan_kind_tempo: "Corré a ritmo", rplan_kind_fast: "Rápido", rplan_hint_walk: "Paso firme, para recuperar.", rplan_hint_jog: "Despacio: podés charlar.", rplan_hint_easy: "Cómodo: podés hablar.", rplan_hint_tempo: "Duro pero sostenible: solo frases cortas.", rplan_hint_fast: "Fuerte, 8 de 10, sin llegar al máximo.", rplan_k_walk: "caminata", rplan_k_jog: "trote", rplan_k_easy: "suave", rplan_k_tempo: "a ritmo", rplan_k_fast: "rápido", rplan_then: "Después: {x}", rplan_last: "Último tramo", rplan_of: "{e} de {t}", rplan_pause: "Pausa", rplan_resume: "Seguir", rplan_skip: "Saltar", rplan_finish: "Terminar", rplan_finish_confirm: "¿Terminar la sesión ahora?", rplan_screen: "Dejá la pantalla prendida: así te avisamos en cada cambio.", rplan_voice: "Voz", rplan_say_min: "{n} minutos", rplan_say_min1: "1 minuto", rplan_say_sec: "{n} segundos", rplan_say_done: "Terminaste. ¡Muy bien!", rplan_session_label: "{plan} · semana {w}, sesión {d}", rplan_not_counted: "Quedó guardado, pero no cuenta para el plan: te faltaron {m} min.", rplan_busy: "Primero terminá o descartá el cronómetro de cardio.", rplan_too_short: "Menos de 1 minuto: no se guardó.", rplan_lighter: "semana más liviana", rplan_week: "Semana {w}", cw_rule: "Como recomienda la OMS, los minutos intensos (correr, HIIT, soga…) cuentan doble y lo muy suave (como yoga o pilates) no suma a esta meta.", bal_maint_note: "Mantenimiento sin tu cardio habitual (~{avg} kcal por día): el cardio de hoy se descuenta aparte, así no se cuenta dos veces.", cardio_saved: "✅ Cardio guardado",
                 prof_personal: "DATOS PERSONALES", prof_weight: "Peso", prof_height: "Altura", prof_age: "Edad", prof_sex: "Sexo", prof_days: "Días/sem", prof_routine: "Rutina",
                 lic_no_server: "No se pudo conectar con el servidor. Probá de nuevo más tarde.", lic_active: "Premium activo", lic_active_sub: "Tenés acceso completo a todas las funciones.", lic_trial_left: "Prueba gratuita: te quedan {n} días.", lic_unlock_title: "Desbloqueá Premium", lic_unlock_sub: "Ingresá tu código de activación o probá gratis.", lic_activate_btn: "Activar código", lic_activated: "¡Premium activado!", lic_try_free: "Probar gratis", lic_trial_started: "Prueba iniciada: {n} días gratis", lic_expires: "Premium hasta el {date} · quedan {n} días.",
                 play_month: "1 mes", play_months: "{n} meses",
@@ -2894,7 +2923,7 @@
                 train_day: "TRAINING DAY", train_exercise: "EXERCISE", train_sel_ph: "Select exercise...", train_log: "LOG SET", train_prev: "Previous: ",
                 train_weight: "WEIGHT", train_add_series: "ADD SET", train_session: "SESSION", train_finish_btn: "✓ FINISH",
                 cardio_start: "START", cardio_pause: "PAUSE", cardio_stop: "STOP", cardio_intensity_label: "INTENSITY",
-                cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_low_hint: "Low: you can chat comfortably.", cardio_med_hint: "Medium: you can talk, but not sing.", cardio_high_hint: "High: you can only say a few words.", cardio_discard: "Discard", cardio_discard_confirm: "Discard this cardio without saving it?", cardio_long_confirm: "This cardio has been running for {h} h. Save it as is? If you forgot to stop it, tap Cancel, discard it and add it manually.", cardio_manual_max: "Maximum 600 minutes per session.", cardio_bad_date: "Pick today or an earlier date.", cardio_date: "Date", cardio_edit_hint: "Tap a session to fix or delete it.", cardio_edit_save: "Save", cardio_edit_saved: "Cardio updated", cardio_delete: "Delete", cardio_delete_confirm: "Delete this cardio session?", cardio_deleted: "Session deleted", cardio_show_all: "Show all ({n})", cardio_show_less: "Show less", cardio_dist: "Distance (km)", cardio_dist_ph: "Optional", cardio_pace: "Pace", cardio_speed: "Speed", cardio_effort: "How hard was it? (1 to 10)", rpe_words: "Very easy|Very easy|Easy|Easy|Moderate|Moderate|Hard|Hard|Very hard|Max", cardio_by_pace: "from your pace", cardio_long_warn: "That's over 4 hours: if you forgot to stop it, fix the minutes.", cardio_bad_dist: "Check the distance (up to 300 km).", cardio_sum_title: "YOUR CARDIO", cardio_sum_week: "Week", cardio_sum_month: "Month", cardio_sum_sessions: "Sessions", cardio_sum_min: "Minutes", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min vs the previous one", cardio_load_line: "Load over the last 7 days: {n} (your weekly average: {avg}). It's effort from 1 to 10 times minutes.", cardio_load_high: "You went up {pct}% at once. Ramping up too fast raises injury risk: if something hurts, ease off.", cardio_rec_title: "RECORDS", cardio_rec_km: "Longest distance", cardio_rec_pace5: "Best pace over 5 km or more", cardio_rec_pace10: "Best pace over 10 km or more", cardio_rec_speed20: "Best speed over 20 km or more", cardio_rec_min: "Longest session", cardio_new_record: "🏆 New record! {r}", cardio_tip_title: "CARDIO AND MUSCLE", cardio_tip_body: "Cardio doesn't cost you muscle or maximal strength (2022 meta-analysis). To protect power, do it after lifting or on another day. If you're worried, cycling seems to interfere a bit less than running.", cardio_tip_ok: "Got it", rt_cardio_hint: "Enter the minutes (and km if you like) and tap ✓: it adds to your weekly cardio.", rt_cardio_need_min: "Enter the minutes", rt_cardio_saved: "🏃 Cardio saved ({n})", cw_rule: "As the WHO recommends, vigorous minutes (running, HIIT, jump rope…) count double and very light activity (like yoga or pilates) doesn't count toward this goal.", bal_maint_note: "Maintenance without your usual cardio (~{avg} kcal a day): today's cardio is subtracted separately so it isn't counted twice.", cardio_saved: "✅ Cardio saved",
+                cardio_low: "Low", cardio_med: "Medium", cardio_high: "High", cardio_low_hint: "Low: you can chat comfortably.", cardio_med_hint: "Medium: you can talk, but not sing.", cardio_high_hint: "High: you can only say a few words.", cardio_discard: "Discard", cardio_discard_confirm: "Discard this cardio without saving it?", cardio_long_confirm: "This cardio has been running for {h} h. Save it as is? If you forgot to stop it, tap Cancel, discard it and add it manually.", cardio_manual_max: "Maximum 600 minutes per session.", cardio_bad_date: "Pick today or an earlier date.", cardio_date: "Date", cardio_edit_hint: "Tap a session to fix or delete it.", cardio_edit_save: "Save", cardio_edit_saved: "Cardio updated", cardio_delete: "Delete", cardio_delete_confirm: "Delete this cardio session?", cardio_deleted: "Session deleted", cardio_show_all: "Show all ({n})", cardio_show_less: "Show less", cardio_dist: "Distance (km)", cardio_dist_ph: "Optional", cardio_pace: "Pace", cardio_speed: "Speed", cardio_effort: "How hard was it? (1 to 10)", rpe_words: "Very easy|Very easy|Easy|Easy|Moderate|Moderate|Hard|Hard|Very hard|Max", cardio_by_pace: "from your pace", cardio_long_warn: "That's over 4 hours: if you forgot to stop it, fix the minutes.", cardio_bad_dist: "Check the distance (up to 300 km).", cardio_sum_title: "YOUR CARDIO", cardio_sum_week: "Week", cardio_sum_month: "Month", cardio_sum_sessions: "Sessions", cardio_sum_min: "Minutes", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min vs the previous one", cardio_load_line: "Load over the last 7 days: {n} (your weekly average: {avg}). It's effort from 1 to 10 times minutes.", cardio_load_high: "You went up {pct}% at once. Ramping up too fast raises injury risk: if something hurts, ease off.", cardio_rec_title: "RECORDS", cardio_rec_km: "Longest distance", cardio_rec_pace5: "Best pace over 5 km or more", cardio_rec_pace10: "Best pace over 10 km or more", cardio_rec_speed20: "Best speed over 20 km or more", cardio_rec_min: "Longest session", cardio_new_record: "🏆 New record! {r}", cardio_tip_title: "CARDIO AND MUSCLE", cardio_tip_body: "Cardio doesn't cost you muscle or maximal strength (2022 meta-analysis). To protect power, do it after lifting or on another day. If you're worried, cycling seems to interfere a bit less than running.", cardio_tip_ok: "Got it", rt_cardio_hint: "Enter the minutes (and km if you like) and tap ✓: it adds to your weekly cardio.", rt_cardio_need_min: "Enter the minutes", rt_cardio_saved: "🏃 Cardio saved ({n})", rplan_title: "RUNNING PLANS", rplan_intro: "8-week guided plans: the app tells you when to run and when to walk, with voice, beep and vibration.", rplan_show: "See the plans", rplan_hide: "Hide", rplan_5k_name: "0 to 5 km", rplan_5k_desc: "To start from scratch. 3 runs a week alternating jogging and walking, until you run 30 minutes non-stop.", rplan_10k_name: "5 to 10 km", rplan_10k_desc: "If you can already run 30 minutes non-stop. 3 runs a week (easy, quality and long) up to about 65 minutes, close to 10 km.", rplan_start_plan: "Start this plan", rplan_free_week: "The first week is free; the full plan is Premium.", rplan_locked_sub: "Full running plans are Premium. The first week is free so you can try it.", rplan_week_of: "Week {w} of {n}", rplan_session_of: "session {d} of {n}", rplan_next: "NEXT SESSION", rplan_go: "▶ Start the session", rplan_view: "See the plan", rplan_quit: "Quit the plan", rplan_quit_confirm: "Quit the plan? Your progress will be lost.", rplan_done_title: "You finished the plan! 🎉", rplan_done_next: "Continue with 5 to 10 km", rplan_choose_other: "Choose another plan", rplan_completed: "🎉 You finished the {plan} plan!", rplan_kind_walk: "Walk", rplan_kind_jog: "Easy jog", rplan_kind_easy: "Easy run", rplan_kind_tempo: "Tempo run", rplan_kind_fast: "Fast", rplan_hint_walk: "Brisk pace, to recover.", rplan_hint_jog: "Slow: you can chat.", rplan_hint_easy: "Comfortable: you can talk.", rplan_hint_tempo: "Hard but sustainable: short sentences only.", rplan_hint_fast: "Hard, 8 out of 10, not all-out.", rplan_k_walk: "walk", rplan_k_jog: "jog", rplan_k_easy: "easy", rplan_k_tempo: "tempo", rplan_k_fast: "fast", rplan_then: "Next: {x}", rplan_last: "Last stretch", rplan_of: "{e} of {t}", rplan_pause: "Pause", rplan_resume: "Resume", rplan_skip: "Skip", rplan_finish: "Finish", rplan_finish_confirm: "Finish the session now?", rplan_screen: "Keep the screen on so we can cue you at every change.", rplan_voice: "Voice", rplan_say_min: "{n} minutes", rplan_say_min1: "1 minute", rplan_say_sec: "{n} seconds", rplan_say_done: "Done. Great job!", rplan_session_label: "{plan} · week {w}, session {d}", rplan_not_counted: "Saved, but it doesn't count for the plan: you were {m} min short.", rplan_busy: "First finish or discard the cardio timer.", rplan_too_short: "Less than 1 minute: not saved.", rplan_lighter: "lighter week", rplan_week: "Week {w}", cw_rule: "As the WHO recommends, vigorous minutes (running, HIIT, jump rope…) count double and very light activity (like yoga or pilates) doesn't count toward this goal.", bal_maint_note: "Maintenance without your usual cardio (~{avg} kcal a day): today's cardio is subtracted separately so it isn't counted twice.", cardio_saved: "✅ Cardio saved",
                 prof_personal: "PERSONAL DATA", prof_weight: "Weight", prof_height: "Height", prof_age: "Age", prof_sex: "Sex", prof_days: "Days/week", prof_routine: "Routine",
                 lic_no_server: "Couldn't reach the server. Try again later.", lic_active: "Premium active", lic_active_sub: "You have full access to every feature.", lic_trial_left: "Free trial: {n} days left.", lic_unlock_title: "Unlock Premium", lic_unlock_sub: "Enter your activation code or try it free.", lic_activate_btn: "Activate code", lic_activated: "Premium activated!", lic_try_free: "Try for free", lic_trial_started: "Trial started: {n} free days", lic_expires: "Premium until {date} · {n} days left.",
                 play_month: "1 month", play_months: "{n} months",
@@ -3337,7 +3366,7 @@
                 train_day: "DIA DE TREINO", train_exercise: "EXERCÍCIO", train_sel_ph: "Selecionar exercício...", train_log: "REGISTRAR SÉRIE", train_prev: "Anterior: ",
                 train_weight: "PESO", train_add_series: "ADICIONAR SÉRIE", train_session: "SESSÃO", train_finish_btn: "✓ FINALIZAR",
                 cardio_start: "INICIAR", cardio_pause: "PAUSAR", cardio_stop: "PARAR", cardio_intensity_label: "INTENSIDADE",
-                cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_low_hint: "Baixa: dá para conversar tranquilo.", cardio_med_hint: "Média: dá para falar, mas não para cantar.", cardio_high_hint: "Alta: só saem frases curtas.", cardio_discard: "Descartar", cardio_discard_confirm: "Descartar este cardio sem salvar?", cardio_long_confirm: "Este cardio já tem {h} h. Salvar assim? Se você esqueceu de parar, toque em Cancelar, descarte e adicione manualmente.", cardio_manual_max: "Máximo de 600 minutos por sessão.", cardio_bad_date: "Escolha hoje ou uma data anterior.", cardio_date: "Data", cardio_edit_hint: "Toque numa sessão para corrigir ou apagar.", cardio_edit_save: "Salvar", cardio_edit_saved: "Cardio atualizado", cardio_delete: "Apagar", cardio_delete_confirm: "Apagar esta sessão de cardio?", cardio_deleted: "Sessão apagada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cardio_dist: "Distância (km)", cardio_dist_ph: "Opcional", cardio_pace: "Ritmo", cardio_speed: "Velocidade", cardio_effort: "Quão difícil foi? (1 a 10)", rpe_words: "Muito leve|Muito leve|Leve|Leve|Moderado|Moderado|Difícil|Difícil|Muito difícil|Máximo", cardio_by_pace: "pelo seu ritmo", cardio_long_warn: "São mais de 4 horas: se você esqueceu de parar, corrija os minutos.", cardio_bad_dist: "Confira a distância (até 300 km).", cardio_sum_title: "SEU CARDIO", cardio_sum_week: "Semana", cardio_sum_month: "Mês", cardio_sum_sessions: "Sessões", cardio_sum_min: "Minutos", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min em relação ao anterior", cardio_load_line: "Carga dos últimos 7 dias: {n} (sua média semanal: {avg}). É o esforço de 1 a 10 vezes os minutos.", cardio_load_high: "Você subiu {pct}% de uma vez. Aumentar rápido demais eleva o risco de lesão: se algo incomodar, pegue mais leve.", cardio_rec_title: "RECORDES", cardio_rec_km: "Maior distância", cardio_rec_pace5: "Melhor ritmo em 5 km ou mais", cardio_rec_pace10: "Melhor ritmo em 10 km ou mais", cardio_rec_speed20: "Melhor velocidade em 20 km ou mais", cardio_rec_min: "Sessão mais longa", cardio_new_record: "🏆 Novo recorde! {r}", cardio_tip_title: "CARDIO E MÚSCULO", cardio_tip_body: "O cardio não tira músculo nem força máxima (meta-análise de 2022). Para preservar a potência, faça depois da musculação ou em outro dia. Se isso te preocupa, a bike parece interferir um pouco menos que a corrida.", cardio_tip_ok: "Entendi", rt_cardio_hint: "Anote os minutos (e os km, se quiser) e toque ✓: soma no seu cardio da semana.", rt_cardio_need_min: "Anote os minutos", rt_cardio_saved: "🏃 Cardio salvo ({n})", cw_rule: "Como recomenda a OMS, os minutos intensos (corrida, HIIT, pular corda…) contam em dobro e o muito leve (como ioga ou pilates) não soma para esta meta.", bal_maint_note: "Manutenção sem o seu cardio habitual (~{avg} kcal por dia): o cardio de hoje é descontado à parte, para não contar duas vezes.", cardio_saved: "✅ Cardio salvo",
+                cardio_low: "Baixa", cardio_med: "Média", cardio_high: "Alta", cardio_low_hint: "Baixa: dá para conversar tranquilo.", cardio_med_hint: "Média: dá para falar, mas não para cantar.", cardio_high_hint: "Alta: só saem frases curtas.", cardio_discard: "Descartar", cardio_discard_confirm: "Descartar este cardio sem salvar?", cardio_long_confirm: "Este cardio já tem {h} h. Salvar assim? Se você esqueceu de parar, toque em Cancelar, descarte e adicione manualmente.", cardio_manual_max: "Máximo de 600 minutos por sessão.", cardio_bad_date: "Escolha hoje ou uma data anterior.", cardio_date: "Data", cardio_edit_hint: "Toque numa sessão para corrigir ou apagar.", cardio_edit_save: "Salvar", cardio_edit_saved: "Cardio atualizado", cardio_delete: "Apagar", cardio_delete_confirm: "Apagar esta sessão de cardio?", cardio_deleted: "Sessão apagada", cardio_show_all: "Ver todas ({n})", cardio_show_less: "Ver menos", cardio_dist: "Distância (km)", cardio_dist_ph: "Opcional", cardio_pace: "Ritmo", cardio_speed: "Velocidade", cardio_effort: "Quão difícil foi? (1 a 10)", rpe_words: "Muito leve|Muito leve|Leve|Leve|Moderado|Moderado|Difícil|Difícil|Muito difícil|Máximo", cardio_by_pace: "pelo seu ritmo", cardio_long_warn: "São mais de 4 horas: se você esqueceu de parar, corrija os minutos.", cardio_bad_dist: "Confira a distância (até 300 km).", cardio_sum_title: "SEU CARDIO", cardio_sum_week: "Semana", cardio_sum_month: "Mês", cardio_sum_sessions: "Sessões", cardio_sum_min: "Minutos", cardio_sum_km: "Km", cardio_sum_kcal: "Kcal", cardio_sum_vs: "{d} min em relação ao anterior", cardio_load_line: "Carga dos últimos 7 dias: {n} (sua média semanal: {avg}). É o esforço de 1 a 10 vezes os minutos.", cardio_load_high: "Você subiu {pct}% de uma vez. Aumentar rápido demais eleva o risco de lesão: se algo incomodar, pegue mais leve.", cardio_rec_title: "RECORDES", cardio_rec_km: "Maior distância", cardio_rec_pace5: "Melhor ritmo em 5 km ou mais", cardio_rec_pace10: "Melhor ritmo em 10 km ou mais", cardio_rec_speed20: "Melhor velocidade em 20 km ou mais", cardio_rec_min: "Sessão mais longa", cardio_new_record: "🏆 Novo recorde! {r}", cardio_tip_title: "CARDIO E MÚSCULO", cardio_tip_body: "O cardio não tira músculo nem força máxima (meta-análise de 2022). Para preservar a potência, faça depois da musculação ou em outro dia. Se isso te preocupa, a bike parece interferir um pouco menos que a corrida.", cardio_tip_ok: "Entendi", rt_cardio_hint: "Anote os minutos (e os km, se quiser) e toque ✓: soma no seu cardio da semana.", rt_cardio_need_min: "Anote os minutos", rt_cardio_saved: "🏃 Cardio salvo ({n})", rplan_title: "PLANOS DE CORRIDA", rplan_intro: "Planos guiados de 8 semanas: o app avisa quando correr e quando caminhar, com voz, bipe e vibração.", rplan_show: "Ver os planos", rplan_hide: "Ocultar", rplan_5k_name: "Do 0 aos 5 km", rplan_5k_desc: "Para começar do zero. 3 treinos por semana alternando trote e caminhada, até correr 30 minutos sem parar.", rplan_10k_name: "Dos 5 aos 10 km", rplan_10k_desc: "Se você já corre 30 minutos sem parar. 3 treinos por semana (leve, de qualidade e longo) até uns 65 minutos, perto de 10 km.", rplan_start_plan: "Começar este plano", rplan_free_week: "A primeira semana é grátis; o plano completo é Premium.", rplan_locked_sub: "Os planos de corrida completos são Premium. A primeira semana é grátis para você experimentar.", rplan_week_of: "Semana {w} de {n}", rplan_session_of: "treino {d} de {n}", rplan_next: "PRÓXIMO TREINO", rplan_go: "▶ Começar o treino", rplan_view: "Ver o plano", rplan_quit: "Deixar o plano", rplan_quit_confirm: "Deixar o plano? O progresso será perdido.", rplan_done_title: "Você terminou o plano! 🎉", rplan_done_next: "Seguir com Dos 5 aos 10 km", rplan_choose_other: "Escolher outro plano", rplan_completed: "🎉 Você terminou o plano {plan}!", rplan_kind_walk: "Caminhe", rplan_kind_jog: "Trote leve", rplan_kind_easy: "Corra leve", rplan_kind_tempo: "Corra no ritmo", rplan_kind_fast: "Rápido", rplan_hint_walk: "Passo firme, para recuperar.", rplan_hint_jog: "Devagar: dá para conversar.", rplan_hint_easy: "Confortável: dá para falar.", rplan_hint_tempo: "Forte mas sustentável: só frases curtas.", rplan_hint_fast: "Forte, 8 de 10, sem chegar ao máximo.", rplan_k_walk: "caminhada", rplan_k_jog: "trote", rplan_k_easy: "leve", rplan_k_tempo: "no ritmo", rplan_k_fast: "rápido", rplan_then: "Depois: {x}", rplan_last: "Último trecho", rplan_of: "{e} de {t}", rplan_pause: "Pausar", rplan_resume: "Continuar", rplan_skip: "Pular", rplan_finish: "Terminar", rplan_finish_confirm: "Terminar o treino agora?", rplan_screen: "Deixe a tela ligada: assim avisamos a cada mudança.", rplan_voice: "Voz", rplan_say_min: "{n} minutos", rplan_say_min1: "1 minuto", rplan_say_sec: "{n} segundos", rplan_say_done: "Terminou. Muito bem!", rplan_session_label: "{plan} · semana {w}, treino {d}", rplan_not_counted: "Ficou salvo, mas não conta para o plano: faltaram {m} min.", rplan_busy: "Primeiro termine ou descarte o cronômetro de cardio.", rplan_too_short: "Menos de 1 minuto: não foi salvo.", rplan_lighter: "semana mais leve", rplan_week: "Semana {w}", cw_rule: "Como recomenda a OMS, os minutos intensos (corrida, HIIT, pular corda…) contam em dobro e o muito leve (como ioga ou pilates) não soma para esta meta.", bal_maint_note: "Manutenção sem o seu cardio habitual (~{avg} kcal por dia): o cardio de hoje é descontado à parte, para não contar duas vezes.", cardio_saved: "✅ Cardio salvo",
                 prof_personal: "DADOS PESSOAIS", prof_weight: "Peso", prof_height: "Altura", prof_age: "Idade", prof_sex: "Sexo", prof_days: "Dias/sem", prof_routine: "Rotina",
                 lic_no_server: "Não foi possível conectar ao servidor. Tente mais tarde.", lic_active: "Premium ativo", lic_active_sub: "Você tem acesso completo a todos os recursos.", lic_trial_left: "Teste grátis: faltam {n} dias.", lic_unlock_title: "Desbloqueie o Premium", lic_unlock_sub: "Insira seu código de ativação ou teste grátis.", lic_activate_btn: "Ativar código", lic_activated: "Premium ativado!", lic_try_free: "Testar grátis", lic_trial_started: "Teste iniciado: {n} dias grátis", lic_expires: "Premium até {date} · faltam {n} dias.",
                 play_month: "1 mês", play_months: "{n} meses",
@@ -4349,7 +4378,7 @@
             exListOpen: false, exSearch: '',
             histFilter: 'TODOS', histExpanded: null,
             statsGroup: '', statsEx: '', statsMetric: 'maxKg', statsPeriod: 'weekly',
-            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioLevel: 1, cardioStartTime: 0, cardioOtherName: '', cardioHistAll: false, cardioSumMonth: false,
+            cardioSport: null, cardioTimer: 0, cardioRunning: false, cardioInterval: null, cardioLevel: 1, cardioStartTime: 0, cardioOtherName: '', cardioHistAll: false, cardioSumMonth: false, rg: null, rpShowPlans: false,
             restInterval: null, restEnd: null, restTotal: 90, restAlerted: false,
             editSessId: null, editData: null,
             activeRoutineIdx: 0, routineSession: {},
@@ -4370,6 +4399,7 @@
             try { state.sessions = JSON.parse(localStorage.getItem('bm-sessions') || '[]'); } catch { state.sessions = []; }
             try { state.cardioSessions = JSON.parse(localStorage.getItem('bm-cardio') || '[]'); } catch { state.cardioSessions = []; }
             loadCardioRun();
+            loadRunGuided();
             try { state.customEx = JSON.parse(localStorage.getItem('bm-custom') || '[]'); } catch { state.customEx = []; }
             try { state.customRoutines = JSON.parse(localStorage.getItem('bm-routines') || '[]'); } catch { state.customRoutines = []; }
             try { state.foodLog = JSON.parse(localStorage.getItem('bm-food') || '[]'); } catch { state.foodLog = []; }
@@ -4866,7 +4896,7 @@
         const BACKUP_EXCLUDE = [
             'bm-oracle-key', 'bm-oracle-cache', 'bm-food-search-cache', 'bm-food-db',
             'bm-errors', 'bm-share-base', 'bm-train-draft', 'bm-routine-draft',
-            'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline', 'bm-health-sync-queue', 'bm-cardio-run',
+            'bm-mock-health-profile', 'bm-health-last-synced', 'bm-health-baseline', 'bm-health-sync-queue', 'bm-cardio-run', 'bm-run-guided',
             'bm-last-backup', 'bm-drive-last', 'bm-drive-pending', 'bm-flash-once', 'bm-schema-version',
             // device-bound / not portable across installs
             'bm-license', 'bm-license-checked', 'bm-device-id', 'bm-api-base', 'bm-twa', 'bm-tester-code',
@@ -5225,7 +5255,8 @@
                 coach: isTWA() ? t('upgrade_coach_sub_app') : t('upgrade_coach_sub'),
                 progress: t('pg_teaser'),
                 perf: t('perf_upgrade_sub'),
-                coach_link: t('coach_link_pro')
+                coach_link: t('coach_link_pro'),
+                runplan: t('rplan_locked_sub')
             };
             if (sub) sub.textContent = subs[feature] || t('upgrade_sub');
             const ttl = $('upgrade-title');
@@ -10231,10 +10262,11 @@
         function cardioLevelLabel(lv) { return t(['cardio_low', 'cardio_med', 'cardio_high'][lv]); }
         // MET y kcal de una sesión: con distancia (correr, caminar, bici) salen del ritmo (Compendio por
         // velocidad); si no, del nivel elegido.
-        function cardioCalc(sport, level, minutes, km) {
+        function cardioCalc(sport, level, minutes, km, metFix) {
             const kmh = km > 0 && minutes > 0 ? km / (minutes / 60) : 0;
-            const vMet = kmh ? cardioMetFromSpeed(sport, kmh) : null;
-            const met = vMet || sportMet(sport, level);
+            // metFix: sesiones de un plan guiado (trote y caminata mezclados): su MET manda, no el ritmo
+            const vMet = (!metFix && kmh) ? cardioMetFromSpeed(sport, kmh) : null;
+            const met = metFix || vMet || sportMet(sport, level);
             return { met, kcal: cardioKcal(met, 1, (state.user && state.user.weight) || 0, minutes * 60), kmh, bySpeed: !!vMet };
         }
         function mmss(minFloat) { const sec = Math.round(minFloat * 60); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
@@ -10348,6 +10380,8 @@
             if (cwCard) v.appendChild(cwCard);
             const tip = cardioTipCard();
             if (tip) v.appendChild(tip);
+            v.appendChild(runPlanCard());
+            if (state.rg && !document.querySelector('.rg-ov')) openRunGuidedView();
 
             // Sport selector
             const sc = h('div', { className: 'card fade-in' });
@@ -10515,6 +10549,7 @@
         function openCardioSheet(s, mode) {
             if (!s || !state.user) return;
             const sp = sportOf(s.sport), isEdit = mode === 'edit', hasDist = CARDIO_DIST.includes(s.sport);
+            const metFix = Number(s.metOverride) > 0 ? Number(s.metOverride) : (s.metFixed && Number(s.met) > 0 ? Number(s.met) : null);
             let level = [0, 1, 2].includes(s.level) ? s.level : 1, rpe = sessionRpe(Object.assign({}, s, { level }));
             let levelTouched = false, rpeTouched = false;
             const ov = h('div', { className: 'fv-modal' });
@@ -10530,9 +10565,11 @@
             card.appendChild(twoCols);
             if (hasDist) { card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_dist'))); card.appendChild(distInp); }
             if (mode === 'timer' && s.duration > CARDIO_LONG_S) card.appendChild(h('p', { className: 'cs-warn' }, t('cardio_long_warn')));
-            card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_intensity')));
             const pills = h('div', { className: 'pills' });
-            card.appendChild(pills);
+            if (!metFix) {   // en una sesión de plan la intensidad ya viene dada por sus tramos
+                card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_intensity')));
+                card.appendChild(pills);
+            }
             card.appendChild(h('p', { className: 'label', style: { marginTop: '10px' } }, t('cardio_effort')));
             const rpeRow = h('div', { className: 'rpe-row' });
             const rpeWord = h('p', { className: 'cardio-lvl-hint', style: { textAlign: 'left' } });
@@ -10558,7 +10595,7 @@
                 rpeWord.textContent = rpe + ' · ' + (words[rpe - 1] || '');
                 const { minutes, km } = nums();
                 if (minutes > 0) {
-                    const c = cardioCalc(s.sport, level, minutes, km);
+                    const c = cardioCalc(s.sport, level, minutes, km, metFix);
                     const keepKcal = isEdit && !(levelTouched && level !== s.level) && Math.round(minutes * 60) === s.duration && km === (Number(s.distance) || 0);
                     const parts = [];
                     const pace = fmtCardioPace(s.sport, minutes, km);
@@ -10579,7 +10616,7 @@
                 const dur = Math.round(minutes * 60);
                 const changed = !isEdit || dur !== s.duration || km !== (Number(s.distance) || 0) || (levelTouched && level !== s.level);
                 if (changed) {
-                    const c = cardioCalc(s.sport, level, minutes, km);
+                    const c = cardioCalc(s.sport, level, minutes, km, metFix);
                     Object.assign(s, { duration: dur, level, met: c.met, calories: c.kcal });
                     if (km > 0) s.distance = Math.round(km * 100) / 100; else delete s.distance;
                 }
@@ -10591,17 +10628,24 @@
                     return;
                 }
                 s.id = Date.now();
+                const planInfo = s.plan ? Object.assign({}, s.plan) : null;
+                delete s.metOverride;
+                if (planInfo) { s.metFixed = true; s.plan = { id: planInfo.id, week: planInfo.week, day: planInfo.day }; }
                 state.cardioSessions.unshift(s);
                 saveCardio();
                 if (mode === 'timer') { state.cardioTimer = 0; state.cardioStartTime = 0; saveCardioRun(); }
                 const recs = cardioNewRecords(s);
+                const planMsg = planInfo ? runPlanMarkDone(planInfo) : '';
                 close(); renderCardio();
                 if (date === todayStr()) { pushTrainedToday(); flashCardioResult(s.calories); }
                 else flash('🔥 ' + s.calories + ' ' + t('cardio_cals_burned'), 'var(--orange)');
+                const later = [];
+                if (planMsg) later.push(planMsg);
                 if (recs.length) {
                     const key = { km: 'cardio_rec_km', min: 'cardio_rec_min', pace5: 'cardio_rec_pace5', pace10: 'cardio_rec_pace10', speed20: 'cardio_rec_speed20' }[recs[0]];
-                    setTimeout(() => flash(t('cardio_new_record').replace('{r}', t(key)), 'var(--accent)'), 1900);
+                    later.push(t('cardio_new_record').replace('{r}', t(key)));
                 }
+                later.forEach((m, i) => setTimeout(() => flash(m, 'var(--accent)'), 1900 * (i + 1)));
             };
             const del = () => {
                 if (!confirm(t('cardio_delete_confirm'))) return;
@@ -10618,6 +10662,222 @@
             ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
             document.body.appendChild(ov);
             if (mode === 'manual') setTimeout(() => minInp.focus(), 50);
+        }
+
+        // ── Planes de running guiados (datos y reglas en core/calc.js: RUN_PLANS) ──
+        // Avance en bm-run-plan { id, started, done: ['1-1', ...], finished }. La primera semana es gratis
+        // y el resto es Premium. La sesión en curso vive en state.rg (y en bm-run-guided, para que una
+        // recarga o el cierre de la app no la corte): cuenta con la hora real, como el cronómetro.
+        function loadRunPlan() { try { const r = JSON.parse(localStorage.getItem('bm-run-plan') || 'null'); return r && RUN_PLANS[r.id] ? Object.assign({ done: [] }, r) : null; } catch { return null; } }
+        function saveRunPlan(r) { try { if (r) localStorage.setItem('bm-run-plan', JSON.stringify(r)); else localStorage.removeItem('bm-run-plan'); } catch { } }
+        function rpName(id) { return t('rplan_' + id + '_name'); }
+        function rpDur(sec) { const m = Math.floor(sec / 60), x = sec % 60; return x ? m + "'" + String(x).padStart(2, '0') + '"' : m + "'"; }
+        function rpSegTxt(g) { return rpDur(g[1]) + ' ' + t('rplan_k_' + g[0]); }
+        // "5' caminata + 8 × (1' trote + 1'30" caminata) + 5' caminata"
+        function rpSummary(sess) {
+            if (!sess) return '';
+            const parts = [];
+            if (sess.warm) parts.push(rpSegTxt(sess.warm));
+            const blk = (sess.block || []).map(rpSegTxt).join(' + ');
+            parts.push(sess.reps > 1 ? sess.reps + ' × (' + blk + ')' : blk);
+            if (sess.cool) parts.push(rpSegTxt(sess.cool));
+            return parts.join(' + ');
+        }
+        function rpLocked(week) { return week > 1 && !isPremium(); }
+        // Marca la sesión del plan (si se hizo al menos el 80 %). Devuelve un mensaje para mostrar, o ''.
+        function runPlanMarkDone(info) {
+            const rp = loadRunPlan();
+            if (!rp || rp.id !== info.id) return '';
+            if (!info.ok) return t('rplan_not_counted').replace('{m}', Math.max(1, Math.round((info.missing || 0) / 60)));
+            const key = info.week + '-' + info.day;
+            if (!rp.done.includes(key)) rp.done.push(key);
+            if (!runPlanNext(rp.id, rp.done)) { rp.finished = todayStr(); saveRunPlan(rp); return t('rplan_completed').replace('{plan}', rpName(rp.id)); }
+            saveRunPlan(rp);
+            return '';
+        }
+
+        function runPlanCard() {
+            const rp = loadRunPlan();
+            const c = h('div', { className: 'card fade-in' });
+            c.appendChild(h('p', { className: 'label' }, '🏃 ' + t('rplan_title')));
+            if (!rp) {
+                c.appendChild(h('p', { className: 'rp-desc' }, t('rplan_intro')));
+                if (!state.rpShowPlans) {
+                    c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', onclick: () => { state.rpShowPlans = true; renderCardio(); } }, t('rplan_show')));
+                    return c;
+                }
+                ['5k', '10k'].forEach(id => c.appendChild(h('div', { className: 'rp-opt' },
+                    h('p', { className: 'rp-name' }, rpName(id)),
+                    h('p', { className: 'rp-desc' }, t('rplan_' + id + '_desc')),
+                    h('button', { className: 'btn btn-primary btn-sm', onclick: () => { saveRunPlan({ id, started: todayStr(), done: [] }); state.rpShowPlans = false; renderCardio(); } }, t('rplan_start_plan')))));
+                if (!isPremium()) c.appendChild(h('p', { className: 'rp-week', style: { marginTop: '10px' } }, t('rplan_free_week')));
+                c.appendChild(h('button', { className: 'rp-link', style: { marginTop: '10px' }, onclick: () => { state.rpShowPlans = false; renderCardio(); } }, t('rplan_hide')));
+                return c;
+            }
+            const plan = RUN_PLANS[rp.id], total = plan.weeks.reduce((a, w) => a + w.length, 0);
+            const next = runPlanNext(rp.id, rp.done);
+            c.appendChild(h('p', { className: 'rp-name' }, rpName(rp.id)));
+            c.appendChild(h('div', { className: 'rp-bar' }, h('div', { style: { width: Math.round(Math.min(rp.done.length, total) / total * 100) + '%' } })));
+            if (!next) {
+                c.appendChild(h('p', { className: 'rp-sum', style: { fontWeight: 800, color: 'var(--accent)' } }, t('rplan_done_title')));
+                if (plan.next) c.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', style: { marginBottom: '8px' }, onclick: () => { saveRunPlan({ id: plan.next, started: todayStr(), done: [] }); renderCardio(); } }, t('rplan_done_next')));
+                c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', onclick: () => { saveRunPlan(null); state.rpShowPlans = true; renderCardio(); } }, t('rplan_choose_other')));
+                return c;
+            }
+            const sess = runPlanSession(rp.id, next.week, next.day);
+            c.appendChild(h('p', { className: 'rp-week' }, t('rplan_week_of').replace('{w}', next.week).replace('{n}', plan.weeks.length) + ' · ' + t('rplan_session_of').replace('{d}', next.day).replace('{n}', plan.weeks[next.week - 1].length)));
+            c.appendChild(h('p', { className: 'label', style: { marginTop: '12px' } }, t('rplan_next')));
+            c.appendChild(h('p', { className: 'rp-sum' }, rpSummary(sess) + ' · ' + Math.round(runSessionSec(sess) / 60) + ' min'));
+            c.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: () => startRunSession(rp.id, next.week, next.day) }, (rpLocked(next.week) ? '🔒 ' : '') + t('rplan_go')));
+            c.appendChild(h('div', { className: 'rp-links' },
+                h('button', { className: 'rp-link', onclick: () => openRunPlanView(rp.id) }, t('rplan_view')),
+                h('button', { className: 'rp-link', onclick: () => { if (confirm(t('rplan_quit_confirm'))) { saveRunPlan(null); renderCardio(); } } }, t('rplan_quit'))));
+            return c;
+        }
+
+        // El plan entero: semanas y sesiones, con las hechas tildadas
+        function openRunPlanView(id) {
+            const rp = loadRunPlan(), plan = RUN_PLANS[id];
+            if (!plan) return;
+            const done = new Set((rp && rp.id === id && rp.done) || []);
+            const next = runPlanNext(id, [...done]);
+            const ov = h('div', { className: 'fv-modal' });
+            const close = () => ov.remove();
+            const card = h('div', { className: 'fv-card', style: { maxHeight: '85vh', overflowY: 'auto' } });
+            card.appendChild(h('p', { className: 'fv-title' }, '🏃 ' + rpName(id)));
+            plan.weeks.forEach((w, wi) => {
+                const lighter = id === '10k' && wi === 3;
+                card.appendChild(h('p', { className: 'label', style: { marginTop: '12px' } }, t('rplan_week').replace('{w}', wi + 1) + (lighter ? ' · ' + t('rplan_lighter') : '') + (rpLocked(wi + 1) ? ' 🔒' : '')));
+                w.forEach((sess, di) => {
+                    const key = (wi + 1) + '-' + (di + 1), isNext = next && next.week === wi + 1 && next.day === di + 1;
+                    card.appendChild(h('div', { className: 'rp-row' + (isNext ? ' next' : '') },
+                        h('span', { className: 'rp-chk' }, done.has(key) ? '✓' : String(di + 1)),
+                        h('span', {}, rpSummary(sess) + ' · ' + Math.round(runSessionSec(sess) / 60) + ' min')));
+                });
+            });
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '14px' }, onclick: close }, t('fv_cancel')));
+            ov.appendChild(card);
+            ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+            document.body.appendChild(ov);
+        }
+
+        // ── Reproductor guiado ──
+        function rpVoiceOn() { try { return localStorage.getItem('bm-run-voice') !== '0'; } catch { return true; } }
+        function rpSay(text) {
+            if (!rpVoiceOn() || !('speechSynthesis' in window)) return;
+            try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = appLocale(); speechSynthesis.speak(u); } catch { }
+        }
+        function rpSayDur(sec) {
+            const m = Math.floor(sec / 60), x = sec % 60, out = [];
+            if (m) out.push(m === 1 ? t('rplan_say_min1') : t('rplan_say_min').replace('{n}', m));
+            if (x) out.push(t('rplan_say_sec').replace('{n}', x));
+            return out.join(' ');
+        }
+        // Aviso de cada tramo: vibra, pita (si el sonido del descanso está prendido) y lo dice en voz alta
+        function rpCue(seg) {
+            try { if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]); } catch { }
+            if (restSoundOn()) restBeep();
+            rpSay(t('rplan_kind_' + seg[0]) + ', ' + rpSayDur(seg[1]));
+        }
+        function rgElapsed() {
+            const g = state.rg; if (!g) return 0;
+            return Math.max(0, Math.floor(((g.pausedAt || Date.now()) - g.start - (g.pausedMs || 0)) / 1000));
+        }
+        function saveRunGuided() {
+            try {
+                const g = state.rg;
+                if (g) localStorage.setItem('bm-run-guided', JSON.stringify({ planId: g.planId, week: g.week, day: g.day, start: g.start, pausedAt: g.pausedAt, pausedMs: g.pausedMs }));
+                else localStorage.removeItem('bm-run-guided');
+            } catch { }
+        }
+        // Al abrir la app, retoma la sesión guiada que había quedado a medias
+        function loadRunGuided() {
+            try {
+                const r = JSON.parse(localStorage.getItem('bm-run-guided') || 'null');
+                const sess = r && runPlanSession(r.planId, r.week, r.day);
+                if (!sess || !(r.start > 0)) { localStorage.removeItem('bm-run-guided'); return; }
+                state.rg = { planId: r.planId, week: r.week, day: r.day, segs: runSegments(sess), total: runSessionSec(sess), start: r.start, pausedAt: r.pausedAt || 0, pausedMs: r.pausedMs || 0, lastIdx: -1 };
+                setTimeout(() => { try { if (state.rg && state.user) openRunGuidedView(); } catch { } }, 900);
+            } catch { }
+        }
+        function startRunSession(planId, week, day) {
+            if (rpLocked(week)) { showUpgradeModal('runplan'); return; }
+            if (state.cardioRunning || state.cardioTimer > 0) { flash(t('rplan_busy'), 'var(--orange)'); return; }
+            const sess = runPlanSession(planId, week, day);
+            if (!sess) return;
+            restAudio();   // el sonido y la voz se habilitan con este toque
+            state.rg = { planId, week, day, segs: runSegments(sess), total: runSessionSec(sess), start: Date.now(), pausedAt: 0, pausedMs: 0, lastIdx: -1 };
+            saveRunGuided();
+            setWorkoutAwake(true);
+            openRunGuidedView();
+        }
+        function openRunGuidedView() {
+            const g = state.rg;
+            if (!g || document.querySelector('.rg-ov')) return;
+            const ov = h('div', { className: 'rg-ov', role: 'dialog', 'aria-live': 'polite' });
+            const voiceBtn = h('button', { className: 'rg-voice', onclick: () => { try { localStorage.setItem('bm-run-voice', rpVoiceOn() ? '0' : '1'); } catch { } voiceBtn.textContent = (rpVoiceOn() ? '🔊 ' : '🔇 ') + t('rplan_voice'); } }, (rpVoiceOn() ? '🔊 ' : '🔇 ') + t('rplan_voice'));
+            ov.appendChild(h('div', { className: 'rg-top' }, h('span', {}, rpName(g.planId) + ' · ' + t('rplan_week').replace('{w}', g.week) + ' · ' + g.day), voiceBtn));
+            const el = { kind: h('p', { className: 'rg-kind' }), hint: h('p', { className: 'rg-hint' }), time: h('p', { className: 'rg-time' }), next: h('p', { className: 'rg-next' }), fill: h('div', { className: 'rg-fill' }), tot: h('p', { className: 'rg-tot' }) };
+            ov.appendChild(el.kind); ov.appendChild(el.hint); ov.appendChild(el.time); ov.appendChild(el.next);
+            ov.appendChild(h('div', { className: 'rg-bar' }, el.fill)); ov.appendChild(el.tot);
+            el.pause = h('button', { className: 'rg-btn main', onclick: () => {
+                const x = state.rg; if (!x) return;
+                if (x.pausedAt) { x.pausedMs += Date.now() - x.pausedAt; x.pausedAt = 0; setWorkoutAwake(true); }
+                else { x.pausedAt = Date.now(); }
+                saveRunGuided(); rgTick();
+            } });
+            ov.appendChild(h('div', { className: 'rg-ctrls' },
+                el.pause,
+                h('button', { className: 'rg-btn', onclick: () => {
+                    // Saltar: adelanta el reloj hasta el comienzo del tramo siguiente
+                    const x = state.rg; if (!x) return;
+                    const at = runSegmentAt(x.segs, rgElapsed());
+                    if (!at.done) { x.start -= at.left * 1000; saveRunGuided(); rgTick(); }
+                } }, '⏭ ' + t('rplan_skip')),
+                h('button', { className: 'rg-btn', onclick: () => { if (confirm(t('rplan_finish_confirm'))) rgFinish(false); } }, '⏹ ' + t('rplan_finish'))));
+            ov.appendChild(h('p', { className: 'rg-tip' }, t('rplan_screen')));
+            g.el = el;
+            document.body.appendChild(ov);
+            clearInterval(g.timer);
+            g.timer = setInterval(rgTick, 500);
+            rgTick();
+        }
+        function rgTick() {
+            const g = state.rg; if (!g || !g.el) return;
+            const e = rgElapsed(), at = runSegmentAt(g.segs, e);
+            if (at.done) { rgFinish(true); return; }
+            if (at.idx !== g.lastIdx) {
+                if (!g.pausedAt) rpCue(g.segs[at.idx]);
+                g.lastIdx = at.idx;
+            }
+            const seg = g.segs[at.idx], nx = g.segs[at.idx + 1];
+            g.el.kind.textContent = t('rplan_kind_' + seg[0]);
+            g.el.kind.dataset.k = seg[0];
+            g.el.hint.textContent = t('rplan_hint_' + seg[0]);
+            g.el.time.textContent = mmss(at.left / 60);
+            g.el.next.textContent = nx ? t('rplan_then').replace('{x}', t('rplan_kind_' + nx[0]) + ' ' + rpDur(nx[1])) : t('rplan_last');
+            g.el.fill.style.width = Math.min(100, Math.round(e / g.total * 100)) + '%';
+            g.el.tot.textContent = t('rplan_of').replace('{e}', mmss(e / 60)).replace('{t}', mmss(g.total / 60));
+            g.el.pause.textContent = g.pausedAt ? '▶ ' + t('rplan_resume') : '⏸ ' + t('rplan_pause');
+        }
+        // Fin de la sesión (completa o cortada antes): se abre la hoja de cardio para guardarla. Cuenta
+        // para el plan si se hizo al menos el 80 %; las kcal salen del MET promedio de sus tramos.
+        function rgFinish(complete) {
+            const g = state.rg; if (!g) return;
+            clearInterval(g.timer);
+            const e = complete ? g.total : Math.min(rgElapsed(), g.total);
+            state.rg = null; saveRunGuided();
+            const ov = document.querySelector('.rg-ov'); if (ov) ov.remove();
+            setWorkoutAwake(false);
+            if (complete) { try { if ('vibrate' in navigator) navigator.vibrate([300, 120, 300, 120, 300]); } catch { } rpSay(t('rplan_say_done')); }
+            if (e < 60) { flash(t('rplan_too_short'), 'var(--orange)'); renderCardio(); return; }
+            const sess = runPlanSession(g.planId, g.week, g.day);
+            openCardioSheet({
+                sport: 'running', level: 1, duration: e, date: todayStr(),
+                customName: t('rplan_session_label').replace('{plan}', rpName(g.planId)).replace('{w}', g.week).replace('{d}', g.day),
+                metOverride: runSessionMet(sess),
+                plan: { id: g.planId, week: g.week, day: g.day, ok: e >= g.total * 0.8, missing: Math.max(0, Math.round(g.total * 0.8) - e) }
+            }, 'manual');
         }
 
         // ── Cardio dentro de una rutina (cinta, bici, remo…): minutos y km con ✓, y al terminar la
