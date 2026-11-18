@@ -670,6 +670,49 @@
         return plan && plan.weeks[week - 1] ? plan.weeks[week - 1][day - 1] || null : null;
     }
 
+    // ── Importar entrenamientos (archivos GPX / TCX de Strava, Garmin y otros relojes) ──
+    function isPos(p) { return p && isFinite(p.lat) && isFinite(p.lon) && p.lat !== null && p.lon !== null && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180; }
+    function haversineM(a, b) {
+        var R = 6371000, r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+        var x = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * R * Math.asin(Math.min(1, Math.sqrt(x)));
+    }
+    // Resumen de un recorrido. points: [{ t (ms), lat, lon, hr, d (metros acumulados del reloj, opcional) }].
+    // Tiempo en movimiento como las apps: suma los tramos de hasta 30 s que van a 0,5 m/s o más (las
+    // paradas no cuentan). Sin posición ni distancia (cinta), todo el tiempo cuenta. Pulso promedio
+    // ponderado por tiempo. Devuelve { km, elapsedSec, movingSec, hrAvg, hrMax, start } o null.
+    function trackSummary(points) {
+        var pts = (points || []).filter(function (p) { return p && p.t > 0; }).sort(function (a, b) { return a.t - b.t; });
+        if (pts.length < 2) return null;
+        var hasD = pts.some(function (p) { return p.d >= 0 && p.d !== null; }), hasPos = pts.some(isPos);
+        var dist = 0, moving = 0, hrSum = 0, hrT = 0, hrMax = pts[0].hr > 0 ? pts[0].hr : 0;
+        for (var i = 1; i < pts.length; i++) {
+            var a = pts[i - 1], b = pts[i], dt = (b.t - a.t) / 1000;
+            var dd = (hasD && a.d >= 0 && b.d >= 0 && a.d !== null && b.d !== null) ? Math.max(0, b.d - a.d) : (isPos(a) && isPos(b) ? haversineM(a, b) : 0);
+            dist += dd;
+            if (dt > 0 && dt <= 30 && (!(hasD || hasPos) || dd / dt >= 0.5)) moving += dt;
+            if (b.hr > 0 && dt > 0 && dt <= 30) { hrSum += b.hr * dt; hrT += dt; }
+            if (b.hr > hrMax) hrMax = b.hr;
+        }
+        return {
+            km: Math.round(dist / 10) / 100, elapsedSec: Math.round((pts[pts.length - 1].t - pts[0].t) / 1000),
+            movingSec: Math.round(moving), hrAvg: hrT ? Math.round(hrSum / hrT) : null, hrMax: hrMax || null, start: pts[0].t
+        };
+    }
+    // Deporte del archivo: por el tipo que trae (Strava: 9 correr, 1 bici, 10 caminar; TCX: Running,
+    // Biking) o, si no dice, por la velocidad promedio.
+    function importSport(type, kmh) {
+        var x = String(type || '').toLowerCase().trim();
+        if (/run|corr|trail|^9$/.test(x)) return 'running';
+        if (/bik|cycl|ride|bici|^1$/.test(x)) return 'cycling';
+        if (/walk|camin|^10$/.test(x)) return 'walking';
+        if (/hik|sender/.test(x)) return 'hiking';
+        if (/swim|nata/.test(x)) return 'swimming';
+        if (/row|remo/.test(x)) return 'rowing';
+        var v = Number(kmh) || 0;
+        return v >= 16 ? 'cycling' : (v >= 7 ? 'running' : 'walking');
+    }
+
     // Frecuencia cardíaca máxima estimada (Tanaka, Monahan y Seals 2001): 208 − 0,7 × edad.
     // Menos sesgada que 220 − edad, que se queda corta en mayores; las dos erran ±7-12 lpm,
     // por eso el usuario puede poner la suya.
@@ -758,6 +801,8 @@
         runSegmentAt: runSegmentAt,
         runPlanNext: runPlanNext,
         runPlanSession: runPlanSession,
+        trackSummary: trackSummary,
+        importSport: importSport,
         sessionPerf: sessionPerf,
         performanceSignals: performanceSignals,
         planMuscleSets: planMuscleSets,

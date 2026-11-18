@@ -357,6 +357,26 @@ console.log('Planes de running guiados');
     ok('sesión por semana y día; fuera de rango null', calc.runPlanSession('10k', 6, 2).block[0][0] === 'tempo' && calc.runPlanSession('10k', 9, 1) === null);
 }
 
+console.log('Importar entrenamientos (GPX / TCX)');
+{
+    const T = calc.trackSummary;
+    // 11 puntos cada 10 s, 0,0005° de latitud (~55,6 m) por tramo → ~556 m en 100 s; luego una parada de 60 s
+    const base = Date.UTC(2026, 10, 18, 9, 0, 0);
+    const run = Array.from({ length: 11 }, (_, i) => ({ t: base + i * 10000, lat: -34.6 + i * 0.0005, lon: -58.4, hr: 140 + i }));
+    const stop = run.concat([{ t: base + 160000, lat: -34.6 + 10 * 0.0005, lon: -58.4, hr: 120 }]);
+    const r = T(stop);
+    ok('distancia por GPS (~0,56 km), tiempo total 160 s y en movimiento 100 s (la parada no cuenta)', r.km === 0.56 && r.elapsedSec === 160 && r.movingSec === 100, r);
+    ok('pulso promedio ponderado (solo tramos de hasta 30 s) y máximo', r.hrAvg === 146 && r.hrMax === 150, r);
+    const tcx = [{ t: base, d: 0, hr: 150 }, { t: base + 5000, d: 15 }, { t: base + 10000, d: 30 }];
+    ok('con la distancia del reloj (TCX) la usa en vez del GPS: 30 m', T(tcx).km === 0.03 && T(tcx).movingSec === 10);
+    const tread = [{ t: base, hr: 130 }, { t: base + 20000, hr: 132 }, { t: base + 40000, hr: 134 }];
+    ok('sin posición ni distancia (cinta): todo el tiempo cuenta como movimiento', T(tread).km === 0 && T(tread).movingSec === 40 && T(tread).hrAvg === 133);
+    ok('menos de 2 puntos con hora → null; desordenados se ordenan', T([{ t: base }]) === null && T([]) === null && T(run.slice().reverse()).movingSec === 100);
+    const S = calc.importSport;
+    ok('deporte por el tipo del archivo (Strava 9/1/10, TCX Running/Biking)', S('9') === 'running' && S('Running') === 'running' && S('1') === 'cycling' && S('Biking') === 'cycling' && S('10') === 'walking' && S('hiking') === 'hiking' && S('Swim') === 'swimming');
+    ok('sin tipo, por la velocidad: 25 km/h bici, 10 correr, 5 caminar', S('', 25) === 'cycling' && S('Other', 10) === 'running' && S(null, 5) === 'walking');
+}
+
 console.log('Frecuencia cardíaca máxima (Tanaka)');
 {
     const mx = calc.maxHrEstimate;
