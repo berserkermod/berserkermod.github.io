@@ -430,12 +430,13 @@ function aiJson(r) {
     return null;
 }
 // Error de Workers AI → respuesta para la app, sin el detalle interno (queda en los registros).
-// Cupo diario de neuronas agotado (para toda la cuenta): mensaje propio con la hora en que vuelve.
+// Cupo diario de neuronas agotado (para toda la cuenta): mensaje propio, sin hora fija: Cloudflare
+// suma más o menos las últimas 24 h (se vio el 18-nov-2026), no se reinicia limpio a las 00:00 UTC.
 function aiErrorResponse(e, fallback) {
     const msg = String((e && e.message) || e);
     console.error('[ia] falló', msg.slice(0, 300));
     if (/\b3036\b|daily free allocation|neurons/i.test(msg)) {
-        return json({ error: 'La IA llegó a su tope de hoy. Se renueva a las 21 h de Argentina (00:00 UTC).', code: 'ai_daily_limit' }, 503);
+        return json({ error: 'La IA llegó a su tope por ahora. Volvé a probar en unas horas.', code: 'ai_daily_limit' }, 503);
     }
     return json({ error: fallback || 'Error al contactar la IA. Probá de nuevo en un rato.' }, 502);
 }

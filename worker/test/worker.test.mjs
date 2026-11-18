@@ -2502,7 +2502,7 @@ let code, licToken;
         };
         const outs = [];
         for (let i = 0; i < 25; i++) outs.push(await call('POST', '/api/oracle', { token: lic, prompt: 'x' }));
-        ok('L-5: sin neuronas en la cuenta → 503 con mensaje propio, sin el detalle interno', outs.every((o) => o.status === 503 && o.body.code === 'ai_daily_limit' && /21 h/.test(o.body.error) && !('detail' in o.body)), outs[0].body);
+        ok('L-5: sin neuronas en la cuenta → 503 con mensaje propio, sin el detalle interno', outs.every((o) => o.status === 503 && o.body.code === 'ai_daily_limit' && /unas horas/.test(o.body.error) && !/\d+ ?h|UTC/.test(o.body.error) && !('detail' in o.body)), outs[0].body);
         ok('L-5: 25 intentos fallidos no gastan la cuota (nunca 429)', !outs.some((o) => o.status === 429));
         aiMode = 'roto';
         const broken = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
