@@ -1604,7 +1604,7 @@
         #oracle-modal {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88);
             backdrop-filter: blur(14px); z-index: 10000;
-            flex-direction: column; align-items: center; padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+            flex-direction: column; align-items: center; padding: calc(16px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));   /* la ✕ no puede quedar debajo de la hora del iPhone */
         }
         #oracle-modal.show { display: flex; animation: fadeIn .3s; }
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
@@ -1993,8 +1993,8 @@
         .fv-busy-card p { font-size: 14px; font-weight: 700; color: var(--text2); margin-top: 12px; }
         .fv-spinner { width: 36px; height: 36px; margin: 0 auto; border-radius: 50%; border: 3px solid var(--sf3); border-top-color: var(--accent); animation: spin .8s linear infinite; }
         /* Estimación del plato */
-        .fv-modal { position: fixed; inset: 0; z-index: 16500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: 16px; }
-        .fv-card { background: var(--sf1); border: 1.5px solid var(--border); border-radius: 22px; padding: 20px 16px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+        .fv-modal { position: fixed; inset: 0; z-index: 16500; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); }
+        .fv-card { background: var(--sf1); border: 1.5px solid var(--border); border-radius: 22px; padding: 20px 16px; width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; }
         .fv-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
         .fv-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-bottom: 12px; }
         .fv-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
@@ -2311,7 +2311,7 @@
     <div id="oracle-modal">
         <div class="oracle-header">
             <div class="oracle-title">🔮 Oracle <span style="color:var(--accent)" data-i18n="oracle_ai_tag">IA</span></div>
-            <button onclick="closeOracle()" style="color:var(--text2);font-size:20px;padding:4px 10px">✕</button>
+            <button onclick="closeOracle()" aria-label="Cerrar" data-i18n-aria="btn_close" style="color:var(--text2);font-size:20px;min-width:44px;min-height:44px;padding:4px 10px">✕</button>
         </div>
         <div class="oracle-body" id="oracle-body">
             <div class="oracle-loading"><div class="oracle-spinner"></div><span data-i18n="oracle_analyzing">Analizando tus últimas 4 semanas...</span></div>
@@ -2354,8 +2354,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-38"></script>
-    <script src="core/i18n-data.js?v=2-38"></script>
+    <script src="core/calc.js?v=2-39"></script>
+    <script src="core/i18n-data.js?v=2-39"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2449,11 +2449,11 @@
                 days_3: "3 días", days_3_d: "Full Body — ideal para principiantes", days_4: "4 días", days_4_d: "Upper/Lower balanceado", days_5: "5 días", days_5_d: "Push/Pull/Legs + Upper/Lower", days_6: "6 días", days_6_d: "PPL x2 — alta frecuencia, avanzado",
                 nutri_yes: "Sí, quiero mi plan", nutri_yes_d: "Calorías y macros personalizados", nutri_no: "No, por ahora no", nutri_no_d: "Podés activarlo después desde tu perfil",
                 msg_enter_name: "Por favor, ingresá tu nombre",
-                btn_cancel: "Cancelar", btn_save: "Guardar Cambios", btn_delete: "Eliminar", btn_back: "Atrás",
+                btn_cancel: "Cancelar", btn_close: "Cerrar", apierr_generic: "Algo salió mal. Probá de nuevo en un rato.", apierr_limit_oracle: "Llegaste al límite diario del Oracle ({n} consultas). Mañana se renueva.", apierr_limit_parse: "Llegaste al límite diario de importaciones ({n} por día). Mañana se renueva.", apierr_limit_food: "Llegaste al límite diario de fotos ({n}). Mañana se renueva.", apierr_ai_cap: "La IA llegó a su tope por ahora. Volvé a probar en unas horas.", apierr_busy: "Servicio ocupado. Probá de nuevo en un rato.", apierr_rate: "Demasiadas solicitudes. Esperá un minuto y probá de nuevo.", apierr_premium: "Función premium: activá tu código para usarla.", apierr_update: "Actualizá la app para usar el análisis nuevo del Oracle.", apierr_plan_gone: "Tu plan ya no está activo en este teléfono. Revisalo en Perfil.", apierr_code_bad: "Código inválido. Revisalo y probá de nuevo.", apierr_code_revoked: "Este código fue revocado.", apierr_code_expired: "Este código venció.", apierr_code_in_use: "Este código ya está en uso.", apierr_code_missing: "Escribí el código.", apierr_code_devices: "Este código se usó en demasiados dispositivos.", apierr_purchase_devices: "Esta compra ya se usó en demasiados teléfonos. Escribinos y lo resolvemos.", apierr_trial_used: "Ya usaste la prueba gratuita en este dispositivo.", apierr_trial_net: "Demasiadas pruebas gratuitas desde esta red. Si es un error, escribinos.", apierr_premium_other: "Este Premium ya se usa en otro teléfono. Pedile a tu coach que lo pase a este.", apierr_no_premium: "No te quedan accesos Premium.", apierr_sub_expired: "Suscripción vencida.", apierr_sub_invalid: "Suscripción o compra inválida.", apierr_payment_pending: "Pago pendiente.", apierr_checkout: "No se pudo abrir el pago. Probá más tarde.", apierr_pass_void: "El pase se anuló por intentos fallidos.", apierr_pass_expired: "El pase venció o ya se usó.", apierr_claims_net: "Demasiados reclamos desde esta red.", apierr_claim_busy: "Ya estamos procesando tu reclamo. Probá de nuevo en un minuto.", apierr_claim_fail: "No se pudo reclamar ahora.", apierr_save_fail: "No se pudo guardar. Probá de nuevo.", apierr_too_big: "Es demasiado grande para guardar.", apierr_bad_data: "Hay un dato inválido. Revisalo y probá de nuevo.", apierr_access_ended: "Tu acceso a esta rutina terminó.", apierr_student_ended: "El acceso de este alumno ya terminó.", apierr_routine_gone: "Esta rutina ya no existe.", apierr_coach_code: "Ese código de Coach no existe o todavía no abrió su panel.", apierr_set_start: "Cargá el inicio del programa en la ficha del alumno.", apierr_balance_wait: "El balance se arma después de las primeras 4 semanas.", apierr_write_first: "Escribí algo antes de enviar.", apierr_pick_ex: "Elegí el ejercicio del video.", apierr_pick_reason: "Elegí el motivo del reporte.", apierr_videos_waiting: "Tenés varios videos esperando la respuesta de tu coach.", apierr_reports_many: "Ya recibimos varios reportes de esta rutina hoy. Los estamos revisando.", apierr_reminder_recent: "Ya le mandaste un recordatorio hace menos de 12 horas.", apierr_reminders_full: "Llegaste al máximo de recordatorios.", apierr_reminder_fail: "No se pudo programar el aviso.", apierr_push_off: "Activá las notificaciones en este teléfono.", apierr_push_unsupported: "Este teléfono no admite estas notificaciones.", apierr_consent: "Para guardar antecedentes o limitaciones hace falta tu consentimiento.", apierr_copies_busy: "Hay muchas copias en curso. Probá de nuevo en unos minutos.", apierr_photo_bad: "Falta la foto o no es válida.", apierr_link_https: "El link tiene que empezar con https://", btn_save: "Guardar Cambios", btn_delete: "Eliminar", btn_back: "Atrás",
                 home_welcome: "¡A entrenar,", home_streak: "Días racha", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "TU PLAN ACTUAL", home_plan_day: "DÍA", home_view_routine: "Ver rutina completa →",
                 routines_create: "➕ Crear Nueva Rutina", routines_empty: "No tienes ninguna rutina.", routines_start: "INICIAR SESIÓN",
-                routine_import_pdf: "Importar rutina desde PDF", routine_import_reading: "Leyendo el PDF con IA…", routine_import_reading_img: "Leyendo las imágenes del PDF… puede tardar unos segundos.", routine_import_preview: "Revisá la rutina importada", routine_import_save: "Guardar rutina", routine_import_done: "Rutina importada", routine_import_fail: "No se pudo leer el PDF. Probá con otro archivo.", routine_import_too_big: "El PDF es muy grande (máx 6 MB)", routine_import_empty: "No encontramos ejercicios en el PDF. Si es una foto o escaneo, probá con un PDF de texto (exportado desde una app, Word o Excel).",
+                routine_import_pdf: "Importar rutina desde PDF", routine_import_reading: "Leyendo el PDF con IA…", routine_import_reading_img: "Leyendo las imágenes del PDF… puede tardar unos segundos.", routine_import_preview: "Revisá la rutina importada", routine_import_save: "Guardar rutina", routine_import_done: "Rutina importada", routine_import_fail: "No se pudo leer el PDF. Probá con otro archivo.", routine_import_too_big: "El PDF es muy grande (máx 6 MB)", routine_import_empty: "No encontramos ejercicios en el PDF. Si es una foto o escaneo, probá con un PDF de texto (exportado desde una app, Word o Excel).", routine_import_no_routine: "No encontramos una rutina en este PDF. Si es tu rutina, probá con otro archivo o cargala a mano.", routine_import_missing: "⚠️ No estaba en el PDF: va un valor común. Podés cambiarlo después en la rutina.", routine_import_rest: "desc. {s} s",
                 routines_creator_title: "Nueva Rutina", routines_creator_name: "Nombre de la rutina", routines_creator_days: "DÍAS POR SEMANA", routines_creator_day_name: "Nombre del día (ej. Push)",
                 routines_creator_add_ex: "+ Nombre de ejercicio...", routines_creator_add_btn: "Agregar", routines_creator_save: "Guardar Rutina", routines_saved: "✅ Rutina Guardada",
                 train_sel_day: "SELECCIONAR DÍA", train_sel_ex: "SELECCIONAR EJERCICIO", train_add_ex: "+ EJERCICIO PERSONALIZADO", train_ex_name: "Nombre del ejercicio",
@@ -2892,11 +2892,11 @@
                 days_3: "3 days", days_3_d: "Full Body — best for beginners", days_4: "4 days", days_4_d: "Upper/Lower split", days_5: "5 days", days_5_d: "Push/Pull/Legs + Upper/Lower", days_6: "6 days", days_6_d: "PPL x2 — high frequency, advanced",
                 nutri_yes: "Yes, I want a plan", nutri_yes_d: "Custom calories and macros", nutri_no: "No, not right now", nutri_no_d: "You can enable it later",
                 msg_enter_name: "Please enter your name",
-                btn_cancel: "Cancel", btn_save: "Save Changes", btn_delete: "Delete", btn_back: "Back",
+                btn_cancel: "Cancel", btn_close: "Close", apierr_generic: "Something went wrong. Try again in a moment.", apierr_limit_oracle: "You reached today's Oracle limit ({n} analyses). It renews tomorrow.", apierr_limit_parse: "You reached today's import limit ({n} per day). It renews tomorrow.", apierr_limit_food: "You reached today's photo limit ({n}). It renews tomorrow.", apierr_ai_cap: "The AI reached its limit for now. Try again in a few hours.", apierr_busy: "The service is busy. Try again in a moment.", apierr_rate: "Too many requests. Wait a minute and try again.", apierr_premium: "Premium feature: activate your code to use it.", apierr_update: "Update the app to use the new Oracle analysis.", apierr_plan_gone: "Your plan is no longer active on this phone. Check it in Profile.", apierr_code_bad: "Invalid code. Check it and try again.", apierr_code_revoked: "This code was revoked.", apierr_code_expired: "This code expired.", apierr_code_in_use: "This code is already in use.", apierr_code_missing: "Enter the code.", apierr_code_devices: "This code was used on too many devices.", apierr_purchase_devices: "This purchase was used on too many phones. Write to us and we'll sort it out.", apierr_trial_used: "You already used the free trial on this device.", apierr_trial_net: "Too many free trials from this network. If this is a mistake, write to us.", apierr_premium_other: "This Premium is already used on another phone. Ask your coach to move it to this one.", apierr_no_premium: "You have no Premium accesses left.", apierr_sub_expired: "Subscription expired.", apierr_sub_invalid: "Invalid subscription or purchase.", apierr_payment_pending: "Payment pending.", apierr_checkout: "Couldn't open the checkout. Try again later.", apierr_pass_void: "The transfer was cancelled after failed attempts.", apierr_pass_expired: "The transfer expired or was already used.", apierr_claims_net: "Too many claims from this network.", apierr_claim_busy: "We're already processing your claim. Try again in a minute.", apierr_claim_fail: "Couldn't claim it right now.", apierr_save_fail: "Couldn't save. Try again.", apierr_too_big: "That's too big to save.", apierr_bad_data: "Some data isn't valid. Check it and try again.", apierr_access_ended: "Your access to this routine ended.", apierr_student_ended: "This client's access already ended.", apierr_routine_gone: "This routine no longer exists.", apierr_coach_code: "That Coach code doesn't exist or hasn't opened their panel yet.", apierr_set_start: "Set the program start date in the client's profile.", apierr_balance_wait: "The review is available after the first 4 weeks.", apierr_write_first: "Write something before sending.", apierr_pick_ex: "Choose the exercise for the video.", apierr_pick_reason: "Choose the reason for the report.", apierr_videos_waiting: "You have several videos waiting for your coach's reply.", apierr_reports_many: "We already got several reports about this routine today. We're reviewing them.", apierr_reminder_recent: "You already sent a reminder less than 12 hours ago.", apierr_reminders_full: "You reached the reminder limit.", apierr_reminder_fail: "Couldn't schedule the reminder.", apierr_push_off: "Turn on notifications on this phone.", apierr_push_unsupported: "This phone doesn't support these notifications.", apierr_consent: "To save health history or limitations we need your consent.", apierr_copies_busy: "Many copies are in progress. Try again in a few minutes.", apierr_photo_bad: "The photo is missing or isn't valid.", apierr_link_https: "The link has to start with https://", btn_save: "Save Changes", btn_delete: "Delete", btn_back: "Back",
                 home_welcome: "Let's train,", home_streak: "Day streak", home_vol: "Tons", home_cals: "Kcal",
                 home_plan_title: "YOUR CURRENT PLAN", home_plan_day: "DAY", home_view_routine: "View full routine →",
                 routines_create: "➕ Create New Routine", routines_empty: "You have no routines.", routines_start: "START SESSION",
-                routine_import_pdf: "Import routine from PDF", routine_import_reading: "Reading the PDF with AI…", routine_import_reading_img: "Reading the PDF images… this can take a few seconds.", routine_import_preview: "Review the imported routine", routine_import_save: "Save routine", routine_import_done: "Routine imported", routine_import_fail: "Couldn't read the PDF. Try another file.", routine_import_too_big: "The PDF is too big (max 6 MB)", routine_import_empty: "We couldn't find exercises in the PDF. If it's a photo or scan, try a text PDF (exported from an app, Word, or Excel).",
+                routine_import_pdf: "Import routine from PDF", routine_import_reading: "Reading the PDF with AI…", routine_import_reading_img: "Reading the PDF images… this can take a few seconds.", routine_import_preview: "Review the imported routine", routine_import_save: "Save routine", routine_import_done: "Routine imported", routine_import_fail: "Couldn't read the PDF. Try another file.", routine_import_too_big: "The PDF is too big (max 6 MB)", routine_import_empty: "We couldn't find exercises in the PDF. If it's a photo or scan, try a text PDF (exported from an app, Word, or Excel).", routine_import_no_routine: "We couldn't find a routine in this PDF. If it is your routine, try another file or add it by hand.", routine_import_missing: "⚠️ Not in the PDF: a common value is used. You can change it later in the routine.", routine_import_rest: "rest {s} s",
                 routines_creator_title: "New Routine", routines_creator_name: "Routine name", routines_creator_days: "DAYS PER WEEK", routines_creator_day_name: "Day name (e.g. Push)",
                 routines_creator_add_ex: "+ Exercise name...", routines_creator_add_btn: "Add", routines_creator_save: "Save Routine", routines_saved: "✅ Routine Saved",
                 train_sel_day: "SELECT DAY", train_sel_ex: "SELECT EXERCISE", train_add_ex: "+ CUSTOM EXERCISE", train_ex_name: "Exercise name",
@@ -3334,11 +3334,11 @@
                 days_3: "3 dias", days_3_d: "Full Body — ideal para iniciantes", days_4: "4 dias", days_4_d: "Upper/Lower equilibrado", days_5: "5 dias", days_5_d: "Push/Pull/Legs + Upper/Lower", days_6: "6 dias", days_6_d: "PPL x2 — alta frequência, avançado",
                 nutri_yes: "Sim, quero meu plano", nutri_yes_d: "Calorias e macros personalizados", nutri_no: "Não, agora não", nutri_no_d: "Você pode ativá-lo depois",
                 msg_enter_name: "Por favor, insira seu nome",
-                btn_cancel: "Cancelar", btn_save: "Salvar Alterações", btn_delete: "Excluir", btn_back: "Voltar",
+                btn_cancel: "Cancelar", btn_close: "Fechar", apierr_generic: "Algo deu errado. Tente de novo em instantes.", apierr_limit_oracle: "Você chegou ao limite diário do Oracle ({n} análises). Renova amanhã.", apierr_limit_parse: "Você chegou ao limite diário de importações ({n} por dia). Renova amanhã.", apierr_limit_food: "Você chegou ao limite diário de fotos ({n}). Renova amanhã.", apierr_ai_cap: "A IA chegou ao limite por agora. Tente de novo em algumas horas.", apierr_busy: "O serviço está ocupado. Tente de novo em instantes.", apierr_rate: "Solicitações demais. Espere um minuto e tente de novo.", apierr_premium: "Recurso Premium: ative seu código para usar.", apierr_update: "Atualize o app para usar a nova análise do Oracle.", apierr_plan_gone: "Seu plano não está mais ativo neste telefone. Confira em Perfil.", apierr_code_bad: "Código inválido. Confira e tente de novo.", apierr_code_revoked: "Este código foi revogado.", apierr_code_expired: "Este código venceu.", apierr_code_in_use: "Este código já está em uso.", apierr_code_missing: "Digite o código.", apierr_code_devices: "Este código foi usado em dispositivos demais.", apierr_purchase_devices: "Esta compra já foi usada em telefones demais. Escreva para nós e resolvemos.", apierr_trial_used: "Você já usou o teste grátis neste dispositivo.", apierr_trial_net: "Testes grátis demais nesta rede. Se for um erro, escreva para nós.", apierr_premium_other: "Este Premium já está em uso em outro telefone. Peça ao seu coach para passar para este.", apierr_no_premium: "Você não tem mais acessos Premium.", apierr_sub_expired: "Assinatura vencida.", apierr_sub_invalid: "Assinatura ou compra inválida.", apierr_payment_pending: "Pagamento pendente.", apierr_checkout: "Não foi possível abrir o pagamento. Tente mais tarde.", apierr_pass_void: "A transferência foi anulada por tentativas falhas.", apierr_pass_expired: "A transferência venceu ou já foi usada.", apierr_claims_net: "Pedidos demais desta rede.", apierr_claim_busy: "Já estamos processando seu pedido. Tente de novo em um minuto.", apierr_claim_fail: "Não foi possível resgatar agora.", apierr_save_fail: "Não foi possível salvar. Tente de novo.", apierr_too_big: "Isso é grande demais para salvar.", apierr_bad_data: "Algum dado não é válido. Confira e tente de novo.", apierr_access_ended: "Seu acesso a esta rotina terminou.", apierr_student_ended: "O acesso deste aluno já terminou.", apierr_routine_gone: "Esta rotina não existe mais.", apierr_coach_code: "Esse código de Coach não existe ou ainda não abriu o painel.", apierr_set_start: "Defina o início do programa na ficha do aluno.", apierr_balance_wait: "O balanço fica disponível depois das primeiras 4 semanas.", apierr_write_first: "Escreva algo antes de enviar.", apierr_pick_ex: "Escolha o exercício do vídeo.", apierr_pick_reason: "Escolha o motivo da denúncia.", apierr_videos_waiting: "Você tem vários vídeos esperando a resposta do seu coach.", apierr_reports_many: "Já recebemos várias denúncias desta rotina hoje. Estamos revisando.", apierr_reminder_recent: "Você já mandou um lembrete há menos de 12 horas.", apierr_reminders_full: "Você chegou ao limite de lembretes.", apierr_reminder_fail: "Não foi possível programar o aviso.", apierr_push_off: "Ative as notificações neste telefone.", apierr_push_unsupported: "Este telefone não aceita estas notificações.", apierr_consent: "Para salvar histórico ou limitações precisamos do seu consentimento.", apierr_copies_busy: "Há muitas cópias em andamento. Tente de novo em alguns minutos.", apierr_photo_bad: "A foto está faltando ou não é válida.", apierr_link_https: "O link precisa começar com https://", btn_save: "Salvar Alterações", btn_delete: "Excluir", btn_back: "Voltar",
                 home_welcome: "Bora treinar,", home_streak: "Dias seguidos", home_vol: "Toneladas", home_cals: "Kcal",
                 home_plan_title: "SEU PLANO ATUAL", home_plan_day: "DIA", home_view_routine: "Ver rotina completa →",
                 routines_create: "➕ Criar Nova Rotina", routines_empty: "Você não tem nenhuma rotina.", routines_start: "INICIAR SESSÃO",
-                routine_import_pdf: "Importar rotina de PDF", routine_import_reading: "Lendo o PDF com IA…", routine_import_reading_img: "Lendo as imagens do PDF… pode levar alguns segundos.", routine_import_preview: "Revise a rotina importada", routine_import_save: "Salvar rotina", routine_import_done: "Rotina importada", routine_import_fail: "Não foi possível ler o PDF. Tente outro arquivo.", routine_import_too_big: "O PDF é muito grande (máx 6 MB)", routine_import_empty: "Não encontramos exercícios no PDF. Se for uma foto ou digitalização, tente um PDF de texto (exportado de um app, Word ou Excel).",
+                routine_import_pdf: "Importar rotina de PDF", routine_import_reading: "Lendo o PDF com IA…", routine_import_reading_img: "Lendo as imagens do PDF… pode levar alguns segundos.", routine_import_preview: "Revise a rotina importada", routine_import_save: "Salvar rotina", routine_import_done: "Rotina importada", routine_import_fail: "Não foi possível ler o PDF. Tente outro arquivo.", routine_import_too_big: "O PDF é muito grande (máx 6 MB)", routine_import_empty: "Não encontramos exercícios no PDF. Se for uma foto ou digitalização, tente um PDF de texto (exportado de um app, Word ou Excel).", routine_import_no_routine: "Não encontramos uma rotina neste PDF. Se for a sua rotina, tente outro arquivo ou adicione à mão.", routine_import_missing: "⚠️ Não estava no PDF: vai um valor comum. Você pode mudar depois na rotina.", routine_import_rest: "desc. {s} s",
                 routines_creator_title: "Nova Rotina", routines_creator_name: "Nome da rotina", routines_creator_days: "DIAS POR SEMANA", routines_creator_day_name: "Nome do dia (ex. Push)",
                 routines_creator_add_ex: "+ Nome do exercício...", routines_creator_add_btn: "Adicionar", routines_creator_save: "Salvar Rotina", routines_saved: "✅ Rotina Salva",
                 train_sel_day: "SELECIONAR DIA", train_sel_ex: "SELECIONAR EXERCÍCIO", train_add_ex: "+ EXERCÍCIO PERSONALIZADO", train_ex_name: "Nome do exercício",
@@ -4575,6 +4575,74 @@
             if (p && p.trial && p.exp && Date.now() >= p.exp) clearLicense();
             if (!DEBUG_APP && state.tier !== 'free') { state.tier = 'free'; saveTier(); }
         }
+        // Los mensajes de error del Worker están en castellano (y alguno interno en inglés). En inglés y
+        // portugués se muestran traducidos con esta tabla, por el comienzo del mensaje; en castellano va el
+        // mensaje original, salvo los internos en inglés. Lo que no está en la tabla: el texto general.
+        const API_ERRS = [
+            [/^(Llegaste al límite diario del Oracle)/, 'apierr_limit_oracle'],
+            [/^(Llegaste al límite diario de importaciones)/, 'apierr_limit_parse'],
+            [/^(Llegaste al límite diario de fotos)/, 'apierr_limit_food'],
+            [/^(La IA llegó a su tope)/, 'apierr_ai_cap'],
+            [/^(Error al contactar la IA|Servicio ocupado)/, 'apierr_busy'],
+            [/^(Demasiadas solicitudes)/, 'apierr_rate'],
+            [/^(Función premium)/, 'apierr_premium'],
+            [/^(Actualizá la app)/, 'apierr_update'],
+            [/^(Tu plan ya no está activo)/, 'apierr_plan_gone'],
+            [/^(Código inválido|Código incorrecto|Licencia inválida)/, 'apierr_code_bad'],
+            [/^(Código revocado)/, 'apierr_code_revoked'],
+            [/^(Código vencido)/, 'apierr_code_expired'],
+            [/^(Código en uso)/, 'apierr_code_in_use'],
+            [/^(Falta el código)/, 'apierr_code_missing'],
+            [/^(Este código se usó en demasiados)/, 'apierr_code_devices'],
+            [/^(Esta compra ya se usó en demasiados)/, 'apierr_purchase_devices'],
+            [/^(Ya usaste la prueba gratuita)/, 'apierr_trial_used'],
+            [/^(Demasiadas pruebas gratuitas)/, 'apierr_trial_net'],
+            [/^(Este Premium ya se usa en otro)/, 'apierr_premium_other'],
+            [/^(No te quedan accesos Premium)/, 'apierr_no_premium'],
+            [/^(Suscripción vencida)/, 'apierr_sub_expired'],
+            [/^(Suscripción inválida|SKU inválido|Compra no encontrada)/, 'apierr_sub_invalid'],
+            [/^(Pago pendiente)/, 'apierr_payment_pending'],
+            [/^(No se pudo autenticar con Google Play|Error consultando Google Play|Play Billing no configurado)/, 'play_err'],
+            [/^(No se pudo crear el checkout|Checkout|Precio de)/, 'apierr_checkout'],
+            [/^(El pase se anuló)/, 'apierr_pass_void'],
+            [/^(El pase venció)/, 'apierr_pass_expired'],
+            [/^(Cupo de testers completo)/, 'tester_closed'],
+            [/^(Demasiados reclamos desde esta red)/, 'apierr_claims_net'],
+            [/^(Ya estamos procesando tu reclamo)/, 'apierr_claim_busy'],
+            [/^(No se pudo reclamar ahora)/, 'apierr_claim_fail'],
+            [/^(No se pudo guardar)/, 'apierr_save_fail'],
+            [/^(Plan inválido o demasiado grande|Sesión demasiado grande|Edit demasiado grande|Payload too large)/, 'apierr_too_big', 1],
+            [/^(Datos inválidos|Cursor inválido|Fecha inválida|Versión inválida|Horario inválido|Recordatorio inválido|Ciclo inválido|Copia inválida|Control vacío|Ficha vacía|Falta confirmar|Faltan los datos)/, 'apierr_bad_data'],
+            [/^(Tu acceso a esta rutina terminó)/, 'apierr_access_ended'],
+            [/^(El acceso de este alumno ya terminó)/, 'apierr_student_ended'],
+            [/^(Routine not found)/, 'apierr_routine_gone', 1],
+            [/^(Ese código de Coach no existe)/, 'apierr_coach_code'],
+            [/^(Cargá el inicio del programa)/, 'apierr_set_start'],
+            [/^(El balance se arma después)/, 'apierr_balance_wait'],
+            [/^(Escribí al menos una parte|Escribí la respuesta)/, 'apierr_write_first'],
+            [/^(Elegí el ejercicio del video)/, 'apierr_pick_ex'],
+            [/^(Elegí el motivo del reporte)/, 'apierr_pick_reason'],
+            [/^(Tenés varios videos esperando)/, 'apierr_videos_waiting'],
+            [/^(Ya recibimos varios reportes)/, 'apierr_reports_many'],
+            [/^(Ya le mandaste un recordatorio)/, 'apierr_reminder_recent'],
+            [/^(Cupo de recordatorios completo)/, 'apierr_reminders_full'],
+            [/^(No se pudo programar el aviso)/, 'apierr_reminder_fail'],
+            [/^(Activá las notificaciones)/, 'apierr_push_off'],
+            [/^(Servicio de notificaciones no soportado)/, 'apierr_push_unsupported'],
+            [/^(Para guardar antecedentes)/, 'apierr_consent'],
+            [/^(Hay muchas copias en curso)/, 'apierr_copies_busy'],
+            [/^(El PDF es demasiado grande)/, 'routine_import_too_big'],
+            [/^(No se pudo interpretar la rutina|No se pudo leer|No se pudieron leer|Falta el PDF|El PDF no tiene)/, 'routine_import_fail'],
+            [/^(Falta la foto)/, 'apierr_photo_bad'],
+            [/^(El link tiene que empezar con https)/, 'apierr_link_https']
+        ];
+        function trApiErr(msg, fallbackKey) {
+            const m = String(msg || '').trim();
+            const hit = m && API_ERRS.find(([re]) => re.test(m));
+            const n = (m.match(/\((\d+)/) || [])[1] || '';
+            if ((state.lang || 'es') === 'es' && m && !(hit && hit[2])) return m;
+            return hit ? t(hit[1]).replace('{n}', n) : t(fallbackKey || 'apierr_generic');
+        }
         function noBackendInProd() {
             return !getApiBase() && location.protocol !== 'file:';
         }
@@ -4586,7 +4654,7 @@
                     body: JSON.stringify(Object.assign({ code: String(code || '').trim().toUpperCase(), deviceId: getDeviceId(), surface: appSurface(), coach_id: getCoachId() }, extra || {}))
                 });
                 const j = await resp.json().catch(() => ({}));
-                if (!resp.ok) return { ok: false, status: resp.status, error: j.error || ('Error ' + resp.status) };
+                if (!resp.ok) return { ok: false, status: resp.status, error: trApiErr(j.error) };
                 localStorage.setItem('bm-license', j.token);
                 localStorage.setItem('bm-license-checked', String(Date.now()));
                 state.tier = 'premium'; saveTier();
@@ -4604,7 +4672,7 @@
                     body: JSON.stringify({ deviceId: getDeviceId(), product: product || 'premium', surface: appSurface() })
                 });
                 const j = await resp.json().catch(() => ({}));
-                if (!resp.ok) return { ok: false, error: j.error || ('Error ' + resp.status) };
+                if (!resp.ok) return { ok: false, error: trApiErr(j.error) };
                 localStorage.setItem('bm-license', j.token);
                 localStorage.setItem('bm-license-checked', String(Date.now()));
                 state.tier = 'premium'; saveTier();
@@ -4652,7 +4720,7 @@
                     // vio señales de Chrome Android (no es la TWA) → mensaje genérico.
                     if (resp.status === 403 && j.error === 'closed') return { ok: false, error: t('tester_closed') };
                     if (resp.status === 409) return { ok: false, error: t('tester_full') };
-                    return { ok: false, error: resp.status === 429 ? (j.error || t('tester_err')) : t('tester_err') };
+                    return { ok: false, error: resp.status === 429 ? trApiErr(j.error, 'tester_err') : t('tester_err') };
                 }
                 localStorage.setItem('bm-license', j.token);
                 localStorage.setItem('bm-license-checked', String(Date.now()));
@@ -4731,7 +4799,7 @@
                 const j = await r.json().catch(() => ({}));
                 if (!r.ok || !j.ok) {
                     await resp.complete('fail');
-                    flash('⚠️ ' + (j.error || t('play_err')), 'var(--red)');
+                    flash('⚠️ ' + trApiErr(j.error, 'play_err'), 'var(--red)');
                     if (btn) btn.disabled = false;
                     return;
                 }
@@ -8626,14 +8694,26 @@
             return out;
         }
         function _countEx(routine) { return ((routine && routine.days) || []).reduce((n, d) => n + ((d.exercises || []).length), 0); }
+        // Nombres que la app ya conoce: primero los del historial y las rutinas del usuario (así lo
+        // importado sigue su historial y la carga sugerida) y después el catálogo. El Worker usa hasta 200.
+        function _knownExerciseNames() {
+            const out = [], seen = new Set();
+            const add = (n) => { n = String(n || '').trim(); const k = n.toLowerCase(); if (n && n.length <= 40 && !seen.has(k)) { seen.add(k); out.push(n); } };
+            (state.sessions || []).slice(-60).reverse().forEach(s => (s.exercises || []).forEach(e => add(e.exercise)));
+            (state.customRoutines || []).forEach(r => (r.plan || []).forEach(d => (d.exercises || []).forEach(e => add(e.name))));
+            (state.customEx || []).forEach(add);
+            EX_CATALOG.forEach(e => add(e.name));
+            return out.slice(0, 200);
+        }
+        // Respuesta entera del Worker: { routine, empty ('no_text' | 'little_text' | 'no_routine'), text_chars }
         async function _postParse(body) {
             const resp = await fetch(getApiBase() + '/api/parse-routine', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(Object.assign({ token: (localStorage.getItem('bm-license') || '') }, body))
+                body: JSON.stringify(Object.assign({ token: (localStorage.getItem('bm-license') || ''), lang: state.lang || 'es', known: _knownExerciseNames() }, body))
             });
             const j = await resp.json().catch(() => ({}));
-            if (!resp.ok || !j.ok || !j.routine) { window._pdfErr = j.error; return null; }
-            return j.routine;
+            if (!resp.ok || !j.ok || !j.routine) { window._pdfErr = j.error ? trApiErr(j.error, 'routine_import_fail') : null; return null; }
+            return j;
         }
         function _pdfLoading(msgKey, file) {
             const loading = h('div', { style: { textAlign: 'center', padding: '12px 0' } });
@@ -8649,25 +8729,33 @@
                 if (noBackendInProd()) { _closePdfOverlay(); flash(t('lic_no_server'), 'var(--red)'); return; }
                 window._pdfErr = null;
                 // 1) Camino texto (gratis e instantáneo para PDFs de texto).
-                let routine = await _postParse({ pdf_base64: await _fileToBase64(file) });
-                // 2) Si la rutina vino vacía, fallback a visión: rasterizar páginas → OCR.
+                const res = await _postParse({ pdf_base64: await _fileToBase64(file) });
+                let routine = res && res.routine, noRoutine = false;
+                // 2) Sin texto (PDF de diseño o escaneado): fotos de las páginas → lectura con IA. Si el
+                // PDF tenía texto y no era una rutina, no se prueba (antes se esperaban hasta 2 minutos).
+                const noText = res && (res.empty === 'no_text' || res.empty === 'little_text' || (res.empty == null && res.text_chars == null));
                 if (routine && _countEx(routine) === 0) {
-                    _pdfLoading('routine_import_reading_img', file);
-                    let images = [];
-                    try { images = await _pdfToImages(file, 6); } catch { images = []; }
-                    if (images.length) {
-                        const r2 = await _postParse({ images });
-                        if (r2 && _countEx(r2) > 0) routine = r2;
-                    }
+                    if (noText) {
+                        _pdfLoading('routine_import_reading_img', file);
+                        let images = [];
+                        try { images = await _pdfToImages(file, 6); } catch { images = []; }
+                        if (images.length) {
+                            const r2 = await _postParse({ images });
+                            if (r2 && _countEx(r2.routine) > 0) routine = r2.routine;
+                            else if (r2 && r2.empty === 'no_routine') noRoutine = true;
+                        }
+                    } else noRoutine = true;
                 }
                 _closePdfOverlay();
                 if (!routine) { flash('⚠️ ' + (window._pdfErr || t('routine_import_fail')), 'var(--red)'); return; }
-                if (_countEx(routine) === 0) { flash('⚠️ ' + t('routine_import_empty'), 'var(--orange)'); return; }
+                if (_countEx(routine) === 0) { flash('⚠️ ' + t(noRoutine ? 'routine_import_no_routine' : 'routine_import_empty'), 'var(--orange)'); return; }
                 showPdfPreview(routine);
             } catch { _closePdfOverlay(); flash(t('routine_import_fail'), 'var(--red)'); }
         }
         function showPdfPreview(routine) {
             const wrap = h('div', {});
+            let anyMissing = false;
+            const val = (v, def) => (v != null && v !== '') ? String(v) : (anyMissing = true, def + '⚠️');
             wrap.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 900, marginBottom: '4px' } }, '📄 ' + t('routine_import_preview')));
             wrap.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '14px' } }, routine.name));
             (routine.days || []).forEach(d => {
@@ -8675,12 +8763,14 @@
                 dc.appendChild(h('p', { style: { fontSize: '12px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, d.name + ' · ' + (d.exercises || []).length + ' ej.'));
                 (d.exercises || []).forEach(e => {
                     let detail;
-                    if (e.type === 'cardio') detail = [e.distance_km ? e.distance_km + 'km' : null, e.duration_min ? e.duration_min + 'min' : null, e.intensity].filter(Boolean).join(' · ');
-                    else detail = [(e.sets ? e.sets + 'x' + (e.reps || '') : e.reps), e.kg ? e.kg + 'kg' : null, (e.rir != null ? 'RIR ' + e.rir : null)].filter(Boolean).join(' · ');
+                    // Lo mismo que guarda importedRoutineToPlan: si falta un dato va el valor común, marcado
+                    if (e.type === 'cardio') detail = [e.distance_km ? e.distance_km + 'km' : null, val(e.duration_min, 20) + 'min', e.intensity].filter(Boolean).join(' · ');
+                    else detail = [val(e.sets, 4) + 'x' + val(e.reps, '8-12'), e.kg ? e.kg + 'kg' : null, (e.rir != null ? 'RIR ' + e.rir : null), (e.rest_s ? t('routine_import_rest').replace('{s}', e.rest_s) : null)].filter(Boolean).join(' · ');
                     dc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', paddingLeft: '8px', marginBottom: '2px' } }, (e.type === 'cardio' ? '🏃 ' : '• ') + e.name + (detail ? '  (' + detail + ')' : '')));
                 });
                 wrap.appendChild(dc);
             });
+            if (anyMissing) wrap.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--orange)', marginTop: '6px' } }, t('routine_import_missing')));
             wrap.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '12px', marginBottom: '8px' }, onclick: () => {
                 _closePdfOverlay();
                 // Si el import se lanzó desde el creador de rutinas (flujo coach),
@@ -8708,7 +8798,9 @@
                     if (e.type === 'cardio') {
                         return { name: e.name, kind: 'cardio', duration_min: e.duration_min || 20, distance_km: (e.distance_km != null ? e.distance_km : ''), intensity: e.intensity || 'medium', notes: e.notes || '' };
                     }
-                    return { name: e.name, kind: 'strength', sets: e.sets || 4, reps: e.reps || '8-12', kg: (e.kg != null ? e.kg : ''), rir: (e.rir != null ? e.rir : ''), notes: e.notes || '' };
+                    const ex = { name: e.name, kind: 'strength', sets: e.sets || 4, reps: e.reps || '8-12', kg: (e.kg != null ? e.kg : ''), rir: (e.rir != null ? e.rir : ''), notes: e.notes || '' };
+                    if (e.rest_s > 0) ex.rest_s = e.rest_s;   // descanso del PDF (lo usa el cronómetro de descanso)
+                    return ex;
                 })
             }));
             // Auto-agregar a la biblioteca los ejercicios de fuerza desconocidos.
@@ -16151,10 +16243,15 @@
                     body: JSON.stringify({ token: localStorage.getItem('bm-license') || '', kind, image, note: note || undefined })
                 });
                 const j = await resp.json().catch(() => ({}));
-                if (!resp.ok) throw new Error(j.error || ('HTTP ' + resp.status));
+                if (!resp.ok) throw new Error(trApiErr(j.error));
                 busy.remove();
                 closeFoodAddModal();
-                if (kind === 'meal') { openMealEstimate(j.items || []); return; }
+                if (kind === 'meal') {
+                    // La IA nombra en castellano: si el alimento está en la base, va su nombre en el idioma del usuario
+                    const db = await foodDbList();
+                    openMealEstimate((j.items || []).map(it => { const f = it.food && db.find(x => x.k === it.food); return f ? Object.assign({}, it, { name: dbFoodName(f) }) : it; }));
+                    return;
+                }
                 // Tabla leída: queda guardada en "Míos" para la próxima y se elige la porción.
                 // Sin nombre legible en la foto: se distingue por la fecha en "Míos".
                 const name = j.name || (t('fv_label_default') + ' ' + todayStr().slice(5).split('-').reverse().join('/'));
@@ -16322,7 +16419,7 @@
             card.appendChild(h('p', { className: 'fv-label', style: { marginTop: '12px' } }, t('fv_extras')));
             const extras = h('div', { className: 'fv-extras' });
             MEAL_EXTRAS.forEach((x) => extras.appendChild(h('button', { className: 'fv-extra', onclick: () => {
-                rows.push({ name: x.n, grams: x.g, g0: x.g, on: true, per100: x.per100, src: 'base' }); renderRows(); renderTotal();
+                rows.push({ name: t(x.lbl).replace(/\s*\(.*\)\s*$/, ''), grams: x.g, g0: x.g, on: true, per100: x.per100, src: 'base' }); renderRows(); renderTotal();
             } }, '+ ' + t(x.lbl))));
             card.appendChild(extras);
             card.appendChild(total);
@@ -16510,6 +16607,8 @@
                 weights: loadBodyweight(), today: todayStr(), wantsNutrition: u.wantsNutrition
             });
             if (!findings.length) return null;
+            // Los ejercicios se guardan con su nombre en castellano: van traducidos (el Worker arma el texto)
+            findings.forEach(f => { const x = f.facts || {}; if (Array.isArray(x.exs)) x.exs = x.exs.map(trD); if (typeof x.ex === 'string') x.ex = trD(x.ex); });
             return { lang: state.lang || 'es', goal: u.goal, level: u.level, age: Number(u.age) || null, findings };
         }
 
@@ -16544,7 +16643,7 @@
                     body: JSON.stringify(payload)
                 });
                 const result = await resp.json().catch(() => ({}));
-                if (!resp.ok) throw new Error(result.error || ('HTTP ' + resp.status));
+                if (!resp.ok) throw new Error(trApiErr(result.error, 'oracle_fail'));
                 const insights = Array.isArray(result.insights) ? result.insights : [];
                 if (!insights.length) throw new Error(t('oracle_fail'));
                 localStorage.setItem('bm-oracle-cache', JSON.stringify({ v: 2, lang: state.lang, ts: Date.now(), insights }));
@@ -16699,7 +16798,7 @@
             }
             if (!resp.ok) {
                 let err = 'API ' + resp.status;
-                try { const j = await resp.json(); if (j.error) err = j.error; } catch {}
+                try { const j = await resp.json(); if (j.error) err = trApiErr(j.error); } catch {}
                 const e = new Error(err);
                 e.status = resp.status;
                 throw e;
