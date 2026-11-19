@@ -2354,8 +2354,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-37"></script>
-    <script src="core/i18n-data.js?v=2-37"></script>
+    <script src="core/calc.js?v=2-38"></script>
+    <script src="core/i18n-data.js?v=2-38"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -16495,111 +16495,22 @@
         // ─────────────────────────────────────────
         // AI ORACLE
         // ─────────────────────────────────────────
+        // Lo que se manda al Oracle: los hallazgos que calcula core/calc.js (oracleFindings) con las
+        // reglas de la app. El Worker arma el pedido y la IA solo los cuenta (auditoría 19-nov-2026:
+        // con los datos sueltos la IA confundía mantenimiento con objetivo, se creía registros de comida
+        // incompletos e inventaba desbalances). null si hay menos de 3 entrenamientos en 4 semanas.
         function collectOracleData() {
+            const u = state.user;
+            if (!u) return null;
             const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 28);
             const cutoffStr = localDateStr(cutoff);   // las sesiones guardan el día local: se comparan como texto
-            const recentSess = state.sessions.filter(s => s.date >= cutoffStr);
-            const recentCardio = state.cardioSessions.filter(s => s.date >= cutoffStr);
-
-            if (recentSess.length < 3) return null;
-
-            const totalVol = recentSess.reduce((a, s) => a + s.exercises.reduce((b, e) => b + e.sets.reduce((c, st) => c + (st.kg || 0) * (st.reps || 0), 0), 0), 0);
-            const setsByGroup = {};
-            recentSess.forEach(s => s.exercises.forEach(e => {
-                const g = getMuscleGroup(e.exercise);
-                setsByGroup[g] = (setsByGroup[g] || 0) + e.sets.length;
-            }));
-
-            const foodCutoff = new Date(); foodCutoff.setDate(foodCutoff.getDate() - 7);
-            const recentFood = state.foodLog.filter(e => new Date(e.date) >= foodCutoff);
-            const avgKcal = recentFood.length
-                ? Math.round(recentFood.reduce((a, e) => a + e.kcal, 0) / 7)
-                : null;
-            const avgProt = recentFood.length
-                ? Math.round(recentFood.reduce((a, e) => a + e.protein, 0) / 7)
-                : null;
-
-            // Progresión por ejercicio (lo primero que mira un coach real): evolución
-            // del peso máximo dentro de la ventana, para los ejercicios más frecuentes.
-            const byEx = {};
-            recentSess.slice().reverse().forEach(s => (s.exercises || []).forEach(e => {
-                const maxKg = Math.max(0, ...(e.sets || []).map(st => parseFloat(st.kg) || 0));
-                if (maxKg <= 0) return;
-                const r = byEx[e.exercise] || (byEx[e.exercise] = { first: maxKg, last: maxKg, count: 0 });
-                r.last = maxKg; r.count++;
-            }));
-            const evolution = Object.entries(byEx)
-                .filter(([, r]) => r.count >= 2)
-                .sort((a, b) => b[1].count - a[1].count)
-                .slice(0, 6)
-                .map(([ex, r]) => ({ ex, from: r.first, to: r.last }));
-            const stagnant = evolution.filter(e => e.to <= e.from && e.from > 0).map(e => e.ex);
-            let recentPRs = [];
-            try {
-                // PRs de los últimos 28 días: máx kg del período > máx kg previo al período.
-                const before = state.sessions.filter(s => s.date < cutoffStr);
-                const prevMax = {};
-                before.forEach(s => (s.exercises || []).forEach(e => {
-                    const m = Math.max(0, ...(e.sets || []).map(st => parseFloat(st.kg) || 0));
-                    if (m > (prevMax[e.exercise] || 0)) prevMax[e.exercise] = m;
-                }));
-                recentPRs = Object.entries(byEx)
-                    .filter(([ex, r]) => prevMax[ex] > 0 && r.last > prevMax[ex])
-                    .slice(0, 5)
-                    .map(([ex, r]) => ex + ' ' + prevMax[ex] + '→' + r.last + 'kg');
-            } catch { /* noop */ }
-            const ws = calcWeeklyStreak();
-
-            return {
-                sessions: recentSess.length,
-                weeks: 4,
-                totalVolKg: Math.round(totalVol),
-                setsByGroup,
-                cardioSessions: recentCardio.length,
-                goal: state.user?.goal,
-                weight: state.user?.weight,
-                level: state.user?.level,
-                daysPlanned: state.user?.days || null,
-                tdeeTarget: state.user ? calcTDEE(state.user) : null,
-                avgKcal,
-                avgProt,
-                evolution,
-                stagnant,
-                recentPRs,
-                weekStreak: ws.streak,
-                thisWeekDays: ws.thisCount
-            };
-        }
-
-        function buildOraclePrompt(data) {
-            const groups = Object.entries(data.setsByGroup).map(([g, s]) => g + ': ' + s + ' series').join(', ');
-            const nutri = data.avgKcal != null
-                ? `Nutrición última semana: ${data.avgKcal} kcal/día promedio (objetivo TDEE: ${data.tdeeTarget}), ${data.avgProt}g proteína/día.`
-                : 'Sin datos de nutrición registrados.';
-            const evo = (data.evolution || []).length
-                ? (data.evolution || []).map(e => `${e.ex}: ${e.from}→${e.to}kg`).join(' · ')
-                : 'sin datos suficientes';
-            const prs = (data.recentPRs || []).length ? data.recentPRs.join(' · ') : 'ninguno';
-            const stag = (data.stagnant || []).length ? data.stagnant.join(', ') : 'ninguno';
-            // Los insights salen en el idioma del usuario.
-            const lang = state.lang === 'en' ? 'inglés' : state.lang === 'pt' ? 'portugués de Brasil' : 'español rioplatense';
-            return `Sos un coach de fitness experto. Analizá estos datos de entrenamiento de las últimas 4 semanas y dá 3-5 insights concretos y accionables. Escribí los insights en ${lang}.
-
-DATOS:
-- Sesiones: ${data.sessions} en 4 semanas (plan: ${data.daysPlanned || '?'} días/semana · esta semana: ${data.thisWeekDays} · racha semanal: ${data.weekStreak})
-- Volumen total: ${data.totalVolKg}kg
-- Series por grupo muscular: ${groups}
-- Evolución de peso máximo por ejercicio (4 sem): ${evo}
-- Récords nuevos del mes: ${prs}
-- Ejercicios sin progresar: ${stag}
-- Sesiones cardio: ${data.cardioSessions}
-- Objetivo: ${data.goal || 'no especificado'}, Nivel: ${data.level || 'no especificado'}, Peso: ${data.weight || '—'}kg
-- ${nutri}
-
-Respondé SOLO en formato JSON con esta estructura exacta, sin texto extra:
-{"insights": [{"icon": "emoji", "title": "título corto", "text": "descripción de 1-2 oraciones"}]}
-
-Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) adherencia al plan, 4) nutrición vs objetivo. Sé directo, específico y usá los números concretos de los datos. No más de 5 insights.`;
+            if (state.sessions.filter(s => s.date >= cutoffStr).length < 3) return null;
+            const findings = oracleFindings({
+                user: u, sessions: state.sessions, cardio: state.cardioSessions, food: state.foodLog,
+                weights: loadBodyweight(), today: todayStr(), wantsNutrition: u.wantsNutrition
+            });
+            if (!findings.length) return null;
+            return { lang: state.lang || 'es', goal: u.goal, level: u.level, age: Number(u.age) || null, findings };
         }
 
         async function runOracle() {
@@ -16609,7 +16520,7 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             if (cacheRaw) {
                 try {
                     const cache = JSON.parse(cacheRaw);
-                    if (Date.now() - cache.ts < 86400000) {
+                    if (cache.v === 2 && cache.lang === state.lang && Date.now() - cache.ts < 86400000) {   // los análisis viejos no se muestran
                         renderOracleInsights(cache.insights, new Date(cache.ts).toLocaleDateString());
                         return;
                     }
@@ -16625,12 +16536,8 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             renderOracleLoading();
             try {
                 if (noBackendInProd()) throw new Error(t('lic_no_server'));
-                // Default: Workers AI (gratis, sin key) con el token de licencia.
-                // Si el usuario guardó su propia key de Anthropic, se usa Claude (legacy).
-                const apiKey = localStorage.getItem('bm-oracle-key');
-                const payload = { prompt: buildOraclePrompt(data) };
-                if (apiKey) payload.apiKey = apiKey;
-                else payload.token = localStorage.getItem('bm-license') || '';
+                // Workers AI (gratis) con el token de licencia; el Worker arma el pedido con los hallazgos
+                const payload = Object.assign({ token: localStorage.getItem('bm-license') || '' }, data);
                 const resp = await fetch(getApiBase() + '/api/oracle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -16638,16 +16545,9 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
                 });
                 const result = await resp.json().catch(() => ({}));
                 if (!resp.ok) throw new Error(result.error || ('HTTP ' + resp.status));
-                let insights;
-                if (Array.isArray(result.insights)) {
-                    insights = result.insights;              // camino Workers AI ({ok, insights})
-                } else {
-                    const text = result.content?.[0]?.text || result.text || '';
-                    const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] || '{}');
-                    insights = parsed.insights || [];        // camino legacy (respuesta Anthropic)
-                }
+                const insights = Array.isArray(result.insights) ? result.insights : [];
                 if (!insights.length) throw new Error(t('oracle_fail'));
-                localStorage.setItem('bm-oracle-cache', JSON.stringify({ ts: Date.now(), insights }));
+                localStorage.setItem('bm-oracle-cache', JSON.stringify({ v: 2, lang: state.lang, ts: Date.now(), insights }));
                 renderOracleInsights(insights);
             } catch (e) {
                 renderOracleBody(h('p', { style: { color: 'var(--red)', textAlign: 'center', padding: '20px', fontSize: '13px' } }, '⚠️ ' + (e.message || t('oracle_fail'))));
@@ -16663,9 +16563,9 @@ Priorizá: 1) progresión/estancamiento por ejercicio, 2) balance muscular, 3) a
             body.appendChild(node);
         }
 
-        // (El gate de API key propia se eliminó: el Oracle corre gratis en Workers AI
-        // con la licencia premium. Una key guardada en bm-oracle-key sigue usándose
-        // como modo avanzado → Claude vía proxy.)
+        // El camino viejo con la clave propia de Anthropic (bm-oracle-key) se sacó en nov 2026: el
+        // Oracle corre en Workers AI con la licencia. Una clave que haya quedado guardada se borra.
+        try { localStorage.removeItem('bm-oracle-key'); } catch { }
 
         function renderOracleInsights(insights, cacheDate) {
             const body = $('oracle-body'); body.innerHTML = '';

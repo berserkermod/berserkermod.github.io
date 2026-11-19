@@ -540,7 +540,7 @@ async function phone() {
     const code = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 1 }, { 'x-admin-secret': 'test-admin' })).body.codes[0];
     const tok = (await call('POST', '/api/license/activate', { code, deviceId: 'dev-ia-00000001' })).body.token;
     const w0 = env.BMOD_KV.w;
-    const r30 = await Promise.all(Array.from({ length: 30 }, () => call('POST', '/api/oracle', { token: tok, prompt: 'hola' })));
+    const r30 = await Promise.all(Array.from({ length: 30 }, () => call('POST', '/api/oracle', { token: tok, lang: 'es', goal: 'muscle', findings: [{ code: 'progress', facts: { exs: ['Sentadilla'], pct: 5 } }] })));
     ok('30 consultas de IA a la vez: pasan justo 20 (la cuota del día)', r30.filter((r) => r.status === 200).length === 20 && r30.filter((r) => r.status === 429).length === 10, r30.map((r) => r.status).join(''));
     ok('la cuota de IA no gasta escrituras de KV', env.BMOD_KV.w === w0, env.BMOD_KV.w - w0);
     const t10 = await Promise.all(Array.from({ length: 10 }, (_, i) => call('POST', '/api/license/trial', { deviceId: 'dev-tr-par-' + i }, { 'CF-Connecting-IP': '9.9.9.9' })));
@@ -561,7 +561,7 @@ async function phone() {
     const code2 = (await caller(worker, Object.assign(Object.create(env), { NOTIFIER: undefined }))('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 1 }, { 'x-admin-secret': 'test-admin' })).body.codes[0];
     const tok2 = (await call('POST', '/api/license/activate', { code: code2, deviceId: 'dev-ia-00000002' })).body.token;
     const down = [];
-    for (let i = 0; i < 3; i++) down.push((await call('POST', '/api/oracle', { token: tok2, prompt: 'hola' })).status);
+    for (let i = 0; i < 3; i++) down.push((await call('POST', '/api/oracle', { token: tok2, lang: 'es', goal: 'muscle', findings: [{ code: 'progress', facts: { exs: ['Sentadilla'], pct: 5 } }] })).status);
     const trial = await call('POST', '/api/license/trial', { deviceId: 'dev-tr-down-01' }, { 'CF-Connecting-IP': '5.5.5.5' });
     env.NOTIFIER.down = false;
     console.error = realErr;
@@ -620,7 +620,7 @@ for (const mirror of ['on', 'off']) {
     };
     const code = (await call('POST', '/api/admin/codes', { count: 1, product: 'premium', months: 1 }, { 'x-admin-secret': 'test-admin' })).body.codes[0];
     const tok = (await call('POST', '/api/license/activate', { code, deviceId: 'dev-cost-' + mirror + '-01' })).body.token;
-    m.ia = await cost(() => call('POST', '/api/oracle', { token: tok, prompt: 'x' }));
+    m.ia = await cost(() => call('POST', '/api/oracle', { token: tok, lang: 'es', goal: 'muscle', findings: [{ code: 'progress', facts: { exs: ['Sentadilla'], pct: 5 } }] }));
     m.prueba = await cost(() => call('POST', '/api/license/trial', { deviceId: 'dev-cost-tr-' + mirror }, { 'CF-Connecting-IP': '3.3.3.3' }));
     m.entrene = await cost(() => call('POST', '/api/push/trained', { endpoint: 'https://fcm.googleapis.com/fcm/send/c1', date: today() }));
     const f = (x) => 'E' + x.w + ' L' + x.r + ' Li' + x.l + ' B' + x.d;

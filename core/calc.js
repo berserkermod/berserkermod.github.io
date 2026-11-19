@@ -713,6 +713,156 @@
         return v >= 16 ? 'cycling' : (v >= 7 ? 'running' : 'walking');
     }
 
+    // ── Oracle: el diagnóstico lo calcula la app; la IA solo lo explica ──────────
+    // Auditoría del 19-nov-2026: con datos sueltos la IA confundía el mantenimiento con el objetivo,
+    // inventaba desbalances, tomaba registros incompletos como reales y no veía la fatiga. Acá se
+    // decide QUÉ decir con las reglas de la app; el Worker le pide a la IA que lo cuente.
+    // o = { user, sessions, cardio, food, weights, today, wantsNutrition }.
+    // Devuelve hasta 5 hallazgos { code, sev: 'warn'|'info'|'good', facts }, los importantes primero.
+    var ORACLE_ORDER = ['fast_load', 'deficit_too_big', 'fatigue', 'no_deficit', 'below_maint_gain', 'loss_fast', 'volume_high',
+        'adherence_low', 'protein_low', 'food_incomplete', 'food_none', 'stalled', 'imbalance', 'volume_low', 'weight_flat', 'cardio_short',
+        'progress', 'holding_strength', 'deficit_ok', 'loss_ok', 'surplus_ok', 'adherence_good', 'cardio_done'];
+    function oracleFindings(o) {
+        var u = (o && o.user) || {}, today = o && o.today;
+        if (!today) return [];
+        var t = dayNum(today), goal = u.goal || 'muscle', age = Number(u.age) || 0, bw = Number(u.weight) || 0;
+        var all = [], add = function (code, sev, facts) { all.push({ code: code, sev: sev, facts: facts || {} }); };
+        var sessions = ((o && o.sessions) || []).filter(function (x) { return x && x.date && dayNum(x.date) <= t; });
+        var win = sessions.filter(function (x) { return t - dayNum(x.date) < 28; });
+        var r1 = function (x) { return Math.round(x * 10) / 10; };
+
+        // Constancia: semanas completas (lunes a domingo) antes de la actual, desde la primera sesión
+        var monday = t - ((t + 2) % 7), planned = Math.max(1, Math.min(7, Number(u.days) || 3));
+        var first = sessions.reduce(function (m, x) { return Math.min(m, dayNum(x.date)); }, Infinity);
+        var done = 0, weeks = 0;
+        for (var w = 1; w <= 4; w++) {
+            var ws = monday - 7 * w, we = ws + 6;
+            if (we < first) break;
+            weeks++;
+            var days = {};
+            sessions.forEach(function (x) { var n = dayNum(x.date); if (n >= ws && n <= we) days[x.date] = true; });
+            done += Math.min(planned, Object.keys(days).length);
+        }
+        if (weeks >= 2) {
+            var ratio = done / (planned * weeks);
+            if (ratio < 0.7) add('adherence_low', 'warn', { done: done, planned: planned * weeks, weeks: weeks });
+            else if (ratio >= 0.9) add('adherence_good', 'good', { done: done, planned: planned * weeks, weeks: weeks });
+        }
+
+        // Ejercicios: 1RM estimado (peso y repeticiones) de las 2 primeras semanas contra las 2 últimas
+        var perf = performanceSignals(sessions, today);
+        var fatigued = {};
+        perf.fatigued.forEach(function (n) { fatigued[n.toLowerCase()] = true; });
+        var byEx = {};
+        win.forEach(function (x) {
+            var d = t - dayNum(x.date);
+            (x.exercises || []).forEach(function (e) {
+                var name = String((e && (e.exercise || e.name)) || '').trim(), pf = name && sessionPerf(e.sets);
+                if (!pf) return;
+                var k = name.toLowerCase(), r = byEx[k] || (byEx[k] = { name: name, n: 0, a: null, b: null, kind: pf.kind });
+                if (pf.kind !== r.kind) return;
+                r.n++;
+                if (d >= 14) r.a = Math.max(r.a || 0, pf.value); else r.b = Math.max(r.b || 0, pf.value);
+            });
+        });
+        var lifts = Object.keys(byEx).map(function (k) { return byEx[k]; })
+            .filter(function (r) { return r.n >= 3 && r.a > 0 && r.b > 0; })
+            .sort(function (x, y) { return y.n - x.n; }).slice(0, 6)
+            .map(function (r) { return { name: r.name, pct: Math.round((r.b / r.a - 1) * 100), fatigued: !!fatigued[r.name.toLowerCase()] }; });
+        var fast = lifts.filter(function (l) { return l.pct >= 15; }).sort(function (x, y) { return y.pct - x.pct; })[0];
+        if (age >= 60 && fast) add('fast_load', 'warn', { ex: fast.name, pct: fast.pct, age: age });
+        if (perf.fatigued.length >= 2) add('fatigue', 'warn', { exs: perf.fatigued.slice(0, 3) });
+        var up = lifts.filter(function (l) { return l.pct >= 3; }).slice(0, 3);
+        // Con el aviso de prudencia (60+ subiendo rápido) no se festeja la misma suba
+        if (up.length && !(age >= 60 && fast)) add('progress', 'good', { exs: up.map(function (l) { return l.name; }), pct: up[0].pct });
+        var flat = lifts.filter(function (l) { return l.pct < 1 && !l.fatigued; }).map(function (l) { return l.name; });
+        // "Mantener" (con déficit o en resistencia): ni sube ni baja más de un 3 %
+        var held = lifts.filter(function (l) { return l.pct > -3 && l.pct < 3 && !l.fatigued; }).map(function (l) { return l.name; });
+
+        // Volumen por semana de cada músculo (series fraccionales, como el mapa del cuerpo)
+        var span = win.length ? Math.max(1, Math.min(4, Math.ceil((t - win.reduce(function (m, x) { return Math.min(m, dayNum(x.date)); }, t) + 1) / 7))) : 1;
+        var ms = muscleSets(win), perWeek = {};
+        MUSCLES.forEach(function (m) { perWeek[m] = r1(ms[m] / span); });
+        var high = MUSCLES.filter(function (m) { return perWeek[m] > 22; });
+        if (win.length >= 4 && high.length) add('volume_high', 'warn', { muscles: high.slice(0, 3), sets: Math.round(Math.max.apply(null, high.map(function (m) { return perWeek[m]; }))) });
+        if (win.length >= 4 && span >= 2) {
+            var pairs = [['chest', 'lats', 1.6], ['quads', 'hamstrings', 2.5]];
+            for (var i = 0; i < pairs.length; i++) {
+                var a = perWeek[pairs[i][0]], b = perWeek[pairs[i][1]];
+                if (a >= 6 && a / Math.max(b, 0.5) >= pairs[i][2]) { add('imbalance', 'info', { a: pairs[i][0], aSets: Math.round(a), b: pairs[i][1], bSets: Math.round(b) }); break; }
+            }
+            if ((goal === 'muscle' || goal === 'recomp') && !high.length && !all.some(function (f) { return f.code === 'adherence_low'; })) {   // con poca constancia, lo que falta es ir más seguido
+                var low = ['chest', 'lats', 'quads', 'glutes', 'shoulders'].filter(function (m) { return perWeek[m] < 4; });
+                if (low.length >= 2) add('volume_low', 'info', { muscles: low.slice(0, 3) });
+            }
+        }
+
+        // Comida: los 7 días anteriores a hoy, solo los registrados en serio (800 kcal o más)
+        var nutrition = o.wantsNutrition !== false;
+        var deficit = false;
+        if (nutrition) {
+            var foodDays = {};
+            ((o && o.food) || []).forEach(function (e) {
+                if (!e || !e.date) return;
+                var d = t - dayNum(e.date);
+                if (d < 1 || d > 7) return;
+                var r = foodDays[e.date] || (foodDays[e.date] = { kcal: 0, prot: 0 });
+                r.kcal += Number(e.kcal) || 0; r.prot += Number(e.protein) || 0;
+            });
+            var logged = Object.keys(foodDays).map(function (k) { return foodDays[k]; }).filter(function (r) { return r.kcal >= 800; });
+            var anyFood = ((o && o.food) || []).length > 0;
+            if (!logged.length) add(anyFood ? 'food_incomplete' : 'food_none', 'info', { days: 0 });
+            else if (logged.length < 4) add('food_incomplete', 'info', { days: logged.length });
+            else {
+                var kcal = Math.round(logged.reduce(function (s2, r) { return s2 + r.kcal; }, 0) / logged.length);
+                var prot = Math.round(logged.reduce(function (s2, r) { return s2 + r.prot; }, 0) / logged.length);
+                var maint = maintenanceOf(u), mac = calcMacros(u), diff = kcal - maint;
+                var floor = u.sex === 'F' ? 1200 : 1500;
+                if (diff < -1000 || kcal < floor) { add('deficit_too_big', 'warn', { kcal: kcal, maint: maint }); deficit = true; }
+                else if (goal === 'fat_loss') {
+                    if (diff > -100) add('no_deficit', 'warn', { kcal: kcal, maint: maint, target: mac.targetCals });
+                    else { add('deficit_ok', 'good', { kcal: kcal, maint: maint }); deficit = true; }
+                } else if (goal === 'muscle' || goal === 'strength') {
+                    if (diff < -100) { add('below_maint_gain', 'warn', { kcal: kcal, maint: maint, target: mac.targetCals }); deficit = true; }
+                    else if (diff <= 700) add('surplus_ok', 'good', { kcal: kcal, maint: maint });
+                }
+                if (bw > 0 && prot < mac.protein * 0.8) add('protein_low', 'warn', { prot: prot, perKg: r1(prot / bw), target: mac.protein });
+            }
+        }
+
+        // Peso de tendencia (si hay al menos 4 pesadas en 14 días o más del último mes)
+        var tr = weightTrend(((o && o.weights) || []).filter(function (x) { return x && x.date && t - dayNum(x.date) < 28 && dayNum(x.date) <= t; }));
+        if (tr.length >= 4) {
+            var daysW = dayNum(tr[tr.length - 1].date) - dayNum(tr[0].date);
+            if (daysW >= 14 && bw > 0) {
+                var rate = (tr[tr.length - 1].trend - tr[0].trend) / daysW * 7, pctW = rate / bw * 100;
+                if (goal === 'fat_loss') {
+                    if (pctW < -1) add('loss_fast', 'warn', { rate: r1(rate) });
+                    else if (pctW <= -0.2) { add('loss_ok', 'good', { rate: r1(rate) }); deficit = true; }
+                    else if (!all.some(function (f) { return f.code === 'no_deficit'; })) add('weight_flat', 'info', { rate: r1(rate) });
+                }
+            }
+        }
+        // Estancados: con déficit (o en resistencia) mantener la fuerza ya es un buen resultado
+        if ((goal === 'fat_loss' && deficit) || goal === 'endurance') {
+            if (held.length >= 2) add('holding_strength', 'good', { exs: held.slice(0, 3) });
+        } else if (flat.length >= 2 && !up.length && perf.fatigued.length < 2) add('stalled', 'info', { exs: flat.slice(0, 3) });   // si algo sube, los accesorios quietos no son un problema
+
+        // Cardio de la semana pasada contra la meta (perder grasa y resistencia)
+        if (goal === 'fat_loss' || goal === 'endurance') {
+            var sun = monday - 1, cw = cardioWeek((o && o.cardio) || [], isoOfDay(sun), { weightOf: function (x) { return Number(x && x.met) > 0 ? cardioMinuteWeight(x.met) : 1; } });
+            if (cw.minutes >= cw.target) add('cardio_done', 'good', { min: cw.minutes, target: cw.target });
+            else if (cw.minutes < cw.target * 0.6) add('cardio_short', 'info', { min: cw.minutes, target: cw.target });
+        }
+
+        // Orden: lo que pide atención primero; como mucho 2 cosas buenas y 5 en total
+        all.sort(function (x, y) { return ORACLE_ORDER.indexOf(x.code) - ORACLE_ORDER.indexOf(y.code); });
+        var bad = all.filter(function (f) { return f.sev !== 'good'; }), good = all.filter(function (f) { return f.sev === 'good'; });
+        // Con 0 o 1 aviso entran hasta 3 cosas buenas (si todo va bien, que se diga qué)
+        var pick = bad.slice(0, good.length ? 4 : 5);
+        return pick.concat(good.slice(0, Math.min(bad.length >= 2 ? 2 : 3, 5 - pick.length)));
+    }
+
     // Frecuencia cardíaca máxima estimada (Tanaka, Monahan y Seals 2001): 208 − 0,7 × edad.
     // Menos sesgada que 220 − edad, que se queda corta en mayores; las dos erran ±7-12 lpm,
     // por eso el usuario puede poner la suya.
@@ -802,6 +952,8 @@
         runPlanNext: runPlanNext,
         runPlanSession: runPlanSession,
         trackSummary: trackSummary,
+        oracleFindings: oracleFindings,
+        ORACLE_ORDER: ORACLE_ORDER,
         importSport: importSport,
         sessionPerf: sessionPerf,
         performanceSignals: performanceSignals,

@@ -377,6 +377,75 @@ console.log('Importar entrenamientos (GPX / TCX)');
     ok('sin tipo, por la velocidad: 25 km/h bici, 10 correr, 5 caminar', S('', 25) === 'cycling' && S('Other', 10) === 'running' && S(null, 5) === 'walking');
 }
 
+console.log('Oracle: diagnóstico calculado por la app');
+{
+    const OF = calc.oracleFindings;
+    const today = '2026-11-19';   // jueves
+    const day = (n) => { const d = new Date(Date.UTC(2026, 10, 19 - n)); return d.toISOString().slice(0, 10); };
+    const S = (n, list) => ({ date: day(n), exercises: list.map(([exercise, kg, reps, sets]) => ({ exercise, sets: Array.from({ length: sets || 3 }, () => ({ kg, reps })) })) });
+    const U = (extra) => Object.assign({ weight: 80, height: 178, age: 30, sex: 'M', goal: 'muscle', days: 3, level: 'intermediate' }, extra || {});
+    const codes = (f) => f.map((x) => x.code);
+    // Constancia: plan de 4 días, 1 por semana durante 5 semanas
+    const few = [3, 10, 17, 24, 31].map((n) => S(n, [['Sentadilla', 100, 5]]));
+    ok('constancia baja: 4 de 16 días planeados en 4 semanas completas', OF({ user: U({ days: 4 }), sessions: few, today }).some((f) => f.code === 'adherence_low' && f.facts.done === 4 && f.facts.planned === 16));
+    ok('una persona nueva (1 semana) no se marca como poco constante', !codes(OF({ user: U(), sessions: [S(2, [['Sentadilla', 60, 8]]), S(4, [['Sentadilla', 60, 8]]), S(6, [['Sentadilla', 60, 8]])], today })).includes('adherence_low'));
+    // Fatiga: dos ejercicios con las 2 últimas sesiones 10 % abajo de su mejor marca
+    const tired = [];
+    for (let n = 34; n >= 1; n -= 3) { const late = n <= 4; tired.push(S(n, [['Press Banca', late ? 90 : 100, 5], ['Sentadilla', late ? 117 : 130, 5]])); }
+    const fT = OF({ user: U({ days: 4 }), sessions: tired, today });
+    ok('fatiga en 2 ejercicios → aviso de descarga (y no "estancado")', fT.some((f) => f.code === 'fatigue' && f.facts.exs.length === 2) && !codes(fT).includes('stalled'), codes(fT));
+    // Mayor de 60 que sube rápido
+    const fast = [26, 23, 19, 16, 12, 9, 5, 2].map((n, i) => S(n, [['Sentadilla', 40 + i * 3, 8]]));
+    ok('mayor de 60 subiendo más de 15 % → prudencia (con el ejercicio y el %)', OF({ user: U({ age: 63, goal: 'strength' }), sessions: fast, today }).some((f) => f.code === 'fast_load' && f.facts.ex === 'Sentadilla' && f.facts.pct >= 15));
+    ok('la misma suba a los 30 años no lleva ese aviso (y cuenta como progreso)', !codes(OF({ user: U({ goal: 'strength' }), sessions: fast, today })).includes('fast_load') && codes(OF({ user: U({ goal: 'strength' }), sessions: fast, today })).includes('progress'));
+    // Comida: se promedian solo los días registrados (≥ 800 kcal), los 7 anteriores a hoy
+    const u = U(), maint = calc.maintenanceOf(u), food = (kcal, prot, days) => Array.from({ length: days }, (_, i) => ({ date: day(i + 1), kcal, protein: prot }));
+    ok('2 días registrados → "faltan días", nunca "comés 860 kcal"', JSON.stringify(OF({ user: u, sessions: [], food: food(2600, 150, 2), today }).filter((f) => f.code.startsWith('food'))) === '[{"code":"food_incomplete","sev":"info","facts":{"days":2}}]');
+    ok('sin comida registrada nunca → sugerir registrar', codes(OF({ user: u, sessions: [], food: [], today })).includes('food_none'));
+    ok('si no quiere usar la nutrición, no se habla de comida', !OF({ user: u, sessions: [], food: [], today, wantsNutrition: false }).length);
+    const fl = U({ goal: 'fat_loss' }), mFl = calc.maintenanceOf(fl);
+    ok('bajar grasa con déficit de 450 → "déficit bien", no un problema', codes(OF({ user: fl, sessions: [], food: food(mFl - 450, 170, 6), today })).includes('deficit_ok'));
+    ok('bajar grasa comiendo por encima del mantenimiento → "no hay déficit" con mantenimiento y objetivo', OF({ user: fl, sessions: [], food: food(mFl + 300, 170, 6), today }).some((f) => f.code === 'no_deficit' && f.facts.maint === mFl && f.facts.target === calc.calcMacros(fl).targetCals));
+    ok('ganar músculo comiendo 600 por debajo → aviso con el objetivo', OF({ user: u, sessions: [], food: food(maint - 600, 170, 6), today }).some((f) => f.code === 'below_maint_gain' && f.facts.target === calc.calcMacros(u).targetCals));
+    ok('ganar músculo con superávit chico → bien', codes(OF({ user: u, sessions: [], food: food(maint + 300, 170, 6), today })).includes('surplus_ok'));
+    ok('1.000 kcal por debajo del mantenimiento → déficit demasiado grande', codes(OF({ user: fl, sessions: [], food: food(mFl - 1100, 170, 6), today })).includes('deficit_too_big'));
+    const woman = U({ goal: 'fat_loss', sex: 'F', weight: 58, height: 162, age: 35 });
+    ok('mujer con 1.150 kcal (piso 1.200, la app guarda el sexo como "F") → déficit demasiado grande; con 1.300 no', calc.maintenanceOf(woman) - 1150 < 1000 && codes(OF({ user: woman, sessions: [], food: food(1150, 100, 6), today })).includes('deficit_too_big') && !codes(OF({ user: woman, sessions: [], food: food(1300, 100, 6), today })).includes('deficit_too_big'), calc.maintenanceOf(woman));
+    ok('proteína baja: 95 g con 80 kg (1,2 g/kg) contra la meta de la app', OF({ user: u, sessions: [], food: food(maint + 200, 95, 6), today }).some((f) => f.code === 'protein_low' && f.facts.perKg === 1.2 && f.facts.target === calc.calcMacros(u).protein));
+    // Volumen y desbalance (por semana, con los músculos de la app)
+    const heavy = [];
+    for (let n = 27; n >= 0; n -= 2) heavy.push(S(n, [['Press Banca', 80, 8, 5], ['Aperturas', 20, 12, 4]]));
+    ok('más de 22 series por semana de pecho → volumen alto', OF({ user: u, sessions: heavy, today }).some((f) => f.code === 'volume_high' && f.facts.muscles.includes('chest')));
+    const push = [];
+    for (let n = 27; n >= 0; n -= 3) push.push(S(n, [['Press Banca', 80, 8, 4], ['Press Inclinado', 60, 8, 3], ['Remo con Barra', 60, 8, 2]]));
+    const fP = OF({ user: u, sessions: push, today });
+    ok('pecho ~16 por semana contra espalda ~6 → desbalance con las series por semana', fP.some((f) => f.code === 'imbalance' && f.facts.a === 'chest' && f.facts.b === 'lats' && f.facts.aSets >= 14 && f.facts.bSets <= 7), fP);
+    // Bajar grasa: con déficit, los ejercicios quietos son "mantener la fuerza" (bueno), no "estancado"
+    const flatS = [26, 22, 19, 15, 12, 8, 5, 1].map((n) => S(n, [['Sentadilla', 80, 6], ['Press Banca', 55, 6]]));
+    const fH = OF({ user: fl, sessions: flatS, food: food(mFl - 450, 170, 6), today });
+    ok('bajar grasa con déficit y la fuerza quieta → "mantenés la fuerza", no "estancado"', codes(fH).includes('holding_strength') && !codes(fH).includes('stalled'), codes(fH));
+    ok('ganar músculo con la fuerza quieta → estancado', codes(OF({ user: u, sessions: flatS, food: food(maint + 200, 170, 6), today })).includes('stalled'));
+    ok('accesorios con el mismo peso mientras los básicos suben → no es "estancado"', !codes(OF({ user: u, sessions: [26, 22, 19, 15, 12, 8, 5, 1].map((n, i) => S(n, [['Sentadilla', 80 + i * 2.5, 6], ['Prensa', 150, 10], ['Curl con Barra', 25, 10]])), food: food(maint + 200, 170, 6), today })).includes('stalled'));
+    // Peso de tendencia al bajar grasa
+    const wts = (k0, perDay) => Array.from({ length: 22 }, (_, i) => ({ date: day(21 - i), kg: k0 + perDay * i }));
+    ok('bajar grasa: −0,5 kg por semana → bien; −1,5 kg → demasiado rápido', codes(OF({ user: fl, sessions: [], weights: wts(85, -0.5 / 7), today, wantsNutrition: false })).includes('loss_ok') && codes(OF({ user: fl, sessions: [], weights: wts(85, -1.5 / 7), today, wantsNutrition: false })).includes('loss_fast'));
+    // Cardio de la semana pasada (lunes 9 a domingo 15)
+    const cardio = [{ date: '2026-11-10', duration: 3600, met: 9.3 }, { date: '2026-11-12', duration: 1800, met: 9.3 }];
+    ok('cardio de la semana pasada: corto o cumplido según la meta', codes(OF({ user: fl, sessions: [], cardio: cardio.slice(1), today, wantsNutrition: false })).includes('cardio_short') && codes(OF({ user: fl, sessions: [], cardio: cardio.concat([{ date: '2026-11-14', duration: 1800, met: 9.3 }]), today, wantsNutrition: false })).includes('cardio_done'));
+    // Selección: como mucho 5, lo importante primero y 2 buenas como máximo
+    const many = OF({ user: U({ days: 4, age: 64, goal: 'muscle' }), sessions: few.concat(fast), food: food(maint - 600, 90, 5), today });
+    const firstGood = many.findIndex((f) => f.sev === 'good');
+    ok('como mucho 5 hallazgos, los avisos antes que lo bueno, y no más de 2 buenos', many.length <= 5 && many.filter((f) => f.sev === 'good').length <= 2 && (firstGood === -1 || firstGood >= many.filter((f) => f.sev !== 'good').length), codes(many));
+    ok('sin fecha de hoy → nada', OF({ user: u, sessions: few }).length === 0);
+    ok('al mayor de 60 que sube rápido no se le festeja la misma suba como progreso', !codes(OF({ user: U({ age: 63, goal: 'strength' }), sessions: fast, today })).includes('progress'));
+    const goodS = [26, 22, 19, 15, 12, 8, 5, 1].map((n, i) => S(n, [['Press Banca', 55, 6], ['Remo con Barra', 60 + i * 0.8, 8], ['Peso Muerto', 100, 5]]));
+    const goodC = [{ date: day(6), duration: 2700, met: 8 }, { date: day(9), duration: 2700, met: 8 }];
+    const okAll = OF({ user: U({ goal: 'fat_loss', days: 2 }), sessions: goodS, cardio: goodC, food: food(mFl - 450, 170, 6), today });
+    ok('si todo va bien entran hasta 3 cosas buenas (progreso, mantener la fuerza y el déficit)', okAll.every((f) => f.sev === 'good') && okAll.length === 3 && codes(okAll).includes('deficit_ok'), codes(okAll));
+    const endu = [26, 22, 19, 15, 12, 8, 5, 1].map((n, i) => S(n, [['Sentadilla', 70, 6], ['Peso Muerto', 90 + (i >= 4 ? 2 : 0), 5]]));
+    ok('resistencia: dos ejercicios que se mueven menos de 3 % → "mantenés la fuerza"', codes(OF({ user: U({ goal: 'endurance' }), sessions: endu, today, wantsNutrition: false })).includes('holding_strength'));
+}
+
 console.log('Frecuencia cardíaca máxima (Tanaka)');
 {
     const mx = calc.maxHrEstimate;

@@ -687,57 +687,67 @@ let code, licToken;
     ok('retrieve con pago → ready + code', ready.body.status === 'ready' && ready.body.code === 'BMOD-TEST-CODE', ready.body);
 }
 
-// ── Oracle: camino Workers AI (default) + camino legacy con apiKey ──
+const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{ code: 'progress', facts: { exs: ['Sentadilla'], pct: 5 } }] });
+// ── Oracle: la app manda los hallazgos (calc.js); el Worker arma el pedido y revisa la respuesta ──
 {
     console.log('\nOracle');
-    const noPrompt = await call('POST', '/api/oracle', {});
-    ok('sin prompt → 400', noPrompt.status === 400);
-
-    // Sin apiKey y sin binding AI → 503
-    const noAI = await call('POST', '/api/oracle', { prompt: 'analizá' });
-    ok('sin apiKey y sin binding AI → 503', noAI.status === 503, noAI.status);
-
-    // Mock de Workers AI: el 70B devuelve el JSON con texto extra alrededor.
-    let oracleModel = null, oraclePrompt = null;
+    const empty = await call('POST', '/api/oracle', {});
+    ok('sin hallazgos → 400', empty.status === 400);
+    const old = await call('POST', '/api/oracle', { prompt: 'analizá', apiKey: 'sk-ant-x' });
+    ok('app vieja (pedido armado o clave de Anthropic) → 400 "actualizá la app"', old.status === 400 && old.body.code === 'oracle_update', old.body);
+    const F = [
+        { code: 'below_maint_gain', facts: { kcal: 2150, maint: 2750, target: 3150 } },
+        { code: 'protein_low', facts: { prot: 95, perKg: 1.2, target: 164 } },
+        { code: 'progress', facts: { exs: ['Sentadilla', 'Press Banca'], pct: 6 } }
+    ];
+    const noLic = await call('POST', '/api/oracle', { findings: F });
+    ok('sin licencia → 403', noLic.status === 403, noLic.status);
+    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
+    const tk = (await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'oracle-dev' })).body.token;
+    const ask = (extra) => call('POST', '/api/oracle', Object.assign({ token: tk, findings: F, goal: 'muscle', level: 'intermediate', age: 30, lang: 'es' }, extra || {}));
+    const fx = await ask();
+    ok('sin IA → 200 con el texto fijo de cada hallazgo, en castellano', fx.status === 200 && fx.body.source === 'fijo' && fx.body.insights.length === 3 && /Comés unas 2150 kcal/.test(fx.body.insights[0].text) && /3150/.test(fx.body.insights[0].text) && /Sentadilla y Press Banca/.test(fx.body.insights[2].text), fx.body);
+    const fxEn = await ask({ lang: 'en' });
+    ok('los decimales van con coma en castellano y con punto en inglés', /1,2 g por kilo/.test(fx.body.insights[1].text) && /1\.2 g per kg/.test(fxEn.body.insights[1].text) && /Sentadilla and Press Banca/.test(fxEn.body.insights[2].text), [fx.body.insights[1], fxEn.body.insights[1]]);
+    let model = null, sent = null;
     env.AI = {
-        async run(model, opts) {
-            oracleModel = model; oraclePrompt = opts.messages[0].content;
-            return { response: 'Acá va tu análisis:\n{"insights":[{"icon":"📈","title":"Buen volumen","text":"Subiste 12% el volumen."},{"icon":"🦵","title":"Piernas flojas","text":"Solo 6 series semanales."}]}' };
+        async run(m, opts) {
+            model = m; sent = opts.messages[0].content;
+            return { response: 'Acá va:\n' + JSON.stringify({ insights: [
+                { icon: '🍽️', title: 'Comé más para crecer', text: 'Comés 2150 kcal y tu mantenimiento es 2.750: subí a unas 3150.' },
+                { icon: '🥩', title: 'Más proteína', text: 'Llegá a 164 g por día; hoy comés 95 g (1,2 g por kilo).' },
+                { icon: '📈', title: 'Vas bien', text: 'Sentadilla y Press Banca vienen subiendo: seguí así.' }
+            ] }) };
         }
     };
-    const noLic = await call('POST', '/api/oracle', { prompt: 'analizá' });
-    ok('sin licencia → 403', noLic.status === 403, noLic.status);
-
-    const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
-    const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'oracle-dev' });
-    const o1 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'analizá mis 4 semanas' });
-    ok('Workers AI → 200 + insights parseados', o1.status === 200 && o1.body.ok && o1.body.insights.length === 2 && o1.body.insights[0].title === 'Buen volumen', o1.body);
-    ok('usa un modelo @cf/', typeof oracleModel === 'string' && oracleModel.startsWith('@cf/'), { oracleModel });
-    ok('le pasa el prompt al modelo', typeof oraclePrompt === 'string' && oraclePrompt.includes('4 semanas'));
-
-    // Respuesta objeto (sin string) también parsea
-    env.AI.run = async () => ({ response: { insights: [{ icon: '💡', title: 'Obj', text: 'ok' }] } });
-    const o2 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
-    ok('respuesta-objeto → parsea', o2.status === 200 && o2.body.insights[0].title === 'Obj', o2.body);
-
-    // Basura del modelo → 422
+    const o1 = await ask();
+    ok('con IA → 200 con sus consejos (los números coinciden con los hallazgos)', o1.status === 200 && o1.body.source === 'ia' && o1.body.insights[0].title === 'Comé más para crecer' && o1.body.insights[1].text.includes('164 g') && typeof model === 'string' && model.startsWith('@cf/'), o1.body);
+    ok('el pedido lo arma el Worker: hallazgos en orden, cuántos consejos, voseo y quién es', sent.includes('1. [atención] Comés poco para crecer') && sent.includes('3. [bien] Vas progresando') && sent.includes('exactamente 3 consejos') && sent.includes('voseo') && sent.includes('quiere ganar músculo, nivel intermedio, 30 años'), sent.slice(0, 400));
+    env.AI.run = async () => ({ response: { insights: [
+        { icon: '🍽️', title: 'Comé más', text: 'Subí a 3500 kcal por día.' },
+        { icon: '🥩', title: 'Proteína', text: 'Tu objetivo de muscle pide más proteína.' },
+        { icon: '📈', title: 'Bien', text: 'Seguí así.' }
+    ] } });
+    const o2 = await ask();
+    ok('un número que no está en el hallazgo (3500) o una palabra interna (muscle) → va el texto fijo de ese consejo', o2.body.insights[0].text === fx.body.insights[0].text && o2.body.insights[1].text === fx.body.insights[1].text && o2.body.insights[2].text === 'Seguí así.' && o2.body.source === 'ia', o2.body);
     env.AI.run = async () => ({ response: 'no hay json acá' });
-    const o3 = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
-    ok('respuesta inválida → 422', o3.status === 422, o3.status);
+    const o3 = await ask();
+    ok('respuesta inválida de la IA → 200 con los textos fijos', o3.status === 200 && o3.body.source === 'fijo' && o3.body.insights.length === 3, o3.body);
+    env.AI.run = async () => ({ response: { insights: [{ icon: '💡', title: 'Ok', text: 'ok' }] } });
+    const o4 = await call('POST', '/api/oracle', { token: tk, lang: 'xx', goal: 'hackear', findings: [{ code: 'borrar_todo', facts: {} }, { code: 'progress', facts: { exs: ['<script>x', 'Remo'], pct: 1e9, raro: { a: 1 } } }, { code: 'progress', facts: {} }] });
+    ok('se descartan códigos desconocidos, repetidos, datos fuera de rango y caracteres raros', o4.status === 200 && o4.body.insights.length === 1 && !JSON.stringify(o4.body).includes('<'), o4.body);
+    env.AI.run = async () => ({ response: { insights: [
+        { icon: '🍽️', title: 'Come más', text: 'Comés unas 2150 kcal. Sube a unas 3150 kcal y tu peso sigue subiendo de a poco.' },
+        { icon: '🥩', title: 'Mantén la proteína alta', text: '¡Suma proteína! Llegá a 164 g.' },
+        { icon: '📈', title: 'Sigue así', text: 'Vas muy bien.' }
+    ] } });
+    const o5 = await ask();
+    ok('el tuteo al principio de cada oración pasa a voseo ("Sigue así" → "Seguí así"), en medio de la frase no se toca', o5.body.insights[0].title === 'Comé más' && o5.body.insights[0].text === 'Comés unas 2150 kcal. Subí a unas 3150 kcal y tu peso sigue subiendo de a poco.' && o5.body.insights[1].title === 'Mantené la proteína alta' && o5.body.insights[1].text.startsWith('¡Sumá proteína!') && o5.body.insights[2].title === 'Seguí así', o5.body.insights);
+    const o6 = await ask({ lang: 'en' });
+    ok('en inglés no se corrige nada (ahí "Come" es otra palabra)', o6.body.insights[0].title === 'Come más', o6.body.insights[0]);
     delete env.AI;
-
-    // Camino legacy: con apiKey del usuario → proxy a Anthropic (Claude)
-    const realFetch = globalThis.fetch;
-    let sentKey = null, sentModel = null;
-    globalThis.fetch = async (u, opts) => {
-        sentKey = opts.headers['x-api-key'];
-        sentModel = JSON.parse(opts.body).model;
-        return new Response(JSON.stringify({ content: [{ text: '{"insights":[]}' }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    };
-    const proxied = await call('POST', '/api/oracle', { apiKey: 'sk-ant-xxx', prompt: 'analizá' });
-    ok('legacy: proxy 200 + pasa la key a Anthropic', proxied.status === 200 && sentKey === 'sk-ant-xxx', { sentKey });
-    ok('legacy: usa el modelo haiku', sentModel === 'claude-haiku-4-5-20251001', { sentModel });
-    globalThis.fetch = realFetch;
+    const z = await call('POST', '/api/oracle', { token: tk, lang: 'es', goal: 'muscle', findings: [{ code: 'imbalance', facts: { a: 'quads', aSets: 9, b: 'hamstrings', bSets: 0 } }] });
+    ok('desbalance con 0 series: "ninguna de isquiotibiales" en vez de "0 de"', z.body.source === 'fijo' && /9 series por semana de cuádriceps y ninguna de isquiotibiales/.test(z.body.insights[0].text), z.body);
 }
 
 // ── Importar rutina desde PDF (Cloudflare Workers AI) ──
@@ -1529,17 +1539,17 @@ let code, licToken;
     const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
     const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'quota-dev' });
     let oracleLast;
-    for (let i = 0; i < 21; i++) oracleLast = await call('POST', '/api/oracle', { token: act.body.token, prompt: 'x' });
+    for (let i = 0; i < 21; i++) oracleLast = await call('POST', '/api/oracle', oracleBody(act.body.token));
     ok('Oracle: llamada 21 del día → 429', oracleLast.status === 429 && /límite diario/.test(oracleLast.body.error || ''), oracleLast.body);
     const gen2 = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
     const act2 = await call('POST', '/api/license/activate', { code: gen2.body.codes[0], deviceId: 'quota-dev-2' });
-    const otherLic = await call('POST', '/api/oracle', { token: act2.body.token, prompt: 'x' });
+    const otherLic = await call('POST', '/api/oracle', oracleBody(act2.body.token));
     ok('otra licencia tiene su propia cuota', otherLic.status === 200, otherLic.status);
     let parseLast;
     for (let i = 0; i < 6; i++) parseLast = await call('POST', '/api/parse-routine', { token: act.body.token, pdf_base64: 'JVBERi0=' });
     ok('Importar PDF: llamada 6 del día → 429', parseLast.status === 429, parseLast.body);
     const legacyKey = await call('POST', '/api/oracle', { apiKey: 'sk-ant-x', prompt: 'x' });
-    ok('camino legacy con API key propia no consume cuota (no 429)', legacyKey.status !== 429, legacyKey.status);
+    ok('app vieja con clave propia → 400 y no consume cuota (no 429)', legacyKey.status === 400, legacyKey.status);
     // Con los datos en Durable Objects, la cuota vive en el objeto de contadores (sin escrituras de KV)
     const aiqRows = coachData() ? counterRows() : env.BMOD_KV._m;
     const dayKeys = [...aiqRows.keys()].filter(k => k.startsWith('aiq:') && (k.endsWith(gen.body.codes[0]) || k.endsWith(gen2.body.codes[0])));
@@ -2501,15 +2511,15 @@ let code, licToken;
             }
         };
         const outs = [];
-        for (let i = 0; i < 25; i++) outs.push(await call('POST', '/api/oracle', { token: lic, prompt: 'x' }));
-        ok('L-5: sin neuronas en la cuenta → 503 con mensaje propio, sin el detalle interno', outs.every((o) => o.status === 503 && o.body.code === 'ai_daily_limit' && /unas horas/.test(o.body.error) && !/\d+ ?h|UTC/.test(o.body.error) && !('detail' in o.body)), outs[0].body);
-        ok('L-5: 25 intentos fallidos no gastan la cuota (nunca 429)', !outs.some((o) => o.status === 429));
+        for (let i = 0; i < 25; i++) outs.push(await call('POST', '/api/oracle', oracleBody(lic)));
+        ok('L-5: sin neuronas en la cuenta → el Oracle igual responde con los textos fijos', outs.every((o) => o.status === 200 && o.body.source === 'fijo' && o.body.insights.length === 1), outs[0].body);
+        ok('L-5: 25 consultas sin IA no gastan la cuota (nunca 429)', !outs.some((o) => o.status === 429));
         aiMode = 'roto';
-        const broken = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
-        ok('L-5: otro error de la IA → 502 sin el mensaje interno', broken.status === 502 && !JSON.stringify(broken.body).includes('internal'), broken.body);
+        const broken = await call('POST', '/api/oracle', oracleBody(lic));
+        ok('L-5: otro error de la IA → textos fijos, sin el mensaje interno', broken.status === 200 && broken.body.source === 'fijo' && !JSON.stringify(broken.body).includes('internal'), broken.body);
         aiMode = 'ok';
         const good = [];
-        for (let i = 0; i < 21; i++) good.push((await call('POST', '/api/oracle', { token: lic, prompt: 'x' })).status);
+        for (let i = 0; i < 21; i++) good.push((await call('POST', '/api/oracle', oracleBody(lic))).status);
         ok('L-5: las 20 consultas que funcionan sí cuentan; la 21 → 429', good.slice(0, 20).every((s) => s === 200) && good[20] === 429, good);
         delete env.AI;
 
@@ -2589,10 +2599,10 @@ let code, licToken;
         const g = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
         const code = g.body.codes[0];
         const lic = (await call('POST', '/api/license/activate', { code, deviceId: 'k5-dev' })).body.token;
-        let o = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
+        let o = await call('POST', '/api/oracle', oracleBody(lic));
         ok('K-5: con el código vigente la IA responde', o.status === 200, o.body);
         await call('POST', '/api/license/activate', { code, deviceId: 'k5-otro-tel' });   // el código pasa a otro teléfono
-        o = await call('POST', '/api/oracle', { token: lic, prompt: 'x' });
+        o = await call('POST', '/api/oracle', oracleBody(lic));
         ok('K-5: si el código pasó a otro teléfono, la licencia vieja ya no usa la IA', o.status === 403 && /no está activo/.test(o.body.error), o.body);
         const rec = JSON.parse(await env.BMOD_KV.get('code:' + code)); rec.revoked = true;
         await env.BMOD_KV.put('code:' + code, JSON.stringify(rec));

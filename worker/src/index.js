@@ -69,7 +69,6 @@ const ERROR_TTL = 30 * 24 * 60 * 60;   // 30 días
 // 7 días para ambos: 3 días de premium no alcanzan para formar hábito (el valor
 // real —stats, plan nutricional, rutinas custom— se siente recién en la semana).
 const TRIAL_DAYS = { coach: 7, premium: 7 };
-const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001';
 
 // ── Límites contra abuso ──
 // Contexto: en Workers cada operación de KV cuenta como subrequest y el plan
@@ -2324,69 +2323,289 @@ async function mercadoPagoWebhook(req, env, url) {
 //    Workers AI (Llama 70B, gratis). Devuelve {ok, insights} ya parseado.
 // 2) LEGACY (opcional): {apiKey, prompt} — la key Anthropic del usuario →
 //    proxy a Claude (respuesta cruda de Anthropic, como siempre). Nunca se loguea.
+// ── Oracle (análisis del entrenamiento, Premium) ─────────────────────────
+// Auditoría del 19-nov-2026: con datos sueltos la IA daba consejos equivocados (trataba un déficit
+// correcto como problema, se creía registros de comida incompletos, no veía la fatiga). Ahora la app
+// calcula los hallazgos (core/calc.js, oracleFindings) y manda { token, lang, goal, level, age,
+// findings }. Este Worker arma el pedido y la IA solo los cuenta con sus palabras; después se revisa
+// cada consejo: si trae números que no están en su hallazgo o palabras internas, va el texto fijo
+// de ese hallazgo. Si la IA falla o no hay cupo, van los textos fijos y no se gasta la consulta.
+// El pedido ya no lo arma el teléfono: así nadie usa el Oracle como chat libre.
+const ORACLE_CODES = ['fast_load', 'deficit_too_big', 'fatigue', 'no_deficit', 'below_maint_gain', 'loss_fast', 'volume_high',
+    'adherence_low', 'protein_low', 'food_incomplete', 'food_none', 'stalled', 'imbalance', 'volume_low', 'weight_flat', 'cardio_short',
+    'progress', 'holding_strength', 'deficit_ok', 'loss_ok', 'surplus_ok', 'adherence_good', 'cardio_done'];
+const ORACLE_GOOD = new Set(['progress', 'holding_strength', 'deficit_ok', 'loss_ok', 'surplus_ok', 'adherence_good', 'cardio_done']);
+const ORACLE_ICON = {
+    fast_load: '🐢', deficit_too_big: '⚠️', fatigue: '🔋', no_deficit: '🍽️', below_maint_gain: '🍽️', loss_fast: '⚠️', volume_high: '📉',
+    adherence_low: '📅', protein_low: '🥩', food_incomplete: '📝', food_none: '📝', stalled: '⏸️', imbalance: '⚖️', volume_low: '📈',
+    weight_flat: '⚖️', cardio_short: '🏃', progress: '📈', holding_strength: '💪', deficit_ok: '✅', loss_ok: '✅', surplus_ok: '✅',
+    adherence_good: '🔥', cardio_done: '🏃'
+};
+const ORACLE_GOALS = ['muscle', 'fat_loss', 'strength', 'recomp', 'endurance'];
+const ORACLE_LEVELS = ['beginner', 'intermediate', 'advanced'];
+const ORACLE_MUSCLES = ['chest', 'shoulders', 'biceps', 'forearms', 'abs', 'quads', 'traps', 'lats', 'triceps', 'lowback', 'glutes', 'hamstrings', 'calves'];
+const ORACLE_WORDS = {
+    es: {
+        muscle: { chest: 'pecho', shoulders: 'hombros', biceps: 'bíceps', forearms: 'antebrazos', abs: 'abdominales', quads: 'cuádriceps', traps: 'trapecios', lats: 'espalda', triceps: 'tríceps', lowback: 'zona lumbar', glutes: 'glúteos', hamstrings: 'isquiotibiales', calves: 'pantorrillas' },
+        goal: { muscle: 'ganar músculo', fat_loss: 'bajar grasa', strength: 'ganar fuerza', recomp: 'recomposición corporal', endurance: 'resistencia' },
+        level: { beginner: 'principiante', intermediate: 'intermedio', advanced: 'avanzado' }, and: 'y'
+    },
+    en: {
+        muscle: { chest: 'chest', shoulders: 'shoulders', biceps: 'biceps', forearms: 'forearms', abs: 'abs', quads: 'quads', traps: 'traps', lats: 'back', triceps: 'triceps', lowback: 'lower back', glutes: 'glutes', hamstrings: 'hamstrings', calves: 'calves' },
+        goal: { muscle: 'build muscle', fat_loss: 'lose fat', strength: 'get stronger', recomp: 'body recomposition', endurance: 'endurance' },
+        level: { beginner: 'beginner', intermediate: 'intermediate', advanced: 'advanced' }, and: 'and'
+    },
+    pt: {
+        muscle: { chest: 'peito', shoulders: 'ombros', biceps: 'bíceps', forearms: 'antebraços', abs: 'abdômen', quads: 'quadríceps', traps: 'trapézio', lats: 'costas', triceps: 'tríceps', lowback: 'lombar', glutes: 'glúteos', hamstrings: 'posteriores de coxa', calves: 'panturrilhas' },
+        goal: { muscle: 'ganhar músculo', fat_loss: 'perder gordura', strength: 'ganhar força', recomp: 'recomposição corporal', endurance: 'resistência' },
+        level: { beginner: 'iniciante', intermediate: 'intermediário', advanced: 'avançado' }, and: 'e'
+    }
+};
+// Textos fijos de cada hallazgo [título, texto]. Son el respaldo si la IA falla y lo que se le da
+// a la IA (en castellano) para que lo cuente con sus palabras.
+const ORACLE_TEXT = {
+    es: {
+        fast_load: (f) => ['Subí de a poco', `Subiste ${f.pct} % en ${f.ex} en pocas semanas. A los ${f.age} años conviene subir de a poco y dejar 2 o 3 repeticiones en reserva en cada serie.`],
+        deficit_too_big: (f) => ['Déficit demasiado grande', `Comés unas ${f.kcal} kcal por día y tu mantenimiento ronda las ${f.maint}. Un déficit tan grande hace perder músculo y energía: subí un poco las calorías.`],
+        fatigue: (f) => ['Toca semana de descarga', `${f.exs} vienen rindiendo menos en las últimas sesiones. Hacé una semana con el mismo peso y la mitad de las series, y después retomá.`],
+        no_deficit: (f) => ['Sin déficit no baja la grasa', `Comés unas ${f.kcal} kcal por día y tu mantenimiento ronda las ${f.maint}. Para bajar grasa apuntá a unas ${f.target} kcal.`],
+        below_maint_gain: (f) => ['Comés poco para crecer', `Comés unas ${f.kcal} kcal por día, por debajo de tu mantenimiento (${f.maint}). Para ganar músculo apuntá a unas ${f.target} kcal.`],
+        loss_fast: (f) => ['Bajás demasiado rápido', `Estás bajando unos ${f.rateAbs} kg por semana. Bajar más de 1 % del peso por semana se lleva músculo: comé un poco más.`],
+        volume_high: (f) => ['Demasiadas series', `Hacés unas ${f.sets} series por semana de ${f.muscles}. Más de 22 por semana no suma y cansa: recortá algunas.`],
+        adherence_low: (f) => ['La clave es la constancia', `En las últimas ${f.weeks} semanas entrenaste ${f.done} de los ${f.planned} días que planeaste. Antes que cambiar la rutina, sostené los días.`],
+        protein_low: (f) => ['Sumá proteína', `Comés unos ${f.prot} g de proteína por día (${f.perKg} g por kilo). Tu meta es ${f.target} g: repartila entre las comidas.`],
+        food_incomplete: (f) => f.days > 0 ? ['Faltan días de comida', `Registraste la comida ${f.days} de los últimos 7 días: con tan pocos no puedo evaluar tus calorías. Probá registrar todo durante una semana.`]
+            : ['Registrá toda tu comida', 'En los últimos 7 días no hay días con la comida completa, así que no puedo evaluar tus calorías. Probá registrar todo durante una semana.'],
+        food_none: () => ['Registrá tu comida', 'Todavía no registraste comidas. Con una semana registrada te digo si tus calorías y tu proteína van con tu objetivo.'],
+        stalled: (f) => ['Ejercicios estancados', `${f.exs} no avanzan hace unas semanas, contando peso y repeticiones. Probá sumar repeticiones antes que peso y revisá descanso y comida.`],
+        imbalance: (f) => ['Equilibrá el entrenamiento', `Hacés unas ${f.aSets} series por semana de ${f.a} y ${f.bSets === '0' ? 'ninguna' : f.bSets} de ${f.b}. Sumá ejercicios de ${f.b} para compensar.`],
+        volume_low: (f) => ['Poco volumen', `${f.muscles} reciben menos de 4 series por semana. Para crecer conviene sumar series de a poco.`],
+        weight_flat: () => ['El peso no baja', 'Tu peso de tendencia casi no cambió en las últimas semanas. Revisá las porciones o sumá un poco de actividad.'],
+        cardio_short: (f) => ['Sumá cardio', `La semana pasada hiciste ${f.min} de ${f.target} minutos de cardio. Sumá caminatas o salidas cortas para llegar.`],
+        progress: (f) => ['Vas progresando', `${f.exs} vienen subiendo (+${f.pct} % en el mejor caso). Seguí así.`],
+        holding_strength: (f) => ['Mantenés la fuerza', `${f.exs} se mantienen mientras ${f.goalKey === 'endurance' ? 'hacés mucho cardio' : 'bajás grasa'}: es un muy buen resultado.`],
+        deficit_ok: (f) => ['Déficit en su punto', `Comés unas ${f.kcal} kcal por día, por debajo de tu mantenimiento (${f.maint}): es lo que hace falta para bajar grasa.`],
+        loss_ok: (f) => ['Bajás a buen ritmo', `Estás bajando unos ${f.rateAbs} kg por semana: un ritmo que cuida el músculo.`],
+        surplus_ok: (f) => ['Calorías en su punto', `Comés unas ${f.kcal} kcal por día, un poco arriba de tu mantenimiento (${f.maint}): justo para ganar músculo.`],
+        adherence_good: (f) => ['Muy constante', `Entrenaste ${f.done} de los ${f.planned} días planeados en las últimas ${f.weeks} semanas. Así se progresa.`],
+        cardio_done: (f) => ['Meta de cardio cumplida', `La semana pasada hiciste ${f.min} minutos de cardio y tu meta era ${f.target}. ¡Bien ahí!`]
+    },
+    en: {
+        fast_load: (f) => ['Go up gradually', `You went up ${f.pct}% on ${f.ex} in a few weeks. At ${f.age}, it's better to add weight gradually and leave 2 or 3 reps in reserve on every set.`],
+        deficit_too_big: (f) => ['Deficit too large', `You eat about ${f.kcal} kcal a day and your maintenance is around ${f.maint}. A deficit this large costs muscle and energy: eat a bit more.`],
+        fatigue: (f) => ['Time for a deload week', `${f.exs} have been going down in your last sessions. Do one week with the same weight and half the sets, then pick it back up.`],
+        no_deficit: (f) => ['No deficit, no fat loss', `You eat about ${f.kcal} kcal a day and your maintenance is around ${f.maint}. To lose fat, aim for about ${f.target} kcal.`],
+        below_maint_gain: (f) => ['Eating too little to grow', `You eat about ${f.kcal} kcal a day, below your maintenance (${f.maint}). To build muscle, aim for about ${f.target} kcal.`],
+        loss_fast: (f) => ['Losing too fast', `You're losing about ${f.rateAbs} kg a week. Losing more than 1% of your weight a week costs muscle: eat a bit more.`],
+        volume_high: (f) => ['Too many sets', `You do about ${f.sets} sets a week for ${f.muscles}. More than 22 a week doesn't add up and wears you out: cut a few.`],
+        adherence_low: (f) => ['Consistency is key', `In the last ${f.weeks} weeks you trained ${f.done} of the ${f.planned} days you planned. Before changing the routine, keep the days.`],
+        protein_low: (f) => ['Add protein', `You eat about ${f.prot} g of protein a day (${f.perKg} g per kg). Your target is ${f.target} g: spread it across your meals.`],
+        food_incomplete: (f) => f.days > 0 ? ['Missing food days', `You logged your food ${f.days} of the last 7 days: that's too few to judge your calories. Try logging everything for a week.`]
+            : ['Log all your food', 'There are no fully logged days in the last 7 days, so I can\'t judge your calories. Try logging everything for a week.'],
+        food_none: () => ['Log your food', 'You haven\'t logged any meals yet. With one week logged I can tell you whether your calories and protein match your goal.'],
+        stalled: (f) => ['Stalled exercises', `${f.exs} haven't moved in a few weeks, counting weight and reps. Try adding reps before weight and check your rest and food.`],
+        imbalance: (f) => ['Balance your training', `You do about ${f.aSets} sets a week for ${f.a} and ${f.bSets === '0' ? 'none' : f.bSets} for ${f.b}. Add ${f.b} exercises to even it out.`],
+        volume_low: (f) => ['Low volume', `${f.muscles} get fewer than 4 sets a week. To grow, add sets gradually.`],
+        weight_flat: () => ['Weight isn\'t moving', 'Your trend weight has barely changed in the last weeks. Check your portions or add a bit of activity.'],
+        cardio_short: (f) => ['Add cardio', `Last week you did ${f.min} of ${f.target} minutes of cardio. Add walks or short sessions to get there.`],
+        progress: (f) => ['You\'re progressing', `${f.exs} keep going up (+${f.pct}% at best). Keep it up.`],
+        holding_strength: (f) => ['You\'re keeping your strength', `${f.exs} are holding steady while you ${f.goalKey === 'endurance' ? 'do a lot of cardio' : 'lose fat'}: that's a great result.`],
+        deficit_ok: (f) => ['Deficit on point', `You eat about ${f.kcal} kcal a day, below your maintenance (${f.maint}): that's what fat loss needs.`],
+        loss_ok: (f) => ['Good pace', `You're losing about ${f.rateAbs} kg a week: a pace that protects muscle.`],
+        surplus_ok: (f) => ['Calories on point', `You eat about ${f.kcal} kcal a day, a bit above your maintenance (${f.maint}): right for building muscle.`],
+        adherence_good: (f) => ['Very consistent', `You trained ${f.done} of the ${f.planned} planned days in the last ${f.weeks} weeks. That's how you progress.`],
+        cardio_done: (f) => ['Cardio goal reached', `Last week you did ${f.min} minutes of cardio and your goal was ${f.target}. Well done!`]
+    },
+    pt: {
+        fast_load: (f) => ['Suba aos poucos', `Você subiu ${f.pct}% em ${f.ex} em poucas semanas. Aos ${f.age} anos, é melhor subir aos poucos e deixar 2 ou 3 repetições em reserva em cada série.`],
+        deficit_too_big: (f) => ['Déficit grande demais', `Você come umas ${f.kcal} kcal por dia e sua manutenção fica em torno de ${f.maint}. Um déficit tão grande faz perder músculo e energia: coma um pouco mais.`],
+        fatigue: (f) => ['Hora de uma semana leve', `${f.exs} vêm rendendo menos nas últimas sessões. Faça uma semana com o mesmo peso e metade das séries, e depois retome.`],
+        no_deficit: (f) => ['Sem déficit a gordura não cai', `Você come umas ${f.kcal} kcal por dia e sua manutenção fica em torno de ${f.maint}. Para perder gordura, mire em umas ${f.target} kcal.`],
+        below_maint_gain: (f) => ['Comendo pouco para crescer', `Você come umas ${f.kcal} kcal por dia, abaixo da sua manutenção (${f.maint}). Para ganhar músculo, mire em umas ${f.target} kcal.`],
+        loss_fast: (f) => ['Perdendo rápido demais', `Você está perdendo uns ${f.rateAbs} kg por semana. Perder mais de 1% do peso por semana leva músculo: coma um pouco mais.`],
+        volume_high: (f) => ['Séries demais', `Você faz umas ${f.sets} séries por semana de ${f.muscles}. Mais de 22 por semana não soma e cansa: corte algumas.`],
+        adherence_low: (f) => ['A chave é a constância', `Nas últimas ${f.weeks} semanas você treinou ${f.done} dos ${f.planned} dias planejados. Antes de mudar a rotina, mantenha os dias.`],
+        protein_low: (f) => ['Mais proteína', `Você come uns ${f.prot} g de proteína por dia (${f.perKg} g por quilo). Sua meta é ${f.target} g: distribua entre as refeições.`],
+        food_incomplete: (f) => f.days > 0 ? ['Faltam dias de comida', `Você registrou a comida em ${f.days} dos últimos 7 dias: poucos para avaliar suas calorias. Tente registrar tudo durante uma semana.`]
+            : ['Registre toda a comida', 'Não há dias com a comida completa nos últimos 7 dias, então não dá para avaliar suas calorias. Tente registrar tudo durante uma semana.'],
+        food_none: () => ['Registre sua comida', 'Você ainda não registrou refeições. Com uma semana registrada eu digo se suas calorias e sua proteína combinam com seu objetivo.'],
+        stalled: (f) => ['Exercícios estagnados', `${f.exs} não avançam há algumas semanas, contando peso e repetições. Tente somar repetições antes de peso e revise descanso e alimentação.`],
+        imbalance: (f) => ['Equilibre o treino', `Você faz umas ${f.aSets} séries por semana de ${f.a} e ${f.bSets === '0' ? 'nenhuma' : f.bSets} de ${f.b}. Some exercícios de ${f.b} para compensar.`],
+        volume_low: (f) => ['Pouco volume', `${f.muscles} recebem menos de 4 séries por semana. Para crescer, some séries aos poucos.`],
+        weight_flat: () => ['O peso não cai', 'Seu peso de tendência quase não mudou nas últimas semanas. Revise as porções ou some um pouco de atividade.'],
+        cardio_short: (f) => ['Mais cardio', `Na semana passada você fez ${f.min} de ${f.target} minutos de cardio. Some caminhadas ou treinos curtos para chegar.`],
+        progress: (f) => ['Você está progredindo', `${f.exs} vêm subindo (+${f.pct}% no melhor caso). Continue assim.`],
+        holding_strength: (f) => ['Você mantém a força', `${f.exs} se mantêm enquanto você ${f.goalKey === 'endurance' ? 'faz muito cardio' : 'perde gordura'}: é um ótimo resultado.`],
+        deficit_ok: (f) => ['Déficit no ponto', `Você come umas ${f.kcal} kcal por dia, abaixo da sua manutenção (${f.maint}): é o que precisa para perder gordura.`],
+        loss_ok: (f) => ['Bom ritmo', `Você está perdendo uns ${f.rateAbs} kg por semana: um ritmo que preserva o músculo.`],
+        surplus_ok: (f) => ['Calorias no ponto', `Você come umas ${f.kcal} kcal por dia, um pouco acima da sua manutenção (${f.maint}): ideal para ganhar músculo.`],
+        adherence_good: (f) => ['Muito constante', `Você treinou ${f.done} dos ${f.planned} dias planejados nas últimas ${f.weeks} semanas. É assim que se progride.`],
+        cardio_done: (f) => ['Meta de cardio cumprida', `Na semana passada você fez ${f.min} minutos de cardio e sua meta era ${f.target}. Muito bem!`]
+    }
+};
+
+// Lo que llega de la app, limpio: hallazgos con código conocido y datos simples (números, textos
+// cortos, listas cortas). null si no hay hallazgos válidos.
+function cleanOracleInput(body) {
+    if (!body || !Array.isArray(body.findings)) return null;
+    const lang = ['es', 'en', 'pt'].includes(body.lang) ? body.lang : 'es';
+    const goal = ORACLE_GOALS.includes(body.goal) ? body.goal : 'muscle';
+    const level = ORACLE_LEVELS.includes(body.level) ? body.level : null;
+    const age = Number(body.age) >= 12 && Number(body.age) <= 100 ? Math.round(Number(body.age)) : null;
+    const txt = (v) => String(v).split('').filter((c) => c.charCodeAt(0) >= 32 && c !== '<' && c !== '>').join('').trim().slice(0, 40);
+    const findings = [];
+    const seen = new Set();
+    for (const f of body.findings.slice(0, 8)) {
+        if (!f || !ORACLE_CODES.includes(f.code) || seen.has(f.code)) continue;
+        seen.add(f.code);
+        const facts = {};
+        for (const [k, v] of Object.entries((f.facts && typeof f.facts === 'object') ? f.facts : {})) {
+            if (!/^[a-zA-Z]{1,12}$/.test(k)) continue;
+            if (typeof v === 'number' && isFinite(v) && Math.abs(v) <= 100000) facts[k] = Math.round(v * 100) / 100;
+            else if (typeof v === 'string' && txt(v)) facts[k] = txt(v);
+            else if (Array.isArray(v)) { const a = v.filter((x) => typeof x === 'string' && txt(x)).slice(0, 4).map(txt); if (a.length) facts[k] = a; }
+        }
+        findings.push({ code: f.code, facts });
+        if (findings.length >= 5) break;
+    }
+    return findings.length ? { lang, goal, level, age, findings } : null;
+}
+// Los datos de un hallazgo listos para el texto: listas con "y", músculos con nombre, números con
+// la coma o el punto de cada idioma.
+function oracleFacts(f, lang, goal) {
+    const W = ORACLE_WORDS[lang];
+    const num = (n) => lang === 'en' ? String(n) : String(n).replace('.', ',');
+    const name = (x) => ORACLE_MUSCLES.includes(x) ? W.muscle[x] : x;
+    const list = (a) => { const xs = (Array.isArray(a) ? a : [a]).map(name); return xs.length > 1 ? xs.slice(0, -1).join(', ') + ' ' + W.and + ' ' + xs[xs.length - 1] : (xs[0] || ''); };
+    const out = { goalKey: goal };
+    for (const [k, v] of Object.entries(f.facts || {})) {
+        if (Array.isArray(v)) out[k] = list(v);
+        else if (typeof v === 'number') out[k] = num(v);
+        else out[k] = name(v);
+    }
+    if (typeof f.facts.rate === 'number') out.rateAbs = num(Math.abs(f.facts.rate));
+    for (const k of ['pct', 'ex', 'age', 'kcal', 'maint', 'target', 'exs', 'sets', 'muscles', 'weeks', 'done', 'planned', 'prot', 'perKg', 'days', 'a', 'b', 'aSets', 'bSets', 'min', 'rateAbs']) {
+        if (out[k] === undefined) out[k] = '—';
+    }
+    return out;
+}
+function oracleFixed(input, f) {
+    const [title, text] = ORACLE_TEXT[input.lang][f.code](oracleFacts(f, input.lang, input.goal));
+    return { icon: ORACLE_ICON[f.code] || '💡', title, text };
+}
+// Números de un texto (acepta 2.150 o 2,150 como miles y 1,2 o 1.2 como decimales)
+function oracleNums(text) {
+    return (String(text).match(/\d+(?:[.,]\d+)*/g) || []).map((m) => {
+        if (/^\d{1,3}([.,]\d{3})+$/.test(m)) return Number(m.replace(/[.,]/g, ''));
+        return Number(m.replace(',', '.'));
+    }).filter((n) => isFinite(n));
+}
+// ¿El consejo de la IA sirve? Sin números que no estén en su hallazgo (los chicos, hasta 10, se
+// permiten: "2 o 3 repeticiones") y sin palabras internas de la app.
+function oracleAiOk(ins, input, f) {
+    if (!ins || typeof ins !== 'object') return false;
+    const title = String(ins.title || '').trim(), text = String(ins.text || '').trim();
+    if (!title || !text || title.length > 80 || text.length > 400) return false;
+    const fixed = oracleFixed(input, f), es = ORACLE_TEXT.es[f.code](oracleFacts(f, 'es', input.goal));
+    const allowed = new Set(oracleNums(fixed.title + ' ' + fixed.text + ' ' + es.join(' ')).map((n) => Math.round(n * 10) / 10));
+    if (oracleNums(title + ' ' + text).some((n) => n > 10 && !allowed.has(Math.round(n * 10) / 10))) return false;
+    const banned = input.lang === 'en' ? /\b(fat_loss|recomp|tdee)\b/i : /\b(fat[_ ]?loss|muscle|recomp|endurance|strength|beginner|intermediate|advanced|tdee)\b/i;
+    return !banned.test(title + ' ' + text);
+}
+function oraclePrompt(input) {
+    const W = ORACLE_WORDS.es;
+    const who = 'quiere ' + W.goal[input.goal] + (input.level ? ', nivel ' + W.level[input.level] : '') + (input.age ? ', ' + input.age + ' años' : '');
+    const lines = input.findings.map((f, i) => {
+        const [title, text] = ORACLE_TEXT.es[f.code](oracleFacts(f, 'es', input.goal));
+        return (i + 1) + '. [' + (ORACLE_GOOD.has(f.code) ? 'bien' : 'atención') + '] ' + title + ': ' + text;
+    });
+    const langRule = input.lang === 'en' ? 'Escribí en inglés (los hallazgos están en castellano: traducilos).'
+        : input.lang === 'pt' ? 'Escribí en portugués de Brasil (los hallazgos están en castellano: traducilos).'
+            : 'Escribí en castellano rioplatense, con voseo: los consejos en imperativo (sumá, comé, probá, seguí, mantené, registrá; nunca "suma", "sigue" ni "mantén") y el presente como "comés" o "entrenaste". No escribas el pronombre "vos" ni uses "tú" o "usted".';
+    const example = input.lang === 'es'
+        ? '\nEjemplo de estilo (es otro caso, no lo copies): hallazgo "Bajás muy rápido: estás bajando unos 1,3 kg por semana; más del 1 % de tu peso por semana se lleva músculo: comé un poco más." → {"icon":"🐢","title":"Frená un poco la bajada","text":"Estás bajando unos 1,3 kg por semana, más rápido de lo que conviene. Comé un poco más para cuidar el músculo."}\n'
+        : '';
+    return 'Sos el Oracle de BerserkerMOD, un coach de entrenamiento cálido y directo. La app ya analizó las últimas 4 semanas de esta persona con reglas basadas en evidencia y encontró estos hallazgos, en orden de importancia. Tu trabajo es contarlos con tus palabras, no diagnosticar de nuevo.\n\n'
+        + 'Persona: ' + who + '.\n\nHALLAZGOS:\n' + lines.join('\n') + '\n\n'
+        + 'Reglas:\n'
+        + '- Escribí exactamente ' + input.findings.length + ' consejos: uno por hallazgo, en el mismo orden. No agregues otros temas ni consejos.\n'
+        + '- Mantené en el texto los números importantes de cada hallazgo (calorías, gramos, series, días); no los cambies ni inventes otros.\n'
+        + '- Cada consejo: un título de hasta 6 palabras y un texto de 1 o 2 oraciones que diga qué hacer.\n'
+        + '- ' + langRule + '\n'
+        + '- No uses palabras en inglés ni nombres técnicos de la app.\n'
+        + '- Si algo ya está bien, decilo como logro y que siga así; si hay que cambiar algo, decí qué hacer desde ahora.\n'
+        + example
+        + 'Respondé SOLO con JSON, sin texto antes ni después: {"insights":[{"icon":"un emoji","title":"...","text":"..."}]}';
+}
+
+// El modelo a veces se pasa al tuteo en los imperativos ("Mantén la constancia"). Se corrige la
+// primera palabra de cada oración (ahí va el imperativo; en medio de una frase "sigue" puede ser
+// "tu peso sigue bajando" y queda como está).
+const ORACLE_TU = {
+    'mantén': 'mantené', 'manten': 'mantené', 'sigue': 'seguí', 'registra': 'registrá', 'suma': 'sumá', 'prueba': 'probá',
+    'comienza': 'comenzá', 'empieza': 'empezá', 'entrena': 'entrená', 'come': 'comé', 'descansa': 'descansá', 'ajusta': 'ajustá',
+    'haz': 'hacé', 'revisa': 'revisá', 'aumenta': 'aumentá', 'reduce': 'reducí', 'recorta': 'recortá', 'intenta': 'intentá',
+    'cuida': 'cuidá', 'apunta': 'apuntá', 'agrega': 'agregá', 'incluye': 'incluí', 'equilibra': 'equilibrá', 'continúa': 'continuá',
+    'controla': 'controlá', 'reparte': 'repartí', 'mejora': 'mejorá', 'sube': 'subí', 'baja': 'bajá', 'frena': 'frená', 'busca': 'buscá'
+};
+function oracleVoseo(s) {
+    return String(s).replace(/(^|[.!?¡]\s*)([A-Za-zÁÉÍÓÚáéíóúñÑ]+)/g, (m, pre, w) => {
+        const v = ORACLE_TU[w.toLowerCase()];
+        if (!v) return m;
+        return pre + (w[0] !== w[0].toLowerCase() ? v[0].toUpperCase() + v.slice(1) : v);
+    });
+}
+
 async function oracleProxy(req, env) {
     const body = await readBody(req);
-    if (!body || !body.prompt) return err('Missing prompt', 400);
-
-    if (body.apiKey) {
-        try {
-            const resp = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'x-api-key': body.apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: ANTHROPIC_MODEL,
-                    max_tokens: 1024,
-                    messages: [{ role: 'user', content: body.prompt }]
-                })
-            });
-            const data = await resp.json();
-            return json(data, resp.ok ? 200 : resp.status);
-        } catch {
-            return err('Oracle upstream error', 502);
-        }
+    const input = cleanOracleInput(body);
+    if (!input) {
+        // La app vieja mandaba el pedido armado (o una clave de Anthropic): ya no se acepta
+        if (body && (body.prompt || body.apiKey)) return json({ error: 'Actualizá la app para usar el análisis nuevo del Oracle.', code: 'oracle_update' }, 400);
+        return err('Faltan los datos del análisis', 400);
     }
-
-    // Camino Workers AI (gratis): gateado por licencia premium/coach.
-    if (!env.AI) return err('Oracle no configurado (falta el binding AI)', 503);
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body.token) : null;
     if (!payload) return err('Función premium: activá tu código para usar el Oracle', 403);
     if (!(await licenseStillValid(env, payload))) return err(LICENSE_GONE_MSG, 403);   // K-5
     const quota = await aiQuotaTake(env, payload, 'oracle');
     if (!quota.ok) return err('Llegaste al límite diario del Oracle (' + AI_QUOTA.oracle + ' consultas). Mañana se renueva.', 429);
-    // L-5: si la IA falla o no sirve, el uso se devuelve.
+    const fixed = input.findings.map((f) => oracleFixed(input, f));
+    // Sin IA (sin el binding, error o sin cupo de la cuenta): los textos fijos, sin gastar la consulta
+    const withoutAi = async (why) => {
+        if (why) console.error('[oracle] sin IA, textos fijos:', String(why).slice(0, 200));
+        try { await quota.undo(); } catch { /* sin más */ }
+        return json({ ok: true, insights: fixed, source: 'fijo' });
+    };
+    if (!env.AI) return withoutAi('sin binding AI');
     return aiCharged(quota, async () => {
-        const model = env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+        let parsed = null;
         try {
-            const aiResp = await env.AI.run(model, {
-                messages: [{ role: 'user', content: String(body.prompt).slice(0, 8000) }],
-                max_tokens: 1024
+            const aiResp = await env.AI.run(env.PARSE_MODEL || '@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+                messages: [{ role: 'user', content: oraclePrompt(input) }],
+                max_tokens: 900,
+                temperature: 0.4
             });
-            // Igual que parse-routine: la respuesta puede venir como objeto ya parseado
-            // (70B) o como string con el JSON adentro.
             const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
-            let parsed = null;
             if (raw && typeof raw === 'object') parsed = raw;
             else {
                 const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
                 const m = txt.match(/\{[\s\S]*\}/);
                 try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
             }
-            const insights = parsed && Array.isArray(parsed.insights) ? parsed.insights : null;
-            if (!insights) return err('La IA no devolvió un análisis válido, probá de nuevo', 422);
-            // Sanitizado: caps y solo los campos esperados.
-            const clean = insights.slice(0, 6).map((i) => ({
-                icon: String((i && i.icon) || '💡').slice(0, 8),
-                title: String((i && i.title) || '').slice(0, 80),
-                text: String((i && i.text) || '').slice(0, 400)
-            })).filter((i) => i.title || i.text);
-            return json({ ok: true, insights: clean });
         } catch (e) {
-            return aiErrorResponse(e);
+            return withoutAi(e && e.message);
         }
+        const ai = parsed && Array.isArray(parsed.insights) ? parsed.insights : null;
+        if (!ai || !ai.length) return withoutAi('respuesta sin consejos');
+        let replaced = 0;
+        const insights = input.findings.map((f, i) => {
+            const x = ai[i];
+            if (!oracleAiOk(x, input, f)) { replaced++; return fixed[i]; }
+            const fix = input.lang === 'es' ? oracleVoseo : String;
+            return { icon: String(x.icon || fixed[i].icon).slice(0, 8), title: fix(String(x.title).trim().slice(0, 80)), text: fix(String(x.text).trim().slice(0, 400)) };
+        });
+        if (replaced) console.log('[oracle] consejos de la IA reemplazados por el texto fijo:', replaced, 'de', insights.length);
+        return json({ ok: true, insights, source: replaced === insights.length ? 'fijo' : 'ia' });
     });
 }
 
