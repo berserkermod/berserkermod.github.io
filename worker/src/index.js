@@ -371,11 +371,28 @@ async function aiQuotaTake(env, payload, kind) {
 // K-5: la IA no acepta licencias que dejaron de valer aunque la firma siga bien: código
 // anulado (devolución, contracargo, baja del coach) o pasado a otro teléfono, o compra de
 // Google Play terminada o usada en otro teléfono. Una lectura de KV por consulta.
+// Dispositivos de un código. El Coach usa su panel en 2 (el celular y la compu); el resto, en 1.
+const COACH_DEVICES = 2;
+function codeHasDevice(rec, deviceId) {
+    if (!rec || !deviceId) return false;
+    if (rec.deviceId === deviceId) return true;
+    return rec.product === 'coach' && Array.isArray(rec.devices) && rec.devices.some((d) => d && d.id === deviceId);
+}
+// Suma un dispositivo a un código de Coach. Si ya tiene 2, sale el más viejo (eso sí cuenta como
+// cambio de teléfono). Devuelve true si fue un cambio.
+function coachAddDevice(rec, deviceId, at) {
+    const devs = (Array.isArray(rec.devices) ? rec.devices : (rec.deviceId ? [{ id: rec.deviceId, at: rec.activated_at || at }] : []))
+        .filter((d) => d && d.id && d.id !== deviceId);
+    const moved = devs.length >= COACH_DEVICES;
+    rec.devices = devs.slice(moved ? devs.length - COACH_DEVICES + 1 : 0).concat([{ id: deviceId, at }]);
+    return moved;
+}
+
 async function licenseStillValid(env, payload) {
     if (payload.code) {
         const rec = await kvGet(env, `code:${payload.code}`);
         if (!rec || rec.revoked) return false;
-        if (rec.deviceId && payload.deviceId && rec.deviceId !== payload.deviceId) return false;
+        if (rec.deviceId && payload.deviceId && !codeHasDevice(rec, payload.deviceId)) return false;
     }
     if (payload.product === 'premium_play' && typeof payload.pt === 'string' && payload.pt) {
         const rec = await kvGet(env, `play:${await playHash(payload.pt)}`);
@@ -541,6 +558,9 @@ async function listRoutines(env, url) {
         closed: !!closedAt(r.access_end_at),
         interest_at: r.interest ? r.interest.at : null,
         seat: seatState(r),
+        plan_days: Array.isArray(r.plan) ? r.plan.length : 0,
+        push_on: (Array.isArray(r.push_subs) ? r.push_subs.length : (r.push_n || 0)) > 0,
+        billing: billingLite(r.billing),
         alerts: studentAlerts(r, today)
     }));
     return json(paged ? { items, next } : items);
@@ -685,8 +705,46 @@ function studentAlerts(r, today) {
             out.push({ type: 'eval', cycle: c, in: Math.max(0, left), late: Math.max(0, -left), date: addDaysISO(today, left) });
         }
     }
+    // 10. Cobro anotado por el coach: por vencer (3 días o menos) o vencido
+    const bill = r.billing;
+    if (bill && bill.on && /^\d{4}-\d{2}-\d{2}$/.test(bill.due || '')) {
+        const d = dayDiff(today, bill.due);
+        if (d < 0) out.push({ type: 'pay_late', days: -d, due: bill.due });
+        else if (d <= 3) out.push({ type: 'pay_due', in: d, due: bill.due });
+    }
     return out.concat(lead);
 }
+
+// ── Cobros (anotador del coach: no mueve plata) ──
+// Cuánto le cobra al alumno, cada cuánto y cuándo vence. "Pagó" lo anota y corre el vencimiento
+// un período (desde el vencimiento, no desde el día del pago: así no se corre el día de cobro).
+// Es privado del coach: no viaja al link del alumno.
+const BILL_PERIODS = { w1: [7, 0], w2: [14, 0], m1: [0, 1], m3: [0, 3], m6: [0, 6] };
+function addPeriod(date, period, anchorDay) {
+    const p = BILL_PERIODS[period] || BILL_PERIODS.m1;
+    if (p[0]) return addDaysISO(date, p[0]);
+    const y = Number(date.slice(0, 4)), m = Number(date.slice(5, 7)) - 1 + p[1];
+    const ny = y + Math.floor(m / 12), nm = ((m % 12) + 12) % 12;
+    const last = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+    const day = Math.min(anchorDay || Number(date.slice(8, 10)), last);
+    return ny + '-' + String(nm + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}
+// Fecha real y a menos de ~13 meses de hoy (para atrás o para adelante)
+function validBillDate(v) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return false;
+    const t = Date.parse(v + 'T12:00:00Z');
+    return !isNaN(t) && new Date(t).toISOString().slice(0, 10) === v && Math.abs(t - Date.now()) < 400 * 86400000;
+}
+function cleanBilling(b, prev) {
+    if (!b || typeof b !== 'object' || !validBillDate(b.due)) return null;
+    const amount = num(b.amount, 0, 100000000);
+    return {
+        on: b.on !== false, amount: amount === null ? null : Math.round(amount * 100) / 100,
+        period: BILL_PERIODS[b.period] ? b.period : 'm1', due: b.due, day: Number(b.due.slice(8, 10)),
+        note: str(b.note, 120) || '', paid: Array.isArray(prev && prev.paid) ? prev.paid : []
+    };
+}
+function billingLite(b) { return b ? { on: !!b.on, amount: b.amount, period: b.period, due: b.due } : null; }
 
 // ── Evaluación de ciclo (cada 4 semanas) ──
 // El sistema arma los datos del ciclo y el coach escribe la devolución; el alumno la ve
@@ -979,6 +1037,24 @@ async function updateRoutine(req, env, url, id) {
     if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = cleanPlanLinks(body.plan);
     let chkChanged = false, accessChanged = false;
+    const billingTouched = body.billing !== undefined || !!body.billing_paid || !!body.billing_undo;
+    if (body.billing === null) delete r.billing;
+    else if (body.billing !== undefined) {
+        const b = cleanBilling(body.billing, r.billing);
+        if (!b) return err('Fecha inválida', 400);
+        r.billing = b;
+    }
+    if (body.billing_paid && r.billing) {
+        const b = r.billing, pd = body.billing_paid;
+        const date = validSessionDate(pd.date) ? pd.date : new Date().toISOString().slice(0, 10);
+        const amount = num(pd.amount, 0, 100000000);
+        b.paid = [{ date, amount: amount === null ? b.amount : Math.round(amount * 100) / 100, due: b.due }].concat(b.paid || []).slice(0, 12);
+        b.due = addPeriod(b.due, b.period, b.day);
+    }
+    if (body.billing_undo && r.billing && (r.billing.paid || []).length) {
+        const last = r.billing.paid.shift();
+        if (last && /^\d{4}-\d{2}-\d{2}$/.test(last.due || '')) r.billing.due = last.due;
+    }
     if (body.chk_remind) {
         const c = cleanChkRemind(body.chk_remind);
         if (!c) return err('Recordatorio inválido', 400);
@@ -1013,8 +1089,8 @@ async function updateRoutine(req, env, url, id) {
             if (endAt) r.access_end_at = endAt; else delete r.access_end_at;
             accessChanged = true;
         }
-    } else if (body.plan || body.name || !body.chk_remind) {
-        r.last_coach_update_at = now;   // solo un cambio de la rutina avisa al alumno
+    } else if (body.plan || body.name || (!body.chk_remind && !billingTouched)) {
+        r.last_coach_update_at = now;   // solo un cambio de la rutina avisa al alumno (no un cobro)
     }
     // Aviso "tu coach actualizó tu rutina": como mucho uno por hora (el coach guarda varias veces)
     const planPush = !!body.plan && (r.push_subs || []).length > 0 && !(r.push_plan_at && Date.now() - Date.parse(r.push_plan_at) < 3600000);
@@ -1460,7 +1536,7 @@ async function getShare(env, token) {
     const pf = r.profile || {};
     return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, review, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [],
-        guest: !!pf.guest, access_until: pf.access_until || '', premium_seat: !!r.premium_seat });
+        guest: !!pf.guest, access_until: pf.access_until || '', premium_seat: !!r.premium_seat, announce: announceRecent(cfg.announce) });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -1738,7 +1814,30 @@ async function getCoachConfig(env, url) {
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
     return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
         digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 },
-        left: leftRecent(cfg.left), invite: inviteOf(cfg), seats: seatCounts(cfg) });
+        left: leftRecent(cfg.left), invite: inviteOf(cfg), seats: seatCounts(cfg), announce: announceRecent(cfg.announce) });
+}
+const ANNOUNCE_DAYS = 14, ANNOUNCE_GAP_MS = 10 * 60000;
+function announceRecent(a) { return a && a.at && Date.now() - Date.parse(a.at) < ANNOUNCE_DAYS * 86400000 ? { id: a.id, text: a.text, at: a.at } : null; }
+// POST /api/routines/{id}/announce — avisa por notificación a un alumno del último aviso del coach
+// (la app lo pide alumno por alumno: el plan Free no deja mandar decenas desde un solo pedido).
+async function announceStudent(req, env, url, id) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
+    const a = cfg.announce;
+    if (!a || Date.now() - Date.parse(a.at) > 3600000) return err('Not found', 404);   // solo el aviso recién publicado
+    const pf = r.profile || {};
+    if (pf.status === 'pausado' || pf.status === 'finalizado' || closedAt(r.access_end_at)) return json({ ok: true, sent: 0, skipped: true });
+    if (r.announce_pushed === a.id) return json({ ok: true, sent: 0, dup: true });
+    r.announce_pushed = a.id;
+    await kvPut(env, routineKey(coachId, id), r);
+    const short = a.text.length > 110 ? a.text.slice(0, 109) + '…' : a.text;
+    const res = await notifyStudent(env, r, 'announce', { text: short }, true);
+    return json({ ok: true, sent: res.sent || 0 });
 }
 async function putCoachConfig(req, env, url) {
     const body = (await readBody(req)) || {};
@@ -1773,6 +1872,15 @@ async function putCoachConfig(req, env, url) {
         if (next.on && !next.subs.length) return err('Activá las notificaciones en este teléfono', 400);
         cfg.digest = next;
         digestChanged = true;
+    }
+    // Aviso a todos los alumnos: queda uno (el último) y lo ven en su link y su app durante 14 días.
+    // Las notificaciones las pide la app alumno por alumno (POST /api/routines/{id}/announce).
+    if (body.announce === null) delete cfg.announce;
+    else if (body.announce && typeof body.announce === 'object') {
+        const text = str(body.announce.text, 300);
+        if (!text) return err('Escribí el aviso', 400);
+        if (cfg.announce && Date.now() - Date.parse(cfg.announce.at) < ANNOUNCE_GAP_MS) return err('Ya mandaste un aviso hace un rato. Probá en unos minutos.', 429);
+        cfg.announce = { id: newShareToken(), text, at: nowISO() };
     }
     cfg.updated_at = nowISO();
     await kvPut(env, `coachcfg:${coachId}`, cfg);
@@ -1904,10 +2012,14 @@ async function activateLicense(req, env) {
         if (!claim || !claim.ok) { console.error('[licencias] sin objeto del código: se activa como antes', claim && claim.error); claim = null; }
     }
     if (!rec.used && claim && claim.deviceId !== deviceId) {
-        // Otro teléfono lo activó hace un momento: para este es un cambio de teléfono.
+        // Otro teléfono lo activó hace un momento: para este es un cambio de teléfono (el Coach
+        // puede tener los dos: el celular y la compu).
         rec.used = true;
         if (rec.duration_days && !rec.expires_at) rec.expires_at = new Date(claim.at + rec.duration_days * 86400000).toISOString();
-        rec.rebinds = (rec.rebinds || 0) + 1;
+        if (rec.product === 'coach') {
+            rec.devices = [{ id: claim.deviceId, at: new Date(claim.at).toISOString() }];
+            coachAddDevice(rec, deviceId, nowISO());
+        } else rec.rebinds = (rec.rebinds || 0) + 1;
         rec.deviceId = deviceId; rec.activated_at = nowISO();
         await kvPut(env, `code:${code}`, rec);
     } else if (!rec.used) {
@@ -1916,12 +2028,23 @@ async function activateLicense(req, env) {
         // código: re-activar o cambiar de teléfono no lo extiende.
         const at = claim ? claim.at : Date.now();
         rec.used = true; rec.deviceId = deviceId; rec.activated_at = new Date(at).toISOString();
+        if (rec.product === 'coach') rec.devices = [{ id: deviceId, at: rec.activated_at }];
         track(env, req, 'activate', rec.product || 'premium', { s: surfaceOf(body) });
         if (rec.duration_days && !rec.expires_at) {
             rec.expires_at = new Date(at + rec.duration_days * 86400000).toISOString();
         }
         await kvPut(env, `code:${code}`, rec);
-    } else if (rec.deviceId && rec.deviceId !== deviceId) {
+    } else if (rec.deviceId && rec.product === 'coach' && !codeHasDevice(rec, deviceId)) {
+        // Coach: el segundo dispositivo (celular y compu) se suma sin contar como cambio; con un
+        // tercero sale el más viejo y eso sí cuenta para el tope de movimientos.
+        const moved = coachAddDevice(rec, deviceId, nowISO());
+        if (moved) {
+            rec.rebinds = (rec.rebinds || 0) + 1;
+            if (rec.rebinds > 10) return err('Este código se usó en demasiados dispositivos', 409);
+        }
+        rec.deviceId = deviceId; rec.activated_at = nowISO();
+        await kvPut(env, `code:${code}`, rec);
+    } else if (rec.deviceId && rec.deviceId !== deviceId && rec.product !== 'coach') {
         // re-binding: el usuario cambió de teléfono. Movemos la licencia al
         // nuevo device (last-device-wins). Tope de movimientos para frenar que
         // un mismo código circule entre muchas personas.
@@ -1965,7 +2088,7 @@ async function coachBind(req, env) {
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.license) : null;
     if (!payload || !payload.code) return err('Licencia inválida', 401);
     const rec = await kvGet(env, `code:${payload.code}`);
-    if (!rec || rec.revoked || rec.product !== 'coach' || rec.deviceId !== payload.deviceId) return err('Licencia inválida', 401);
+    if (!rec || rec.revoked || rec.product !== 'coach' || !codeHasDevice(rec, payload.deviceId)) return err('Licencia inválida', 401);
     const want = validPanelId(body && body.coach_id);
     if (!rec.panel_id && want) {
         rec.panel_id = want;
@@ -2011,7 +2134,7 @@ async function claimSharePremium(req, env, shareToken) {
     const payload = env.LICENSE_SECRET ? await verifyLicense(env.LICENSE_SECRET, body && body.license) : null;
     if (!payload || !payload.code) return json({ ok: true, bound: false });
     const rec = await kvGet(env, `code:${payload.code}`);
-    if (!rec || rec.deviceId !== payload.deviceId) return json({ ok: true, bound: false });
+    if (!rec || !codeHasDevice(rec, payload.deviceId)) return json({ ok: true, bound: false });
     return json({ ok: true, bound: await bindCoachCode(env, payload.code, rec, shareToken) });
 }
 
@@ -2025,7 +2148,7 @@ async function verifyLicenseHandler(req, env) {
     if (payload.code) {
         const rec = await kvGet(env, `code:${payload.code}`);
         if (!rec || rec.revoked) return json({ valid: false, reason: 'revoked' }, 200);
-        if (rec.deviceId && payload.deviceId && rec.deviceId !== payload.deviceId) {
+        if (rec.deviceId && payload.deviceId && !codeHasDevice(rec, payload.deviceId)) {
             return json({ valid: false, reason: 'device_mismatch' }, 200);
         }
     }
@@ -3125,9 +3248,9 @@ function localClock(tz, when) {
 // el servidor. El texto viaja cifrado para cada teléfono (RFC 8291, aes128gcm). El
 // recordatorio diario de entrenar sigue como push vacío (el teléfono pone el texto).
 const PUSH_MSG = {
-    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', chkreply: '💬 {coach} respondió tu control semanal', plan: '🔄 {coach} actualizó tu rutina', review: '🏁 {coach} te dejó el balance de tu programa', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
-    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', chkreply: '💬 {coach} replied to your weekly check-in', plan: '🔄 {coach} updated your routine', review: '🏁 {coach} left your program summary', digest: '📋 Students to review: {names}', more: ' and {n} more' },
-    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', chkreply: '💬 {coach} respondeu seu check-in semanal', plan: '🔄 {coach} atualizou sua rotina', review: '🏁 {coach} deixou o balanço do seu programa', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
+    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', chkreply: '💬 {coach} respondió tu control semanal', announce: '📣 {coach}: {text}', plan: '🔄 {coach} actualizó tu rutina', review: '🏁 {coach} te dejó el balance de tu programa', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
+    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', chkreply: '💬 {coach} replied to your weekly check-in', announce: '📣 {coach}: {text}', plan: '🔄 {coach} updated your routine', review: '🏁 {coach} left your program summary', digest: '📋 Students to review: {names}', more: ' and {n} more' },
+    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', chkreply: '💬 {coach} respondeu seu check-in semanal', announce: '📣 {coach}: {text}', plan: '🔄 {coach} atualizou sua rotina', review: '🏁 {coach} deixou o balanço do seu programa', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
 };
 function pushText(lang, key, vars) {
     const L = PUSH_MSG[lang] || PUSH_MSG.es;
@@ -4520,6 +4643,7 @@ async function coachRoutes(req, env, url, p, m) {
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/checkins\/(\d{4}-W\d{2})$/)) && m === 'PUT') return await replyCheckin(req, env, url, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/announce$/)) && m === 'POST') return await announceStudent(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);

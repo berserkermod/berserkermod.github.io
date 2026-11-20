@@ -14,7 +14,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const BASE_COMMIT = '852caff';   // Worker publicado antes de esta obra (tanda 1 de la auditoría)
+const BASE_COMMIT = '852caff';
+// Campos que se sumaron a propósito después de ese Worker (fase 2 del Coach, nov 2026): el viejo no los tiene
+const NEW_FIELDS = ['announce', 'plan_days', 'push_on', 'billing'];   // Worker publicado antes de esta obra (tanda 1 de la auditoría)
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 let pass = 0, fail = 0, skipped = 0;
@@ -412,7 +414,7 @@ async function phone() {
         const jn = await journey(caller(worker, envNew), C, sub);
         ok('recorrido completo: mismos pasos', jo.out.length === jn.out.length && jo.out.length > 40, [jo.out.length, jn.out.length]);
         const bad = [];
-        const no = normalize(jo.out), nn = normalize(jn.out);
+        const no = normalize(jo.out, NEW_FIELDS), nn = normalize(jn.out, NEW_FIELDS);
         for (let i = 0; i < no.length; i++) {
             const d = firstDiff(no[i], nn[i]);
             if (d) bad.push({ paso: jo.out[i].name, d });
@@ -441,7 +443,7 @@ async function phone() {
             await call('GET', '/api/routines?coach_id=' + C),
             await call('GET', '/api/coach/config?coach_id=' + C)
         ].map((r) => ({ status: r.status, body: r.body }));
-        const IGN = ['last_seen_by_alumno_at'];   // "visto" ya no se copia a KV en cada apertura (ver diseño)
+        const IGN = ['last_seen_by_alumno_at'].concat(NEW_FIELDS);   // "visto" ya no se copia a KV en cada apertura (ver diseño)
         const before = normalize(await reads(caller(OldWorker, envOld)), IGN);
         const envNew = await makeEnv({ kv });
         const callNew = caller(worker, envNew);

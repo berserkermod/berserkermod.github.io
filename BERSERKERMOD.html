@@ -1622,6 +1622,10 @@
         @keyframes spin { to { transform: rotate(360deg) } }
 
         /* COACH MODE */
+        .coach-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 8px; margin: 2px 0 12px; }
+        .coach-sum-cell { background: var(--sf2); border-radius: 12px; padding: 10px 6px; text-align: center; }
+        .coach-sum-val { font-size: 18px; font-weight: 900; }
+        .coach-sum-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; line-height: 1.25; }
         .student-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--sf2); border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: background .2s; }
         .student-card:hover { background: var(--sf3); }
         .student-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--blue)); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #0A0A0B; flex-shrink: 0; }
@@ -2354,8 +2358,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-41"></script>
-    <script src="core/i18n-data.js?v=2-41"></script>
+    <script src="core/calc.js?v=2-42"></script>
+    <script src="core/i18n-data.js?v=2-42"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2478,7 +2482,7 @@
                 home_greet_am: "Buenos días", home_greet_pm: "Buenas tardes", home_greet_eve: "Buenas noches",
                 home_streak_label: "RACHA DE ENTRENAMIENTO", home_streak_msg: "días consecutivos", home_streak_start: "¡Empezá tu racha hoy!",
                 home_stats_sess: "SESIONES", home_stats_vol: "VOLUMEN", home_stats_cardio: "CARDIO", home_stats_cals: "CALORÍAS",
-                home_today: "HOY TOCA", rm_students: "Mis alumnos", rm_mine: "Mi entrenamiento", coach_tools: "HERRAMIENTAS", hm_students_n: "{n} alumnos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} controles nuevos", hm_students_hint: "Revisá cómo vienen tus alumnos.", hm_open_panel: "Abrir el panel →", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
+                home_today: "HOY TOCA", rm_students: "Mis alumnos", bl_title: "COBRO", bl_empty: "Anotá cuánto le cobrás y cuándo vence: te avisamos cuando esté por vencer o vencido.", bl_setup: "Anotar el cobro", bl_p_w1: "por semana", bl_p_w2: "cada 15 días", bl_p_m1: "por mes", bl_p_m3: "cada 3 meses", bl_p_m6: "cada 6 meses", bl_late: "Cuota vencida hace {n} días", bl_late1: "Cuota vencida hace 1 día", bl_today: "La cuota vence hoy", bl_tomorrow: "La cuota vence mañana", bl_soon: "La cuota vence en {n} días", bl_due_on: "Próximo vencimiento: {date}", bl_paused: "Avisos de cobro apagados", bl_paid_btn: "Pagó", bl_paid_done: "Pago anotado: el vencimiento pasó al período siguiente", bl_wa_btn: "Recordarle", bl_wa_text: "¡Hola {name}! Te recuerdo que el {date} vence la cuota {amount}. Avisame cuando la pagues. ¡Gracias!", bl_wa_text_late: "¡Hola {name}! Te recuerdo que la cuota {amount} venció el {date}. Avisame cuando la pagues. ¡Gracias!", bl_edit: "Editar", bl_history: "PAGOS ANOTADOS", bl_undo: "Deshacer el último pago", bl_undo_confirm: "¿Deshacer el último pago? El vencimiento vuelve a la fecha anterior.", bl_undo_done: "Pago deshecho", bl_private: "Solo lo ves vos: tu alumno no ve el cobro y la app no mueve plata.", bl_sheet_sub: "La app no cobra: es un anotador para que no se te pase ningún vencimiento.", bl_amount_ph: "Monto (opcional)", bl_every: "CADA CUÁNTO", bl_next_due: "PRÓXIMO VENCIMIENTO", bl_note_ph: "Nota (ej. transferencia, efectivo)", bl_alerts_on: "Avisarme cuando esté por vencer o vencido", bl_due_required: "Elegí la fecha de vencimiento", bl_save: "Guardar", bl_saved: "Cobro guardado", bl_delete: "Borrar el cobro", bl_delete_confirm: "¿Borrar el cobro y sus pagos anotados?", bl_deleted: "Cobro borrado", cs_active: "activos", cs_week: "cumplimiento 7 días", cs_review: "para revisar", cs_pay_late: "cobros vencidos", cs_pay_due: "cobros por vencer", an_btn: "Aviso a todos tus alumnos", an_title: "AVISO A TODOS TUS ALUMNOS", an_sub: "Lo ven en su link y en su app durante 14 días, y a los que tienen los avisos activados les llega una notificación.", an_ph: "Ej. El lunes es feriado: entrenamos el martes.", an_empty: "Escribí el aviso", an_send: "Publicar el aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificación enviada a {n} alumnos.", an_current: "Aviso actual", an_delete: "Borrar", an_delete_confirm: "¿Borrar el aviso? Deja de verse en el link y la app de tus alumnos.", an_deleted: "Aviso borrado", an_student_title: "AVISO DE TU COACH", an_ok: "Entendido", apierr_announce_wait: "Ya mandaste un aviso hace un rato. Probá en unos minutos.", coach_two_devices: "Tu código de Coach funciona en 2 dispositivos: abrí la app en la compu, ingresá el mismo código y manejá el panel desde ahí.", rm_mine: "Mi entrenamiento", coach_tools: "HERRAMIENTAS", hm_students_n: "{n} alumnos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} controles nuevos", hm_students_hint: "Revisá cómo vienen tus alumnos.", hm_open_panel: "Abrir el panel →", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
                 routines_rec: "Plan Recomendado", routines_no_series: "No completaste ninguna serie", routines_saved_ok: "¡Entrenamiento Guardado! 🔥",
                 routines_day: "Día", routines_continue: "Continuar →", routines_back: "Atrás", routines_finish: "FINALIZAR ENTRENAMIENTO 🔥",
                 train_day: "DÍA DE ENTRENAMIENTO", train_exercise: "EJERCICIO", train_sel_ph: "Seleccionar ejercicio...", train_log: "REGISTRAR SERIE", train_prev: "Anterior: ",
@@ -2920,7 +2924,7 @@
                 home_greet_am: "Good morning", home_greet_pm: "Good afternoon", home_greet_eve: "Good evening",
                 home_streak_label: "TRAINING STREAK", home_streak_msg: "days in a row", home_streak_start: "Start your streak today!",
                 home_stats_sess: "SESSIONS", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIES",
-                home_today: "TODAY", rm_students: "My clients", rm_mine: "My training", coach_tools: "TOOLS", hm_students_n: "{n} clients", hm_review_n: "{n} to review", hm_review_none: "nothing to review", hm_chk_n: "{n} new check-ins", hm_students_hint: "See how your clients are doing.", hm_open_panel: "Open the panel →", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
+                home_today: "TODAY", rm_students: "My clients", bl_title: "PAYMENT", bl_empty: "Note how much you charge and when it's due: we'll let you know when it's coming up or overdue.", bl_setup: "Set up payment", bl_p_w1: "per week", bl_p_w2: "every 2 weeks", bl_p_m1: "per month", bl_p_m3: "every 3 months", bl_p_m6: "every 6 months", bl_late: "Payment overdue by {n} days", bl_late1: "Payment overdue by 1 day", bl_today: "Payment due today", bl_tomorrow: "Payment due tomorrow", bl_soon: "Payment due in {n} days", bl_due_on: "Next due date: {date}", bl_paused: "Payment alerts off", bl_paid_btn: "Paid", bl_paid_done: "Payment noted: the due date moved to the next period", bl_wa_btn: "Remind", bl_wa_text: "Hi {name}! Just a reminder that your {amount} payment is due on {date}. Let me know when you pay. Thanks!", bl_wa_text_late: "Hi {name}! Just a reminder that your {amount} payment was due on {date}. Let me know when you pay. Thanks!", bl_edit: "Edit", bl_history: "RECORDED PAYMENTS", bl_undo: "Undo last payment", bl_undo_confirm: "Undo the last payment? The due date goes back to the previous one.", bl_undo_done: "Payment undone", bl_private: "Only you see this: your client doesn't, and the app doesn't move money.", bl_sheet_sub: "The app doesn't charge: it's a log so you don't miss any due date.", bl_amount_ph: "Amount (optional)", bl_every: "HOW OFTEN", bl_next_due: "NEXT DUE DATE", bl_note_ph: "Note (e.g. bank transfer, cash)", bl_alerts_on: "Alert me when it's coming up or overdue", bl_due_required: "Pick the due date", bl_save: "Save", bl_saved: "Payment saved", bl_delete: "Delete payment", bl_delete_confirm: "Delete the payment and its recorded payments?", bl_deleted: "Payment deleted", cs_active: "active", cs_week: "7-day adherence", cs_review: "to review", cs_pay_late: "overdue payments", cs_pay_due: "payments due soon", an_btn: "Message all your clients", an_title: "MESSAGE ALL YOUR CLIENTS", an_sub: "They see it in their link and app for 14 days, and those with notifications on get one.", an_ph: "E.g. Monday is a holiday: we train on Tuesday.", an_empty: "Write the message", an_send: "Publish the message", an_sending: "Notifying {i} of {n}…", an_done: "Message published. Notification sent to {n} clients.", an_current: "Current message", an_delete: "Delete", an_delete_confirm: "Delete the message? It stops showing in your clients' link and app.", an_deleted: "Message deleted", an_student_title: "MESSAGE FROM YOUR COACH", an_ok: "Got it", apierr_announce_wait: "You already sent a message a moment ago. Try again in a few minutes.", coach_two_devices: "Your Coach code works on 2 devices: open the app on your computer, enter the same code and manage the panel from there.", rm_mine: "My training", coach_tools: "TOOLS", hm_students_n: "{n} clients", hm_review_n: "{n} to review", hm_review_none: "nothing to review", hm_chk_n: "{n} new check-ins", hm_students_hint: "See how your clients are doing.", hm_open_panel: "Open the panel →", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
                 routines_rec: "Recommended Plan", routines_no_series: "No sets completed", routines_saved_ok: "Workout Saved! 🔥",
                 routines_day: "Day", routines_continue: "Continue →", routines_back: "Back", routines_finish: "FINISH WORKOUT 🔥",
                 train_day: "TRAINING DAY", train_exercise: "EXERCISE", train_sel_ph: "Select exercise...", train_log: "LOG SET", train_prev: "Previous: ",
@@ -3363,7 +3367,7 @@
                 home_greet_am: "Bom dia", home_greet_pm: "Boa tarde", home_greet_eve: "Boa noite",
                 home_streak_label: "SEQUÊNCIA DE TREINO", home_streak_msg: "dias seguidos", home_streak_start: "Comece sua sequência hoje!",
                 home_stats_sess: "SESSÕES", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIAS",
-                home_today: "HOJE VOCÊ TREINA", rm_students: "Meus alunos", rm_mine: "Meu treino", coach_tools: "FERRAMENTAS", hm_students_n: "{n} alunos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} check-ins novos", hm_students_hint: "Veja como estão seus alunos.", hm_open_panel: "Abrir o painel →", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
+                home_today: "HOJE VOCÊ TREINA", rm_students: "Meus alunos", bl_title: "COBRANÇA", bl_empty: "Anote quanto você cobra e quando vence: avisamos quando estiver perto de vencer ou vencido.", bl_setup: "Anotar a cobrança", bl_p_w1: "por semana", bl_p_w2: "a cada 15 dias", bl_p_m1: "por mês", bl_p_m3: "a cada 3 meses", bl_p_m6: "a cada 6 meses", bl_late: "Mensalidade vencida há {n} dias", bl_late1: "Mensalidade vencida há 1 dia", bl_today: "A mensalidade vence hoje", bl_tomorrow: "A mensalidade vence amanhã", bl_soon: "A mensalidade vence em {n} dias", bl_due_on: "Próximo vencimento: {date}", bl_paused: "Avisos de cobrança desligados", bl_paid_btn: "Pagou", bl_paid_done: "Pagamento anotado: o vencimento passou para o próximo período", bl_wa_btn: "Lembrar", bl_wa_text: "Oi {name}! Lembrando que a mensalidade {amount} vence em {date}. Me avisa quando pagar. Obrigado!", bl_wa_text_late: "Oi {name}! Lembrando que a mensalidade {amount} venceu em {date}. Me avisa quando pagar. Obrigado!", bl_edit: "Editar", bl_history: "PAGAMENTOS ANOTADOS", bl_undo: "Desfazer o último pagamento", bl_undo_confirm: "Desfazer o último pagamento? O vencimento volta para a data anterior.", bl_undo_done: "Pagamento desfeito", bl_private: "Só você vê: seu aluno não vê a cobrança e o app não movimenta dinheiro.", bl_sheet_sub: "O app não cobra: é um anotador para você não perder nenhum vencimento.", bl_amount_ph: "Valor (opcional)", bl_every: "A CADA QUANTO", bl_next_due: "PRÓXIMO VENCIMENTO", bl_note_ph: "Nota (ex. transferência, dinheiro)", bl_alerts_on: "Me avisar quando estiver perto de vencer ou vencido", bl_due_required: "Escolha a data de vencimento", bl_save: "Salvar", bl_saved: "Cobrança salva", bl_delete: "Apagar a cobrança", bl_delete_confirm: "Apagar a cobrança e os pagamentos anotados?", bl_deleted: "Cobrança apagada", cs_active: "ativos", cs_week: "cumprimento 7 dias", cs_review: "para revisar", cs_pay_late: "cobranças vencidas", cs_pay_due: "cobranças a vencer", an_btn: "Aviso para todos os seus alunos", an_title: "AVISO PARA TODOS OS SEUS ALUNOS", an_sub: "Eles veem no link e no app durante 14 dias, e quem tem os avisos ativados recebe uma notificação.", an_ph: "Ex. Segunda é feriado: treinamos na terça.", an_empty: "Escreva o aviso", an_send: "Publicar o aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificação enviada a {n} alunos.", an_current: "Aviso atual", an_delete: "Apagar", an_delete_confirm: "Apagar o aviso? Ele deixa de aparecer no link e no app dos seus alunos.", an_deleted: "Aviso apagado", an_student_title: "AVISO DO SEU COACH", an_ok: "Entendi", apierr_announce_wait: "Você já mandou um aviso há pouco. Tente em alguns minutos.", coach_two_devices: "Seu código de Coach funciona em 2 dispositivos: abra o app no computador, digite o mesmo código e use o painel de lá.", rm_mine: "Meu treino", coach_tools: "FERRAMENTAS", hm_students_n: "{n} alunos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} check-ins novos", hm_students_hint: "Veja como estão seus alunos.", hm_open_panel: "Abrir o painel →", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
                 routines_rec: "Plano Recomendado", routines_no_series: "Nenhuma série completada", routines_saved_ok: "Treino Salvo! 🔥",
                 routines_day: "Dia", routines_continue: "Continuar →", routines_back: "Voltar", routines_finish: "FINALIZAR TREINO 🔥",
                 train_day: "DIA DE TREINO", train_exercise: "EXERCÍCIO", train_sel_ph: "Selecionar exercício...", train_log: "REGISTRAR SÉRIE", train_prev: "Anterior: ",
@@ -4634,7 +4638,9 @@
             [/^(El PDF es demasiado grande)/, 'routine_import_too_big'],
             [/^(No se pudo interpretar la rutina|No se pudo leer|No se pudieron leer|Falta el PDF|El PDF no tiene)/, 'routine_import_fail'],
             [/^(Falta la foto)/, 'apierr_photo_bad'],
-            [/^(El link tiene que empezar con https)/, 'apierr_link_https']
+            [/^(El link tiene que empezar con https)/, 'apierr_link_https'],
+            [/^(Escribí el aviso)/, 'an_empty'],
+            [/^(Ya mandaste un aviso hace un rato)/, 'apierr_announce_wait']
         ];
         function trApiErr(msg, fallbackKey) {
             const m = String(msg || '').trim();
@@ -17131,6 +17137,7 @@
                     r.coach.evalCycle = ev0 ? ev0.cycle : 0; r.coach.evalAt = ev0 ? (ev0.updated_at || '') : '';
                     r.coach.vidReplyAt = lastReplyAt(j.videos);
                     const cr = lastChkReply(j.checkins); r.coach.chkReply = cr ? cr.reply : ''; r.coach.chkReplyAt = cr ? (cr.reply_at || '') : '';
+                    r.coach.announce = j.announce ? { id: j.announce.id, text: j.announce.text, at: j.announce.at } : null;
                     r.coach.reviewAt = (j.review && j.review.updated_at) || '';
                     r.coach.syncedAt = Date.now();
                     changed = true;
@@ -17258,6 +17265,15 @@
             if (!r.coach.gone && !coachPushOn(r.coach.token)) c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginBottom: '8px' }, onclick: async () => { if (await setCoachPush(r.coach.token, true)) renderRoutines(); } }, t('pn_app_btn')));
             const chkDone = r.coach.chkWeek === isoWeek(todayStr());
             if (!r.coach.gone && chkDone) c.appendChild(h('p', { className: 'perf-body', style: { color: 'var(--accent)', fontWeight: 700 } }, '✓ ' + t('chk_sent')));
+            if (!r.coach.gone && r.coach.announce) {
+                let aSeen = ''; try { aSeen = localStorage.getItem(announceSeenKey(r.coach.token)) || ''; } catch { }
+                if (aSeen !== r.coach.announce.id) {
+                    c.appendChild(h('div', { style: { background: 'var(--sf2)', border: '1.5px solid var(--accent)', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px' } },
+                        h('p', { style: { fontSize: '12px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, '📣 ' + t('an_student_title')),
+                        h('p', { style: { fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginBottom: '8px' } }, r.coach.announce.text),
+                        h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { try { localStorage.setItem(announceSeenKey(r.coach.token), r.coach.announce.id); } catch { } renderRoutines(); } }, t('an_ok'))));
+                }
+            }
             if (!r.coach.gone && r.coach.chkReply) {
                 let crSeen = ''; try { crSeen = localStorage.getItem(chkReplySeenKey(r.coach.token)) || ''; } catch { }
                 const crNew = (r.coach.chkReplyAt || '') > crSeen;
@@ -17393,9 +17409,34 @@
                 className: 'btn btn-primary btn-full', style: { marginBottom: '8px' },
                 onclick: openCoachCreateFlow
             }, t('coach_create')));
+            // Resumen: activos, cumplimiento de los últimos 7 días, para revisar y cobros
+            if (state.myStudents && state.myStudents.length) {
+                const act = state.myStudents.filter(st => (st.status || 'activo') === 'activo' && !st.closed);
+                const planned = act.reduce((n, st) => n + (st.plan_days || 0), 0);
+                const done = act.reduce((n, st) => n + Math.min(st.week_sessions || 0, st.plan_days || 0), 0);
+                const has = (type) => state.myStudents.filter(st => (st.alerts || []).some(a => a.type === type)).length;
+                const nRev = state.myStudents.filter(st => (st.alerts || []).length).length, nLate = has('pay_late'), nDue = has('pay_due');
+                const grid = h('div', { className: 'coach-sum' });
+                const cell = (val, lbl, color) => grid.appendChild(h('div', { className: 'coach-sum-cell' }, h('div', { className: 'coach-sum-val', style: color ? { color } : {} }, String(val)), h('div', { className: 'coach-sum-lbl' }, lbl)));
+                cell(act.length, t('cs_active'));
+                cell(planned ? Math.round(done / planned * 100) + '%' : '—', t('cs_week'), planned && done / planned < 0.6 ? 'var(--orange)' : null);
+                cell(nRev, t('cs_review'), nRev ? 'var(--orange)' : null);
+                if (state.myStudents.some(st => st.billing)) cell(nLate || nDue, nLate ? t('cs_pay_late') : t('cs_pay_due'), nLate ? 'var(--red)' : nDue ? 'var(--orange)' : null);
+                wrap.appendChild(grid);
+            }
             // Herramientas (preguntas de la ficha, exportar, huéspedes, Premium, resumen diario): debajo de la lista
             const tools = h('div', { style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' } });
             tools.appendChild(h('p', { className: 'label' }, t('coach_tools')));
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openAnnounceSheet }, '📣 ' + t('an_btn')));
+            const ann = state.coachCfg && state.coachCfg.announce;
+            if (ann) tools.appendChild(h('div', { style: { fontSize: '12px', color: 'var(--text2)', background: 'var(--sf2)', borderRadius: '10px', padding: '8px 10px', marginBottom: '8px', lineHeight: 1.45, overflowWrap: 'anywhere' } },
+                h('b', {}, t('an_current') + ' · ' + relativeTime(ann.at) + ': '), ann.text, ' ',
+                h('a', { href: '#', style: { color: 'var(--red)', fontWeight: 700 }, onclick: async (e) => {
+                    e.preventDefault();
+                    if (!confirm(t('an_delete_confirm'))) return;
+                    try { await api('PUT', '/api/coach/config', { announce: null }); state.coachCfg.announce = null; flash(t('an_deleted')); renderRoutines(); }
+                    catch (er) { flash('⚠️ ' + er.message, 'var(--red)'); }
+                } }, t('an_delete'))));
             tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachQuestionsSheet }, t('cq_btn')));
             tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachExportSheet }, t('xp_btn')));
             tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openInviteSheet }, t('hg_invite_btn')));
@@ -17404,6 +17445,7 @@
                 t('sp_seats').replace('{free}', seatsNow.free).replace('{total}', seatsNow.total)));
             const dgCfg = (state.coachCfg && state.coachCfg.digest) || { on: false, hour: 9 };
             tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', onclick: openDigestSheet }, '🔔 ' + (dgCfg.on ? t('dg_on_btn').replace('{h}', dgCfg.hour) : t('dg_btn'))));
+            tools.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '10px', lineHeight: 1.45 } }, '💻 ' + t('coach_two_devices')));
             const leftBox = coachLeftNotice();
             if (leftBox) wrap.appendChild(leftBox);
 
@@ -17827,6 +17869,139 @@
             const week = Math.floor(days / 7) + 1, cycle = Math.floor((week - 1) / 4) + 1;
             return { week, cycle, nextEval: perfAddDays(start, (days === 0 ? 1 : Math.ceil(days / 28)) * 28) };
         }
+        // ── Cobro del alumno: anotador del coach (no mueve plata y el alumno no lo ve) ──
+        const BILL_PERIOD_KEYS = [['w1', 'bl_p_w1'], ['w2', 'bl_p_w2'], ['m1', 'bl_p_m1'], ['m3', 'bl_p_m3'], ['m6', 'bl_p_m6']];
+        function money(n) { return n == null ? '' : '$' + Number(n).toLocaleString(appLocale(), { maximumFractionDigits: 2 }); }
+        function billingStatus(b) {
+            const d = Math.round((Date.parse(b.due + 'T12:00:00') - Date.parse(todayStr() + 'T12:00:00')) / 86400000);
+            if (d < 0) return { text: d === -1 ? t('bl_late1') : t('bl_late').replace('{n}', -d), color: 'var(--red)' };
+            if (d === 0) return { text: t('bl_today'), color: 'var(--orange)' };
+            if (d === 1) return { text: t('bl_tomorrow'), color: 'var(--orange)' };
+            if (d <= 3) return { text: t('bl_soon').replace('{n}', d), color: 'var(--orange)' };
+            return { text: t('bl_due_on').replace('{date}', shortDate(b.due)), color: 'var(--text2)' };
+        }
+        function renderStudentBilling(v, routine) {
+            const b = routine.billing;
+            const c = h('div', { className: 'card fade-in' });
+            c.appendChild(h('p', { className: 'label' }, '💵 ' + t('bl_title')));
+            const save = async (body, msg) => {
+                try { await api('PUT', '/api/routines/' + routine.id, body); if (msg) flash(msg); await openStudentDetail(routine.id); loadMyStudents().catch(() => { }); }
+                catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
+            };
+            if (!b) {
+                c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('bl_empty')));
+                c.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', onclick: () => openBillingSheet(null, save) }, t('bl_setup')));
+                v.appendChild(c);
+                return;
+            }
+            const st = billingStatus(b);
+            const per = (BILL_PERIOD_KEYS.find(x => x[0] === b.period) || BILL_PERIOD_KEYS[2])[1];
+            c.appendChild(h('p', { style: { fontSize: '16px', fontWeight: 800, marginBottom: '2px' } }, (b.amount != null ? money(b.amount) + ' · ' : '') + t(per)));
+            c.appendChild(h('p', { style: { fontSize: '13px', fontWeight: 700, color: b.on ? st.color : 'var(--text3)', marginBottom: '8px' } }, b.on ? st.text : t('bl_paused') + ' · ' + t('bl_due_on').replace('{date}', shortDate(b.due))));
+            if (b.note) c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginBottom: '8px', overflowWrap: 'anywhere' } }, b.note));
+            const acts = h('div', { className: 'perf-actions' });
+            acts.appendChild(h('button', { className: 'btn btn-primary btn-sm', onclick: (e) => { e.currentTarget.disabled = true; save({ billing_paid: { date: todayStr() } }, t('bl_paid_done')); } }, '✅ ' + t('bl_paid_btn')));
+            // Recordatorio por WhatsApp (al número de la ficha si lo dejó)
+            const phone = String((routine.intake && routine.intake.contact) || '').replace(/[^\d+]/g, '');
+            const to = /^\+?\d{8,15}$/.test(phone) ? phone.replace('+', '') : '';
+            const late = Date.parse(b.due + 'T12:00:00') < Date.parse(todayStr() + 'T12:00:00');
+            const msg = t(late ? 'bl_wa_text_late' : 'bl_wa_text').replace('{name}', (routine.alumno_name || '').split(' ')[0]).replace('{amount}', b.amount != null ? money(b.amount) : '').replace('{date}', shortDate(b.due)).replace(/ {2,}/g, ' ');
+            acts.appendChild(h('a', { className: 'btn btn-secondary btn-sm', href: 'https://wa.me/' + to + '?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener', style: { textDecoration: 'none' } }, '💬 ' + t('bl_wa_btn')));
+            acts.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => openBillingSheet(b, save) }, t('bl_edit')));
+            c.appendChild(acts);
+            const paid = b.paid || [];
+            if (paid.length) {
+                c.appendChild(h('p', { className: 'label', style: { marginTop: '12px' } }, t('bl_history')));
+                paid.slice(0, 6).forEach(pp => c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', padding: '3px 0' } }, '✓ ' + shortDate(pp.date) + (pp.amount != null ? ' · ' + money(pp.amount) : ''))));
+                c.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { marginTop: '6px' }, onclick: () => { if (confirm(t('bl_undo_confirm'))) save({ billing_undo: true }, t('bl_undo_done')); } }, t('bl_undo')));
+            }
+            c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '10px', lineHeight: 1.4 } }, t('bl_private')));
+            v.appendChild(c);
+        }
+        function openBillingSheet(b, save) {
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            card.appendChild(h('p', { className: 'label' }, '💵 ' + t('bl_title')));
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('bl_sheet_sub')));
+            const amt = h('input', { className: 'input', type: 'number', inputmode: 'decimal', min: '0', placeholder: t('bl_amount_ph'), style: { marginBottom: '10px' } });
+            if (b && b.amount != null) amt.value = String(b.amount);
+            card.appendChild(amt);
+            let period = (b && b.period) || 'm1';
+            card.appendChild(h('p', { className: 'label' }, t('bl_every')));
+            const pills = h('div', { className: 'pills', style: { marginBottom: '10px' } });
+            const drawP = () => { pills.innerHTML = ''; BILL_PERIOD_KEYS.forEach(([k, key]) => pills.appendChild(h('button', { className: 'pill' + (period === k ? ' active' : ''), onclick: () => { period = k; drawP(); } }, t(key)))); };
+            drawP();
+            card.appendChild(pills);
+            card.appendChild(h('p', { className: 'label' }, t('bl_next_due')));
+            const due = h('input', { className: 'input', type: 'date', style: { marginBottom: '10px' } });
+            due.value = (b && b.due) || todayStr();
+            card.appendChild(due);
+            const note = h('input', { className: 'input', maxlength: '120', placeholder: t('bl_note_ph'), style: { marginBottom: '10px' } });
+            note.value = (b && b.note) || '';
+            card.appendChild(note);
+            let on = b ? b.on !== false : true;
+            const onRow = h('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '12px' } });
+            const chk = h('input', { type: 'checkbox', className: 'cyc-check' });
+            chk.checked = on; chk.onchange = () => { on = chk.checked; };
+            onRow.append(chk, t('bl_alerts_on'));
+            card.appendChild(onRow);
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: async () => {
+                if (!due.value) { flash(t('bl_due_required'), 'var(--orange)'); return; }
+                const a = parseFloat(String(amt.value).replace(',', '.'));
+                ov.remove();
+                await save({ billing: { amount: a > 0 ? a : null, period, due: due.value, note: note.value.trim(), on } }, t('bl_saved'));
+            } }, t('bl_save')));
+            if (b) card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px', color: 'var(--red)' }, onclick: async () => {
+                if (!confirm(t('bl_delete_confirm'))) return;
+                ov.remove();
+                await save({ billing: null }, t('bl_deleted'));
+            } }, t('bl_delete')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('btn_cancel')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+        }
+
+        // ── Aviso del coach a todos sus alumnos ──
+        // El texto queda una vez en el servidor (lo ven en el link y la app 14 días); la notificación
+        // se pide alumno por alumno (activos y con avisos), de a uno por segundo con más de 30.
+        function openAnnounceSheet() {
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            card.appendChild(h('p', { className: 'label' }, '📣 ' + t('an_title')));
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('an_sub')));
+            const ta = h('textarea', { className: 'input', rows: 4, maxlength: '300', placeholder: t('an_ph'), style: { fontSize: '14px' } });
+            card.appendChild(ta);
+            const send = h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '10px' }, onclick: async () => {
+                const text = ta.value.trim();
+                if (!text) { flash(t('an_empty'), 'var(--orange)'); return; }
+                send.disabled = true;
+                try { await api('PUT', '/api/coach/config', { announce: { text } }); }
+                catch (e) { send.disabled = false; flash('⚠️ ' + e.message, 'var(--red)'); return; }
+                const targets = (state.myStudents || []).filter(st => st.push_on && (st.status || 'activo') === 'activo' && !st.closed);
+                let sent = 0;
+                for (let i = 0; i < targets.length; i++) {
+                    send.textContent = t('an_sending').replace('{i}', i + 1).replace('{n}', targets.length);
+                    try { const r = await api('POST', '/api/routines/' + targets[i].id + '/announce', {}); if (r && r.sent) sent++; } catch { }
+                    if (targets.length > 30) await new Promise(res => setTimeout(res, 1000));
+                }
+                ov.remove();
+                flash('📣 ' + t('an_done').replace('{n}', sent));
+                loadMyStudents().then(() => renderRoutines()).catch(() => { });
+            } }, t('an_send'));
+            card.appendChild(send);
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('btn_cancel')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+        }
+        function announceSeenKey(token) { return 'bm-ann-seen-' + token; }
+        function renderAlumnoAnnounce(v, a, isNew) {
+            const c = h('div', { className: 'alumno-routine-card', style: Object.assign({ padding: '16px', marginBottom: 0 }, isNew ? { border: '1.5px solid var(--accent)' } : {}) });
+            c.appendChild(h('p', { className: 'label' }, '📣 ' + t('an_student_title')));
+            c.appendChild(h('p', { style: { fontSize: '14px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, a.text));
+            c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '6px' } }, relativeTime(a.at)));
+            v.appendChild(c);
+        }
+
         function renderStudentFicha(v, routine) {
             const pf = routine.profile || {}, ik = routine.intake;
             const c = h('div', { className: 'card fade-in' });
@@ -17930,12 +18105,14 @@
                 case 'no_logs': return t('al_no_logs');
                 case 'no_checkin': return a.days == null ? t('al_no_checkin_never') : t('al_no_checkin').replace('{n}', a.days);
                 case 'interest': return t('al_interest');
+                case 'pay_due': return a.in === 0 ? t('bl_today') : a.in === 1 ? t('bl_tomorrow') : t('bl_soon').replace('{n}', a.in);
+                case 'pay_late': return a.days === 1 ? t('bl_late1') : t('bl_late').replace('{n}', a.days);
                 case 'eval': return (a.late === 1 ? t('al_eval_late1') : a.late > 0 ? t('al_eval_late').replace('{n}', a.late) : a.in === 0 ? t('al_eval_today') : a.in === 1 ? t('al_eval_tomorrow') : t('al_eval_in').replace('{n}', a.in).replace('{date}', perfDate(a.date))).replace('{c}', a.cycle);
                 default: return '';
             }
         }
-        function alertIcon(a) { return a.type === 'eval' ? '📅 ' : a.type === 'interest' ? '🙋 ' : '⚠️ '; }
-        function alertColor(a) { return a.type === 'interest' ? 'var(--accent)' : a.type === 'no_training' ? 'var(--red)' : a.type === 'eval' ? (a.late > 0 ? 'var(--orange)' : 'var(--accent)') : 'var(--orange)'; }
+        function alertIcon(a) { return a.type === 'eval' ? '📅 ' : a.type === 'interest' ? '🙋 ' : /^pay_/.test(a.type) ? '💵 ' : '⚠️ '; }
+        function alertColor(a) { return a.type === 'interest' ? 'var(--accent)' : (a.type === 'no_training' || a.type === 'pay_late') ? 'var(--red)' : a.type === 'eval' ? (a.late > 0 ? 'var(--orange)' : 'var(--accent)') : 'var(--orange)'; }
         function renderStudentAlerts(v, alerts) {
             const list = (alerts || []).filter(a => alertText(a));
             if (!list.length) return;
@@ -19564,6 +19741,7 @@
             renderStudentInterest(v, routine);
             renderStudentAlerts(v, routine.alerts);
             renderStudentFicha(v, routine);
+            if (!(routine.profile && routine.profile.guest)) renderStudentBilling(v, routine);   // al huésped le cobra el hotel
             renderStudentStay(v, routine, stay);
             const isGuest = !!(routine.profile && routine.profile.guest);
             if (!isGuest) {   // evaluaciones y balance van por ciclos de 4 semanas: no aplican a una estadía
@@ -19810,6 +19988,7 @@
                 state.alumnoEdits = edits;
                 state.alumnoSessions = sessions || [];
                 state.alumnoCheckins = checkins || [];
+                state.alumnoAnnounce = share.announce || null;
                 state.alumnoLocalPlan = JSON.parse(JSON.stringify(routine.plan));
                 state.alumnoName = localStorage.getItem('bm-alumno-name-' + state.alumnoToken) || '';
                 renderAlumnoView();
@@ -19855,6 +20034,10 @@
             // rutina, que quedaba debajo de 4 tarjetas. Arriba va solo lo poco frecuente o lo nuevo del
             // coach (balance, evaluación, respuesta al control) y la ficha si todavía no la mandó; la rutina
             // enseguida, y el control, los videos, los avisos y la app debajo.
+            const ann = state.alumnoAnnounce;
+            let annSeen = ''; try { annSeen = localStorage.getItem(announceSeenKey(state.alumnoToken)) || ''; } catch { }
+            const annNew = !!ann && ann.id !== annSeen;
+            if (annNew) { renderAlumnoAnnounce(v, ann, true); try { localStorage.setItem(announceSeenKey(state.alumnoToken), ann.id); } catch { } }
             renderAlumnoReviewCard(v);
             renderAlumnoEvalCard(v);
             if (!state.alumnoIntake) renderAlumnoIntakeCard(v);
@@ -19959,6 +20142,7 @@
             v.appendChild(card);
             // Huésped (estadía corta): sin control semanal, avisos del control ni pase a la app
             if (!state.alumnoGuest && !crNew) renderAlumnoCheckin(v);
+            if (ann && !annNew) renderAlumnoAnnounce(v, ann, false);
             renderAlumnoVideosCard(v);
             if (!state.alumnoGuest) {
                 renderAlumnoPushCard(v);

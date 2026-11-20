@@ -606,9 +606,46 @@ let token, routineId;
     const b4 = await call('POST', '/api/coach/bind', { license: 'x.y', coach_id: PANEL });
     ok('/coach/bind rechaza licencias Premium o inventadas', b3.status === 401 && b4.status === 401);
 
+    // Dos dispositivos para el Coach (celular y compu); un tercero saca al más viejo
+    const valid = async (tok) => (await call('POST', '/api/license/verify', { token: tok })).body.valid === true;
+    ok('Coach: el celular y la compu quedan activos a la vez (sin contar como cambio de teléfono)', await valid(a1.body.token) && await valid(a2.body.token) && !code(coachCode).rebinds, [code(coachCode).devices, code(coachCode).rebinds]);
+    const a4 = await call('POST', '/api/license/activate', { code: coachCode, deviceId: 'compu3', coach_id: OTRO });
+    ok('Coach: un tercer dispositivo saca al más viejo y cuenta como cambio', a4.status === 200 && a4.body.coach_id === PANEL && !(await valid(a1.body.token)) && await valid(a2.body.token) && await valid(a4.body.token) && code(coachCode).rebinds === 1, code(coachCode).devices);
+    const b5 = await call('POST', '/api/coach/bind', { license: a2.body.token, coach_id: OTRO });
+    ok('Coach: el segundo dispositivo también recupera su panel', b5.status === 200 && b5.body.coach_id === PANEL, b5.body);
+    const prem2 = await call('POST', '/api/license/activate', { code: prem, deviceId: 'devP2' });
+    ok('Premium sigue en un solo teléfono: activarlo en otro saca al anterior', prem2.status === 200 && !(await valid(a3.body.token)) && await valid(prem2.body.token));
+
     const cfg0 = await call('PUT', '/api/coach/config', { coach_id: PANEL, intake_questions: ['¿Practicás otro deporte?', '', '¿Qué horario preferís?', 'cuarta', 'quinta'] });
     ok('el coach guarda hasta 3 preguntas propias', cfg0.status === 200 && cfg0.body.intake_questions.length === 3 && cfg0.body.intake_questions[0] === '¿Practicás otro deporte?', cfg0.body);
     const r = (await call('POST', '/api/routines', { coach_id: PANEL, name: 'Plan Caro', plan: [{ name: 'A' }], alumno_name: 'Caro' })).body;
+
+    // Cobros (anotador del coach, sin mover plata)
+    {
+        const iso = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+        const itemOf = async () => (await call('GET', '/api/routines?coach_id=' + PANEL + '&paged=1')).body.items.find((x) => x.id === r.id);
+        const bad = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing: { amount: 15000, period: 'm1', due: '2026-02-30' } });
+        ok('cobro con una fecha que no existe → 400', bad.status === 400);
+        const late = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing: { amount: 15000, period: 'm1', due: '2026-01-31', note: 'Transferencia' } });
+        ok('anotar el cobro no cuenta como "tu coach actualizó la rutina"', late.status === 200 && late.body.billing.amount === 15000 && late.body.last_coach_update_at === r.last_coach_update_at, late.body.billing);
+        let it = await itemOf();
+        ok('la lista trae el cobro y la alerta de vencido con los días', it.billing && it.billing.due === '2026-01-31' && it.alerts.some((a) => a.type === 'pay_late' && a.days > 100), it.alerts);
+        const sh = await call('GET', '/api/shares/' + r.share_token);
+        ok('el cobro no viaja al link del alumno', !JSON.stringify(sh.body).includes('15000') && !JSON.stringify(sh.body).includes('billing'));
+        await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing_paid: { date: iso(0) } });
+        const p2 = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing_paid: { date: iso(0), amount: 16000 } });
+        ok('"pagó" corre el vencimiento un mes y respeta el día 31 (31-ene → 28-feb → 31-mar)', p2.body.billing.due === '2026-03-31' && p2.body.billing.paid.length === 2 && p2.body.billing.paid[0].amount === 16000 && p2.body.billing.paid[1].amount === 15000, p2.body.billing);
+        const un = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing_undo: true });
+        ok('deshacer el último pago vuelve el vencimiento atrás', un.body.billing.due === '2026-02-28' && un.body.billing.paid.length === 1, un.body.billing);
+        await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing: { amount: 9000, period: 'w2', due: iso(2) } });
+        it = await itemOf();
+        ok('cobro cada 15 días que vence en 2 → alerta "por vencer"', it.alerts.some((a) => a.type === 'pay_due' && a.in === 2) && !it.alerts.some((a) => a.type === 'pay_late'), it.alerts);
+        const w2 = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing_paid: {} });
+        ok('cada 15 días: "pagó" corre el vencimiento 14 días', w2.body.billing.due === new Date(Date.parse(iso(2) + 'T00:00:00Z') + 14 * 86400000).toISOString().slice(0, 10), w2.body.billing.due);
+        await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, billing: null });
+        it = await itemOf();
+        ok('borrar el cobro saca el dato y sus alertas', it.billing === null && !it.alerts.some((a) => /^pay_/.test(a.type)));
+    }
     const sh0 = await call('GET', '/api/shares/' + r.share_token);
     ok('el link del alumno trae las preguntas del coach y la ficha vacía', sh0.body.intake === null && sh0.body.intake_questions.length === 3);
     const noConsent = await call('POST', '/api/shares/' + r.share_token + '/intake', { goals: ['fuerza'], limitations: 'Hernia lumbar' });
@@ -657,10 +694,13 @@ let code, licToken;
     const reactivateSame = await call('POST', '/api/license/activate', { code, deviceId: 'dev1' });
     ok('reactivar mismo device (idempotente) ok', reactivateSame.status === 200 && !!reactivateSame.body.token);
 
-    // cambio de teléfono legítimo: la licencia se mueve al nuevo device
+    // Coach: un segundo dispositivo (la compu) se suma; con un tercero sale el más viejo
     const otherDevice = await call('POST', '/api/license/activate', { code, deviceId: 'dev2' });
     ok('cambio de device → re-bind 200 (no bloquea)', otherDevice.status === 200 && !!otherDevice.body.token, otherDevice.body);
-    // tras moverse, el viejo token (dev1) ya no valida (device_mismatch)
+    const both = await call('POST', '/api/license/verify', { token: licToken });
+    ok('Coach con 2 dispositivos: el primero sigue válido', both.body.valid === true, both.body);
+    await call('POST', '/api/license/activate', { code, deviceId: 'dev3' });
+    // con el tercero, el más viejo (dev1) ya no valida (device_mismatch)
     const oldDeviceVerify = await call('POST', '/api/license/verify', { token: licToken });
     ok('token del device viejo → inválido tras mover', oldDeviceVerify.body.valid === false && oldDeviceVerify.body.reason === 'device_mismatch', oldDeviceVerify.body);
     // re-activamos en dev1 para el resto de los asserts
@@ -2099,6 +2139,32 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     // 4) El coach elige el día y la hora
     const cr = await call('PUT', '/api/routines/' + r.id, { coach_id: C, chk_remind: { mode: 'custom', dow: 3, hour: 7 } });
     ok('el coach elige miércoles 7 h y se reprograma', cr.status === 200 && cr.body.chk_remind.dow === 3 && dowOf(chkDO.storage.alarm) === 3 && T.localParts(BA, new Date(chkDO.storage.alarm)).hour === 7, cr.body.chk_remind);
+
+    // Aviso del coach a todos sus alumnos
+    const an0 = await call('PUT', '/api/coach/config', { coach_id: C, announce: { text: '  ' } });
+    ok('aviso vacío → 400', an0.status === 400);
+    const an1 = await call('PUT', '/api/coach/config', { coach_id: C, announce: { text: 'El lunes 24 es feriado: entrenamos el martes.' } });
+    const cfgA = await call('GET', '/api/coach/config?coach_id=' + C);
+    ok('el coach publica un aviso', an1.status === 200 && cfgA.body.announce && cfgA.body.announce.text.includes('feriado'), cfgA.body.announce);
+    const an2 = await call('PUT', '/api/coach/config', { coach_id: C, announce: { text: 'Otro aviso' } });
+    ok('otro aviso enseguida → 429', an2.status === 429, an2.status);
+    const shA = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve el aviso en su link', !!shA.body.announce && shA.body.announce.text.includes('feriado'), shA.body.announce);
+    pushes = [];
+    const ps1 = await call('POST', '/api/routines/' + r.id + '/announce', { coach_id: C });
+    const anMsg = pushes.length ? await decrypt(phone, pushes[0].body) : null;
+    ok('la notificación del aviso le llega al alumno con el texto', ps1.status === 200 && ps1.body.sent === 1 && anMsg && anMsg.body.includes('feriado') && anMsg.body.includes('Profe Juan'), anMsg);
+    pushes = [];
+    const ps2 = await call('POST', '/api/routines/' + r.id + '/announce', { coach_id: C });
+    ok('el mismo aviso no se manda dos veces', ps2.body.dup === true && pushes.length === 0);
+    const psX = await call('POST', '/api/routines/' + r.id + '/announce', { coach_id: 'otroCoach' });
+    ok('otro coach no puede avisarle a este alumno', psX.status === 403 || psX.status === 404, psX.status);
+    await call('PUT', '/api/coach/config', { coach_id: C, announce: null });
+    const shA2 = await call('GET', '/api/shares/' + tk);
+    ok('borrar el aviso lo saca del link', shA2.body.announce === null, shA2.body.announce);
+    const lstP = await call('GET', '/api/routines?coach_id=' + C + '&paged=1');
+    const itP = lstP.body.items.find((x) => x.id === r.id);
+    ok('la lista dice si el alumno tiene avisos y cuántos días tiene su plan', itP.push_on === true && itP.plan_days === 1, itP);
     ok('cambiar el recordatorio no cuenta como "tu coach actualizó la rutina"', cr.body.last_coach_update_at === r.last_coach_update_at && cr.body.push_subs === undefined);
     const badC = await call('PUT', '/api/routines/' + r.id, { coach_id: C, chk_remind: { mode: 'custom', dow: 9, hour: 7 } });
     ok('día inválido → 400', badC.status === 400);

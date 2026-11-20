@@ -57,6 +57,7 @@ export function routineLite(r) {
         delete o.profile.notes; delete o.profile.goals;
     }
     delete o.ex_first; delete o.vol_log; delete o.goal_history;
+    o.push_n = Array.isArray(r.push_subs) ? r.push_subs.length : 0;   // la lista solo necesita saber si tiene avisos
     delete o.push_subs; delete o.moved_tokens; delete o.terms;
     return o;
 }
