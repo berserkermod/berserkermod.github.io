@@ -213,6 +213,19 @@ let token, routineId;
     ok('abrir el detalle marca el control como visto', lst2.body[0].new_checkin === false, lst2.body[0]);
     const sh = await call('GET', '/api/shares/' + tk);
     ok('el alumno ve sus controles', Array.isArray(sh.body.checkins) && sh.body.checkins.length === 2, sh.body.checkins);
+    // El coach responde el control de la semana
+    const wk = c1.body.checkin.week;
+    const rEmpty = await call('PUT', '/api/routines/' + rid + '/checkins/' + wk, { coach_id: 'coachR', reply: '  ' });
+    const rOther = await call('PUT', '/api/routines/' + rid + '/checkins/' + wk, { coach_id: 'coachOtro', reply: 'x' });
+    const rNoWeek = await call('PUT', '/api/routines/' + rid + '/checkins/2020-W01', { coach_id: 'coachR', reply: 'x' });
+    ok('responder el control: vacío → 400, otro coach → no, semana sin control → 404', rEmpty.status === 400 && (rOther.status === 403 || rOther.status === 404) && rNoWeek.status === 404, [rEmpty.status, rOther.status, rNoWeek.status]);
+    const rOk = await call('PUT', '/api/routines/' + rid + '/checkins/' + wk, { coach_id: 'coachR', reply: 'Bien la semana. Dormí más: apuntá a 7 h.' });
+    ok('responder el control → queda en el control con la fecha', rOk.status === 200 && rOk.body.checkin.reply === 'Bien la semana. Dormí más: apuntá a 7 h.' && !!rOk.body.checkin.reply_at, rOk.body);
+    const shR = await call('GET', '/api/shares/' + tk);
+    ok('el alumno ve la respuesta en su link', shR.body.checkins[0].reply === 'Bien la semana. Dormí más: apuntá a 7 h.', shR.body.checkins[0]);
+    await call('POST', '/api/shares/' + tk + '/checkins', { date: today, weight: 78.0, note: 'Corrijo el peso' });
+    const shR2 = await call('GET', '/api/shares/' + tk);
+    ok('si el alumno corrige el control de la semana, la respuesta se conserva', shR2.body.checkins[0].weight === 78 && shR2.body.checkins[0].reply === 'Bien la semana. Dormí más: apuntá a 7 h.', shR2.body.checkins[0]);
     const bad = await call('POST', '/api/shares/nonexist00/checkins', { weight: 70 });
     ok('control con token inválido → 404', bad.status === 404);
 
@@ -2125,6 +2138,14 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     pushes = [];
     await call('PUT', '/api/routines/' + r.id + '/videos/' + vd.body.video.id, { coach_id: C, reply: 'Corrijo' });
     ok('editar la respuesta no vuelve a avisar', pushes.length === 0);
+    const ck = await call('POST', '/api/shares/' + tk + '/checkins', { weight: 80, energy: 3 });
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/checkins/' + ck.body.checkin.week, { coach_id: C, reply: 'Vamos bien' });
+    const ckMsg = pushes.length ? await decrypt(phone, pushes[0].body) : null;
+    ok('primera respuesta al control → aviso', pushes.length === 1 && ckMsg && ckMsg.body.includes('control semanal'), ckMsg);
+    pushes = [];
+    await call('PUT', '/api/routines/' + r.id + '/checkins/' + ck.body.checkin.week, { coach_id: C, reply: 'Vamos muy bien' });
+    ok('editar la respuesta al control no vuelve a avisar', pushes.length === 0);
     pushes = [];
     await call('PUT', '/api/routines/' + r.id, { coach_id: C, plan: [{ name: 'A', exercises: [{ name: 'Press' }] }] });
     const plMsg = pushes.length ? await decrypt(phone, pushes[0].body) : null;

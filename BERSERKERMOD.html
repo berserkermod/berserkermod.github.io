@@ -2354,8 +2354,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-40"></script>
-    <script src="core/i18n-data.js?v=2-40"></script>
+    <script src="core/calc.js?v=2-41"></script>
+    <script src="core/i18n-data.js?v=2-41"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2478,7 +2478,7 @@
                 home_greet_am: "Buenos días", home_greet_pm: "Buenas tardes", home_greet_eve: "Buenas noches",
                 home_streak_label: "RACHA DE ENTRENAMIENTO", home_streak_msg: "días consecutivos", home_streak_start: "¡Empezá tu racha hoy!",
                 home_stats_sess: "SESIONES", home_stats_vol: "VOLUMEN", home_stats_cardio: "CARDIO", home_stats_cals: "CALORÍAS",
-                home_today: "HOY TOCA", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
+                home_today: "HOY TOCA", rm_students: "Mis alumnos", rm_mine: "Mi entrenamiento", coach_tools: "HERRAMIENTAS", hm_students_n: "{n} alumnos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} controles nuevos", hm_students_hint: "Revisá cómo vienen tus alumnos.", hm_open_panel: "Abrir el panel →", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
                 routines_rec: "Plan Recomendado", routines_no_series: "No completaste ninguna serie", routines_saved_ok: "¡Entrenamiento Guardado! 🔥",
                 routines_day: "Día", routines_continue: "Continuar →", routines_back: "Atrás", routines_finish: "FINALIZAR ENTRENAMIENTO 🔥",
                 train_day: "DÍA DE ENTRENAMIENTO", train_exercise: "EJERCICIO", train_sel_ph: "Seleccionar ejercicio...", train_log: "REGISTRAR SERIE", train_prev: "Anterior: ",
@@ -2656,9 +2656,9 @@
                 coach_sessions_summary: "🔥 {w} esta semana · {t} en los últimos 30 días",
                 al_log_title: "Registrá tu entrenamiento", al_log_sub: "Precargado con tu última vez: cambiá lo que hiciste distinto.",
                 al_log_add_set: "+ serie", al_log_rm_set: "− serie", al_log_min: "min",
-                al_log_rpe: "¿QUÉ TAN DURO FUE?", al_rpe_6: "Fácil", al_rpe_7: "Moderado", al_rpe_8: "Duro", al_rpe_9: "Muy duro", al_rpe_10: "Al límite",
+                al_log_rpe: "¿QUÉ TAN DURO FUE?", al_log_sec: "seg", coach_since: "Alumno desde el {date}", al_rpe_6: "Fácil", al_rpe_7: "Moderado", al_rpe_8: "Duro", al_rpe_9: "Muy duro", al_rpe_10: "Al límite",
                 al_log_note_ph: "Nota para tu coach (opcional)", al_log_save: "Guardar entrenamiento", al_log_quick: "Solo marcar que entrené", al_trained_edit: "Registrado hoy · editar",
-                chk_title: "CONTROL SEMANAL", chk_sub: "Una vez por semana, contale a tu coach cómo venís. Son 2 minutos.", chk_weight: "Peso (kg)", chk_energy: "Energía",
+                chk_title: "CONTROL SEMANAL", cr_reply_title: "TU RESPUESTA", cr_reply_ph: "Contale qué viste y qué hacer esta semana…", cr_reply_btn: "Responder", cr_reply_edit: "Editar respuesta", cr_reply_sent: "Respuesta enviada", cr_reply_empty: "Escribí la respuesta", cr_reply_wa: "Mandarla por WhatsApp", cr_reply_wa_text: "¡Hola {name}! Sobre tu control: {reply}", chk_coach_says: "Tu coach te respondió", chk_reply_new_app: "Tu coach respondió tu control", chk_reply_view: "Ver la respuesta de tu coach", chk_sub: "Una vez por semana, contale a tu coach cómo venís. Son 2 minutos.", chk_weight: "Peso (kg)", chk_energy: "Energía",
                 chk_energy_low: "muy mal", chk_energy_high: "muy bien", chk_note_ph: "Mensaje para tu coach (opcional)",
                 chk_send: "Enviar al coach", chk_ok: "✓ Control enviado a tu coach", chk_sent: "Control de esta semana enviado", chk_edit: "Editar", chk_empty: "Completá al menos un dato",
                 coach_chk_title: "CONTROL SEMANAL", coach_chk_none: "Todavía no mandó controles. El link se lo pide una vez por semana.", coach_chk_new: "Control nuevo",
@@ -2828,7 +2828,7 @@
                 eq_bike: "bicicleta",
                 eq_ab_wheel: "rueda abdominal",
                 n_days: "{n} días",
-                coach_tpl_use: "Usar plantilla", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
+                coach_tpl_use: "Usar plantilla", cb_title: "ARMAR UNA BASE CON LA APP", cb_sub: "Elegí objetivo y nivel (los días son los de abajo): la app arma la rutina con sus reglas basadas en evidencia (series, repeticiones, reps en reserva y descanso) y después la ajustás a tu manera.", cb_btn: "Armar la base", cb_done: "Base armada: ajustala y generá el link", cb_done_edit: "Base nueva armada: revisala y guardá los cambios", cb_from_intake: "Rehacer la base según su ficha", cb_confirm: "Esto reemplaza la rutina actual por una base nueva según su ficha ({goal}, {level}, {days}). ¿Seguimos?", cb_home_note: "Según su ficha no entrena en gimnasio: la base usa barras y máquinas, cambiá los ejercicios que no pueda hacer.", n_day_one: "1 día", coach_tpl_loaded: "Plantilla cargada — revisá y generá el link", coach_tpl_deleted: "Plantilla eliminada", coach_tpl_save: "Guardar como plantilla", coach_tpl_saved: "Plantilla \"{name}\" guardada",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetales", food_cat_fruit: "Frutas", food_cat_fat: "Grasas", food_cat_dairy: "Lácteos",
                 food_search_ph: "Buscar alimento (manzana, pollo, yogur...)", food_manual_name_ph: "Nombre del alimento", creator_name_ph: "Ej. Volumen Extremo",
                 rt_routine_updated: "🔄 Rutina actualizada",
@@ -2920,7 +2920,7 @@
                 home_greet_am: "Good morning", home_greet_pm: "Good afternoon", home_greet_eve: "Good evening",
                 home_streak_label: "TRAINING STREAK", home_streak_msg: "days in a row", home_streak_start: "Start your streak today!",
                 home_stats_sess: "SESSIONS", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIES",
-                home_today: "TODAY", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
+                home_today: "TODAY", rm_students: "My clients", rm_mine: "My training", coach_tools: "TOOLS", hm_students_n: "{n} clients", hm_review_n: "{n} to review", hm_review_none: "nothing to review", hm_chk_n: "{n} new check-ins", hm_students_hint: "See how your clients are doing.", hm_open_panel: "Open the panel →", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
                 routines_rec: "Recommended Plan", routines_no_series: "No sets completed", routines_saved_ok: "Workout Saved! 🔥",
                 routines_day: "Day", routines_continue: "Continue →", routines_back: "Back", routines_finish: "FINISH WORKOUT 🔥",
                 train_day: "TRAINING DAY", train_exercise: "EXERCISE", train_sel_ph: "Select exercise...", train_log: "LOG SET", train_prev: "Previous: ",
@@ -3098,9 +3098,9 @@
                 coach_sessions_summary: "🔥 {w} this week · {t} in the last 30 days",
                 al_log_title: "Log your workout", al_log_sub: "Prefilled with your last time: change what you did differently.",
                 al_log_add_set: "+ set", al_log_rm_set: "− set", al_log_min: "min",
-                al_log_rpe: "HOW HARD WAS IT?", al_rpe_6: "Easy", al_rpe_7: "Moderate", al_rpe_8: "Hard", al_rpe_9: "Very hard", al_rpe_10: "Max effort",
+                al_log_rpe: "HOW HARD WAS IT?", al_log_sec: "sec", coach_since: "Client since {date}", al_rpe_6: "Easy", al_rpe_7: "Moderate", al_rpe_8: "Hard", al_rpe_9: "Very hard", al_rpe_10: "Max effort",
                 al_log_note_ph: "Note for your coach (optional)", al_log_save: "Save workout", al_log_quick: "Just mark that I trained", al_trained_edit: "Logged today · edit",
-                chk_title: "WEEKLY CHECK-IN", chk_sub: "Once a week, tell your coach how it's going. It takes 2 minutes.", chk_weight: "Weight (kg)", chk_energy: "Energy",
+                chk_title: "WEEKLY CHECK-IN", cr_reply_title: "YOUR REPLY", cr_reply_ph: "Tell them what you saw and what to do this week…", cr_reply_btn: "Reply", cr_reply_edit: "Edit reply", cr_reply_sent: "Reply sent", cr_reply_empty: "Write the reply", cr_reply_wa: "Send it on WhatsApp", cr_reply_wa_text: "Hi {name}! About your check-in: {reply}", chk_coach_says: "Your coach replied", chk_reply_new_app: "Your coach replied to your check-in", chk_reply_view: "See your coach's reply", chk_sub: "Once a week, tell your coach how it's going. It takes 2 minutes.", chk_weight: "Weight (kg)", chk_energy: "Energy",
                 chk_energy_low: "very bad", chk_energy_high: "very good", chk_note_ph: "Message for your coach (optional)",
                 chk_send: "Send to coach", chk_ok: "✓ Check-in sent to your coach", chk_sent: "This week's check-in sent", chk_edit: "Edit", chk_empty: "Fill in at least one field",
                 coach_chk_title: "WEEKLY CHECK-IN", coach_chk_none: "No check-ins yet. The link asks for one every week.", coach_chk_new: "New check-in",
@@ -3270,7 +3270,7 @@
                 eq_bike: "bike",
                 eq_ab_wheel: "ab wheel",
                 n_days: "{n} days",
-                coach_tpl_use: "Use template", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
+                coach_tpl_use: "Use template", cb_title: "BUILD A BASE WITH THE APP", cb_sub: "Pick the goal and level (days are set below): the app builds the routine with its evidence-based rules (sets, reps, reps in reserve and rest) and then you adjust it your way.", cb_btn: "Build the base", cb_done: "Base ready: adjust it and generate the link", cb_done_edit: "New base ready: review it and save the changes", cb_from_intake: "Rebuild the base from their intake form", cb_confirm: "This replaces the current routine with a new base from their intake form ({goal}, {level}, {days}). Continue?", cb_home_note: "Their intake form says they don't train at a gym: the base uses barbells and machines, swap the exercises they can't do.", n_day_one: "1 day", coach_tpl_loaded: "Template loaded — review and generate the link", coach_tpl_deleted: "Template deleted", coach_tpl_save: "Save as template", coach_tpl_saved: "Template \"{name}\" saved",
                 food_cat_all: "All", food_cat_protein: "Protein", food_cat_carb: "Carbs", food_cat_veg: "Veggies", food_cat_fruit: "Fruits", food_cat_fat: "Fats", food_cat_dairy: "Dairy",
                 food_search_ph: "Search food (apple, chicken, yogurt...)", food_manual_name_ph: "Food name", creator_name_ph: "E.g. Extreme Volume",
                 rt_routine_updated: "🔄 Routine updated",
@@ -3363,7 +3363,7 @@
                 home_greet_am: "Bom dia", home_greet_pm: "Boa tarde", home_greet_eve: "Boa noite",
                 home_streak_label: "SEQUÊNCIA DE TREINO", home_streak_msg: "dias seguidos", home_streak_start: "Comece sua sequência hoje!",
                 home_stats_sess: "SESSÕES", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIAS",
-                home_today: "HOJE VOCÊ TREINA", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
+                home_today: "HOJE VOCÊ TREINA", rm_students: "Meus alunos", rm_mine: "Meu treino", coach_tools: "FERRAMENTAS", hm_students_n: "{n} alunos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} check-ins novos", hm_students_hint: "Veja como estão seus alunos.", hm_open_panel: "Abrir o painel →", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
                 routines_rec: "Plano Recomendado", routines_no_series: "Nenhuma série completada", routines_saved_ok: "Treino Salvo! 🔥",
                 routines_day: "Dia", routines_continue: "Continuar →", routines_back: "Voltar", routines_finish: "FINALIZAR TREINO 🔥",
                 train_day: "DIA DE TREINO", train_exercise: "EXERCÍCIO", train_sel_ph: "Selecionar exercício...", train_log: "REGISTRAR SÉRIE", train_prev: "Anterior: ",
@@ -3541,9 +3541,9 @@
                 coach_sessions_summary: "🔥 {w} esta semana · {t} nos últimos 30 dias",
                 al_log_title: "Registre seu treino", al_log_sub: "Preenchido com a sua última vez: mude o que fez diferente.",
                 al_log_add_set: "+ série", al_log_rm_set: "− série", al_log_min: "min",
-                al_log_rpe: "QUÃO PESADO FOI?", al_rpe_6: "Fácil", al_rpe_7: "Moderado", al_rpe_8: "Pesado", al_rpe_9: "Muito pesado", al_rpe_10: "No limite",
+                al_log_rpe: "QUÃO PESADO FOI?", al_log_sec: "seg", coach_since: "Aluno desde {date}", al_rpe_6: "Fácil", al_rpe_7: "Moderado", al_rpe_8: "Pesado", al_rpe_9: "Muito pesado", al_rpe_10: "No limite",
                 al_log_note_ph: "Nota para o seu coach (opcional)", al_log_save: "Salvar treino", al_log_quick: "Só marcar que treinei", al_trained_edit: "Registrado hoje · editar",
-                chk_title: "CHECK-IN SEMANAL", chk_sub: "Uma vez por semana, conte ao seu coach como está indo. Leva 2 minutos.", chk_weight: "Peso (kg)", chk_energy: "Energia",
+                chk_title: "CHECK-IN SEMANAL", cr_reply_title: "SUA RESPOSTA", cr_reply_ph: "Conte o que você viu e o que fazer nesta semana…", cr_reply_btn: "Responder", cr_reply_edit: "Editar resposta", cr_reply_sent: "Resposta enviada", cr_reply_empty: "Escreva a resposta", cr_reply_wa: "Mandar pelo WhatsApp", cr_reply_wa_text: "Oi {name}! Sobre o seu check-in: {reply}", chk_coach_says: "Seu coach respondeu", chk_reply_new_app: "Seu coach respondeu seu check-in", chk_reply_view: "Ver a resposta do seu coach", chk_sub: "Uma vez por semana, conte ao seu coach como está indo. Leva 2 minutos.", chk_weight: "Peso (kg)", chk_energy: "Energia",
                 chk_energy_low: "muito mal", chk_energy_high: "muito bem", chk_note_ph: "Mensagem para seu coach (opcional)",
                 chk_send: "Enviar ao coach", chk_ok: "✓ Check-in enviado ao seu coach", chk_sent: "Check-in desta semana enviado", chk_edit: "Editar", chk_empty: "Preencha pelo menos um campo",
                 coach_chk_title: "CHECK-IN SEMANAL", coach_chk_none: "Ainda não enviou check-ins. O link pede um por semana.", coach_chk_new: "Check-in novo",
@@ -3713,7 +3713,7 @@
                 eq_bike: "bicicleta",
                 eq_ab_wheel: "roda abdominal",
                 n_days: "{n} dias",
-                coach_tpl_use: "Usar modelo", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
+                coach_tpl_use: "Usar modelo", cb_title: "MONTAR UMA BASE COM O APP", cb_sub: "Escolha objetivo e nível (os dias ficam abaixo): o app monta a rotina com suas regras baseadas em evidências (séries, repetições, reps em reserva e descanso) e depois você ajusta do seu jeito.", cb_btn: "Montar a base", cb_done: "Base pronta: ajuste e gere o link", cb_done_edit: "Base nova pronta: revise e salve as alterações", cb_from_intake: "Refazer a base pela ficha", cb_confirm: "Isto substitui a rotina atual por uma base nova pela ficha ({goal}, {level}, {days}). Continuar?", cb_home_note: "Pela ficha não treina em academia: a base usa barras e máquinas, troque os exercícios que não puder fazer.", n_day_one: "1 dia", coach_tpl_loaded: "Modelo carregado — revise e gere o link", coach_tpl_deleted: "Modelo excluído", coach_tpl_save: "Salvar como modelo", coach_tpl_saved: "Modelo \"{name}\" salvo",
                 food_cat_all: "Todos", food_cat_protein: "Proteínas", food_cat_carb: "Carbos", food_cat_veg: "Vegetais", food_cat_fruit: "Frutas", food_cat_fat: "Gorduras", food_cat_dairy: "Laticínios",
                 food_search_ph: "Buscar alimento (maçã, frango, iogurte...)", food_manual_name_ph: "Nome do alimento", creator_name_ph: "Ex. Volume Extremo",
                 rt_routine_updated: "🔄 Rotina atualizada",
@@ -7707,6 +7707,24 @@
             qc.appendChild(h('p', { className: 'quote-text' }, '"' + quote + '"'));
             v.appendChild(qc);
 
+            // Coach: acceso directo a "Mis alumnos" con lo que hay para revisar
+            if (canUseCoach() && termsAccepted()) {
+                const ss = state.myStudents;
+                if (!ss && !state._coachHomeLoad) {   // una carga por sesión; después se vuelve a dibujar
+                    state._coachHomeLoad = true;
+                    loadMyStudents().then(() => { if (state.tab === 'home') renderHome(); }).catch(() => { });
+                }
+                const mc = h('div', { className: 'card fade-in' });
+                mc.appendChild(h('p', { className: 'label' }, '👥 ' + t('rm_students')));
+                if (ss && ss.length) {
+                    const nRev = ss.filter(s => (s.alerts || []).length).length, nChk = ss.filter(s => s.new_checkin).length;
+                    mc.appendChild(h('p', { style: { fontSize: '14px', fontWeight: 700, marginBottom: '8px', color: nRev ? 'var(--orange)' : 'var(--text)' } },
+                        [t('hm_students_n').replace('{n}', ss.length), nRev ? t('hm_review_n').replace('{n}', nRev) : t('hm_review_none'), nChk ? t('hm_chk_n').replace('{n}', nChk) : ''].filter(Boolean).join(' · ')));
+                } else mc.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', marginBottom: '8px' } }, t('hm_students_hint')));
+                mc.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => { setRoutinesMode('students'); state.coachActiveRoutineId = null; switchTab('routines'); } }, t('hm_open_panel')));
+                v.appendChild(mc);
+            }
+
             // Tester de la prueba cerrada de Play → Premium vitalicio (solo TWA)
             renderTesterCard(v);
 
@@ -7790,7 +7808,7 @@
                 rc.appendChild(h('p', { className: 'label' }, t('home_today')));
                 rc.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '4px' } }, coachDay.name || '—'));
                 rc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' } }, t('coach_today_by').replace('{name}', coachToday.coach.coachName || 'Coach')));
-                rc.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => switchTab('routines') }, t('home_go_train')));
+                rc.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => { if (canUseCoach()) setRoutinesMode('mine'); switchTab('routines'); } }, t('home_go_train')));
                 v.appendChild(rc);
             }
             if (todayRoutine) {
@@ -8013,6 +8031,18 @@
                 return;
             }
 
+            // Coach: "Mis alumnos" tiene su propio lugar (antes quedaba abajo de crear e importar, mezclado
+            // con el plan personal). Arranca en los alumnos y recuerda la elección en este teléfono.
+            if (canUseCoach()) {
+                const mode = routinesMode();
+                const seg = h('div', { className: 'focus-pills', style: { display: 'flex', gap: '8px', marginBottom: '14px' } });
+                const nRev = (state.myStudents || []).filter(s => (s.alerts || []).length).length;
+                [['students', '👥 ' + t('rm_students') + (nRev ? ' (' + nRev + ')' : '')], ['mine', '🏋️ ' + t('rm_mine')]].forEach(([k, label]) =>
+                    seg.appendChild(h('button', { className: 'focus-pill' + (mode === k ? ' sel' : ''), style: { flex: 1, justifyContent: 'center' }, onclick: () => { setRoutinesMode(k); renderRoutines(); } }, label)));
+                v.appendChild(seg);
+                if (mode === 'students') { renderCoachSection(v); return; }
+            }
+
             // Auto-regen routine if user parameters changed since last generation
             regenerateRoutineIfNeeded();
 
@@ -8050,10 +8080,7 @@
                 v.appendChild(coachRow);
             }
 
-            // Coach section — solo el producto Coach (Premium no incluye alumnos)
-            if (canUseCoach()) {
-                renderCoachSection(v);
-            }
+            // (El panel de alumnos del Coach va en su propia pestaña: ver arriba)
 
             // Active Routine
             const allPlans = [];
@@ -8974,6 +9001,27 @@
                         className: 'btn btn-secondary btn-full btn-sm', style: { borderStyle: 'dashed', marginBottom: '16px' },
                         onclick: () => { if (needName()) return; openPdfImport('creator'); }
                     }, '📄 ' + t('routine_import_pdf')));
+                    // Armar una base con el generador de la app: objetivo y nivel; los días son los de abajo
+                    const bx = h('div', { style: { background: 'var(--sf2)', borderRadius: '12px', padding: '12px', marginBottom: '16px' } });
+                    bx.appendChild(h('p', { className: 'label' }, t('cb_title')));
+                    bx.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('cb_sub')));
+                    const bg = routineCreator.baseGoal || 'muscle', bl = routineCreator.baseLevel || 'intermedio';
+                    const gp = h('div', { className: 'pills', style: { marginBottom: '8px' } });
+                    BASE_GOALS.forEach(([k, key]) => gp.appendChild(h('button', { className: 'pill' + (bg === k ? ' active' : ''), onclick: () => { routineCreator.baseGoal = k; renderRoutines(); } }, t(key))));
+                    bx.appendChild(gp);
+                    const lp = h('div', { className: 'pills', style: { marginBottom: '10px' } });
+                    BASE_LEVELS.forEach(([k, key]) => lp.appendChild(h('button', { className: 'pill' + (bl === k ? ' active' : ''), onclick: () => { routineCreator.baseLevel = k; renderRoutines(); } }, t(key))));
+                    bx.appendChild(lp);
+                    bx.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => {
+                        if (needName()) return;
+                        routineCreator.plan = coachBasePlan(bg, bl, routineCreator.days);
+                        routineCreator.days = routineCreator.plan.length;
+                        if (!(routineCreator.name || '').trim()) routineCreator.name = t(BASE_GOALS.find(x => x[0] === bg)[1]) + ' · ' + t('n_days').replace('{n}', routineCreator.days);
+                        routineCreator.step = 1;
+                        flash('⚡ ' + t('cb_done'));
+                        renderRoutines();
+                    } }, '⚡ ' + t('cb_btn')));
+                    c.appendChild(bx);
                 }
 
                 c.appendChild(h('p', { className: 'label' }, t('routines_creator_name').toUpperCase()));
@@ -8984,7 +9032,7 @@
                 c.appendChild(h('p', { className: 'label' }, t('routines_creator_days')));
                 const di = h('div', { className: 'pills', style: { marginBottom: '20px' } });
                 [1, 2, 3, 4, 5, 6].forEach(d => {
-                    di.appendChild(h('button', { className: 'pill' + (routineCreator.days === d ? ' active' : ''), onclick: () => { routineCreator.days = d; renderRoutines(); } }, t('n_days').replace('{n}', d)));
+                    di.appendChild(h('button', { className: 'pill' + (routineCreator.days === d ? ' active' : ''), onclick: () => { routineCreator.days = d; renderRoutines(); } }, d === 1 ? t('n_day_one') : t('n_days').replace('{n}', d)));
                 });
                 c.appendChild(di);
 
@@ -9013,6 +9061,18 @@
                 const hc = h('div', { className: 'card fade-in', style: { marginBottom: '12px' } });
                 hc.appendChild(h('p', { className: 'label' }, t('coach_edit_title').replace('{name}', routineCreator.alumnoName || '')));
                 hc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginBottom: '8px', lineHeight: 1.5 } }, t('coach_edit_sub')));
+                if (routineCreator.intake) {
+                    const ib = intakeToBase(routineCreator.intake);
+                    hc.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: () => {
+                        const goalTxt = t(BASE_GOALS.find(x => x[0] === ib.goal)[1]), levelTxt = t(BASE_LEVELS.find(x => x[0] === ib.level)[1]);
+                        if (!confirm(t('cb_confirm').replace('{goal}', goalTxt).replace('{level}', levelTxt).replace('{days}', ib.days === 1 ? t('n_day_one') : t('n_days').replace('{n}', ib.days)))) return;
+                        routineCreator.plan = coachBasePlan(ib.goal, ib.level, ib.days);
+                        routineCreator.days = routineCreator.plan.length;
+                        flash('⚡ ' + t('cb_done_edit'));
+                        renderRoutines();
+                    } }, '⚡ ' + t('cb_from_intake')));
+                    if (ib.home) hc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--orange)', lineHeight: 1.5, marginBottom: '8px' } }, t('cb_home_note')));
+                }
                 hc.appendChild(h('input', { className: 'input', value: routineCreator.name, placeholder: t('creator_name_ph'), oninput: e => routineCreator.name = e.target.value }));
                 v.appendChild(hc);
             }
@@ -17070,6 +17130,7 @@
                     const ev0 = Array.isArray(j.evals) && j.evals[0];
                     r.coach.evalCycle = ev0 ? ev0.cycle : 0; r.coach.evalAt = ev0 ? (ev0.updated_at || '') : '';
                     r.coach.vidReplyAt = lastReplyAt(j.videos);
+                    const cr = lastChkReply(j.checkins); r.coach.chkReply = cr ? cr.reply : ''; r.coach.chkReplyAt = cr ? (cr.reply_at || '') : '';
                     r.coach.reviewAt = (j.review && j.review.updated_at) || '';
                     r.coach.syncedAt = Date.now();
                     changed = true;
@@ -17197,6 +17258,15 @@
             if (!r.coach.gone && !coachPushOn(r.coach.token)) c.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginBottom: '8px' }, onclick: async () => { if (await setCoachPush(r.coach.token, true)) renderRoutines(); } }, t('pn_app_btn')));
             const chkDone = r.coach.chkWeek === isoWeek(todayStr());
             if (!r.coach.gone && chkDone) c.appendChild(h('p', { className: 'perf-body', style: { color: 'var(--accent)', fontWeight: 700 } }, '✓ ' + t('chk_sent')));
+            if (!r.coach.gone && r.coach.chkReply) {
+                let crSeen = ''; try { crSeen = localStorage.getItem(chkReplySeenKey(r.coach.token)) || ''; } catch { }
+                const crNew = (r.coach.chkReplyAt || '') > crSeen;
+                c.appendChild(h('button', { className: 'btn ' + (crNew ? 'btn-primary' : 'btn-secondary') + ' btn-sm btn-full', style: { marginBottom: '8px' }, onclick: () => {
+                    try { localStorage.setItem(chkReplySeenKey(r.coach.token), r.coach.chkReplyAt || ''); } catch { }
+                    openChkReplyView(r.coach.chkReply, r.coach.coachName);
+                    renderRoutines();
+                } }, '💬 ' + t(crNew ? 'chk_reply_new_app' : 'chk_reply_view')));
+            }
             const row = h('div', { className: 'perf-actions' });
             if (!r.coach.gone) row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => openCoachCheckinInApp(r) }, t(chkDone ? 'chk_edit_week' : 'coach_card_checkin')));
             if (!r.coach.gone && r.coach.evalCycle) row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: async () => {
@@ -17279,6 +17349,14 @@
         // ─────────────────────────────────────────
         // COACH MODE — UI
         // ─────────────────────────────────────────
+        // Pestaña de Rutinas del Coach: 'students' (Mis alumnos) o 'mine' (Mi entrenamiento)
+        function routinesMode() {
+            if (state.routinesMode) return state.routinesMode;
+            let m = null; try { m = localStorage.getItem('bm-routines-mode'); } catch { }
+            return (state.routinesMode = m === 'mine' ? 'mine' : 'students');
+        }
+        function setRoutinesMode(m) { state.routinesMode = m; try { localStorage.setItem('bm-routines-mode', m); } catch { } }
+
         async function loadMyStudents() {
             try {
                 const cfgP = api('GET', '/api/coach/config').then(c => { state.coachCfg = c; }).catch(() => { });
@@ -17315,14 +17393,17 @@
                 className: 'btn btn-primary btn-full', style: { marginBottom: '8px' },
                 onclick: openCoachCreateFlow
             }, t('coach_create')));
-            wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachQuestionsSheet }, t('cq_btn')));
-            wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachExportSheet }, t('xp_btn')));
-            wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openInviteSheet }, t('hg_invite_btn')));
+            // Herramientas (preguntas de la ficha, exportar, huéspedes, Premium, resumen diario): debajo de la lista
+            const tools = h('div', { style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' } });
+            tools.appendChild(h('p', { className: 'label' }, t('coach_tools')));
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachQuestionsSheet }, t('cq_btn')));
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openCoachExportSheet }, t('xp_btn')));
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openInviteSheet }, t('hg_invite_btn')));
             const seatsNow = state.coachCfg && state.coachCfg.seats;
-            if (seatsNow && seatsNow.total) wrap.appendChild(h('p', { style: { fontSize: '12px', fontWeight: 700, color: seatsNow.free ? 'var(--accent)' : 'var(--orange)', textAlign: 'center', margin: '0 0 10px' } },
+            if (seatsNow && seatsNow.total) tools.appendChild(h('p', { style: { fontSize: '12px', fontWeight: 700, color: seatsNow.free ? 'var(--accent)' : 'var(--orange)', textAlign: 'center', margin: '0 0 10px' } },
                 t('sp_seats').replace('{free}', seatsNow.free).replace('{total}', seatsNow.total)));
             const dgCfg = (state.coachCfg && state.coachCfg.digest) || { on: false, hour: 9 };
-            wrap.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '12px' }, onclick: openDigestSheet }, '🔔 ' + (dgCfg.on ? t('dg_on_btn').replace('{h}', dgCfg.hour) : t('dg_btn'))));
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', onclick: openDigestSheet }, '🔔 ' + (dgCfg.on ? t('dg_on_btn').replace('{h}', dgCfg.hour) : t('dg_btn'))));
             const leftBox = coachLeftNotice();
             if (leftBox) wrap.appendChild(leftBox);
 
@@ -17403,6 +17484,7 @@
                     apply();
                 }
             }
+            wrap.appendChild(tools);
             container.appendChild(wrap);
         }
 
@@ -18036,9 +18118,40 @@
         function safeLink(u) { const v = String(u || '').trim(); return /^https:\/\/[^\s<>"'`]{4,290}$/i.test(v) ? v : ''; }
         function linkHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } }
         function fmtRest(sec) { const n = Number(sec) || 0; if (n < 60) return n + ' s'; const m = Math.floor(n / 60), r = n % 60; return r ? m + ' min ' + r + ' s' : m + ' min'; }
+        // Rutina base para un alumno con el generador de la app (las mismas reglas basadas en evidencia
+        // que la rutina automática: series, reps, reps en reserva y descanso). El coach la ajusta después.
+        // El generador arma 3 a 6 días: con 1 o 2 se toman los primeros del plan de 3 (cuerpo completo).
+        function coachBasePlan(goal, level, days) {
+            const n = Math.max(1, Math.min(6, Number(days) || 3));
+            const gen = getRoutinePlan(goal, Math.max(3, n), level) || [];
+            const rirNum = (r) => { const m = String(r == null ? '' : r).match(/(\d+)(?:\s*-\s*(\d+))?/); return m ? Math.floor((Number(m[1]) + Number(m[2] || m[1])) / 2) : ''; };
+            return JSON.parse(JSON.stringify(gen.slice(0, n))).map((d, i) => ({
+                name: d.name || (t('routines_day') + ' ' + (i + 1)), method: 'Personalizado',
+                exercises: (d.exercises || []).map(e => {
+                    const x = { name: e.name, kind: 'strength', sets: e.sets || 3, reps: String(e.reps || '8-12'), kg: '', rir: rirNum(e.rir), notes: e.notes || '' };
+                    if (e.rest_s > 0) x.rest_s = e.rest_s;
+                    return x;
+                })
+            }));
+        }
+        // Lo que contó el alumno en su ficha → objetivo, nivel y días del generador
+        function intakeToBase(ik) {
+            const g = (ik && ik.goals) || [];
+            const goal = g.includes('musculo') && g.includes('grasa') ? 'recomp'
+                : g.includes('grasa') ? 'fat_loss' : g.includes('musculo') ? 'muscle' : g.includes('fuerza') ? 'strength'
+                : g.includes('rendimiento') ? 'endurance' : g.includes('salud') ? 'recomp' : 'muscle';
+            const ex = ik && ik.experience;
+            const level = ex === 'mas3' ? 'avanzado' : ex === '1a3' ? 'intermedio' : 'principiante';
+            const days = Math.max(1, Math.min(6, Number(ik && ik.days) || 3));
+            const home = ((ik && ik.equipment) || []).length > 0 && !((ik && ik.equipment) || []).includes('gimnasio');
+            return { goal, level, days, home };
+        }
+        const BASE_GOALS = [['muscle', 'goal_muscle'], ['strength', 'goal_str'], ['fat_loss', 'goal_fat'], ['recomp', 'goal_recomp'], ['endurance', 'goal_endurance']];
+        const BASE_LEVELS = [['principiante', 'level_beg'], ['intermedio', 'level_int'], ['avanzado', 'level_adv']];
+
         function openCoachRoutineEditor(routine) {
             const plan = JSON.parse(JSON.stringify(routine.plan || []));
-            routineCreator = { open: true, step: 1, forAlumno: true, editId: routine.id, name: routine.name || '', days: plan.length, plan, alumnoName: routine.alumno_name || '' };
+            routineCreator = { open: true, step: 1, forAlumno: true, editId: routine.id, name: routine.name || '', days: plan.length, plan, alumnoName: routine.alumno_name || '', intake: routine.intake || null };
             state.coachActiveRoutineId = null;
             renderRoutines();
             window.scrollTo(0, 0);
@@ -18053,6 +18166,9 @@
             if (!resp.ok) throw new Error(t('api_log_fail'));
         }
         function videoReplySeenKey(token) { return 'bm-vid-seen-' + token; }
+        function chkReplySeenKey(token) { return 'bm-chkr-seen-' + token; }
+        // La respuesta del coach a uno de los 2 últimos controles (los más viejos ya no importan)
+        function lastChkReply(checkins) { return (checkins || []).slice(0, 2).find(c => c && c.reply) || null; }
         function lastReplyAt(videos) { return (videos || []).reduce((m, x) => (x.reply_at && x.reply_at > m ? x.reply_at : m), ''); }
         function openVideoSendSheet(token, plan, onSaved) {
             const names = planExerciseNames(plan);
@@ -19430,7 +19546,7 @@
             const head = h('div', { className: 'card fade-in' });
             head.appendChild(h('p', { className: 'label' }, t('coach_routine_lbl') + (routine.alumno_name || '—')));
             head.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '4px' } }, routine.name));
-            head.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, 'Token: ' + routine.share_token + ' · ' + new Date(routine.created_at).toLocaleDateString()
+            head.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)' } }, t('coach_since').replace('{date}', new Date(routine.created_at).toLocaleDateString(appLocale()))
                 + (routine.link_changed_at ? ' · ' + t('nl_changed_on').replace('{date}', shortDate(localDateStr(new Date(routine.link_changed_at)))) : '')));
 
             const linkRow = h('div', { style: { display: 'flex', gap: '8px', marginTop: '10px' } });
@@ -19501,6 +19617,46 @@
                 chkCard.appendChild(stats);
                 chkAnswers(last).forEach(l => chkCard.appendChild(h('p', { style: { fontSize: '13px', color: l.warn ? 'var(--orange)' : 'var(--text2)', lineHeight: 1.5, marginBottom: '4px', overflowWrap: 'anywhere' } }, h('b', {}, l.label + ': '), l.text)));
                 if (last.note) chkCard.appendChild(h('p', { style: { fontSize: '13px', background: 'var(--sf2)', borderRadius: '10px', padding: '10px 12px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, last.note));
+                // Respuesta del coach al último control: el alumno la ve en su link y en su app (con aviso).
+                // También se puede mandar por WhatsApp (al número de la ficha si lo dejó).
+                if (!routine.closed_at && last.week) {
+                    const waBtn = (txt) => {
+                        const phone = String((routine.intake && routine.intake.contact) || '').replace(/[^\d+]/g, '');
+                        const to = /^\+?\d{8,15}$/.test(phone) ? phone.replace('+', '') : '';
+                        const msg = t('cr_reply_wa_text').replace('{name}', (routine.alumno_name || '').split(' ')[0]).replace('{reply}', txt);
+                        return h('a', { className: 'btn btn-secondary btn-sm', href: 'https://wa.me/' + to + '?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener', style: { textDecoration: 'none' } }, t('cr_reply_wa'));
+                    };
+                    const replyBox = h('div', { style: { marginTop: '10px' } });
+                    const drawReply = (editing) => {
+                        replyBox.innerHTML = '';
+                        replyBox.appendChild(h('p', { className: 'label', style: { marginBottom: '4px' } }, t('cr_reply_title')));
+                        if (last.reply && !editing) {
+                            replyBox.appendChild(h('p', { style: { fontSize: '13px', background: 'var(--sf2)', borderRadius: '10px', padding: '8px 10px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, last.reply));
+                            const acts = h('div', { className: 'perf-actions', style: { marginTop: '6px' } });
+                            acts.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => drawReply(true) }, t('cr_reply_edit')));
+                            acts.appendChild(waBtn(last.reply));
+                            replyBox.appendChild(acts);
+                            return;
+                        }
+                        const ta = h('textarea', { className: 'input', rows: 3, maxlength: '1000', placeholder: t('cr_reply_ph'), style: { fontSize: '13px' } });
+                        ta.value = last.reply || '';
+                        replyBox.appendChild(ta);
+                        const b = h('button', { className: 'btn btn-primary btn-sm', style: { marginTop: '6px' }, onclick: async () => {
+                            const txt = ta.value.trim();
+                            if (!txt) { flash(t('cr_reply_empty'), 'var(--orange)'); return; }
+                            b.disabled = true;
+                            try {
+                                await api('PUT', '/api/routines/' + routine.id + '/checkins/' + last.week, { reply: txt });
+                                last.reply = txt; last.reply_at = new Date().toISOString();
+                                flash(t('cr_reply_sent'));
+                                drawReply(false);
+                            } catch (e) { b.disabled = false; flash('⚠️ ' + e.message, 'var(--red)'); }
+                        } }, t('cr_reply_btn'));
+                        replyBox.appendChild(b);
+                    };
+                    drawReply(false);
+                    chkCard.appendChild(replyBox);
+                }
                 if (chk.length > 1) {
                     chkCard.appendChild(h('p', { className: 'label', style: { marginTop: '12px' } }, t('coach_chk_prev')));
                     chk.slice(1, 8).forEach(c => {
@@ -19511,6 +19667,7 @@
                         chkCard.appendChild(row);
                         chkAnswers(c).filter(l => l.warn).forEach(l => chkCard.appendChild(h('p', { style: Object.assign({ padding: '2px 0 0', overflowWrap: 'anywhere' }, muted, { color: 'var(--orange)' }) }, l.label + ': ' + l.text)));
                         if (c.note) chkCard.appendChild(h('p', { style: Object.assign({ padding: '2px 0 6px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }, muted) }, c.note));
+                        if (c.reply) chkCard.appendChild(h('p', { style: Object.assign({ padding: '2px 0 6px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }, muted) }, '💬 ' + c.reply));
                     });
                 }
             }
@@ -19541,11 +19698,13 @@
                     sessCard.appendChild(row);
                     if (!hasDetail) return;
                     const det = h('div', { style: { display: i === firstDetailed ? 'block' : 'none', padding: '6px 0 10px 4px', borderBottom: '1px solid var(--border)' } });
+                    const timedPlan = new Set();
+                    (routine.plan || []).forEach(d => (d.exercises || []).forEach(x => { if (isTimedReps(x.reps)) timedPlan.add(String(x.name || '').trim().toLowerCase()); }));
                     (s.exercises || []).forEach(e => {
                         const line = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px', fontSize: '12px', padding: '3px 0' } });
                         const desc = e.kind === 'cardio'
                             ? [e.min ? e.min + ' min' : '', e.km ? fmt1(e.km) + ' km' : ''].filter(Boolean).join(' · ')
-                            : (e.sets || []).map(x => fmt1(x.kg) + '×' + x.reps).join('  ');
+                            : (e.sets || []).map(x => timedPlan.has(String(e.name || '').trim().toLowerCase()) ? x.reps + ' s' : Number(x.kg) > 0 ? fmt1(x.kg) + '×' + x.reps : '×' + x.reps).join('  ');
                         line.appendChild(h('span', { style: { color: 'var(--text2)', minWidth: 0, overflowWrap: 'anywhere' } }, h('b', { style: { color: 'var(--text)' } }, e.name), ' ' + desc));
                         const tr = e.kind === 'cardio' ? null : exerciseTrend(sessList, i, e.name);
                         if (tr !== null) {
@@ -19692,16 +19851,19 @@
             if (state.alumnoAccessUntil) banner.appendChild(h('div', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--text2)', marginTop: '8px' } },
                 t(state.alumnoGuest ? 'hg_until_guest' : 'hg_until').replace('{date}', perfDate(state.alumnoAccessUntil))));
             v.appendChild(banner);
+            // Orden (auditoría del Coach, nov 2026): en el gimnasio el alumno abre el link para ver su
+            // rutina, que quedaba debajo de 4 tarjetas. Arriba va solo lo poco frecuente o lo nuevo del
+            // coach (balance, evaluación, respuesta al control) y la ficha si todavía no la mandó; la rutina
+            // enseguida, y el control, los videos, los avisos y la app debajo.
             renderAlumnoReviewCard(v);
             renderAlumnoEvalCard(v);
-            renderAlumnoIntakeCard(v);
-            // Huésped (estadía corta): sin control semanal, avisos del control ni pase a la app
-            if (!state.alumnoGuest) {
-                renderAlumnoAppCta(v);
-                renderAlumnoCheckin(v);
-                renderAlumnoPushCard(v);
-            }
-            renderAlumnoVideosCard(v);
+            if (!state.alumnoIntake) renderAlumnoIntakeCard(v);
+            const crNew = !state.alumnoGuest && (() => {
+                const rp = lastChkReply(state.alumnoCheckins);
+                let seen = ''; try { seen = localStorage.getItem(chkReplySeenKey(state.alumnoToken)) || ''; } catch { }
+                return !!rp && (rp.reply_at || '') > seen;
+            })();
+            if (crNew) renderAlumnoCheckin(v);
 
             const card = h('div', { className: 'alumno-routine-card' });
 
@@ -19795,6 +19957,14 @@
                 });
             }
             v.appendChild(card);
+            // Huésped (estadía corta): sin control semanal, avisos del control ni pase a la app
+            if (!state.alumnoGuest && !crNew) renderAlumnoCheckin(v);
+            renderAlumnoVideosCard(v);
+            if (!state.alumnoGuest) {
+                renderAlumnoPushCard(v);
+                renderAlumnoAppCta(v);
+            }
+            if (state.alumnoIntake) renderAlumnoIntakeCard(v);
 
             // Pending edits display
             const pendingCount = (state.alumnoPendingEdits || []).length;
@@ -19838,6 +20008,8 @@
         // Registro de la sesión desde el link: lo que hizo en cada ejercicio,
         // precargado con lo de hoy (si ya registró), la última vez o el plan.
         // "Solo marcar" deja la adherencia sin detalle, como antes.
+        // Ejercicio indicado por tiempo (plancha "30s", "45 seg", "40''"): se registra en segundos, sin kg
+        function isTimedReps(reps) { return /^\s*\d+\s*(s|seg|segs|segundos|sec|''|")\s*$/i.test(String(reps == null ? '' : reps)); }
         function openAlumnoSessionSheet(day) {
             const today = todayStr();
             const all = state.alumnoSessions || [];
@@ -19851,10 +20023,11 @@
                     const prev = done || hist.map(s => (s.exercises || []).find(e => e.kind === 'cardio' && same(e.name, ex.name))).find(Boolean);
                     return { name: ex.name, kind: 'cardio', min: prev ? prev.min : (ex.duration_min || ''), km: prev ? prev.km : (ex.distance_km || '') };
                 }
-                if (done && done.sets) return { name: ex.name, sets: done.sets.map(s => ({ kg: s.kg, reps: s.reps })) };
+                const timed = isTimedReps(ex.reps);
+                if (done && done.sets) return { name: ex.name, timed, sets: done.sets.map(s => ({ kg: s.kg, reps: s.reps })) };
                 const base = prefillSets(ex.name, hist, ex);
                 const pk = parseFloat(String(ex.kg || '').replace(',', '.'));
-                return { name: ex.name, sets: pk > 0 ? base.map(s => ({ kg: pk, reps: s.reps })) : base };
+                return { name: ex.name, timed, sets: timed ? base.map(s => ({ kg: 0, reps: s.reps })) : pk > 0 ? base.map(s => ({ kg: pk, reps: s.reps })) : base };
             });
             let rpe = (todays && todays.rpe) || null;
 
@@ -19884,7 +20057,9 @@
                     } else {
                         r.sets.forEach((s, i) => {
                             const line = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' } });
-                            line.append(h('span', { style: Object.assign({ width: '22px' }, unit) }, 'S' + (i + 1)),
+                            if (r.timed) line.append(h('span', { style: Object.assign({ width: '22px' }, unit) }, 'S' + (i + 1)),
+                                numInp(s.reps, t('al_log_sec'), '5', v => { s.reps = v; }), h('span', { style: unit }, t('al_log_sec')));
+                            else line.append(h('span', { style: Object.assign({ width: '22px' }, unit) }, 'S' + (i + 1)),
                                 numInp(s.kg, 'kg', '0.5', v => { s.kg = v; }), h('span', { style: unit }, 'kg ×'),
                                 numInp(s.reps, 'reps', '1', v => { s.reps = v; }), h('span', { style: unit }, 'reps'));
                             blk.appendChild(line);
@@ -20097,7 +20272,27 @@
                 card.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '10px' } }, t('chk_sub')));
                 card.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: open }, t('chk_open')));
             }
+            const rep = lastChkReply(mine);
+            if (rep) {
+                let seen = ''; try { seen = localStorage.getItem(chkReplySeenKey(state.alumnoToken)) || ''; } catch { }
+                const isNew = (rep.reply_at || '') > seen;
+                card.appendChild(h('div', { style: { marginTop: '10px', background: 'var(--sf2)', borderRadius: '10px', padding: '10px 12px', border: isNew ? '1.5px solid var(--accent)' : '1px solid transparent' } },
+                    h('p', { style: { fontSize: '12px', fontWeight: 800, color: 'var(--accent)', marginBottom: '4px' } }, '💬 ' + t('chk_coach_says')),
+                    h('p', { style: { fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, rep.reply)));
+                if (isNew) try { localStorage.setItem(chkReplySeenKey(state.alumnoToken), rep.reply_at || ''); } catch { }
+            }
             container.appendChild(card);
+        }
+        // App: la respuesta del coach al control semanal
+        function openChkReplyView(text, coachName) {
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            card.appendChild(h('p', { className: 'label' }, '💬 ' + t('chk_coach_says')));
+            if (coachName) card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', marginBottom: '8px' } }, coachName));
+            card.appendChild(h('p', { style: { fontSize: '14px', lineHeight: 1.55, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginBottom: '14px' } }, text));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', onclick: () => ov.remove() }, t('btn_close')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
         }
         // App: el mismo control, con lo que ya registró en la app (entrenamientos y peso)
         async function openCoachCheckinInApp(r) {

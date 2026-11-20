@@ -1,5 +1,5 @@
 {
-  "version": "2-40",
+  "version": "2-41",
   "files": {
     "core/calc.js": "cb954ec00adadcfc",
     "core/i18n-data.js": "52021d40c84af771",

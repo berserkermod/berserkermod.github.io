@@ -1586,6 +1586,9 @@ async function postCheckin(req, env, token) {
     if (!filled.some((k) => chk[k] !== undefined)) return err('Control vacío', 400);
 
     const agg = (await kvGet(env, checkinsKey(idx.routineId))) || { items: [] };
+    // Si corrige el control de la semana, la respuesta que ya le dio el coach se conserva
+    const old = agg.items.find((c) => c.week === chk.week);
+    if (old && old.reply) { chk.reply = old.reply; chk.reply_at = old.reply_at; }
     agg.items = [chk].concat(agg.items.filter((c) => c.week !== chk.week))
         .sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, CHECKINS_MAX);
     await kvPut(env, checkinsKey(idx.routineId), agg);
@@ -1662,6 +1665,28 @@ async function replyVideo(req, env, url, id, vidId) {
     if ((r.videos_pending || 0) !== n) { r.videos_pending = n; await kvPut(env, routineKey(coachId, id), r); }
     if (firstReply) await notifyStudent(env, r, 'video', { ex: v.exercise }, true);
     return json({ ok: true, video: v });
+}
+
+// PUT /api/routines/{id}/checkins/{semana} — el coach responde el control semanal (o corrige su
+// respuesta). El alumno la ve en su link y en su app; la primera vez le llega un aviso.
+async function replyCheckin(req, env, url, id, week) {
+    const body = await readBody(req);
+    const coachId = coachIdFrom(req, url, body);
+    if (!coachId) return err('Missing coach_id', 401);
+    const r = await kvGetRoutine(env, routineKey(coachId, id));
+    if (!r) return err('Not found', 404);
+    if (r.coach_id !== coachId) return err('Forbidden', 403);
+    const reply = str(body && body.reply, 1000);
+    if (!reply) return err('Escribí la respuesta', 400);
+    const agg = (await kvGet(env, checkinsKey(id))) || { items: [] };
+    const c = agg.items.find((x) => x.week === week);
+    if (!c) return err('Not found', 404);
+    const firstReply = !c.reply;
+    c.reply = reply;
+    c.reply_at = nowISO();
+    await kvPut(env, checkinsKey(id), agg);
+    if (firstReply) await notifyStudent(env, r, 'chkreply', {}, true);
+    return json({ ok: true, checkin: c });
 }
 
 // ── Ficha del alumno ──
@@ -3100,9 +3125,9 @@ function localClock(tz, when) {
 // el servidor. El texto viaja cifrado para cada teléfono (RFC 8291, aes128gcm). El
 // recordatorio diario de entrenar sigue como push vacío (el teléfono pone el texto).
 const PUSH_MSG = {
-    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', plan: '🔄 {coach} actualizó tu rutina', review: '🏁 {coach} te dejó el balance de tu programa', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
-    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', plan: '🔄 {coach} updated your routine', review: '🏁 {coach} left your program summary', digest: '📋 Students to review: {names}', more: ' and {n} more' },
-    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', plan: '🔄 {coach} atualizou sua rotina', review: '🏁 {coach} deixou o balanço do seu programa', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
+    es: { coach: 'Tu coach', rest: '¡Terminó el descanso! A la próxima serie 💪', chk: '📝 {coach}: es momento de tu control semanal', remind: '🔔 {coach} te recuerda mandar tu control semanal', eval: '📋 {coach} te dejó la evaluación del ciclo {c}', video: '📹 {coach} respondió tu video de {ex}', chkreply: '💬 {coach} respondió tu control semanal', plan: '🔄 {coach} actualizó tu rutina', review: '🏁 {coach} te dejó el balance de tu programa', digest: '📋 Alumnos para revisar: {names}', more: ' y {n} más' },
+    en: { coach: 'Your coach', rest: 'Rest is over! On to the next set 💪', chk: '📝 {coach}: time for your weekly check-in', remind: '🔔 {coach} reminds you to send your weekly check-in', eval: '📋 {coach} left your cycle {c} review', video: '📹 {coach} replied to your {ex} video', chkreply: '💬 {coach} replied to your weekly check-in', plan: '🔄 {coach} updated your routine', review: '🏁 {coach} left your program summary', digest: '📋 Students to review: {names}', more: ' and {n} more' },
+    pt: { coach: 'Seu coach', rest: 'Acabou o descanso! Bora para a próxima série 💪', chk: '📝 {coach}: hora do seu check-in semanal', remind: '🔔 {coach} lembra você de enviar seu check-in semanal', eval: '📋 {coach} deixou a avaliação do ciclo {c}', video: '📹 {coach} respondeu seu vídeo de {ex}', chkreply: '💬 {coach} respondeu seu check-in semanal', plan: '🔄 {coach} atualizou sua rotina', review: '🏁 {coach} deixou o balanço do seu programa', digest: '📋 Alunos para revisar: {names}', more: ' e mais {n}' }
 };
 function pushText(lang, key, vars) {
     const L = PUSH_MSG[lang] || PUSH_MSG.es;
@@ -4494,6 +4519,7 @@ async function coachRoutes(req, env, url, p, m) {
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/review$/)) && m === 'POST') return await reviewRoutine(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/evals\/(\d{1,2})$/)) && m === 'PUT') return await putEval(req, env, url, mt[1], mt[2]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/videos\/([a-z0-9]{6,40})$/)) && m === 'PUT') return await replyVideo(req, env, url, mt[1], mt[2]);
+    if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/checkins\/(\d{4}-W\d{2})$/)) && m === 'PUT') return await replyCheckin(req, env, url, mt[1], mt[2]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/report$/)) && m === 'POST') return await postRoutineReport(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/remind$/)) && m === 'POST') return await remindRoutine(req, env, url, mt[1]);
     if ((mt = p.match(/^\/api\/routines\/([a-f0-9-]+)\/new-link$/)) && m === 'POST') return await newShareLink(req, env, url, mt[1]);
