@@ -801,18 +801,48 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     // VISION PATH: images → OCR (modelo de visión) → estructura (70B).
     let visionModelCalled = null;
     env.AI.run = async (model) => {
-        if (/scout|vision/.test(model)) { visionModelCalled = model; return { response: 'Día 1\nSentadilla 4 series 8 reps 60kg RIR 2\nCorrer 5km 30min' }; }
+        if (/mistral|scout|vision/.test(model)) { visionModelCalled = model; return { response: 'Día 1\nSentadilla 4 series 8 reps 60kg RIR 2\nCorrer 5km 30min' }; }
         return { response: '{"name":"Visión","days":[{"name":"Día 1","exercises":[{"type":"strength","name":"Sentadilla","sets":4,"reps":"8","kg":60,"rir":2,"notes":null},{"type":"cardio","name":"Correr","distance_km":5,"duration_min":30,"intensity":"medium","notes":null}]}]}' };
     };
     const vimg = await call('POST', '/api/parse-routine', { token, images: ['data:image/jpeg;base64,/9j/4AAQ'] });
     ok('vision: images → OCR → estructura → rutina', vimg.status === 200 && vimg.body.ok && vimg.body.routine.name === 'Visión' && vimg.body.routine.days[0].exercises.length === 2, vimg.body);
-    ok('vision: usó el modelo de visión', typeof visionModelCalled === 'string' && /scout|vision/.test(visionModelCalled), { visionModelCalled });
+    ok('vision: las páginas las lee Mistral Small 3.1', typeof visionModelCalled === 'string' && /mistral-small/.test(visionModelCalled), { visionModelCalled });
 
-    // PDF sin texto (imagen escaneada, sin fallback de imágenes) → 422, no rompe.
-    env.AI.run = async () => ({ response: '{}' });
-    env.AI.toMarkdown = async () => [{ name: 'rutina.pdf', data: '' }];
+    // PDF hecho de imágenes: toMarkdown solo trae los metadatos → sin llamar al modelo, sin descontar
+    let runs = 0;
+    env.AI.run = async () => { runs++; return { response: '{}' }; };
+    env.AI.toMarkdown = async () => [{ name: 'rutina.pdf', data: '# rutina.pdf\n## Metadata\n- PDFFormatVersion=1.7\n- Producer=Canva\n\n## Contents\n### Page 1\n\n\n### Page 2\n\n' }];
     const empty = await call('POST', '/api/parse-routine', { token, pdf_base64: 'JVBERi0=' });
-    ok('PDF sin texto legible → 422', empty.status === 422, empty.status);
+    ok('PDF sin texto (solo metadatos) → 200 vacía con "no_text", sin llamar al modelo', empty.status === 200 && empty.body.empty === 'no_text' && empty.body.routine.days[0].exercises.length === 0 && runs === 0, [empty.status, empty.body, runs]);
+
+    // Pedido nuevo: nombres conocidos, RPE → RIR, descansos, límites y días vacíos
+    let sys = null, usr = null, opts = null;
+    env.AI.toMarkdown = async () => [{ data: '# rutina.pdf\n## Metadata\n- Producer=Word\n## Contents\n### Page 1\nSesión A: Sentadilla frontal 4x5 @RPE 8, pausa 2\'. Sillón de cuádriceps 3x15. Plancha 3x40\'\'.' }];
+    env.AI.run = async (m, o) => {
+        opts = o; sys = o.messages[0].content; usr = o.messages[1].content;
+        return { response: { name: 'A', days: [{ name: 'Sesión A', exercises: [
+            { name: 'Sentadilla frontal', sets: 4, reps: '5', rir: 8, rest_s: 120 },
+            { name: 'Extensión Cuádriceps', sets: 3, reps: '15', kg: 9999, rest_s: 5000 },
+            { name: 'Plancha', sets: 3, reps: '40 s', rir: 40 }] }, { name: 'Descanso', exercises: [] }] } };
+    };
+    const nr = await call('POST', '/api/parse-routine', { token, pdf_base64: 'JVBERi0=', known: ['Extensión Cuádriceps', 'Sentadilla', '<script>', 'Sentadilla', 42] });
+    const ne = nr.body.routine.days[0].exercises;
+    ok('el pedido trae las reglas nuevas (RPE, descanso, semanas, páginas, libras, no es rutina) y temperatura baja', /RPE/.test(sys) && /rest_s/.test(sys) && /semana 1/.test(sys) && /\[Página N\]/.test(sys) && /libras/.test(sys) && /no es una rutina/.test(sys) && opts.temperature <= 0.2, sys.slice(0, 200));
+    ok('los nombres conocidos van en el pedido (limpios y sin repetir) y el texto sin los metadatos', usr.includes('NOMBRES CONOCIDOS: Extensión Cuádriceps, Sentadilla, script') && !usr.includes('Producer') && usr.includes('Sillón de cuádriceps'), usr.slice(0, 200));
+    ok('sin idioma, los nombres van en español', usr.startsWith('IDIOMA: español'), usr.slice(0, 40));
+    ok('RIR 8 (un RPE copiado) → RIR 2; descanso en segundos', ne[0].rir === 2 && ne[0].rest_s === 120, ne[0]);
+    ok('kg y descansos fuera de rango se descartan; RIR 40 (eran segundos) se descarta', ne[1].kg === null && ne[1].rest_s === null && ne[2].rir === null && ne[2].reps === '40 s', ne.slice(1));
+    ok('los días sin ejercicios se sacan; responde cuánto texto tenía', nr.body.routine.days.length === 1 && nr.body.text_chars > 50, nr.body);
+    env.AI.toMarkdown = async () => [{ data: '## Contents\n' + 'Guía técnica: cómo funcionan las rutinas y la nutrición de la app. '.repeat(8) }];
+    env.AI.run = async () => ({ response: '{"name":"","days":[]}' });
+    const nor = await call('POST', '/api/parse-routine', { token, pdf_base64: 'JVBERi0=' });
+    ok('mucho texto y ninguna rutina → "no_routine" (la app no prueba con imágenes)', nor.status === 200 && nor.body.empty === 'no_routine', nor.body);
+    let ocrModel = null;
+    env.AI.run = async (m) => { if (!ocrModel) ocrModel = m; return { response: m.includes('70b') ? '{"name":"x","days":[{"name":"D","exercises":[{"name":"Remo","sets":3}]}]}' : 'Remo 3x10' }; };
+    const gen5 = await call('POST', '/api/admin/codes', { count: 1, product: 'coach' }, { 'x-admin-secret': 'test-admin' });   // la anterior ya usó sus 5 del día
+    const token5 = (await call('POST', '/api/license/activate', { code: gen5.body.codes[0], deviceId: 'pdf-dev-5' })).body.token;
+    await call('POST', '/api/parse-routine', { token: token5, images: ['data:image/jpeg;base64,/9j/4AAQ'], ocr_model: '@cf/otro/modelo' });
+    ok('fuera del banco no se puede elegir el modelo que lee las imágenes', ocrModel === '@cf/mistralai/mistral-small-3.1-24b-instruct', ocrModel);
 
     delete env.AI;
 }
@@ -1534,7 +1564,7 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     // Cuota diaria de IA por licencia: oracle 20, parse 5
     env.AI = {
         async run() { return { response: '{"insights":[{"icon":"📈","title":"t","text":"x"}]}' }; },
-        async toMarkdown() { return [{ data: 'Día 1: Press banca 3x8' }]; }
+        async toMarkdown() { return [{ data: 'Día 1: Press banca 3x8 con 60 kg y sentadilla 4x6' }]; }
     };
     const gen = await call('POST', '/api/admin/codes', { count: 1, product: 'premium' }, { 'x-admin-secret': 'test-admin' });
     const act = await call('POST', '/api/license/activate', { code: gen.body.codes[0], deviceId: 'quota-dev' });

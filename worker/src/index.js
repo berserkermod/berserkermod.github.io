@@ -2615,30 +2615,58 @@ async function oracleProxy(req, env) {
 // Sin API key ni cuenta de terceros: corre en la misma cuenta de Cloudflare,
 // dentro del tier gratuito (10.000 neuronas/día). Gateado a premium/coach.
 const PARSE_SYSTEM = [
-    'Sos un parser de rutinas de entrenamiento. Recibís una rutina en texto/markdown y devolvés SOLO un objeto JSON válido,',
-    'sin texto extra ni markdown ni ```json ni explicaciones. El formato EXACTO es:',
-    '{"name": string, "days": [{"name": string, "exercises": [EX]}]}',
-    'donde cada EX de fuerza es: {"type":"strength","name":string,"sets":int|null,"reps":string|null,"kg":number|null,"rir":int|null,"notes":string|null}',
-    'y cada EX de cardio es: {"type":"cardio","name":string,"distance_km":number|null,"duration_min":int|null,"intensity":"low"|"medium"|"high"|null,"notes":string|null}',
-    'Reglas:',
-    '- Cardio = correr, trotar, caminar, cinta, bici/ciclismo/spinning, eliptica, nadar, remo ergometro, escalador. El resto es strength.',
-    '- reps va como string para permitir rangos ("8-10", "12", "AMRAP", "al fallo").',
-    '- Si un dato NO esta en el texto, poné null. No inventes numeros.',
-    '- Normaliza los nombres de ejercicios a español claro, en mayuscula inicial.',
-    '- Agrupá por DÍA o SESIÓN de entrenamiento, NO por bloque. Una "Sesión A" (o "Día 1") con varios bloques (calentamiento, potencia, fuerza, hipertrofia, acondicionamiento, etc.) es UN SOLO dia con TODOS sus ejercicios juntos.',
-    '- "Bloque", "Parte", "Calentamiento", "Principal", "Accesorios", "HIIT" NO son dias: son secciones del MISMO dia.',
-    '- Resultado tipico: POCOS dias (2 a 6). Si te salen mas de 7 dias casi seguro estas separando bloques de mas: reagrupalos por sesion/dia.',
-    '- Si el mismo dia/sesion aparece resumido en una pagina y detallado en otra, usá la version detallada y NO lo dupliques.',
-    '- Solo si NO hay ninguna separacion de dias/sesiones, poné todo en un solo dia ("Dia 1").',
-    '- intensity: suave/baja=low, moderada/media=medium, alta/fuerte/intensa=high.',
-    '- Si no hay nombre de rutina, inventa uno corto descriptivo.',
-    'Devolvé unicamente el JSON, empezando con "{" y terminando con "}".'
+    'Sos un parser de rutinas de entrenamiento. Recibís el texto de un PDF y devolvés SOLO un objeto JSON válido, sin texto antes ni después.',
+    'Formato: {"name": string, "days": [{"name": string, "exercises": [EX]}]}',
+    'EX de fuerza: {"name": string, "sets": int|null, "reps": string|null, "kg": number|null, "rir": int|null, "rest_s": int|null, "notes": string|null}',
+    'EX de cardio: {"type": "cardio", "name": string, "duration_min": int|null, "distance_km": number|null, "intensity": "low"|"medium"|"high"|null, "notes": string|null}',
+    'Si un dato NO está escrito en el PDF, poné null: nunca 0 ni un valor típico (no pongas rir 2 ni descanso 90 si el PDF no los dice). No inventes números.',
+    '',
+    'Estructura:',
+    '- Un día es una sesión de entrenamiento ("Día 1", "Lunes", "Sesión A", "Torso A"). Los bloques de una sesión (entrada en calor, bloque 1, A1/A2, superserie, circuito, core, finisher) van todos en el MISMO día, en orden.',
+    '- Si un plan semanal dice qué rutina toca cada día (Lunes: Rutina A, Miércoles: Rutina B, Viernes: Rutina A), los días son las rutinas (Rutina A, Rutina B), cada una UNA sola vez; no armes un día por cada día de la semana.',
+    '- Si el programa tiene varias semanas (columnas "Semana 1, 2, 3..."), armá cada día UNA sola vez con los valores de la semana 1 y anotá en notes cómo sigue (ej. "S2 4x5 @77%, S3 5x4 @82%, S4 descarga 3x5 @65%").',
+    '- Si una página resume los días y otra los detalla, usá el detalle y no dupliques.',
+    '- Las marcas [Página N] son cortes de página, no días: una página puede tener varios días y un día puede seguir en la página siguiente. Guiate por los títulos de cada día.',
+    '- Si el texto no es una rutina de entrenamiento (una guía, un artículo, una factura), devolvé {"name": "", "days": []}.',
+    '',
+    'Cada ejercicio:',
+    '- Cada ejercicio va por separado, con su propio nombre (nunca "Circuito" ni "Abdominales" como nombre). Un circuito o una superserie se separa en sus ejercicios: las vueltas son las series y en notes va "circuito". "Abdominales: crunch 3x20, plancha 3x40 s" son dos ejercicios: Crunch y Plancha.',
+    '- reps es texto: "10", "8-12", "12-10-8-6", "al fallo", "AMRAP". Si son segundos (40\'\', 30 s), poné "40 s". "Por pierna", "por lado" o "c/brazo" van en notes.',
+    '- rir = repeticiones en reserva. Si el PDF da RPE, rir = 10 - RPE (RPE 8 = rir 2). "Al fallo" = rir 0.',
+    '- kg = carga en kilos. Si está en libras (lb, lbs), convertí: kg = lb x 0,4536, redondeado a 0,5. Si es un % del 1RM y el PDF da el 1RM de ese ejercicio, calculá los kg y redondeá a 2,5; si no, no pongas kg y anotá el % en notes. Un lastre (+10 kg) va en kg. Pirámide con varias cargas: kg = la primera y todas en notes.',
+    '- rest_s = descanso entre series en segundos (90\'\' = 90, 2\' = 120, 1\'30\'\' = 90, "2-3 min" = 150). Si hay un descanso general para todos, ponelo en cada ejercicio.',
+    '- Cardio = correr, trotar, caminar, cinta, bici, spinning, elíptica, escaladora, remo ergómetro, natación, soga. Con intervalos calculá el total: 8 x 250 m = distance_km 2; 10 x (15\'\' + 45\'\') = duration_min 10. Suave = low, moderado = medium, fuerte o a tope = high.',
+    '- Nombres en el IDIOMA indicado, con mayúscula inicial. Si el ejercicio es exactamente el mismo que uno de los NOMBRES CONOCIDOS (mismo movimiento y mismo implemento), usá ese nombre exacto. Si no hay uno igual, dejá el nombre del PDF (traducido al IDIOMA si está en otro): no lo cambies por uno parecido.',
+    '- Del inglés al español: bench press = press banca, overhead press = press militar, row = remo, pull-up = dominadas, deadlift = peso muerto, leg curl = curl femoral, calf raise = pantorrilla, face pull = face pull. "Prensa" es solo la prensa de piernas.',
+    '- Si es una rutina sin nombre, poné uno corto descriptivo.'
 ].join('\n');
+
+// Nombres de ejercicios que la app ya conoce (catálogo e historial del usuario): la IA los usa
+// cuando es el mismo ejercicio, así el historial y la carga sugerida quedan conectados.
+function cleanKnownNames(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set(), out = [];
+    for (const v of list.slice(0, 300)) {
+        if (typeof v !== 'string') continue;
+        const n = v.replace(/[^\p{L}\p{N} ().,/+-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+        if (!n || seen.has(n.toLowerCase())) continue;
+        seen.add(n.toLowerCase()); out.push(n);
+        if (out.length >= 200) break;
+    }
+    return out;
+}
+
+// Texto útil de toMarkdown: sin el bloque de metadatos ni los títulos de página que agrega.
+function pdfContentText(md) {
+    const t = String(md || ''), k = t.indexOf('## Contents');
+    return (k >= 0 ? t.slice(k + 11) : t).replace(/^#{1,3} Page \d+\s*$/gm, '').trim();
+}
 
 function sanitizeParsedRoutine(p) {
     const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max || 80) : null);
     const numOrNull = (v) => (typeof v === 'number' && isFinite(v) ? v : (v != null && !isNaN(parseFloat(v)) ? parseFloat(v) : null));
     const intOrNull = (v) => { const n = numOrNull(v); return n == null ? null : Math.round(n); };
+    const inRange = (n, lo, hi) => (n != null && n >= lo && n <= hi ? n : null);
     const out = { name: str(p && p.name, 60) || 'Rutina importada', days: [] };
     const days = (p && Array.isArray(p.days)) ? p.days.slice(0, 14) : [];
     days.forEach((d, i) => {
@@ -2648,18 +2676,23 @@ function sanitizeParsedRoutine(p) {
             if (!e || !str(e.name, 80)) continue;
             if (e.type === 'cardio') {
                 exercises.push({ type: 'cardio', name: str(e.name, 80),
-                    distance_km: numOrNull(e.distance_km), duration_min: intOrNull(e.duration_min),
+                    distance_km: inRange(numOrNull(e.distance_km), 0.1, 300), duration_min: inRange(intOrNull(e.duration_min), 1, 600),
                     intensity: ['low', 'medium', 'high'].includes(e.intensity) ? e.intensity : null,
                     notes: str(e.notes, 200) });
             } else {
+                // RIR de 6 a 10 en una rutina es casi seguro un RPE copiado: RIR = 10 − RPE
+                let rir = intOrNull(e.rir);
+                if (rir != null && rir >= 6 && rir <= 10) rir = 10 - rir;
                 exercises.push({ type: 'strength', name: str(e.name, 80),
-                    sets: intOrNull(e.sets), reps: str(e.reps, 24), kg: numOrNull(e.kg),
-                    rir: intOrNull(e.rir), notes: str(e.notes, 200) });
+                    sets: inRange(intOrNull(e.sets), 1, 20), reps: str(e.reps, 24), kg: inRange(numOrNull(e.kg), 0.5, 600),   // 0 kg = sin carga
+                    rir: inRange(rir, 0, 5), rest_s: inRange(intOrNull(e.rest_s), 5, 900), notes: str(e.notes, 200) });
             }
         }
         out.days.push({ name: str(d && d.name, 60) || ('Día ' + (i + 1)), exercises });
     });
-    if (!out.days.length) out.days.push({ name: 'Día 1', exercises: [] });
+    // Días sin ejercicios no sirven (salvo que no haya ninguno: la app lo toma como "vacía")
+    const full = out.days.filter((d) => d.exercises.length);
+    out.days = full.length ? full : [{ name: 'Día 1', exercises: [] }];
     return out;
 }
 
@@ -2673,9 +2706,12 @@ function base64ToBytes(b64) {
     return bytes;
 }
 
-// Modelo de visión para PDFs de imágenes/diseño (el cliente rasteriza las
-// páginas con PDF.js y manda los PNG/JPEG acá). OCR puro: transcribe el texto.
+// Modelo de visión de la tabla nutricional (Llama 4 Scout).
 const VISION_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
+// PDFs de imágenes o diseño (la app rasteriza las páginas con PDF.js y manda los JPEG): OCR puro, transcribe
+// el texto. Mistral Small 3.1: en el banco de PDFs (20-nov-2026) leyó las 3 rutinas de imagen igual o mejor
+// que Scout (la foto torcida del celular, 100 % de los datos contra 98 %) en 19-25 s contra 40-80 s.
+const OCR_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 // Foto del plato: Mistral Small 3.1. En el banco de 30 platos (18-nov-2026) dio el mismo error que Scout
 // en calorías (32 % contra 31 %), las mismas neuronas y 4,5 s por foto contra 14-26 s (picos de 49 s).
 // La tabla nutricional sigue con Scout: no se probó con Mistral.
@@ -2691,9 +2727,9 @@ const OCR_PROMPT = [
 // OCR de una imagen (base64) con un modelo de visión → texto plano.
 // Llama 4 Scout usa formato multimodal (messages con image_url), más capaz
 // que el 11B. temperature baja para minimizar alucinaciones.
-async function ocrImage(env, b64) {
+async function ocrImage(env, b64, model) {
     const clean = b64.replace(/^data:image\/\w+;base64,/, '');
-    const r = await env.AI.run(VISION_MODEL, {
+    const r = await env.AI.run(model || OCR_MODEL, {
         messages: [{ role: 'user', content: [
             { type: 'text', text: OCR_PROMPT },
             { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,' + clean } }
@@ -2701,7 +2737,9 @@ async function ocrImage(env, b64) {
         max_tokens: 2048,
         temperature: 0.1
     });
-    return (r && (r.response || r.description || r.text)) || '';
+    if (!r) return '';
+    const msg = Array.isArray(r.choices) && r.choices[0] && r.choices[0].message ? r.choices[0].message.content : null;
+    return String(r.response || msg || r.description || r.text || '');
 }
 
 async function parseRoutine(req, env) {
@@ -2713,6 +2751,12 @@ async function parseRoutine(req, env) {
     if (!(await licenseStillValid(env, payload))) return err(LICENSE_GONE_MSG, 403);   // K-5
     const quota = await aiQuotaTake(env, payload, 'parse');
     if (!quota.ok) return err('Llegaste al límite diario de importaciones (' + AI_QUOTA.parse + ' por día). Mañana se renueva.', 429);
+    // Banco de pruebas (solo con FOOD_BENCH = "1", que en producción no existe): permite elegir el
+    // modelo que lee las imágenes. Ver bench-pdf/ (fuera del repo).
+    const bench = String(env.FOOD_BENCH || '') === '1';
+    const ocrModel = (bench && typeof body.ocr_model === 'string' && /^@cf\/[\w.\-/]+$/.test(body.ocr_model)) ? body.ocr_model : (env.OCR_MODEL || OCR_MODEL);
+    const known = cleanKnownNames(body && body.known);
+    const langName = { en: 'inglés', pt: 'portugués de Brasil' }[body && body.lang] || 'español';   // idioma de la app
     // L-5: si la IA falla o no sirve, el uso se devuelve.
     return aiCharged(quota, async () => {
 
@@ -2723,17 +2767,16 @@ async function parseRoutine(req, env) {
             catch (e) { return aiErrorResponse(e, 'agree falló'); }
         }
 
-        // Dos fuentes posibles: imágenes rasterizadas (PDF de diseño/imágenes) o el
-        // PDF crudo (texto). El cliente intenta texto primero y cae a imágenes si vuelve vacío.
+        // Dos fuentes posibles: imágenes de las páginas (PDF de diseño o escaneado) o el PDF
+        // crudo (texto). La app prueba el texto primero y pasa a imágenes si no hay texto.
         let sourceText = '';
         const images = (body && Array.isArray(body.images)) ? body.images.slice(0, 8) : null;
         if (images && images.length) {
             try {
                 const valid = images.filter((img) => typeof img === 'string' && img.length <= 4000000); // ~3 MB/imagen
                 // OCR de las páginas en paralelo (mucho más rápido que en serie).
-                const parts = await Promise.all(valid.map((img) => ocrImage(env, img).catch(() => '')));
-                // Marcamos cada página para que el estructurador separe días/sesiones.
-                sourceText = parts.map((tx, i) => '=== Página ' + (i + 1) + ' ===\n' + tx).join('\n\n');
+                const parts = await Promise.all(valid.map((img) => ocrImage(env, img, ocrModel).catch(() => '')));
+                sourceText = parts.map((tx, i) => '[Página ' + (i + 1) + ']\n' + tx).join('\n\n');
             } catch (e) {
                 return aiErrorResponse(e, 'No se pudieron leer las imágenes del PDF');
             }
@@ -2746,7 +2789,7 @@ async function parseRoutine(req, env) {
                 const blob = new Blob([base64ToBytes(pdf)], { type: 'application/pdf' });
                 const docs = await env.AI.toMarkdown([{ name: 'rutina.pdf', blob }]);
                 const doc = Array.isArray(docs) ? docs[0] : docs;
-                sourceText = (doc && doc.data) || '';
+                sourceText = pdfContentText((doc && doc.data) || '');
             } catch (e) {
                 return aiErrorResponse(e, 'No se pudo leer el PDF');
             }
@@ -2754,7 +2797,14 @@ async function parseRoutine(req, env) {
 
         // Debug gateado (solo si el caller manda debug:true): ver el texto crudo.
         if (body && body.debug) return json({ ok: true, debug: true, src: images ? 'vision' : 'text', md_chars: sourceText.length, md_preview: sourceText.slice(0, 4000) });
-        if (!sourceText.trim()) return err('El PDF no tiene texto legible (¿es una imagen escaneada?)', 422);
+        const textChars = sourceText.replace(/\[Página \d+\]/g, '').replace(/\s/g, '').length;
+        // Sin texto (PDF hecho de imágenes): no se llama al modelo ni se descuenta la importación;
+        // la app sigue con las fotos de las páginas.
+        if (!images && textChars < 20) {
+            try { await quota.undo(); } catch { /* sin más */ }
+            return json({ ok: true, routine: sanitizeParsedRoutine({ days: [] }), text_chars: textChars, empty: 'no_text' });
+        }
+        if (!textChars) return err('No se pudo leer texto en las imágenes del PDF', 422);
         sourceText = sourceText.slice(0, 24000); // acotamos lo que va al modelo
 
         // Estructurar con el 70B (texto → JSON), igual para ambas fuentes.
@@ -2763,23 +2813,17 @@ async function parseRoutine(req, env) {
             const aiResp = await env.AI.run(model, {
                 messages: [
                     { role: 'system', content: PARSE_SYSTEM },
-                    { role: 'user', content: 'Rutina (en texto/markdown):\n\n' + sourceText + '\n\nDevolvé SOLO el JSON.' }
+                    { role: 'user', content: 'IDIOMA: ' + langName + '\n' + (known.length ? 'NOMBRES CONOCIDOS: ' + known.join(', ') + '\n' : '') + '\nTexto del PDF:\n\n' + sourceText + '\n\nDevolvé SOLO el JSON.' }
                 ],
-                max_tokens: 4096
+                max_tokens: 4096,
+                temperature: 0.1
             });
-            // Workers AI devuelve la respuesta como string (lo normal) o, según el
-            // modelo (ej. Llama 70B), como objeto JSON ya parseado. Normalizamos ambos.
-            const raw = aiResp ? (aiResp.response != null ? aiResp.response : aiResp.text) : null;
-            let parsed = null;
-            if (raw && typeof raw === 'object') {
-                parsed = raw;
-            } else {
-                const txt = typeof raw === 'string' ? raw : (raw != null ? String(raw) : '');
-                const m = txt.match(/\{[\s\S]*\}/);
-                try { parsed = JSON.parse(m ? m[0] : txt); } catch { parsed = null; }
-            }
+            const parsed = aiJson(aiResp);
             if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return err('No se pudo interpretar la rutina del PDF', 422);
-            return json({ ok: true, routine: sanitizeParsedRoutine(parsed) });
+            const routine = sanitizeParsedRoutine(parsed);
+            const n = routine.days.reduce((a, d) => a + d.exercises.length, 0);
+            // Con texto de sobra y sin ejercicios: el PDF no es una rutina (la app no prueba con imágenes)
+            return json({ ok: true, routine, text_chars: textChars, empty: n ? undefined : (images ? 'no_routine' : (textChars >= 300 ? 'no_routine' : 'little_text')), raw: bench && body.raw ? parsed : undefined });
         } catch (e) {
             return aiErrorResponse(e);
         }
