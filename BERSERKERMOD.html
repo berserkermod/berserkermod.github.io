@@ -2363,8 +2363,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-47"></script>
-    <script src="core/i18n-data.js?v=2-47"></script>
+    <script src="core/calc.js?v=2-48"></script>
+    <script src="core/i18n-data.js?v=2-48"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2550,7 +2550,7 @@
                 water_title: "Hidratación", water_glass: "Vaso", water_bottle: "Botella", water_done: "✓ ¡Meta de hidratación cumplida!", water_of_goal: "de tu meta", water_undo: "Deshacer", undo_btn: "Deshacer", undo_food_del: "Alimento borrado", undo_ex_del: "Ejercicio quitado",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
-                food_scanner_hint: "Apuntá al código de barras", food_scanner_manual: "✏️ Ingresar manualmente",
+                food_scanner_hint: "Apuntá al código de barras", scan_searching: "⏳ Buscando el producto ({code})…", scan_lookup_fail: "No pude buscar el producto (sin conexión o el servicio tardó). Probá de nuevo o sacale una foto a la tabla nutricional.", fv_incomplete: "Encontré «{name}», pero no tiene la tabla nutricional cargada. Sacale una foto a la tabla y lo guardo con su código para la próxima.", fv_src_scan: "Escaneado", fv_src_mine: "Míos", food_scanner_manual: "✏️ Ingresar manualmente",
                 food_not_found: "Producto no encontrado. Ingresá los datos manualmente.",
                 food_found: "Producto encontrado",
                 oracle_btn: "🔮 Mi análisis IA", oracle_title: "Análisis Personalizado",
@@ -2992,7 +2992,7 @@
                 water_title: "Hydration", water_glass: "Glass", water_bottle: "Bottle", water_done: "✓ Hydration goal reached!", water_of_goal: "of your goal", water_undo: "Undo", undo_btn: "Undo", undo_food_del: "Food removed", undo_ex_del: "Exercise removed",
                 food_scan: "📷 Scan barcode", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal logged", food_of_target: "of",
-                food_scanner_hint: "Point at barcode", food_scanner_manual: "✏️ Enter manually",
+                food_scanner_hint: "Point at barcode", scan_searching: "⏳ Looking up the product ({code})…", scan_lookup_fail: "Couldn’t look up the product (offline or the service was slow). Try again or take a photo of the nutrition label.", fv_incomplete: "I found “{name}”, but its nutrition facts aren’t loaded. Take a photo of the label and I’ll save it with its barcode for next time.", fv_src_scan: "Scanned", fv_src_mine: "Mine", food_scanner_manual: "✏️ Enter manually",
                 food_not_found: "Product not found. Enter data manually.",
                 food_found: "Product found",
                 oracle_btn: "🔮 My AI Analysis", oracle_title: "Personalized Analysis",
@@ -3435,7 +3435,7 @@
                 water_title: "Hidratação", water_glass: "Copo", water_bottle: "Garrafa", water_done: "✓ Meta de hidratação atingida!", water_of_goal: "da sua meta", water_undo: "Desfazer", undo_btn: "Desfazer", undo_food_del: "Alimento apagado", undo_ex_del: "Exercício removido",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
-                food_scanner_hint: "Aponte para o código de barras", food_scanner_manual: "✏️ Inserir manualmente",
+                food_scanner_hint: "Aponte para o código de barras", scan_searching: "⏳ Procurando o produto ({code})…", scan_lookup_fail: "Não consegui procurar o produto (sem conexão ou o serviço demorou). Tente de novo ou tire uma foto da tabela nutricional.", fv_incomplete: "Encontrei «{name}», mas ele não tem a tabela nutricional cadastrada. Tire uma foto da tabela e eu salvo com o código para a próxima.", fv_src_scan: "Escaneado", fv_src_mine: "Meus", food_scanner_manual: "✏️ Inserir manualmente",
                 food_not_found: "Produto não encontrado. Insira os dados manualmente.",
                 food_found: "Produto encontrado",
                 oracle_btn: "🔮 Minha análise IA", oracle_title: "Análise Personalizada",
@@ -15925,10 +15925,7 @@
             }
             const grid = h('div', { className: 'food-grid' });
             state.customFoods.forEach(f => {
-                const card = h('div', { className: 'food-card', onclick: () => openPortionModal({
-                    name: f.name, kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
-                    icon: f.icon || '⭐', source: 'Personalizado', id: f.id, unit: f.unit
-                }) });
+                const card = h('div', { className: 'food-card', onclick: () => customFoodPortion(f) });
                 card.appendChild(h('div', { className: 'food-card-icon' }, f.icon || '⭐'));
                 card.appendChild(h('div', { className: 'food-card-name' }, f.name));
                 card.appendChild(h('div', { className: 'food-card-kcal' }, f.kcal + ' ', h('small', {}, '/100g')));
@@ -16017,7 +16014,7 @@
 
             // Arranca en la primera porción casera ("1 unidad mediana"); si no hay, en gramos/ml/unidades
             if (food.portions.length) setPortionUnit(defPortionIdx(food.portions), 1);
-            else setPortionUnit(-1, _portionBase === 'count' ? 1 : (_portionBase === 'ml' ? 200 : 100));
+            else setPortionUnit(-1, _portionBase === 'count' ? 1 : (food.portion_g > 0 ? food.portion_g : (_portionBase === 'ml' ? 200 : 100)));
 
             // Meal selector (Comida 1-4) — defaults to whatever section the user added from
             _portionMeal = _foodModal.meal || 1;
@@ -16184,8 +16181,10 @@
             return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
         }
 
+        let _scanSeq = 0;   // sube al abrir y al cerrar: una búsqueda que llega tarde no abre nada
         async function openBarcodeScanner(onResult) {
             if (!isPremium()) { showUpgradeModal('scanner'); return; }
+            _scanSeq++;
             _scanCallback = onResult || null;
             const overlay = $('scanner-overlay');
             overlay.classList.add('show');
@@ -16205,15 +16204,15 @@
                     _scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     video.srcObject = _scanStream;
                     await video.play();
-                    _scanDetector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39'] });
+                    _scanDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
                     _scanInterval = setInterval(async () => {
                         try {
                             const barcodes = await _scanDetector.detect(video);
-                            if (barcodes.length > 0) {
+                            // Un número mal leído no cierra el dígito verificador: se sigue escaneando
+                            const hit = barcodes.find(b => validBarcode(b.rawValue));
+                            if (hit) {
                                 clearInterval(_scanInterval); _scanInterval = null;
-                                const code = barcodes[0].rawValue;
-                                $('scanner-hint').textContent = '⏳ ' + code;
-                                await handleBarcodeFound(code);
+                                await handleBarcodeFound(hit.rawValue);
                             }
                         } catch {}
                     }, 400);
@@ -16229,11 +16228,10 @@
                     { video: { facingMode: { ideal: 'environment' } } },
                     video,
                     (result, err) => {
-                        if (result) {
+                        if (result && validBarcode(result.getText())) {
                             const code = result.getText();
                             try { _zxingReader.reset(); } catch {}
                             _zxingReader = null;
-                            $('scanner-hint').textContent = '⏳ ' + code;
                             handleBarcodeFound(code);
                         }
                         // err is fired on every frame without a barcode — ignore unless it's fatal
@@ -16252,6 +16250,7 @@
         }
 
         function closeBarcodeScanner(mode) {
+            _scanSeq++;
             if (_scanInterval) { clearInterval(_scanInterval); _scanInterval = null; }
             if (_scanStream) { _scanStream.getTracks().forEach(t => t.stop()); _scanStream = null; }
             if (_zxingReader) { try { _zxingReader.reset(); } catch {} _zxingReader = null; }
@@ -16259,51 +16258,67 @@
             if (mode === 'manual') openAddFoodModal();
         }
 
+        // Producto escaneado: primero en "Míos" (al instante y sin conexión), después en Open Food
+        // Facts (solo los campos necesarios, ~1,6 KB en vez de ~30, con tiempo máximo). Sin tabla
+        // cargada no se anota en 0: se pide la foto de la tabla y queda guardado con su código.
+        let _pendingScan = null;   // { code, name } para guardar la tabla leída con su código
+        function customFoodPortion(f, source) {
+            openPortionModal({ name: f.name, kcal_100g: f.kcal, protein_100g: f.protein, carbs_100g: f.carbs, fat_100g: f.fat,
+                icon: f.icon || '⭐', source: source || t('fv_src_mine'), id: f.id, unit: f.unit, portion_g: f.portion_g });
+        }
         async function handleBarcodeFound(barcode) {
-            // Show "buscando..." feedback while fetching
-            $('scanner-hint').textContent = '⏳ Buscando producto (' + barcode + ')...';
-            try {
-                const res = await fetch('https://world.openfoodfacts.org/api/v2/product/' + barcode + '.json');
-                const data = await res.json();
-                if (data.status === 1 && data.product) {
-                    const p = data.product;
-                    const n = p.nutriments || {};
-                    const fullName = p.product_name || p.abbreviated_product_name || barcode;
-                    const brand = (p.brands || '').split(',')[0].trim();
-                    const prefill = {
-                        name: brand && !fullName.toLowerCase().includes(brand.toLowerCase()) ? brand + ' — ' + fullName : fullName,
-                        kcal: Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
-                        protein: Math.round((n.proteins_100g || 0) * 10) / 10,
-                        carbs: Math.round((n.carbohydrates_100g || 0) * 10) / 10,
-                        fat: Math.round((n.fat_100g || 0) * 10) / 10,
-                        icon: '🛒',
-                        source: brand || 'Escaneado'
-                    };
-                    closeBarcodeScanner();
-                    flash(t('food_found') + ': ' + prefill.name);
-                    openAddFoodModal(prefill);
-                } else {
-                    closeBarcodeScanner();
-                    openAddFoodModal(); showLabelHint();
-                }
-            } catch {
+            const seq = _scanSeq;
+            const code = String(barcode).trim();
+            const mine = (state.customFoods || []).find(f => f.barcode === code);
+            if (mine) {
                 closeBarcodeScanner();
-                openAddFoodModal(); showLabelHint();
+                flash(t('food_found') + ': ' + mine.name);
+                customFoodPortion(mine);
+                return;
             }
+            $('scanner-hint').textContent = t('scan_searching').replace('{code}', code);
+            let p = null, failed = false;
+            try {
+                const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 8000);
+                const res = await fetch('https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=product_name,product_name_es,product_name_en,product_name_pt,abbreviated_product_name,brands,nutriments,serving_quantity,quantity,product_quantity_unit', { signal: ctl.signal });
+                clearTimeout(timer);
+                const data = await res.json();
+                if (data && data.status === 1 && data.product) p = data.product;
+            } catch { failed = true; }
+            if (seq !== _scanSeq) return;   // cerró el escáner mientras buscaba
+            closeBarcodeScanner();
+            const f = p ? offToFood(p, state.lang) : null;
+            if (f && f.complete) {
+                const food = { id: 'cf_' + Date.now(), name: f.name || code, kcal: f.kcal, protein: f.protein, carbs: f.carbs, fat: f.fat,
+                    icon: '🛒', barcode: code, created_at: Date.now() };
+                if (f.portion_g) food.portion_g = f.portion_g;
+                if (f.ml) food.unit = { kind: 'ml', density: 1 };
+                state.customFoods = (state.customFoods || []).filter(x => x.barcode !== code);
+                state.customFoods.unshift(food); saveCustomFoods();
+                flash(t('food_found') + ': ' + food.name);
+                customFoodPortion(food, (p.brands || '').split(',')[0].trim() || t('fv_src_scan'));
+                return;
+            }
+            _pendingScan = { code, name: (f && f.name) || '' };
+            openAddFoodModal();
+            if (failed) showLabelHint(t('scan_lookup_fail'));
+            else if (f) showLabelHint(t('fv_incomplete').replace('{name}', f.name || code));
+            else showLabelHint();
         }
 
         // ─────────────────────────────────────────
         // COMIDA POR FOTO (Premium) — tabla nutricional o plato, con la IA del servidor.
         // La foto se achica en el teléfono, se analiza y el servidor no la guarda.
         // ─────────────────────────────────────────
-        function showLabelHint() {
+        function showLabelHint(msg) {
             const box = $('food-hint'); box.innerHTML = '';
-            box.appendChild(h('p', {}, t('fv_not_found')));
-            box.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', onclick: () => foodPhoto('label') }, t('fv_not_found_btn')));
+            box.appendChild(h('p', {}, msg || t('fv_not_found')));
+            box.appendChild(h('button', { className: 'btn btn-primary btn-sm btn-full', onclick: () => foodPhoto('label', true) }, t('fv_not_found_btn')));
             box.classList.add('show');
         }
         let _foodPhotoInput = null;
-        function foodPhoto(kind) {
+        function foodPhoto(kind, fromScan) {
+            if (!fromScan) _pendingScan = null;
             if (!isPremium()) { showUpgradeModal('scanner'); return; }
             if (noBackendInProd()) { flash(t('lic_no_server'), 'var(--orange)'); return; }
             if (!_foodPhotoInput) {
@@ -16380,8 +16395,11 @@
                 }
                 // Tabla leída: queda guardada en "Míos" para la próxima y se elige la porción.
                 // Sin nombre legible en la foto: se distingue por la fecha en "Míos".
-                const name = j.name || (t('fv_label_default') + ' ' + todayStr().slice(5).split('-').reverse().join('/'));
+                const scan = _pendingScan; _pendingScan = null;
+                const name = j.name || (scan && scan.name) || (t('fv_label_default') + ' ' + todayStr().slice(5).split('-').reverse().join('/'));
                 const food = { id: 'cf_' + Date.now(), name, kcal: j.per100.kcal, protein: j.per100.protein, carbs: j.per100.carbs, fat: j.per100.fat, icon: '🏷️', created_at: Date.now() };
+                if (j.portion_g) food.portion_g = j.portion_g;
+                if (scan && scan.code) { food.barcode = scan.code; state.customFoods = state.customFoods.filter(x => x.barcode !== scan.code); }
                 state.customFoods.unshift(food); saveCustomFoods();
                 openPortionModal({ name, kcal_100g: food.kcal, protein_100g: food.protein, carbs_100g: food.carbs, fat_100g: food.fat, icon: '🏷️', source: t('fv_label_source'), id: food.id });
                 if (j.portion_g) { $('portion-grams').value = j.portion_g; recalcPortionMacros(); }

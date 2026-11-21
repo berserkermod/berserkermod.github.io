@@ -565,5 +565,24 @@ console.log('\nUnidad de las cargas (kg / lb)');
     ok('una serie editada en libras: el valor editado pasa a ser el original (140 lb → 63,5 kg)', ed[0].exercises[0].sets[0].kg === 63.5, ed[0].exercises[0].sets[0]);
 }
 
+console.log('\nCódigo de barras y Open Food Facts');
+{
+    const { validBarcode, offToFood } = calc;
+    ok('códigos reales válidos (EAN-13 argentino y europeo, UPC-A, EAN-8, UPC-E)', ['7794000008557', '7790895000997', '3017620429484', '036000291452', '96385074', '01234565'].every(validBarcode), ['7794000008557', '7790895000997', '3017620429484', '036000291452', '96385074', '01234565'].filter((c) => !validBarcode(c)));
+    ok('un dígito mal leído no pasa', !validBarcode('7794000008558') && !validBarcode('7794000018557') && !validBarcode('036000291453'));
+    ok('lo que no es un código de alimento no pasa', !validBarcode('') && !validBarcode('ABC123') && !validBarcode('12345') && !validBarcode(null));
+    const full = { product_name: 'Galletitas de agua', product_name_en: 'Water crackers', brands: 'Criollitas,Bagley', serving_quantity: '30', nutriments: { 'energy-kcal_100g': 427, proteins_100g: 7, carbohydrates_100g: 63.33, fat_100g: 16 } };
+    let f = offToFood(full, 'es');
+    ok('producto completo: marca + nombre y porción del envase', f.complete && f.name === 'Criollitas — Galletitas de agua' && f.kcal === 427 && f.carbs === 63.3 && f.portion_g === 30, f);
+    ok('nombre en el idioma de la app', offToFood(full, 'en').name === 'Criollitas — Water crackers');
+    f = offToFood({ product_name: 'Biscuits', nutriments: { 'energy-kj_100g': 1880, proteins_100g: 7.9, carbohydrates_100g: 61.5, fat_100g: 21 } }, 'es');
+    ok('solo kJ → kcal (1880 kJ = 449 kcal)', f.complete && f.kcal === 449, f);
+    f = offToFood({ product_name: 'Caldo de verduras', brands: 'Knorr', nutriments: { 'added-sugars_100g': 5.7 } }, 'es');
+    ok('sin tabla cargada → incompleto (no se carga en 0)', f.complete === false && f.kcal === null && f.name === 'Knorr — Caldo de verduras', f);
+    f = offToFood({ product_name: 'Agua mineral', quantity: '1,5 l', nutriments: { 'energy-kcal_100g': 0, proteins_100g: 0, carbohydrates_100g: 0, fat_100g: 0 } }, 'es');
+    ok('agua con todo en 0 sí está completa, y es líquido (ml)', f.complete && f.kcal === 0 && f.ml === true, f);
+    ok('valores imposibles → incompleto', offToFood({ product_name: 'X', nutriments: { 'energy-kcal_100g': 4000, proteins_100g: 1, carbohydrates_100g: 1, fat_100g: 1 } }, 'es').complete === false);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

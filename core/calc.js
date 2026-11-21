@@ -385,6 +385,55 @@
         return n;
     }
 
+    // ── Código de barras (auditoría de etiqueta y código, nov 2026) ───────
+    // Dígito verificador de los códigos de alimentos (EAN-13, EAN-8, UPC-A, GTIN-14 y UPC-E).
+    // Si la cámara lee mal un número, el dígito no cierra: se sigue escaneando en vez de
+    // traer otro producto.
+    function gtinOk(d) {
+        var s = 0;
+        for (var i = 0; i < d.length - 1; i++) { var x = +d[d.length - 2 - i]; s += i % 2 === 0 ? x * 3 : x; }
+        return (10 - s % 10) % 10 === +d[d.length - 1];
+    }
+    function upcEtoA(e) {   // UPC-E de 8 dígitos → UPC-A de 12 (el verificador es el del UPC-A)
+        var ns = e[0], d = e.slice(1, 7), c = e[7], x = d[5], m;
+        if ('012'.indexOf(x) >= 0) m = d.slice(0, 2) + x + '0000' + d.slice(2, 5);
+        else if (x === '3') m = d.slice(0, 3) + '00000' + d.slice(3, 5);
+        else if (x === '4') m = d.slice(0, 4) + '00000' + d[4];
+        else m = d.slice(0, 5) + '0000' + x;
+        return ns + m + c;
+    }
+    function validBarcode(code) {
+        var d = String(code == null ? '' : code).trim();
+        if (!/^\d+$/.test(d)) return false;
+        if (d.length === 12 || d.length === 13 || d.length === 14) return gtinOk(d);
+        if (d.length === 8) return gtinOk(d) || ((d[0] === '0' || d[0] === '1') && gtinOk(upcEtoA(d)));
+        return false;
+    }
+
+    // Producto de Open Food Facts → alimento de la app (por 100 g). Si solo trae kJ se pasa a
+    // kcal; si faltan las kcal o algún macro, complete = false (no se carga en 0: se pide la
+    // foto de la tabla). El nombre va en el idioma de la app si está, con la marca adelante.
+    function offToFood(p, lang) {
+        if (!p || typeof p !== 'object') return null;
+        var n = p.nutriments || {};
+        var num = function (v) { var x = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(x) && x >= 0 ? x : null; };
+        var kcal = num(n['energy-kcal_100g']);
+        if (kcal == null) { var kj = num(n['energy-kj_100g']); if (kj == null) kj = num(n.energy_100g); if (kj != null) kcal = kj / 4.184; }
+        var pr = num(n.proteins_100g), ca = num(n.carbohydrates_100g), fa = num(n.fat_100g);
+        var nm = String((lang && p['product_name_' + lang]) || p.product_name || p.product_name_es || p.product_name_en || p.product_name_pt || p.abbreviated_product_name || '').trim();
+        var brand = String(p.brands || '').split(',')[0].trim();
+        var name = brand && nm && nm.toLowerCase().indexOf(brand.toLowerCase()) < 0 ? brand + ' — ' + nm : (nm || brand);
+        var complete = kcal != null && pr != null && ca != null && fa != null && kcal <= 950 && pr + ca + fa <= 105;
+        var sq = num(p.serving_quantity);
+        var ml = String(p.product_quantity_unit || '').toLowerCase() === 'ml' || /\d\s*(ml|cl|l)\b/i.test(String(p.quantity || ''));
+        var r1 = function (x) { return Math.round(x * 10) / 10; };
+        return {
+            name: name.slice(0, 80), complete: complete,
+            kcal: complete ? Math.round(kcal) : null, protein: complete ? r1(pr) : null, carbs: complete ? r1(ca) : null, fat: complete ? r1(fa) : null,
+            portion_g: sq > 0 && sq <= 2000 ? Math.round(sq) : null, ml: ml
+        };
+    }
+
     // ── Peso corporal y gasto real ──────────────────────────────────────
     var DAY_MS = 86400000;
     function dayNum(iso) { return Math.round(Date.parse(iso + 'T12:00:00Z') / DAY_MS); }
@@ -1203,6 +1252,8 @@
         pushLoad: pushLoad,
         convertLoad: convertLoad,
         convertSessionsUnit: convertSessionsUnit,
+        validBarcode: validBarcode,
+        offToFood: offToFood,
         calcTDEE: calcTDEE,
         calcMacros: calcMacros,
         proteinWeight: proteinWeight,
