@@ -1,13 +1,13 @@
 {
-  "version": "2-44",
+  "version": "2-45",
   "files": {
     "core/calc.js": "cb954ec00adadcfc",
     "core/i18n-data.js": "9b7d63922730cf6f",
     "fonts/inter-latin-ext.woff2": "34b9c504cab7a73e",
     "fonts/inter-latin.woff2": "3100e775e8616cd2",
-    "icon-192.png": "483783ab174fdbcd",
-    "icon-512.png": "eb0721f167c1f15e",
-    "icon-maskable.png": "4760d97026657897",
+    "icon-192.png": "6e0aa9d4379e4bf8",
+    "icon-512.png": "79e3bd8d062b634a",
+    "icon-maskable.png": "e35eabd4b1104590",
     "img/landing/coach.webp": "07822ab7e8baf314",
     "img/landing/en/coach.webp": "5b7bc72f157867b9",
     "img/landing/en/entreno.webp": "1850a615cabc6277",
