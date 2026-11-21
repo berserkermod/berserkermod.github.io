@@ -108,22 +108,23 @@ ok('todas las reglas anteriores valen también con prioridad en piernas y en tor
     const a2 = html.indexOf('        function suggestNextLoad(');
     const b2 = html.indexOf('        function checkProgression(');
     const state = { sessions: [], unit: 'kg' };
-    const suggest = new Function('state', html.slice(a2, b2) + '; return suggestNextLoad;')(state);
+    // La lógica vive en core/calc.js (nextLoad); la app solo le pasa el historial y el día.
+    const suggest = new Function('state', 'nextLoad', 'dumbbellGrid', 'todayStr', 'appLocale', html.slice(a2, b2) + '; return suggestNextLoad;')(state, calc.nextLoad, calc.dumbbellGrid, () => '2026-11-21', () => 'es-AR');
     const run = (name, reps, kg, done) => {
-        state.sessions = [{ exercises: [{ exercise: name, sets: done.map((r) => ({ kg, reps: r })) }] }];
+        state.sessions = [{ date: '2026-11-18', exercises: [{ exercise: name, sets: done.map((r) => ({ kg, reps: r })) }] }];
         return suggest({ name, reps });
     };
     console.log('\n=== sugerencia de carga ===\n');
     const lat = run('Elevaciones Laterales', '10-12', 3, [12, 12, 12]);
-    ok('3 kg con el rango completo: primero sumar reps hasta 14 (+1 kg sería +33 %)', lat && !lat.up && lat.extend && lat.targetReps === 14 && lat.kg === 3, [JSON.stringify(lat)]);
+    ok('3 kg con el rango completo: primero sumar reps hasta 14 (+1 kg sería +33 %)', lat && lat.kind === 'extend' && lat.targetReps === 14 && lat.kg === 3, [JSON.stringify(lat)]);
     const lat2 = run('Elevaciones Laterales', '10-12', 3, [14, 14, 14]);
-    ok('3 kg con 14 reps en todas: sube a 4 kg (escalón real de mancuerna)', lat2 && lat2.up && lat2.kg === 4 && lat2.inc === 1, [JSON.stringify(lat2)]);
+    ok('3 kg con 14 reps en todas: sube a 4 kg (escalón real de mancuerna)', lat2 && lat2.kind === 'up' && lat2.kg === 4 && lat2.inc === 1, [JSON.stringify(lat2)]);
     const sq = run('Sentadilla', '8-10', 60, [10, 10, 10]);
-    ok('60 kg en sentadilla: sube 2,5 kg como siempre (4 %)', sq && sq.up && sq.kg === 62.5, [JSON.stringify(sq)]);
+    ok('60 kg en sentadilla: sube 2,5 kg como siempre (4 %)', sq && sq.kind === 'up' && sq.kg === 62.5, [JSON.stringify(sq)]);
     const bar = run('Sentadilla', '8-10', 20, [10, 10, 10]);
-    ok('barra sola (20 kg): +2,5 sería 12,5 % → primero 12 reps', bar && bar.extend && bar.targetReps === 12, [JSON.stringify(bar)]);
+    ok('barra sola (20 kg): +2,5 sería 12,5 % → primero 12 reps', bar && bar.kind === 'extend' && bar.targetReps === 12, [JSON.stringify(bar)]);
     const part = run('Elevaciones Laterales', '10-12', 3, [12, 11, 10]);
-    ok('sin el rango completo: mismo peso y buscar el tope (sin cambios)', part && !part.up && !part.extend && part.targetReps === 12, [JSON.stringify(part)]);
+    ok('sin el rango completo: mismo peso y buscar el tope (sin cambios)', part && part.kind === 'same' && part.targetReps === 12, [JSON.stringify(part)]);
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');

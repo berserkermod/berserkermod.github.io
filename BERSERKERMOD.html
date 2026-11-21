@@ -1449,6 +1449,7 @@
         .rt-note .ico { color: var(--text3); margin-top: 2px; }
         .rt-sug { display: flex; gap: 8px; align-items: flex-start; width: 100%; text-align: left; border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 700; margin-bottom: 10px; line-height: 1.4; cursor: pointer; background: var(--sf2); color: var(--text); border: 1px dashed var(--border); }
         .rt-sug.up { background: rgba(0,212,170,.08); color: var(--accent); border-color: rgba(0,212,170,.35); }
+        .rt-sug.down { background: rgba(253,203,110,.08); color: var(--orange); border-color: rgba(253,203,110,.35); }
         .rt-sug .ico { margin-top: 1px; }
 
         .pulse {
@@ -2362,8 +2363,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-45"></script>
-    <script src="core/i18n-data.js?v=2-45"></script>
+    <script src="core/calc.js?v=2-46"></script>
+    <script src="core/i18n-data.js?v=2-46"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2653,7 +2654,7 @@
                 rt_last_weight: "Último:",
                 rt_suggest_up: "🎯 Hoy: {kg}{unit} ({inc}{unit}) — ¡completaste el rango, a subir!",
                 rt_suggest_same: "🎯 Hoy: {kg}{unit} — buscá llegar a {reps} reps", rt_suggest_extend: "🎯 Hoy: {kg}{unit} — con poco peso el salto es grande: sumá reps hasta {reps} y después subí",
-                rt_suggest_tap: "tocá para cargar",
+                rt_suggest_tap: "tocá para cargar", rt_suggest_down: "🎯 Hoy: {kg}{unit} — la última vez quedaste debajo de {reps} reps: bajá un escalón y volvé a construir", rt_suggest_restart: "🎯 Hoy: {kg}{unit} — hace {weeks} semanas que no lo hacés: volvé con un 90 % y subí desde ahí", rt_suggest_bw: "🎯 Con tu peso: buscá {reps} reps por serie", rt_suggest_bw_load: "🎯 Ya hacés {reps} reps con tu peso: podés sumar {kg}{unit} de lastre (o seguir sumando reps)", rt_first: "Primera vez con este ejercicio: elegí un peso con el que llegues a {reps} reps dejando {rir} en reserva. La próxima vez te sugiero cuánto.", rt_first_norir: "Primera vez con este ejercicio: elegí un peso con el que llegues a {reps} reps sin llegar al fallo. La próxima vez te sugiero cuánto.", rt_first_bw: "Primera vez: hacé hasta {reps} reps por serie (anotá 0 kg si es con tu peso).",
                 rt_suggest_loaded: "cargado en las series",
                 share_sum_volume: "VOLUMEN", share_sum_sets: "SERIES", share_sum_duration: "DURACIÓN", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Racha semanal", home_week_record: "récord", home_week_progress: "esta semana {x}/{y} días", home_week_record_new: "¡Nuevo récord de racha semanal!",
@@ -2685,7 +2686,7 @@
                 rat_days_5: "PPL+UL con 5 días: cada grupo 2 veces por semana y más volumen total.",
                 rat_days_6: "PPL x2 con 6 días es para avanzados que toleran alto volumen y recuperan rápido.",
                 prog_beg: "Subí 2.5kg cuando completes todas las series del tope del rango (ej. 4×8). Cambiá la rutina cada 12-16 semanas.",
-                prog_int: "Subí 1.25-2.5kg cuando completes el rango de reps; si no podés, sumá 1 rep. Si tu rendimiento baja varias sesiones seguidas, hacé una semana con la mitad de las series.",
+                prog_int: "Subí el peso cuando completes el rango de reps (2,5 kg en barra, la mancuerna siguiente o una placa en máquinas); si no llegás, repetí el peso y sumá reps. Si tu rendimiento baja varias sesiones seguidas, hacé una semana con la mitad de las series.",
                 prog_adv: "Progresá con doble progresión y seguí tus récords. Si tu rendimiento baja varias sesiones seguidas, hacé una semana con la mitad de las series y después volvé a tu volumen.",
                 prog_default: "Progresá subiendo peso o reps cuando puedas completar todas las series con buena técnica.",
                 pdf_lib_fail: "No se pudo cargar la librería PDF",
@@ -3095,7 +3096,7 @@
                 rt_last_weight: "Last:",
                 rt_suggest_up: "🎯 Today: {kg}{unit} ({inc}{unit}) — you completed the range, go up!",
                 rt_suggest_same: "🎯 Today: {kg}{unit} — aim for {reps} reps", rt_suggest_extend: "🎯 Today: {kg}{unit} — with light weights the jump is big: build up to {reps} reps, then go up",
-                rt_suggest_tap: "tap to load",
+                rt_suggest_tap: "tap to load", rt_suggest_down: "🎯 Today: {kg}{unit} — last time you fell below {reps} reps: drop one step and build back up", rt_suggest_restart: "🎯 Today: {kg}{unit} — it’s been {weeks} weeks since you did it: come back at about 90% and build from there", rt_suggest_bw: "🎯 Bodyweight: aim for {reps} reps per set", rt_suggest_bw_load: "🎯 You already do {reps} reps with your bodyweight: you can add {kg}{unit} (or keep adding reps)", rt_first: "First time with this exercise: pick a weight you can do for {reps} reps with {rir} left in the tank. Next time I’ll suggest how much.", rt_first_norir: "First time with this exercise: pick a weight you can do for {reps} reps without reaching failure. Next time I’ll suggest how much.", rt_first_bw: "First time: do up to {reps} reps per set (log 0 if it’s bodyweight).",
                 rt_suggest_loaded: "loaded into sets",
                 share_sum_volume: "VOLUME", share_sum_sets: "SETS", share_sum_duration: "DURATION", share_sum_vs_prev: "VS LAST",
                 home_week_streak: "Weekly streak", home_week_record: "record", home_week_progress: "this week {x}/{y} days", home_week_record_new: "New weekly streak record!",
@@ -3127,7 +3128,7 @@
                 rat_days_5: "PPL+UL on 5 days: each muscle group twice a week with more total volume.",
                 rat_days_6: "PPL x2 on 6 days is for advanced lifters who handle high volume and recover fast.",
                 prog_beg: "Add 2.5kg once you complete every set at the top of the range (e.g. 4×8). Change the routine every 12-16 weeks.",
-                prog_int: "Add 1.25-2.5kg once you complete the rep range; if you can’t, add 1 rep. If your performance drops for several sessions in a row, do one week with half the sets.",
+                prog_int: "Add weight once you complete the rep range (2.5 kg on a barbell, the next dumbbell or one plate on machines); if you can’t, keep the weight and add reps. If your performance drops for several sessions in a row, do one week with half the sets.",
                 prog_adv: "Progress with double progression and track your PRs. If your performance drops for several sessions in a row, do one week with half the sets, then return to your usual volume.",
                 prog_default: "Progress by adding weight or reps when you can complete every set with good technique.",
                 pdf_lib_fail: "Couldn’t load the PDF library",
@@ -3538,7 +3539,7 @@
                 rt_last_weight: "Último:",
                 rt_suggest_up: "🎯 Hoje: {kg}{unit} ({inc}{unit}) — você completou a faixa, suba!",
                 rt_suggest_same: "🎯 Hoje: {kg}{unit} — tente chegar a {reps} reps", rt_suggest_extend: "🎯 Hoje: {kg}{unit} — com pouco peso o salto é grande: chegue a {reps} reps e depois suba",
-                rt_suggest_tap: "toque para carregar",
+                rt_suggest_tap: "toque para carregar", rt_suggest_down: "🎯 Hoje: {kg}{unit} — da última vez você ficou abaixo de {reps} reps: desça um degrau e reconstrua", rt_suggest_restart: "🎯 Hoje: {kg}{unit} — faz {weeks} semanas que você não faz: volte com uns 90 % e suba a partir daí", rt_suggest_bw: "🎯 Com seu peso: busque {reps} reps por série", rt_suggest_bw_load: "🎯 Você já faz {reps} reps com seu peso: pode adicionar {kg}{unit} de carga (ou seguir somando reps)", rt_first: "Primeira vez com este exercício: escolha um peso com o qual chegue a {reps} reps deixando {rir} em reserva. Na próxima eu sugiro quanto.", rt_first_norir: "Primeira vez com este exercício: escolha um peso com o qual chegue a {reps} reps sem chegar à falha. Na próxima eu sugiro quanto.", rt_first_bw: "Primeira vez: faça até {reps} reps por série (anote 0 kg se for com seu peso).",
                 rt_suggest_loaded: "carregado nas séries",
                 share_sum_volume: "VOLUME", share_sum_sets: "SÉRIES", share_sum_duration: "DURAÇÃO", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Sequência semanal", home_week_record: "recorde", home_week_progress: "esta semana {x}/{y} dias", home_week_record_new: "Novo recorde de sequência semanal!",
@@ -3570,7 +3571,7 @@
                 rat_days_5: "PPL+UL em 5 dias: cada grupo 2 vezes por semana e mais volume total.",
                 rat_days_6: "PPL x2 em 6 dias é para avançados que toleram alto volume e se recuperam rápido.",
                 prog_beg: "Suba 2,5kg quando completar todas as séries no topo da faixa (ex. 4×8). Troque a rotina a cada 12-16 semanas.",
-                prog_int: "Suba 1,25-2,5kg quando completar a faixa de reps; se não conseguir, faça 1 rep a mais. Se o seu rendimento cair várias sessões seguidas, faça uma semana com metade das séries.",
+                prog_int: "Suba o peso quando completar a faixa de reps (2,5 kg na barra, o próximo halter ou uma placa nas máquinas); se não conseguir, mantenha o peso e some reps. Se o seu rendimento cair várias sessões seguidas, faça uma semana com metade das séries.",
                 prog_adv: "Progrida com dupla progressão e acompanhe seus recordes. Se o seu rendimento cair várias sessões seguidas, faça uma semana com metade das séries e depois volte ao seu volume.",
                 prog_default: "Progrida subindo carga ou reps quando conseguir completar todas as séries com boa técnica.",
                 pdf_lib_fail: "Não foi possível carregar a biblioteca de PDF",
@@ -6150,7 +6151,13 @@
         }
 
         // Last weight used for a given exercise (max kg across all logged sessions).
-        function getLastWeightFor(exName) {
+        function getLastWeightFor(exName, day) {
+            if (day) {   // mismo ejercicio con otro rango otro día: solo la última vez en este
+                const e = lastExerciseEntry(state.sessions || [], exName, day);
+                if (!e || e.otherDay) return null;
+                const m = Math.max(...e.sets.map(set => parseFloat(set.kg) || 0));
+                return m > 0 ? { kg: m, date: e.date } : null;
+            }
             for (const s of state.sessions || []) {
                 const ex = (s.exercises || []).find(e => e.exercise === exName);
                 if (ex) {
@@ -8000,11 +8007,7 @@
         function isCompoundLift(name) {
             return /sentadilla|peso muerto|press banca|press inclinado|press militar|dominada|remo|hip thrust|prensa|hack|fondos|squat|deadlift|bench|overhead press|row/i.test(String(name || ''));
         }
-        function isBarbellLift(name) {
-            const n = String(name || '').toLowerCase();
-            if (/mancuerna|dumbbell|máquina|maquina|machine|smith|polea|cable|prensa|búlgara|bulgara|goblet|kettlebell|dominada|fondos|pull-?up|dip/.test(n)) return false;
-            return /barra|barbell|sentadilla|squat|peso muerto|deadlift|press banca|press plano|bench|press militar|overhead press|hip thrust/.test(n);
-        }
+        function isBarbellLift(name) { return exerciseGear(name) === 'barbell'; }
         const BAR_WEIGHT = { kg: 20, lbs: 45 };
         const PLATES_AVAILABLE = { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lbs: [45, 35, 25, 10, 5, 2.5] };
         // Panel desplegable "Calentamiento y discos" para el peso de trabajo `work`.
@@ -8331,10 +8334,13 @@
                 if (rirTxt) ec.appendChild(h('p', { className: 'rt-rir' }, ico('flame'), h('span', {}, t('rt_rir_line').replace('{rir}', rirTxt))));
                 if (coachKg) ec.appendChild(h('p', { className: 'rt-rir' }, ico('target'), h('span', {}, t('rt_coach_kg').replace('{kg}', fmtN(planKg) + ' ' + state.unit))));
 
+                // El mismo ejercicio en otro día del plan con otro rango (día pesado y liviano):
+                // la referencia es la última vez en ESTE día.
+                const dayPref = activePlanObj.plan.some((d, i) => i !== dayIdx && (d.exercises || []).some(e => e.name === ex.name && String(e.reps) !== String(ex.reps))) ? today.name : null;
                 // Last weight reminder
-                const last = getLastWeightFor(ex.name);
+                const last = getLastWeightFor(ex.name, dayPref);
                 if (last) {
-                    ec.appendChild(h('p', { className: 'rt-last-weight' }, t('rt_last_weight') + ' ' + last.kg + state.unit + ' · ' + relativeTime(last.date + 'T12:00:00')));
+                    ec.appendChild(h('p', { className: 'rt-last-weight' }, t('rt_last_weight') + ' ' + fmtKg(last.kg) + state.unit + ' · ' + relativeTime(last.date + 'T12:00:00')));
                 }
 
                 // Coach notes (from plan generator)
@@ -8348,9 +8354,9 @@
                 const rec = (deloadActive() || coachKg) ? null : checkProgression(ex.name);
                 if (rec) {
                     const recMsg = t('prog_recommend')
-                        .replace('{newKg}', rec.newKg)
+                        .replace('{newKg}', fmtKg(rec.newKg))
                         .replaceAll('{unit}', state.unit)
-                        .replace('{currentKg}', rec.currentKg)
+                        .replace('{currentKg}', fmtKg(rec.currentKg))
                         .replace('{pct}', rec.pct)
                         .replace('{days}', rec.diffDays);
                     const recDiv = h('div', { style: { display: 'flex', gap: '8px', alignItems: 'flex-start', background: 'rgba(0, 212, 170, 0.1)', color: 'var(--accent)', borderLeft: '3px solid var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '13px', fontWeight: '700', marginBottom: '12px', lineHeight: '1.4' } },
@@ -8365,19 +8371,24 @@
 
                 // Sugerencia de doble progresión (si el banner de estancamiento no saltó).
                 // Tap → pre-carga el kg sugerido en las series vacías.
-                const sug = (rec || deloadActive() || coachKg) ? null : suggestNextLoad(ex);
-                if (sug) {
-                    const sugMsg = (sug.up
-                        ? t('rt_suggest_up').replace('{kg}', sug.kg).replace('{inc}', '+' + sug.inc)
-                        : t(sug.extend ? 'rt_suggest_extend' : 'rt_suggest_same').replace('{kg}', sug.kg).replace('{reps}', sug.targetReps)
-                    ).replaceAll('{unit}', state.unit);
+                const sug = (rec || deloadActive() || coachKg) ? null : suggestNextLoad(ex, dayPref);
+                if (sug && sug.kind === 'first') {
+                    // Primera vez: cómo elegir el peso (la próxima ya hay sugerencia)
+                    const rirF = effectiveRir(ex.rir);
+                    const fk = sug.gear === 'bodyweight' ? 'rt_first_bw' : (rirF ? 'rt_first' : 'rt_first_norir');
+                    ec.appendChild(h('p', { className: 'rt-note' }, ico('bulb'), h('span', {}, t(fk).replace('{reps}', sug.targetReps).replace('{rir}', rirF))));
+                } else if (sug) {
+                    const fill = sug.kind === 'bw' ? (sug.addKg || 0) : sug.kg;
+                    const msgKey = { up: 'rt_suggest_up', extend: 'rt_suggest_extend', same: 'rt_suggest_same', down: 'rt_suggest_down', restart: 'rt_suggest_restart', bw: sug.addKg ? 'rt_suggest_bw_load' : 'rt_suggest_bw' }[sug.kind];
+                    const sugMsg = t(msgKey).replace('{kg}', fmtKg(fill)).replace('{inc}', '+' + fmtKg(sug.inc || 0))
+                        .replace('{reps}', sug.targetReps).replace('{weeks}', sug.weeks).replaceAll('{unit}', state.unit);
                     const sugBtn = h('button', {
-                        className: 'rt-sug' + (sug.up ? ' up' : ''),
+                        className: 'rt-sug' + (sug.kind === 'up' ? ' up' : (sug.kind === 'down' || sug.kind === 'restart') ? ' down' : ''),
                         onclick: () => {
-                            setsArr.forEach(st => { if (!st.kg) st.kg = sug.kg; });
+                            setsArr.forEach(st => { if (st.kg === '' || st.kg == null) st.kg = fill; });
                             saveRoutineDraft();
                             renderRoutines();
-                            flash('✅ ' + sug.kg + state.unit + ' → ' + t('rt_suggest_loaded'));
+                            flash('✅ ' + fmtKg(fill) + state.unit + ' → ' + t('rt_suggest_loaded'));
                         }
                     }, ico('target'), h('span', {}, noEmoji(sugMsg) + ' · ' + t('rt_suggest_tap')));
                     ec.appendChild(sugBtn);
@@ -8391,7 +8402,7 @@
                 }
 
                 // Referencia de cada serie: la anterior de hoy o la misma serie del último entreno.
-                const prevSets = getPrevSets(ex.name);
+                const prevSets = getPrevSets(ex.name, dayPref);
                 // Reps del plan como última referencia ("8" → 8, "8-12" → 8); "30s" o "al fallo" no
                 const planReps = /^\s*\d+(\s*-\s*\d+)?\s*$/.test(String(ex.reps || '')) ? parseInt(String(ex.reps), 10) : '';
                 const refFor = (i) => ({
@@ -9295,7 +9306,7 @@
                     const rec = checkProgression(state.selEx);
                     if (rec) {
                         const recMsg = t('prog_recommend_free')
-                            .replace('{newKg}', rec.newKg)
+                            .replace('{newKg}', fmtKg(rec.newKg))
                             .replaceAll('{unit}', state.unit)
                             .replace('{pct}', rec.pct)
                             .replace('{days}', rec.diffDays);
@@ -9400,7 +9411,8 @@
             });
         }
 
-        function getPrevSets(exName) {
+        function getPrevSets(exName, day) {
+            if (day) { const e = lastExerciseEntry(state.sessions || [], exName, day); return e && !e.otherDay ? e.sets : []; }
             for (const s of state.sessions) {
                 const ex = s.exercises.find(e => e.exercise === exName);
                 if (ex) return ex.sets;
@@ -9860,11 +9872,6 @@
             return state.user && state.user.age >= 60 ? '2-3' : r;
         }
 
-        // Doble progresión por sesión: mira la ÚLTIMA vez que hiciste el ejercicio
-        // contra el rango objetivo del plan. Si completaste el tope de reps en todas
-        // las series → sugiere subir peso (+2.5kg compuesto / +1.25kg aislamiento).
-        // Si no → sugiere repetir el peso y completar el rango. Complementa a
-        // checkProgression (que detecta estancamiento largo de 14+ días).
         // Peso programado en el plan: el que carga el coach (o el "Kg" de una rutina propia).
         // Se guarda en kg; si la app está en libras, se muestra y se usa convertido.
         function planKgOf(ex) {
@@ -9872,42 +9879,14 @@
             if (!(n > 0)) return 0;
             return state.unit === 'lbs' ? Math.round(n * 2.20462 * 2) / 2 : n;
         }
-        function suggestNextLoad(ex) {
-            if (!ex || ex.kind === 'cardio') return null;
-            const repsStr = String(ex.reps || '');
-            // Solo rangos numéricos ("8-10", "12"); skip isométricos/tiempo/AMRAP ("30-45s", "10/lado", "al fallo")
-            if (!/^\d+(-\d+)?$/.test(repsStr.trim())) return null;
-            const parts = repsStr.trim().split('-');
-            const topReps = parseInt(parts[parts.length - 1], 10);
-            if (!topReps) return null;
-            // Última performance registrada de este ejercicio
-            let last = null;
-            for (const s of state.sessions || []) {
-                const found = (s.exercises || []).find(e => e.exercise === ex.name);
-                if (found && found.sets && found.sets.length) { last = found; break; }
-            }
-            if (!last) return null;
-            const kgs = last.sets.map(st => parseFloat(st.kg) || 0).filter(k => k > 0);
-            if (!kgs.length) return null;
-            const maxKg = Math.max(...kgs);
-            const allTop = last.sets.every(st => (parseInt(st.reps, 10) || 0) >= topReps);
-            const isLbs = state.unit === 'lbs';
-            const compound = /sentadilla|peso muerto|press banca|press inclinado|press militar|dominada|remo barra|hip thrust|prensa|hack|fondos/i.test(ex.name);
-            if (allTop) {
-                let inc = isLbs ? (compound ? 5 : 2.5) : (compound ? 2.5 : 1.25);
-                // Mancuernas livianas: el escalón real suele ser de 1 kg (no existe la de 4,25).
-                if (!isLbs && maxKg < 10) inc = 1;
-                // La ACSM sugiere subir 2-10 % por vez. Con cargas livianas el salto fijo se
-                // pasa (3 kg → 4 kg = +33 %): primero se estira el rango 2 reps (regla "2 por
-                // 2") y recién con eso completo en todas las series se sube.
-                const extTop = topReps + 2;
-                if (inc / maxKg > 0.10 && !last.sets.every(st => (parseInt(st.reps, 10) || 0) >= extTop)) {
-                    return { kg: maxKg, up: false, targetReps: extTop, extend: true };
-                }
-                return { kg: Math.round((maxKg + inc) * 100) / 100, up: true, inc };
-            }
-            return { kg: maxKg, up: false, targetReps: topReps };
+        // Carga sugerida para hoy: core/calc.js (nextLoad) decide con pesos que existen según el
+        // equipo, vuelve atrás si quedó debajo del rango o pasó más de un mes, y con `day`
+        // compara el día pesado con el pesado (mismo ejercicio con otro rango otro día).
+        function suggestNextLoad(ex, day) {
+            const list = state.sessions || [];
+            return nextLoad(list, ex, { today: todayStr(), unit: state.unit, day: day || null, dbGrid: dumbbellGrid(list) });
         }
+        function fmtKg(n) { return Number(n).toLocaleString(appLocale(), { maximumFractionDigits: 2 }); }
 
         function checkProgression(exName) {
             const exSessions = [];
@@ -9952,22 +9931,15 @@
                 const isLbs = state.unit === 'lbs';
                 const heavyThreshold = isLbs ? 110 : 50;
                 const lightThreshold = isLbs ? 44 : 20;
-                let pct = W >= heavyThreshold ? 0.05 : W >= lightThreshold ? 0.075 : 0.10;
-                let inc = W * pct;
-
-                let step;
-                if (isLbs) {
-                    step = W >= 100 ? 5 : W >= 40 ? 2.5 : 1.25;
-                } else {
-                    step = W >= 50 ? 2.5 : W >= 20 ? 1.25 : 0.5;
-                }
-                let roundedInc = Math.round(inc / step) * step;
-                if (roundedInc === 0) roundedInc = step;
+                const pct = W >= heavyThreshold ? 0.05 : W >= lightThreshold ? 0.075 : 0.10;
+                // A un peso que exista: barra de a 2,5, la mancuerna siguiente, una placa en máquinas
+                const list = state.sessions || [];
+                const push = pushLoad(W, pct, exerciseGear(exName), state.unit, { dbGrid: dumbbellGrid(list), seenStep: seenStep(list, exName, state.unit) });
                 return {
                     currentKg: W,
                     currentReps: R,
-                    newKg: +(W + roundedInc).toFixed(2),
-                    pct: Math.round(pct * 100),
+                    newKg: push.newKg,
+                    pct: push.pct,
                     diffDays: diffDays,
                     consecutiveCount: consecutiveCount
                 };
@@ -16716,7 +16688,7 @@
                 const banner = h('div', { className: 'prog-banner' });
                 const txt = h('div', { className: 'prog-banner-text' });
                 txt.appendChild(h('div', { className: 'prog-banner-ex' }, exercise));
-                txt.appendChild(h('div', {}, rec.currentKg + state.unit + ' → ' + rec.newKg + state.unit + ' (+' + rec.pct + '%) · ' + t('n_days').replace('{n}', rec.diffDays)));
+                txt.appendChild(h('div', {}, fmtKg(rec.currentKg) + state.unit + ' → ' + fmtKg(rec.newKg) + state.unit + ' (+' + rec.pct + '%) · ' + t('n_days').replace('{n}', rec.diffDays)));
                 const btn = h('button', {
                     className: 'prog-banner-dismiss',
                     onclick: () => dismissProgBanner(exercise, rec.newKg)

@@ -471,5 +471,81 @@ console.log('Registro del período');
     ok('un hueco de 125 días no entra al promedio ni cuenta como ciclo largo', gap.avg === 28 && gap.long === false && gap.lastLen === 125, gap);
 }
 
+console.log('\nCarga sugerida (auditoría de progresión, nov 2026)');
+{
+    const { exerciseGear, workingWeight, nextLoad, pushLoad, dumbbellGrid, seenStep } = calc;
+    const G = { 'Sentadilla': 'barbell', 'Press Banca Plano': 'barbell', 'Remo Barra': 'barbell', 'Press Francés': 'barbell', 'Curl Bíceps Barra': 'barbell',
+        'Hack Squat': 'plates', 'Prensa Piernas': 'plates', 'Press Banca Mancuernas': 'dumbbell', 'Sentadilla Búlgara': 'dumbbell', 'Elevaciones Laterales': 'dumbbell',
+        'Remo Polea Baja': 'machine', 'Jalón Polea': 'machine', 'Extensión Cuádriceps': 'machine', 'Crunch en Polea': 'machine', 'Pantorrilla Pie': 'machine',
+        'Dominadas': 'bodyweight', 'Fondos Paralelas': 'bodyweight', 'Crunch Clásico': 'bodyweight', 'Curl Bíceps': 'other', 'Encogimientos': 'other' };
+    const bad = Object.entries(G).filter(([n, g]) => exerciseGear(n) !== g).map(([n]) => n + '=' + exerciseGear(n));
+    ok('tipo de equipo por nombre (barra, discos, mancuernas, máquina, con tu peso)', bad.length === 0, bad);
+    const S = (kg, reps) => ({ kg, reps });
+    ok('peso de trabajo: ignora el calentamiento y el tipeo', workingWeight([S(20, 10), S(60, 10), S(60, 10), S(60, 10)]) === 60 && workingWeight([S(60, 10), S(600, 10), S(60, 10)]) === 60 && workingWeight([S(60, 10), S(600, 10)]) === 60 && workingWeight([S(50, 10), S(55, 10), S(60, 10)]) === 60);
+    const today = '2026-11-21';
+    const hist = (name, sets, date = '2026-11-18', day) => [{ date, day, exercises: [{ exercise: name, sets: sets.map(([kg, reps]) => S(kg, reps)) }] }];
+    const top3 = (kg, r = 10) => [[kg, r], [kg, r], [kg, r]];
+    const nl = (name, reps, sessions, o = {}) => nextLoad(sessions, { name, reps }, Object.assign({ today, unit: 'kg' }, o));
+    // Pesos que existen
+    let r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', top3(60)));
+    ok('barra: 60 → 62,5', r.kind === 'up' && r.kg === 62.5 && r.inc === 2.5, r);
+    r = nl('Remo Polea Baja', '8-10', hist('Remo Polea Baja', top3(60)));
+    ok('máquina: 60 → 65 (no 61,25)', r.kind === 'up' && r.kg === 65, r);
+    r = nl('Extensión Cuádriceps', '10-12', hist('Extensión Cuádriceps', top3(40, 12)));
+    ok('máquina liviana: el salto de 5 es > 10 % → primero 14 reps', r.kind === 'extend' && r.kg === 40 && r.targetReps === 14, r);
+    r = nl('Extensión Cuádriceps', '10-12', hist('Extensión Cuádriceps', top3(40, 14)));
+    ok('… y con 14 reps en todas → 45', r.kind === 'up' && r.kg === 45, r);
+    r = nl('Press Banca Mancuernas', '8-10', hist('Press Banca Mancuernas', top3(22)));
+    ok('mancuernas: 22 → 24 (no 24,5)', r.kind === 'up' && r.kg === 24, r);
+    r = nl('Press Banca Mancuernas', '8-10', hist('Press Banca Mancuernas', top3(27.5)), { dbGrid: 2.5 });
+    ok('mancuernas de a 2,5: 27,5 → 30', r.kind === 'up' && r.kg === 30, r);
+    r = nl('Curl Martillo', '10-12', hist('Curl Martillo', top3(26, 12)), { dbGrid: 2.5 });
+    ok('mancuernas: el peso que usa manda sobre el escalón general (26 → 28)', r.kind === 'up' && r.kg === 28, r);
+    r = nl('Elevaciones Laterales', '10-12', hist('Elevaciones Laterales', top3(11, 12)), { dbGrid: 2.5 });
+    ok('mancuernas de a 1 kg: 11 → 12', r.kind === 'up' && r.kg === 12, r);
+    r = nl('Elevaciones Laterales', '10-12', hist('Elevaciones Laterales', top3(9, 14)));
+    ok('mancuernas livianas: 9 → 10', r.kind === 'up' && r.kg === 10, r);
+    r = nl('Curl Bíceps Barra', '8-10', hist('Curl Bíceps Barra', top3(30)));
+    ok('barra de curl: 30 → 32,5 (no 31,25)', r.kind === 'up' && r.kg === 32.5, r);
+    const machHist = [...hist('Jalón Polea', top3(52), '2026-11-18'), ...hist('Jalón Polea', top3(48), '2026-11-11')];
+    r = nl('Jalón Polea', '8-10', machHist);
+    ok('máquina: usa el salto que ya usaste (48 → 52 → 56)', r.kind === 'up' && r.kg === 56, r);
+    ok('escalón de mancuernas deducido del registro', dumbbellGrid(hist('Curl Mancuernas', top3(12.5))) === 2.5 && dumbbellGrid(hist('Curl Mancuernas', top3(14))) === 2 && dumbbellGrid([]) === 2 && seenStep(machHist, 'Jalón Polea', 'kg') === 4);
+    r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', top3(135)), { unit: 'lbs' });
+    ok('libras: 135 → 140', r.kind === 'up' && r.kg === 140, r);
+    // Mismo día del plan
+    const hl = [...hist('Sentadilla', [[85, 8], [85, 8], [85, 8]], '2026-11-19', 'LOWER B'), ...hist('Sentadilla', [[100, 6], [100, 6], [100, 6], [100, 6]], '2026-11-17', 'LOWER A')];
+    r = nl('Sentadilla', '4-6', hl, { day: 'LOWER A' });
+    ok('día pesado: se compara con el pesado (100 → 102,5), no con el liviano', r.kind === 'up' && r.kg === 102.5, r);
+    r = nl('Sentadilla', '6-8', hist('Sentadilla', [[100, 5], [100, 5]], '2026-11-17', 'LOWER A'), { day: 'LOWER B' });
+    ok('día liviano sin historial propio: no sugiere el peso del pesado', r === null, r);
+    // Volver atrás
+    r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', [[62.5, 6], [62.5, 5], [62.5, 5]]));
+    ok('quedó debajo del rango → bajar un escalón (62,5 → 60)', r.kind === 'down' && r.kg === 60 && r.targetReps === 8, r);
+    r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', [[62.5, 8], [62.5, 7], [62.5, 6]]));
+    ok('si alguna serie entró al rango, repetir el peso', r.kind === 'same' && r.kg === 62.5 && r.targetReps === 10, r);
+    r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', top3(60), '2026-08-15'));
+    ok('3 meses sin hacerlo → volver con ~90 % (52,5)', r.kind === 'restart' && r.kg === 52.5 && r.weeks === 14, r);
+    r = nl('Press Banca Mancuernas', '8-10', hist('Press Banca Mancuernas', top3(24), '2026-09-01'));
+    ok('… con mancuernas, a una que existe (24 → 20)', r.kind === 'restart' && r.kg === 20, r);
+    r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', [[60, 10], [600, 10], [60, 10]]));
+    ok('un tipeo de 600 no manda (60 → 62,5)', r.kind === 'up' && r.kg === 62.5, r);
+    // Con su peso y primera vez
+    r = nl('Dominadas', '8-10', hist('Dominadas', [[0, 8], [0, 8], [0, 7]]));
+    ok('dominadas: buscar 10 reps', r.kind === 'bw' && r.targetReps === 10 && !r.addKg, r);
+    r = nl('Dominadas', '8-10', hist('Dominadas', [[0, 5], [0, 4], [0, 4]]));
+    ok('dominadas debajo del rango: buscar 8', r.kind === 'bw' && r.targetReps === 8, r);
+    r = nl('Dominadas', '8-10', hist('Dominadas', top3(0, 12)));
+    ok('dominadas con 12 en todas: ya puede sumar lastre', r.kind === 'bw' && r.addKg === 2.5, r);
+    r = nl('Dominadas', '8-10', hist('Dominadas', top3(5)));
+    ok('dominadas con lastre: suben de a 2,5', r.kind === 'up' && r.kg === 7.5, r);
+    r = nl('Press Militar', '8-10', []);
+    ok('primera vez → elegir el peso por reps en reserva', r.kind === 'first' && r.targetReps === 10, r);
+    ok('cardio, tiempo y "por lado" no llevan sugerencia', nl('Plancha', '30-45s', []) === null && nl('Dead Bug', '10/lado', []) === null && nextLoad([], { name: 'Cinta', reps: '20', kind: 'cardio' }, {}) === null);
+    // Empujón tras estancarse: a un peso que exista
+    ok('empujón: 45 +7,5 % → 47,5 (no 48,75)', pushLoad(45, 0.075, 'barbell', 'kg', {}).newKg === 47.5 && pushLoad(45, 0.075, 'barbell', 'kg', {}).pct === 6);
+    ok('empujón: 100 +5 % → 105; mancuernas 22 +10 % → 24; máquina 40 +10 % → 45', pushLoad(100, 0.05, 'barbell', 'kg', {}).newKg === 105 && pushLoad(22, 0.10, 'dumbbell', 'kg', { dbGrid: 2 }).newKg === 24 && pushLoad(40, 0.10, 'machine', 'kg', {}).newKg === 45);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

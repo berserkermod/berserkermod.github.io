@@ -159,6 +159,189 @@
         return out;
     }
 
+    // ── Carga sugerida (auditoría de progresión, nov 2026) ─────────────────
+    // Tipo de equipo según el nombre: decide de a cuánto se puede subir. El orden importa:
+    // "Press Banca Mancuernas" es de mancuernas aunque diga "press banca", "Hack Squat" es una
+    // máquina de discos aunque diga "squat" y "Crunch en Polea" es de polea.
+    var GEAR_RULES = [
+        ['machine', /m[áa]quina|machine|polea|cable|pec deck|jal[óo]n|pulldown|pushdown|face pull|cruces|crossover|extensi[óo]n (de )?cu[áa]driceps|leg extension|curl femoral|leg curl|abductor|aductor|pantorrilla|gemelo|calf/],
+        ['plates', /prensa|leg press|hack|smith|t-?bar|landmine/],
+        ['dumbbell', /mancuerna|dumbbell|martillo|hammer|arnold|zancada|lunge|b[úu]lgara|goblet|kettlebell|elevaci[óo]n(es)? lateral|lateral raise|elevaci[óo]n(es)? posterior|rear delt|concentrad/],
+        ['bodyweight', /dominada|pull-?up|chin-?up|fondos|\bdips?\b|flexi[óo]n|push-?up|plancha|plank|dead bug|dragon flag|elevaci[óo]n de (piernas|rodillas)|leg raise|ab wheel|rueda abdominal|russian twist|burpee|crunch/],
+        ['barbell', /barra|barbell|sentadilla|squat|peso muerto|deadlift|press banca|press plano|bench|press militar|overhead press|hip thrust|good morning|press franc[ée]s|skull|\bez\b/]
+    ];
+    function exerciseGear(name) {
+        var n = String(name || '').toLowerCase();
+        for (var i = 0; i < GEAR_RULES.length; i++) if (GEAR_RULES[i][1].test(n)) return GEAR_RULES[i][0];
+        return 'other';
+    }
+    function r2(x) { return Math.round(x * 100) / 100; }
+
+    // Peso de trabajo: el que más se repite (empate → el más pesado). Si son todos distintos,
+    // el más pesado, salvo que se despegue más de 1,5 veces del siguiente (error de tipeo:
+    // 600 entre series de 60). Así no mandan una serie de calentamiento anotada ni un tipeo.
+    function workingWeight(sets) {
+        var count = {}, list = [];
+        (sets || []).forEach(function (s) {
+            var kg = Number(s && s.kg) || 0, reps = Number(s && s.reps) || 0;
+            if (kg > 0 && reps > 0) { if (!count[kg]) list.push(kg); count[kg] = (count[kg] || 0) + 1; }
+        });
+        if (!list.length) return 0;
+        var best = 0, bestN = 0;
+        list.forEach(function (kg) { var n = count[kg]; if (n > bestN || (n === bestN && kg > best)) { best = kg; bestN = n; } });
+        if (bestN > 1) return best;
+        list.sort(function (a, b) { return b - a; });
+        return list.length > 1 && list[0] > list[1] * 1.5 ? list[1] : list[0];
+    }
+
+    // Última vez que hizo el ejercicio (sesiones de la más nueva a la más vieja). Con `day`,
+    // la última vez en ese día del plan: el día pesado y el liviano del mismo ejercicio no se
+    // mezclan. Si nunca lo hizo ese día, devuelve la última vez con `otherDay: true`.
+    function lastExerciseEntry(sessions, name, day) {
+        var any = null, list = sessions || [];
+        for (var i = 0; i < list.length; i++) {
+            var s = list[i], exs = (s && s.exercises) || [];
+            for (var j = 0; j < exs.length; j++) {
+                var e = exs[j];
+                if ((e.exercise || e.name) !== name || !e.sets || !e.sets.length) continue;
+                var hit = { sets: e.sets, date: s.date, day: s.day };
+                if (!day || s.day === day) return hit;
+                if (!any) { any = hit; any.otherDay = true; }
+            }
+        }
+        return any;
+    }
+
+    // Escalón de las mancuernas del gimnasio, deducido de lo que anotó: 2,5 si usa 12,5 /
+    // 17,5 / 22,5…; 2 si usa 12 / 14 / 16…; sin datos, 2.
+    function dumbbellGrid(sessions) {
+        var c2 = 0, c25 = 0;
+        (sessions || []).slice(0, 120).forEach(function (s) {
+            ((s && s.exercises) || []).forEach(function (e) {
+                if (exerciseGear(e.exercise || e.name) !== 'dumbbell') return;
+                (e.sets || []).forEach(function (x) {
+                    var kg = Number(x && x.kg) || 0;
+                    if (kg < 10) return;
+                    var m2 = Math.abs(kg / 2 - Math.round(kg / 2)) < 1e-6, m25 = Math.abs(kg / 2.5 - Math.round(kg / 2.5)) < 1e-6;
+                    if (m25 && !m2) c25++; else if (m2 && !m25) c2++;
+                });
+            });
+        });
+        return c25 > c2 ? 2.5 : 2;
+    }
+
+    // El salto más chico entre los pesos que ya usó en ese ejercicio (placas de una máquina:
+    // 40 → 45 dice 5). 0 si no hay al menos dos pesos distintos o el salto es raro.
+    function seenStep(sessions, name, unit) {
+        var vals = {};
+        (sessions || []).slice(0, 120).forEach(function (s) {
+            ((s && s.exercises) || []).forEach(function (e) {
+                if ((e.exercise || e.name) !== name) return;
+                (e.sets || []).forEach(function (x) { var kg = Number(x && x.kg) || 0; if (kg > 0) vals[kg] = 1; });
+            });
+        });
+        var list = Object.keys(vals).map(Number).sort(function (a, b) { return a - b; }), d = 0;
+        for (var i = 1; i < list.length; i++) { var g = r2(list[i] - list[i - 1]); if (g > 0 && (!d || g < d)) d = g; }
+        var lo = unit === 'lbs' ? 2 : 1, hi = unit === 'lbs' ? 20 : 10;
+        return d >= lo && d <= hi ? d : 0;
+    }
+
+    // De a cuánto se puede subir (en la unidad de la app). Barra y discos: el disco más
+    // chico de cada lado (1,25 → 2,5 en total). Mancuernas: de a 1 kg hasta 10 y después
+    // el escalón del gimnasio. Máquinas y el resto: el salto que ya usó, o uno típico.
+    function loadStep(gear, kg, unit, opts) {
+        var lb = unit === 'lbs', o = opts || {};
+        if (gear === 'barbell' || gear === 'plates' || gear === 'bodyweight') return lb ? 5 : 2.5;
+        if (gear === 'dumbbell') {
+            if (lb) return 5;
+            if (kg < 10) return 1;
+            // El peso que usa dice el escalón de su gimnasio: 26 → de a 2, 27,5 → de a 2,5,
+            // 17 → de a 1. Solo si encaja en los dos (10, 20, 30) manda lo que anotó en general.
+            var on2 = Math.abs(kg / 2 - Math.round(kg / 2)) < 1e-6, on25 = Math.abs(kg / 2.5 - Math.round(kg / 2.5)) < 1e-6;
+            if (on2 && !on25) return 2;
+            if (on25 && !on2) return 2.5;
+            if (!on2 && !on25) return 1;
+            return o.dbGrid || 2;
+        }
+        if (o.seenStep) return o.seenStep;
+        return gear === 'machine' ? (lb ? 10 : 5) : (lb ? 5 : 2.5);
+    }
+    // Siguiente peso que existe: las mancuernas van a la próxima del escalón (22 → 24);
+    // lo demás suma el escalón al peso que viene usando (respeta su propia grilla).
+    function stepUp(kg, step, gear) {
+        if (gear === 'dumbbell') return r2(Math.floor(kg / step + 1e-9) * step + step);
+        return r2(kg + step);
+    }
+    function stepDown(kg, step, gear) {
+        if (gear === 'dumbbell') return r2(Math.ceil(kg / step - 1e-9) * step - step);
+        return r2(kg - step);
+    }
+    // El peso que existe más cerca por debajo de `target`, partiendo de `from`.
+    function floorTo(target, from, step, gear) {
+        if (gear === 'dumbbell') return r2(Math.floor(target / step + 1e-9) * step);
+        return r2(from - Math.ceil((from - target) / step - 1e-9) * step);
+    }
+
+    // Carga sugerida para hoy (doble progresión). ex = { name, reps: '8-10', kind }.
+    // opts = { today, unit, day, dbGrid }. Devuelve null o { kind, kg, inc, targetReps, weeks, addKg }:
+    //   first   — nunca lo hizo: elegir el peso por las reps en reserva
+    //   up      — completó el tope del rango en todas las series de trabajo: subir un escalón
+    //   extend  — el escalón es > 10 % del peso: primero 2 reps más (regla "2 por 2")
+    //   same    — repetir el peso y completar el rango
+    //   down    — quedó debajo del rango en todas las series: bajar un escalón
+    //   restart — más de 28 días sin hacerlo: volver con ~90 % (en peso que existe)
+    //   bw      — con su peso: progresar en reps; addKg cuando ya puede sumar lastre
+    function nextLoad(sessions, ex, opts) {
+        var o = opts || {};
+        if (!ex || ex.kind === 'cardio') return null;
+        var rs = String(ex.reps || '').trim();
+        if (!/^\d+(-\d+)?$/.test(rs)) return null;   // "30-45s", "10/lado", "al fallo": no
+        var parts = rs.split('-'), top = parseInt(parts[parts.length - 1], 10);
+        if (!top) return null;
+        var bottom = parts.length > 1 ? parseInt(parts[0], 10) : Math.max(1, top - 2);
+        var unit = o.unit === 'lbs' ? 'lbs' : 'kg', gear = exerciseGear(ex.name);
+        var last = lastExerciseEntry(sessions, ex.name, o.day);
+        if (!last) return { kind: 'first', kg: 0, targetReps: top, gear: gear };
+        if (last.otherDay) return null;   // solo lo hizo otro día del plan, con otro rango
+        var reps = function (s) { return parseInt(s && s.reps, 10) || 0; };
+        var w = workingWeight(last.sets);
+        var work = last.sets.filter(function (s) { return reps(s) > 0 && (!(w > 0) || (Number(s.kg) || 0) >= w - 1e-9); });
+        if (!work.length) return null;
+        var rr = work.map(reps), minR = Math.min.apply(null, rr);
+        if (!(w > 0)) {   // con su peso
+            if (minR >= top + 2) return { kind: 'bw', kg: 0, targetReps: top + 2, addKg: unit === 'lbs' ? 5 : 2.5, gear: gear };
+            if (minR >= top) return { kind: 'bw', kg: 0, targetReps: top + 2, gear: gear };
+            return { kind: 'bw', kg: 0, targetReps: rr.every(function (r) { return r < bottom; }) ? bottom : top, gear: gear };
+        }
+        var step = loadStep(gear, w, unit, { dbGrid: o.dbGrid, seenStep: seenStep(sessions, ex.name, unit) });
+        var days = o.today && last.date ? dayNum(o.today) - dayNum(last.date) : 0;
+        if (days > 28) {
+            var back = floorTo(w * 0.9, w, step, gear);
+            if (back > 0 && back < w) return { kind: 'restart', kg: back, weeks: Math.round(days / 7), gear: gear };
+        }
+        if (rr.every(function (r) { return r < bottom; })) {
+            var dn = stepDown(w, step, gear);
+            if (dn > 0) return { kind: 'down', kg: dn, targetReps: bottom, inc: r2(dn - w), gear: gear };
+            return { kind: 'same', kg: w, targetReps: top, gear: gear };
+        }
+        if (minR >= top) {
+            var up = stepUp(w, step, gear), inc = r2(up - w), ext = top + 2;
+            // Con lastre el salto se mide contra el peso del cuerpo + lastre: no se estira el rango.
+            if (gear !== 'bodyweight' && inc / w > 0.10 && minR < ext) return { kind: 'extend', kg: w, targetReps: ext, gear: gear };
+            return { kind: 'up', kg: up, inc: inc, gear: gear };
+        }
+        return { kind: 'same', kg: w, targetReps: top, gear: gear };
+    }
+
+    // Empujón tras un estancamiento (se mantiene desde la auditoría del 3-nov): subir ~pct,
+    // pero a un peso que exista. Devuelve { newKg, pct } con el % real.
+    function pushLoad(w, pct, gear, unit, opts) {
+        var step = loadStep(gear, w, unit, opts), target = w * (1 + pct);
+        var kg = stepUp(w, step, gear), guard = 0;
+        while (stepUp(kg, step, gear) - step / 2 <= target && guard++ < 20) kg = stepUp(kg, step, gear);
+        return { newKg: kg, pct: Math.round((kg - w) / w * 100) };
+    }
+
     // ── Peso corporal y gasto real ──────────────────────────────────────
     var DAY_MS = 86400000;
     function dayNum(iso) { return Math.round(Date.parse(iso + 'T12:00:00Z') / DAY_MS); }
@@ -967,6 +1150,14 @@
         adaptiveTDEE: adaptiveTDEE,
         platesPerSide: platesPerSide,
         warmupSets: warmupSets,
+        exerciseGear: exerciseGear,
+        workingWeight: workingWeight,
+        lastExerciseEntry: lastExerciseEntry,
+        dumbbellGrid: dumbbellGrid,
+        seenStep: seenStep,
+        loadStep: loadStep,
+        nextLoad: nextLoad,
+        pushLoad: pushLoad,
         calcTDEE: calcTDEE,
         calcMacros: calcMacros,
         proteinWeight: proteinWeight,
