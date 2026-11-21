@@ -222,7 +222,7 @@
             flex: 1;
             display: none;
             flex-direction: column;
-            padding: 24px 20px;
+            padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
             overflow-y: auto
         }
 
@@ -578,6 +578,8 @@
             transition: all .2s;
             white-space: nowrap
         }
+
+        button.pill, .focus-pill, .period-pill, .nutri-day-tab { min-height: 36px; }
 
         .pill.active {
             background: var(--accent);
@@ -1441,7 +1443,7 @@
         .lock-badge .ico { width: 1.15em; height: 1.15em; }
         .btn .ico { width: 1.2em; height: 1.2em; }
         .ico-orange { color: var(--orange); } .ico-accent { color: var(--accent); } .ico-blue { color: var(--blue); }
-        .rt-lib-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 9px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 15px; cursor: pointer; flex-shrink: 0; }
+        .rt-lib-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; background: var(--sf2); border: 1px solid var(--border); color: var(--text2); font-size: 15px; cursor: pointer; flex-shrink: 0; }
         .rt-rest-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--text2); background: var(--sf2); border: 1px solid var(--border); padding: 4px 9px; border-radius: 10px; }
         .rt-note { display: flex; gap: 7px; align-items: flex-start; font-size: 13px; color: var(--text2); margin: 6px 0 10px; line-height: 1.45; }
         .rt-note .ico { color: var(--text3); margin-top: 2px; }
@@ -1462,7 +1464,7 @@
             backdrop-filter: blur(10px);
             z-index: 9999;
             flex-direction: column;
-            padding: 32px 24px;
+            padding: calc(32px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom));
             box-sizing: border-box;
             align-items: center;
         }
@@ -1509,12 +1511,13 @@
         .upgrade-sheet {
             background: var(--sf1);
             border-radius: 28px 28px 0 0;
-            padding: 8px 24px 32px;
+            padding: 8px 24px calc(32px + env(safe-area-inset-bottom));
             width: 100%;
             max-width: 480px;
             border-top: 1.5px solid var(--border);
             animation: slideUp .3s cubic-bezier(.4,0,.2,1);
             max-height: 92vh;
+            max-height: 92dvh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -1583,9 +1586,10 @@
         /* FOOD LOG */
         .food-entry { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); gap: 10px; }
         .food-entry:last-child { border-bottom: none; }
+        .undo-bar { position: fixed; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 16600; max-width: 480px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; background: var(--sf1); border: 1px solid var(--border); border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 24px rgba(0,0,0,.4); }
         .food-entry-name { flex: 1; font-size: 13px; font-weight: 600; }
         .food-entry-kcal { font-size: 12px; color: var(--orange); font-weight: 700; min-width: 52px; text-align: right; }
-        .food-entry-del { font-size: 16px; color: var(--text3); padding: 4px; background: none; border: none; cursor: pointer; }
+        .food-entry-del { font-size: 16px; color: var(--text3); padding: 4px; background: none; border: none; cursor: pointer; min-width: 40px; min-height: 40px; margin: -10px -8px -10px 0; flex-shrink: 0; }
         .food-macro-row { display: flex; gap: 8px; margin-top: 10px; }
         .food-macro-chip { flex: 1; background: var(--sf2); border-radius: 10px; padding: 6px 4px; text-align: center; }
         .food-macro-chip .val { font-size: 14px; font-weight: 800; }
@@ -1598,7 +1602,7 @@
         .prog-banner { background: linear-gradient(135deg,rgba(0,212,170,.1),rgba(0,212,170,.04)); border: 1.5px solid rgba(0,212,170,.25); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .prog-banner-text { flex: 1; font-size: 12px; line-height: 1.5; }
         .prog-banner-ex { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
-        .prog-banner-dismiss { font-size: 18px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 6px; }
+        .prog-banner-dismiss { font-size: 18px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 2px 6px; min-width: 40px; min-height: 40px; margin: -6px -8px -6px 0; }
 
         /* ORACLE MODAL */
         #oracle-modal {
@@ -1699,7 +1703,7 @@
         #ex-picker-modal.show { display: flex; }
         .ex-picker-sheet {
             background: var(--sf1); border-radius: 24px 24px 0 0;
-            width: 100%; max-width: 540px; max-height: 88vh;
+            width: 100%; max-width: 540px; max-height: 88vh; max-height: 88dvh; padding-bottom: env(safe-area-inset-bottom);
             border-top: 1.5px solid var(--border);
             display: flex; flex-direction: column;
             animation: slideUp .25s cubic-bezier(.4,0,.2,1);
@@ -1772,7 +1776,7 @@
         .meal-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
         #swap-food-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(12px); z-index: 13000; align-items: flex-end; justify-content: center; }
         #swap-food-modal.show { display: flex; }
-        .swap-sheet { background: var(--sf1); border-radius: 24px 24px 0 0; padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; border-top: 1.5px solid var(--border); animation: slideUp .25s cubic-bezier(.4,0,.2,1); }
+        .swap-sheet { background: var(--sf1); border-radius: 24px 24px 0 0; padding: 8px 20px calc(20px + env(safe-area-inset-bottom)); width: 100%; max-width: 480px; max-height: 80vh; max-height: 80dvh; overflow-y: auto; border-top: 1.5px solid var(--border); animation: slideUp .25s cubic-bezier(.4,0,.2,1); }
         .swap-handle { width: 40px; height: 4px; background: var(--sf3); border-radius: 2px; margin: 12px auto 16px; }
         .swap-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 10px; cursor: pointer; margin-bottom: 4px; }
         .swap-item:hover { background: var(--sf2); }
@@ -1833,7 +1837,7 @@
         .cyc-date { background: var(--sf2, transparent); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; font-size: 13px; min-width: 0; flex: 1 1 130px; }
         .focus-pill.sel { border-color: var(--accent); background: rgba(0,212,170,.12); color: var(--accent); }
         .rup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
-        .rup-sheet { background: var(--sf1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; max-height: 85vh; overflow-y: auto; }
+        .rup-sheet { background: var(--sf1); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; max-height: 85vh; max-height: 85dvh; overflow-y: auto; }
         .rup-day { font-size: 14px; font-weight: 800; color: var(--text); margin: 12px 0 4px; }
         .rup-list p { font-size: 12px; color: var(--text2); line-height: 1.5; }
         /* Mapa del cuerpo */
@@ -2024,7 +2028,7 @@
         .bw-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
         .food-add-sheet {
             background: var(--sf1); border-radius: 24px 24px 0 0;
-            width: 100%; max-width: 540px; max-height: 92vh;
+            width: 100%; max-width: 540px; max-height: 92vh; max-height: 92dvh; padding-bottom: env(safe-area-inset-bottom);
             border-top: 1.5px solid var(--border);
             display: flex; flex-direction: column;
             animation: slideUp .25s cubic-bezier(.4,0,.2,1);
@@ -2358,8 +2362,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-43"></script>
-    <script src="core/i18n-data.js?v=2-43"></script>
+    <script src="core/calc.js?v=2-44"></script>
+    <script src="core/i18n-data.js?v=2-44"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2542,7 +2546,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para pruebas",
                 food_title: "ALIMENTACIÓN HOY", food_add: "+ Agregar alimento", food_empty: "Sin registros hoy", food_meal: "Comida", food_which_meal: "¿A QUÉ COMIDA?", food_meal_empty: "Sin alimentos",
                 bal_title: "BALANCE CALÓRICO DEL DÍA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Neto", bal_maint: "Mantenim.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Mantenimiento", bal_aligned: "✓ Vas alineado con tu objetivo", bal_warn_surplus: "⚠️ Tu objetivo es ganar peso, pero contando el cardio hoy estás en {s} ({d}). Sumá calorías o reducí el cardio.", bal_warn_deficit: "⚠️ Tu objetivo es bajar grasa, pero contando el cardio hoy estás en {s} ({d}). Reducí calorías o sumá cardio.", bal_warn_maint: "⚠️ Hoy estás en {s} ({d}) respecto a tu mantenimiento.",
-                water_title: "Hidratación", water_glass: "Vaso", water_bottle: "Botella", water_done: "✓ ¡Meta de hidratación cumplida!", water_of_goal: "de tu meta", water_undo: "Deshacer",
+                water_title: "Hidratación", water_glass: "Vaso", water_bottle: "Botella", water_done: "✓ ¡Meta de hidratación cumplida!", water_of_goal: "de tu meta", water_undo: "Deshacer", undo_btn: "Deshacer", undo_food_del: "Alimento borrado", undo_ex_del: "Ejercicio quitado",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Apuntá al código de barras", food_scanner_manual: "✏️ Ingresar manualmente",
@@ -2984,7 +2988,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simulate tier for testing",
                 food_title: "TODAY'S NUTRITION", food_add: "+ Add food", food_empty: "No entries today", food_meal: "Meal", food_which_meal: "WHICH MEAL?", food_meal_empty: "No foods",
                 bal_title: "TODAY'S CALORIE BALANCE", bal_consumed: "Eaten", bal_cardio: "Cardio", bal_net: "Net", bal_maint: "Maint.", bal_s_surplus: "Surplus", bal_s_deficit: "Deficit", bal_s_maintenance: "Maintenance", bal_aligned: "✓ You're on track with your goal", bal_warn_surplus: "⚠️ Your goal is to gain weight, but counting today's cardio you're at {s} ({d}). Eat more or cut the cardio.", bal_warn_deficit: "⚠️ Your goal is to lose fat, but counting today's cardio you're at {s} ({d}). Eat less or add cardio.", bal_warn_maint: "⚠️ Today you're at {s} ({d}) vs your maintenance.",
-                water_title: "Hydration", water_glass: "Glass", water_bottle: "Bottle", water_done: "✓ Hydration goal reached!", water_of_goal: "of your goal", water_undo: "Undo",
+                water_title: "Hydration", water_glass: "Glass", water_bottle: "Bottle", water_done: "✓ Hydration goal reached!", water_of_goal: "of your goal", water_undo: "Undo", undo_btn: "Undo", undo_food_del: "Food removed", undo_ex_del: "Exercise removed",
                 food_scan: "📷 Scan barcode", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal logged", food_of_target: "of",
                 food_scanner_hint: "Point at barcode", food_scanner_manual: "✏️ Enter manually",
@@ -3427,7 +3431,7 @@
                 prof_devmode: "DEV MODE", prof_devmode_sub: "Simular tier para testes",
                 food_title: "ALIMENTAÇÃO HOJE", food_add: "+ Adicionar alimento", food_empty: "Sem registros hoje", food_meal: "Refeição", food_which_meal: "QUAL REFEIÇÃO?", food_meal_empty: "Sem alimentos",
                 bal_title: "BALANÇO CALÓRICO DO DIA", bal_consumed: "Consumido", bal_cardio: "Cardio", bal_net: "Líquido", bal_maint: "Manut.", bal_s_surplus: "Superávit", bal_s_deficit: "Déficit", bal_s_maintenance: "Manutenção", bal_aligned: "✓ Você está alinhado com seu objetivo", bal_warn_surplus: "⚠️ Seu objetivo é ganhar peso, mas contando o cardio de hoje você está em {s} ({d}). Coma mais ou reduza o cardio.", bal_warn_deficit: "⚠️ Seu objetivo é perder gordura, mas contando o cardio de hoje você está em {s} ({d}). Coma menos ou adicione cardio.", bal_warn_maint: "⚠️ Hoje você está em {s} ({d}) em relação à sua manutenção.",
-                water_title: "Hidratação", water_glass: "Copo", water_bottle: "Garrafa", water_done: "✓ Meta de hidratação atingida!", water_of_goal: "da sua meta", water_undo: "Desfazer",
+                water_title: "Hidratação", water_glass: "Copo", water_bottle: "Garrafa", water_done: "✓ Meta de hidratação atingida!", water_of_goal: "da sua meta", water_undo: "Desfazer", undo_btn: "Desfazer", undo_food_del: "Alimento apagado", undo_ex_del: "Exercício removido",
                 food_scan: "📷 Escanear código", food_manual: "✏️ Manual",
                 food_total_kcal: "kcal registradas", food_of_target: "de",
                 food_scanner_hint: "Aponte para o código de barras", food_scanner_manual: "✏️ Inserir manualmente",
@@ -4346,7 +4350,7 @@
             { id: 'dairy', label: 'Lácteos', icon: '🥛' }
         ];
         const QUOTES = [
-            "El dolor que sientes hoy será la fuerza que sientas mañana.",
+            "El dolor que sentís hoy es la fuerza que vas a tener mañana.",
             "No pares cuando llegue el cansancio. Pará cuando hayas terminado.",
             "Tu cuerpo puede soportar casi todo. Es tu mente la que tenés que convencer.",
             "La disciplina supera a la motivación.",
@@ -5634,6 +5638,16 @@
         // Saca el emoji del comienzo de un texto (algunas traducciones lo traen).
         function noEmoji(str) { return String(str).replace(/^[\s\p{Extended_Pictographic}️‍]+/u, ''); }
         function fmt(n) { return Math.round(n).toLocaleString('es-AR') }
+        // Aviso con "Deshacer" para lo que se borra de un toque (dura 5 s).
+        let _undoTimer = null;
+        function undoBar(msg, onUndo) {
+            const old = $('undo-bar'); if (old) old.remove();
+            clearTimeout(_undoTimer);
+            const bar = h('div', { id: 'undo-bar', className: 'undo-bar', role: 'status' }, h('span', {}, msg));
+            bar.appendChild(h('button', { className: 'btn btn-secondary btn-sm', style: { minHeight: '36px', flexShrink: 0 }, onclick: () => { clearTimeout(_undoTimer); bar.remove(); onUndo(); } }, t('undo_btn')));
+            document.body.appendChild(bar);
+            _undoTimer = setTimeout(() => bar.remove(), 5000);
+        }
         function flash(msg, color) {
             const f = $('flash'); f.textContent = msg; f.style.borderColor = color || 'var(--accent)'; f.style.color = color || 'var(--accent)';
             f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 1800);
@@ -6756,9 +6770,14 @@
             // Hide progress bar on language selection screen (step 0)
             prog.style.display = onbStep === 0 ? 'none' : 'flex';
             for (let i = 1; i < 8; i++) { const b = h('div', { className: 'onb-bar' + (i <= onbStep ? ' done' : '') }); prog.appendChild(b); }
-            const wrap = $('onb-steps'); wrap.innerHTML = '';
+            const wrap = $('onb-steps');
+            const prevSc = wrap.querySelector('.onb-step.active');
+            const keepY = prevSc && renderOnboarding._step === onbStep ? prevSc.scrollTop : 0;
+            renderOnboarding._step = onbStep;
+            wrap.innerHTML = '';
             const steps = [renderOnbLang, renderOnbWelcome, renderOnbPersonal, renderOnbLevel, renderOnbGoal, renderOnbDays, renderOnbNutrition, renderOnbRoutinePreview];
             steps.forEach((fn, i) => { const s = h('div', { className: 'onb-step' + (i === onbStep ? ' active' : '') }); fn(s); wrap.appendChild(s); });
+            if (keepY) { const sc = wrap.querySelector('.onb-step.active'); if (sc) sc.scrollTop = keepY; }
         }
 
         function renderOnbLang(s) {
@@ -6776,7 +6795,7 @@
             s.appendChild(bg);
 
             // Content wrapper
-            const wrap = h('div', { style: { position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 24px 28px' } });
+            const wrap = h('div', { style: { position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', padding: 'calc(32px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom))' } });
 
             // Brand header
             const brand = h('div', { style: { textAlign: 'center', marginBottom: 'auto', paddingTop: '16px' } });
@@ -7000,7 +7019,9 @@
             });
             s.appendChild(opts);
             s.appendChild(h('p', { className: 'label', style: { marginTop: '14px' } }, t('onb_focus')));
-            s.appendChild(focusPills(onbData.focus, (k) => { onbData.focus = k; renderOnboarding(); }));
+            const fp = focusPills(onbData.focus, (k) => { onbData.focus = k; renderOnboarding(); });
+            fp.style.marginBottom = '20px';
+            s.appendChild(fp);
             s.appendChild(h('button', {
                 className: 'onb-btn', disabled: !onbData.goal, style: { marginTop: 'auto' },
                 onclick: () => { onbStep = 5; renderOnboarding(); }
@@ -7093,7 +7114,7 @@
 
                     // Sets input
                     const si = h('input', {
-                        type: 'number', className: 'input', value: ex.sets,
+                        type: 'number', inputmode: 'numeric', className: 'input', value: ex.sets,
                         style: { width: '38px', padding: '5px', textAlign: 'center', fontSize: '12px', fontWeight: 700 },
                         oninput: e => { ex.sets = parseInt(e.target.value) || 1; }
                     });
@@ -7116,8 +7137,11 @@
 
                     // Delete exercise button
                     row.appendChild(h('button', {
-                        style: { color: 'var(--red)', padding: '2px 6px', fontSize: '14px', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 },
-                        onclick: () => { day.exercises.splice(exIdx, 1); renderOnboarding(); }
+                        style: { color: 'var(--red)', width: '34px', height: '34px', margin: '-6px -8px -6px 0', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 },
+                        onclick: () => {
+                            const [gone] = day.exercises.splice(exIdx, 1); renderOnboarding();
+                            undoBar(t('undo_ex_del'), () => { if (state.user) return; day.exercises.splice(Math.min(exIdx, day.exercises.length), 0, gone); renderOnboarding(); });
+                        }
                     }, '✕'));
 
                     block.appendChild(row);
@@ -7734,6 +7758,11 @@
             // Tester de la prueba cerrada de Play → Premium vitalicio (solo TWA)
             renderTesterCard(v);
 
+            // Recién empieza (ningún entrenamiento): lo primero que ve es qué le toca hoy
+            const fresh = !state.sessions.length;
+            const todaySlot = h('div');
+            v.appendChild(todaySlot);
+
             // Streak
             const streak = calcStreak();
             const sc = h('div', { className: 'card fade-in' });
@@ -7809,20 +7838,21 @@
             const coachToday = activeCoachRoutine();
             const coachDay = coachToday && coachToday.plan.length ? coachToday.plan[nextRoutineDayIdx(coachToday.plan) % coachToday.plan.length] : null;
             const todayRoutine = coachDay ? null : getTodayRoutine();
+            const todayBox = fresh ? todaySlot : v;
             if (coachDay) {
                 const rc = h('div', { className: 'card card-accent fade-in' });
                 rc.appendChild(h('p', { className: 'label' }, t('home_today')));
                 rc.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '4px' } }, coachDay.name || '—'));
                 rc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' } }, t('coach_today_by').replace('{name}', coachToday.coach.coachName || 'Coach')));
                 rc.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => { if (canUseCoach()) setRoutinesMode('mine'); switchTab('routines'); } }, t('home_go_train')));
-                v.appendChild(rc);
+                todayBox.appendChild(rc);
             }
             if (todayRoutine) {
                 const rc = h('div', { className: 'card card-accent fade-in' });
                 rc.appendChild(h('p', { className: 'label' }, t('home_today')));
                 rc.appendChild(h('p', { style: { fontSize: '18px', fontWeight: 800, marginBottom: '8px' } }, todayRoutine));
                 rc.appendChild(h('button', { className: 'btn btn-primary btn-full btn-sm', onclick: () => { state.selDay = findDayMatch(todayRoutine); switchTab('train') } }, t('home_go_train')));
-                v.appendChild(rc);
+                todayBox.appendChild(rc);
             }
 
             // Inactivity message
@@ -8888,7 +8918,7 @@
                 // Sets
                 const f1 = h('div', { className: 'ex-field' });
                 f1.appendChild(h('label', {}, t('ex_field_sets')));
-                f1.appendChild(h('input', { type: 'number', value: ex.sets, oninput: e => ex.sets = parseInt(e.target.value) || 0 }));
+                f1.appendChild(h('input', { type: 'number', inputmode: 'numeric', value: ex.sets, oninput: e => ex.sets = parseInt(e.target.value) || 0 }));
                 fields.appendChild(f1);
                 // Reps
                 const f2 = h('div', { className: 'ex-field' });
@@ -8898,28 +8928,28 @@
                 // Kg (suggested)
                 const f3 = h('div', { className: 'ex-field' });
                 f3.appendChild(h('label', {}, t('ex_field_kg')));
-                f3.appendChild(h('input', { type: 'number', value: ex.kg, placeholder: '—', oninput: e => ex.kg = e.target.value }));
+                f3.appendChild(h('input', { type: 'number', inputmode: 'decimal', value: ex.kg, placeholder: '—', oninput: e => ex.kg = e.target.value }));
                 fields.appendChild(f3);
                 // RIR
                 const f4 = h('div', { className: 'ex-field' });
                 f4.appendChild(h('label', {}, t('ex_field_rir')));
-                f4.appendChild(h('input', { type: 'number', value: ex.rir, placeholder: '—', oninput: e => ex.rir = e.target.value }));
+                f4.appendChild(h('input', { type: 'number', inputmode: 'numeric', value: ex.rir, placeholder: '—', oninput: e => ex.rir = e.target.value }));
                 fields.appendChild(f4);
                 // Descanso en segundos: lo usa el cronómetro de descanso de la app
                 const f5 = h('div', { className: 'ex-field' });
                 f5.appendChild(h('label', {}, t('ex_field_rest')));
-                f5.appendChild(h('input', { type: 'number', step: '15', min: '0', value: ex.rest_s || '', placeholder: '90', oninput: e => { const n = parseInt(e.target.value, 10); if (n > 0) ex.rest_s = n; else delete ex.rest_s; } }));
+                f5.appendChild(h('input', { type: 'number', inputmode: 'numeric', step: '15', min: '0', value: ex.rest_s || '', placeholder: '90', oninput: e => { const n = parseInt(e.target.value, 10); if (n > 0) ex.rest_s = n; else delete ex.rest_s; } }));
                 fields.appendChild(f5);
             } else {
                 // Duration
                 const f1 = h('div', { className: 'ex-field' });
                 f1.appendChild(h('label', {}, t('ex_field_duration')));
-                f1.appendChild(h('input', { type: 'number', value: ex.duration_min, oninput: e => ex.duration_min = parseInt(e.target.value) || 0 }));
+                f1.appendChild(h('input', { type: 'number', inputmode: 'numeric', value: ex.duration_min, oninput: e => ex.duration_min = parseInt(e.target.value) || 0 }));
                 fields.appendChild(f1);
                 // Distance
                 const f2 = h('div', { className: 'ex-field' });
                 f2.appendChild(h('label', {}, t('ex_field_distance')));
-                f2.appendChild(h('input', { type: 'number', step: '0.1', value: ex.distance_km, placeholder: '—', oninput: e => ex.distance_km = e.target.value }));
+                f2.appendChild(h('input', { type: 'number', inputmode: 'decimal', step: '0.1', value: ex.distance_km, placeholder: '—', oninput: e => ex.distance_km = e.target.value }));
                 fields.appendChild(f2);
                 // Intensity
                 const f3 = h('div', { className: 'ex-field' });
@@ -9246,7 +9276,7 @@
             ['kg', 'lbs'].forEach(u => {
                 ut.appendChild(h('button', {
                     style: {
-                        padding: '5px 14px', borderRadius: '16px', fontSize: '11px', fontWeight: 700, transition: 'all .15s',
+                        padding: '5px 14px', minHeight: '32px', borderRadius: '16px', fontSize: '11px', fontWeight: 700, transition: 'all .15s',
                         background: state.unit === u ? 'var(--accent)' : 'transparent', color: state.unit === u ? 'var(--bg)' : 'var(--text3)'
                     },
                     onclick: () => { state.unit = u; renderTrain(); }
@@ -11791,8 +11821,8 @@
                     const row = h('div', { style: { display: 'flex', gap: '8px', marginBottom: '6px', alignItems: 'center' } });
                     row.appendChild(h('span', { style: { width: '20px', fontSize: '11px', color: 'var(--text3)', textAlign: 'center' } }, (sIdx + 1) + ''));
 
-                    const ki = h('input', { type: 'number', className: 'input', value: set.kg, style: { padding: '6px', flex: 1, textAlign: 'center', fontSize: '14px', fontWeight: 700 }, oninput: e => set.kg = parseFloat(e.target.value) || 0 });
-                    const ri = h('input', { type: 'number', className: 'input', value: set.reps, style: { padding: '6px', flex: 1, textAlign: 'center', fontSize: '14px', fontWeight: 700 }, oninput: e => set.reps = parseInt(e.target.value) || 0 });
+                    const ki = h('input', { type: 'number', inputmode: 'decimal', className: 'input', value: set.kg, style: { padding: '6px', flex: 1, textAlign: 'center', fontSize: '14px', fontWeight: 700 }, oninput: e => set.kg = parseFloat(e.target.value) || 0 });
+                    const ri = h('input', { type: 'number', inputmode: 'numeric', className: 'input', value: set.reps, style: { padding: '6px', flex: 1, textAlign: 'center', fontSize: '14px', fontWeight: 700 }, oninput: e => set.reps = parseInt(e.target.value) || 0 });
 
                     row.appendChild(ki); row.appendChild(h('span', { style: { fontSize: '10px', color: 'var(--text3)' } }, 'kg'));
                     row.appendChild(ri); row.appendChild(h('span', { style: { fontSize: '10px', color: 'var(--text3)' } }, 'reps'));
@@ -12112,7 +12142,7 @@
             ['M', 'F'].forEach(sx => {
                 const on = u.sex === sx;
                 sexPills.appendChild(h('button', {
-                    style: { padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', border: '1px solid ' + (on ? 'var(--accent)' : 'var(--border)'), background: on ? 'rgba(0,212,170,.12)' : 'transparent', color: on ? 'var(--accent)' : 'var(--text2)' },
+                    style: { padding: '4px 12px', minHeight: '36px', borderRadius: '999px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', border: '1px solid ' + (on ? 'var(--accent)' : 'var(--border)'), background: on ? 'rgba(0,212,170,.12)' : 'transparent', color: on ? 'var(--accent)' : 'var(--text2)' },
                     onclick: () => { if (u.sex === sx) return; u.sex = sx; saveUser(); flash(t('prof_sex_changed')); renderProfile(); }
                 }, sx === 'M' ? t('prof_male') : t('prof_female')));
             });
@@ -15517,7 +15547,7 @@
             const hdr = h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' } });
             hdr.appendChild(h('p', { className: 'label', style: { marginBottom: 0 } }, t('food_title')));
             hdr.appendChild(h('button', {
-                className: 'btn btn-primary btn-sm', style: { fontSize: '11px', padding: '6px 12px' },
+                className: 'btn btn-primary btn-sm', style: { fontSize: '11px', padding: '6px 12px', minHeight: '36px', whiteSpace: 'nowrap' },
                 onclick: openAddFoodModal
             }, t('food_add')));
             fc.appendChild(hdr);
@@ -15571,7 +15601,7 @@
                     const headRight = h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } });
                     if (mealKcal > 0) headRight.appendChild(h('span', { style: { fontSize: '11px', fontWeight: 700, color: 'var(--orange)' } }, mealKcal + ' kcal'));
                     headRight.appendChild(h('button', {
-                        style: { background: 'rgba(0,212,170,.1)', border: '1px solid rgba(0,212,170,.25)', color: 'var(--accent)', fontSize: '14px', fontWeight: 800, width: '24px', height: '24px', borderRadius: '8px', cursor: 'pointer', lineHeight: 1 },
+                        style: { background: 'rgba(0,212,170,.1)', border: '1px solid rgba(0,212,170,.25)', color: 'var(--accent)', fontSize: '16px', fontWeight: 800, width: '34px', height: '34px', borderRadius: '10px', cursor: 'pointer', lineHeight: 1 },
                         onclick: () => { _foodModal.meal = mealNum; openAddFoodModal(); }
                     }, '+'));
                     head.appendChild(headRight);
@@ -15584,7 +15614,11 @@
                             const row = h('div', { className: 'food-entry' });
                             row.appendChild(h('span', { className: 'food-entry-name' }, e.name));
                             row.appendChild(h('span', { className: 'food-entry-kcal' }, (e.kcal || 0) + ' kcal'));
-                            row.appendChild(h('button', { className: 'food-entry-del', onclick: () => { state.foodLog = state.foodLog.filter(x => x.id !== e.id); saveFoodLog(); renderHome(); } }, '✕'));
+                            row.appendChild(h('button', { className: 'food-entry-del', onclick: () => {
+                                const i = state.foodLog.findIndex(x => x.id === e.id); if (i < 0) return;
+                                const [gone] = state.foodLog.splice(i, 1); saveFoodLog(); renderHome();
+                                undoBar(t('undo_food_del'), () => { state.foodLog.splice(Math.min(i, state.foodLog.length), 0, gone); saveFoodLog(); renderHome(); });
+                            } }, '✕'));
                             fc.appendChild(row);
                         });
                     }
@@ -15923,7 +15957,7 @@
                 const labels = { kcal: 'KCAL', protein: t('food_lbl_protein'), carbs: t('food_lbl_carbs'), fat: t('food_lbl_fat') };
                 const field = h('div', { className: 'food-manual-field' });
                 field.appendChild(h('label', {}, labels[k]));
-                field.appendChild(h('input', { id: 'manual-food-' + k, className: 'input', type: 'number', step: '0.1', placeholder: '0' }));
+                field.appendChild(h('input', { id: 'manual-food-' + k, className: 'input', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: '0' }));
                 grid.appendChild(field);
             });
             c.appendChild(grid);
@@ -20306,7 +20340,7 @@
 
                         if (ex.kind === 'cardio') {
                             // Duration input
-                            const durInp = h('input', { className: 'alumno-ex-input', type: 'number', placeholder: 'min', value: ex.duration_min || '' });
+                            const durInp = h('input', { className: 'alumno-ex-input', type: 'number', inputmode: 'decimal', placeholder: 'min', value: ex.duration_min || '' });
                             durInp.addEventListener('change', () => {
                                 const oldV = ex.duration_min || 0;
                                 ex.duration_min = parseInt(durInp.value) || 0;
@@ -20314,7 +20348,7 @@
                             });
                             row.appendChild(durInp);
                             // Distance input
-                            const distInp = h('input', { className: 'alumno-ex-input', type: 'number', step: '0.1', placeholder: 'km', value: ex.distance_km || '' });
+                            const distInp = h('input', { className: 'alumno-ex-input', type: 'number', inputmode: 'decimal', step: '0.1', placeholder: 'km', value: ex.distance_km || '' });
                             distInp.addEventListener('change', () => {
                                 const oldV = ex.distance_km || '';
                                 ex.distance_km = distInp.value;
@@ -20323,7 +20357,7 @@
                             row.appendChild(distInp);
                         } else {
                             // KG input
-                            const kgInp = h('input', { className: 'alumno-ex-input', type: 'number', placeholder: 'kg', value: ex.kg || '' });
+                            const kgInp = h('input', { className: 'alumno-ex-input', type: 'number', inputmode: 'decimal', placeholder: 'kg', value: ex.kg || '' });
                             kgInp.addEventListener('change', () => {
                                 const oldKg = ex.kg || 0;
                                 ex.kg = parseFloat(kgInp.value) || 0;

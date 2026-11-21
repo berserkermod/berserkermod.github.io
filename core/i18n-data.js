@@ -117,7 +117,7 @@
 
     // Frases de Inicio
     var QUOTES = {
-        'El dolor que sientes hoy será la fuerza que sientas mañana.': ["The pain you feel today will be the strength you feel tomorrow.", 'A dor que você sente hoje será a força que vai sentir amanhã.'],
+        'El dolor que sentís hoy es la fuerza que vas a tener mañana.': ["The pain you feel today will be the strength you feel tomorrow.", 'A dor que você sente hoje será a força que vai sentir amanhã.'],
         'No pares cuando llegue el cansancio. Pará cuando hayas terminado.': ["Don't stop when you're tired. Stop when you're done.", 'Não pare quando bater o cansaço. Pare quando tiver terminado.'],
         'Tu cuerpo puede soportar casi todo. Es tu mente la que tenés que convencer.': ['Your body can handle almost anything. It’s your mind you have to convince.', 'Seu corpo aguenta quase tudo. É a sua mente que você precisa convencer.'],
         'La disciplina supera a la motivación.': ['Discipline beats motivation.', 'Disciplina supera motivação.'],

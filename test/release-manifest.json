@@ -1,8 +1,8 @@
 {
-  "version": "2-43",
+  "version": "2-44",
   "files": {
     "core/calc.js": "cb954ec00adadcfc",
-    "core/i18n-data.js": "52021d40c84af771",
+    "core/i18n-data.js": "9b7d63922730cf6f",
     "fonts/inter-latin-ext.woff2": "34b9c504cab7a73e",
     "fonts/inter-latin.woff2": "3100e775e8616cd2",
     "icon-192.png": "483783ab174fdbcd",
