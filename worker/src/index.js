@@ -3205,6 +3205,42 @@ async function foodVision(req, env) {
     });
 }
 
+// ── Búsqueda de envasados por nombre (Open Food Facts) ───────────────
+// Su buscador nuevo (search.openfoodfacts.org) no acepta pedidos desde una página de otro sitio
+// (no manda permiso CORS) y el viejo (cgi/search.pl) respondió "no disponible" en más de la
+// mitad de las pruebas (nov 2026). La app pregunta acá: el Worker lo reenvía y devuelve solo los
+// campos que usa. Queda un día en la caché de Cloudflare (no en KV) y no se guarda quién buscó.
+const FOOD_SEARCH_FIELDS = ['code', 'product_name', 'product_name_es', 'product_name_en', 'product_name_pt', 'brands', 'serving_quantity', 'quantity', 'product_quantity_unit', 'countries_tags'];
+const FOOD_SEARCH_NUTRI = ['energy-kcal_100g', 'energy-kj_100g', 'energy_100g', 'proteins_100g', 'carbohydrates_100g', 'fat_100g'];
+async function foodSearch(req) {
+    const u = new URL(req.url);
+    const q = String(u.searchParams.get('q') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    const lang = ['es', 'en', 'pt'].includes(u.searchParams.get('lang')) ? u.searchParams.get('lang') : 'es';
+    if (q.length < 2) return json({ hits: [] });
+    const send = (body) => new Response(body, { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders() } });
+    const cache = typeof caches !== 'undefined' && caches.default ? caches.default : null;
+    const key = new Request('https://food-search.cache/' + lang + '/' + encodeURIComponent(q.toLowerCase()));
+    if (cache) { try { const hit = await cache.match(key); if (hit) return send(await hit.text()); } catch { /* sin caché: se busca */ } }
+    let data;
+    try {
+        const r = await fetch('https://search.openfoodfacts.org/search?q=' + encodeURIComponent(q) + '&page_size=24&langs=' + lang +
+            '&fields=' + FOOD_SEARCH_FIELDS.concat('nutriments').join(','), { signal: AbortSignal.timeout(8000) });
+        if (!r.ok) throw new Error('status ' + r.status);
+        data = await r.json();
+    } catch {
+        return err('El buscador de productos no responde. Probá de nuevo en un rato.', 502);
+    }
+    const hits = (Array.isArray(data && data.hits) ? data.hits : []).slice(0, 24).map((p) => {
+        const o = { nutriments: {} };
+        FOOD_SEARCH_FIELDS.forEach((k) => { if (p && p[k] != null) o[k] = p[k]; });
+        FOOD_SEARCH_NUTRI.forEach((k) => { if (p && p.nutriments && p.nutriments[k] != null) o.nutriments[k] = p.nutriments[k]; });
+        return o;
+    });
+    const body = JSON.stringify({ hits });
+    if (cache) { try { await cache.put(key, new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' } })); } catch { /* la caché es opcional */ } }
+    return send(body);
+}
+
 // ── Observabilidad ───────────────────────────────────────────────────
 // Ring buffer en UNA key (errors:ring): 1 get + 1 put por request, sin importar
 // cuántos errores traiga. Antes era una key por error (20 escrituras por
@@ -4842,6 +4878,7 @@ export default {
             if (p === '/api/food-vision' && m === 'POST') return await foodVision(req, env);
             // Base de alimentos (USDA) para la pantalla de revisión del plato: elegir el alimento
             // correcto o agregar uno. No usa IA ni KV; la app la guarda y la pide una vez por semana.
+            if (p === '/api/food-search' && m === 'GET') return await foodSearch(req);
             if (p === '/api/foods' && m === 'GET') return json({ v: FOOD_DB_VERSION, items: FOOD_DB.map((f) => ({ k: f.k, n: f.n, ne: f.ne, np: f.np, i: f.i, s: f.s, kcal: f.kcal, p: f.p, c: f.c, f: f.f, u: f.u, d: f.d })) });
 
             // Push (recordatorio diario)

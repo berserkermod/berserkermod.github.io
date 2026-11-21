@@ -1045,6 +1045,25 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     const fitems = (fl.body && fl.body.items) || [];
     const byK = Object.fromEntries(fitems.map((x) => [x.k, x]));
     ok('/api/foods: versión 2 con ~200 alimentos', fl.status === 200 && fl.body.v === 2 && fitems.length >= 190, fl.status + ' ' + fitems.length);
+    {   // /api/food-search: reenvía al buscador de Open Food Facts y devuelve solo lo que usa la app
+        const realFetchFS = globalThis.fetch;
+        let asked = '';
+        globalThis.fetch = async (u) => {
+            asked = String(u);
+            return new Response(JSON.stringify({ hits: [{ code: '7790001', product_name: 'Alfajor', brands: ['Marca'], countries_tags: ['en:argentina'], image_url: 'x', ingredients_text: 'mucho texto',
+                nutriments: { 'energy-kcal_100g': 450, proteins_100g: 5, carbohydrates_100g: 60, fat_100g: 20, salt_100g: 0.3, 'nova-group': 4 } }] }), { status: 200 });
+        };
+        const fs1 = await call('GET', '/api/food-search?q=' + encodeURIComponent('  alfajor  de   maicena ') + '&lang=es');
+        const h0 = fs1.body && fs1.body.hits && fs1.body.hits[0];
+        ok('/api/food-search: busca en search.openfoodfacts.org con el texto limpio y el idioma', /^https:\/\/search\.openfoodfacts\.org\/search\?q=alfajor%20de%20maicena&page_size=24&langs=es&fields=/.test(asked), asked);
+        ok('/api/food-search: devuelve solo los campos que usa la app', fs1.status === 200 && h0 && h0.product_name === 'Alfajor' && h0.nutriments['energy-kcal_100g'] === 450 && !('salt_100g' in h0.nutriments) && !('image_url' in h0) && !('ingredients_text' in h0), h0);
+        const fs2 = await call('GET', '/api/food-search?q=a');
+        ok('/api/food-search: menos de 2 letras → vacío sin preguntar', fs2.status === 200 && fs2.body.hits.length === 0);
+        globalThis.fetch = async () => new Response('<html>no disponible</html>', { status: 503 });
+        const fs3 = await call('GET', '/api/food-search?q=yogur');
+        ok('/api/food-search: si el buscador falla → 502 con mensaje', fs3.status === 502 && typeof fs3.body.error === 'string', fs3.status);
+        globalThis.fetch = realFetchFS;
+    }
     ok('/api/foods: cada alimento trae nombre en es/en/pt, ícono, sinónimos y macros', fitems.every((x) => x.k && x.n && x.ne && x.np && x.i && Array.isArray(x.s) && x.s.length && typeof x.kcal === 'number' && typeof x.p === 'number'), fitems.find((x) => !(x.ne && x.np && x.i)));
     ok('/api/foods: porciones caseras válidas ([unidad, cantidad > 0])', fitems.every((x) => !x.u || x.u.every((q) => Array.isArray(q) && typeof q[0] === 'string' && q[1] > 0)) && fitems.filter((x) => x.u).length >= 190);
     ok('/api/foods: la milanesa trae unidad chica/mediana/grande; la gaseosa va en ml (densidad)', JSON.stringify(byK.milanesa_carne && byK.milanesa_carne.u) === '[["us",80],["um",120],["ul",180]]' && byK.gaseosa && byK.gaseosa.d > 1 && !byK.pan.d, [byK.milanesa_carne, byK.gaseosa]);
