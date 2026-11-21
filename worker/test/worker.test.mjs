@@ -646,6 +646,33 @@ let token, routineId;
         it = await itemOf();
         ok('borrar el cobro saca el dato y sus alertas', it.billing === null && !it.alerts.some((a) => /^pay_/.test(a.type)));
     }
+
+    // Metas de comida, carpeta de fotos y marca del coach (fase 3)
+    {
+        const badT = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, targets: { kcal: 50, protein: 5000 } });
+        ok('metas fuera de rango → 400', badT.status === 400);
+        const tg = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, targets: { kcal: 2300.4, protein: 150, note: 'Priorizá la proteína en el desayuno' } });
+        ok('el coach pone metas de comida (sin avisar "rutina actualizada")', tg.status === 200 && tg.body.targets.kcal === 2300 && tg.body.targets.protein === 150 && tg.body.last_coach_update_at === r.last_coach_update_at, tg.body.targets);
+        const badL = await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, photos_link: 'javascript:alert(1)' });
+        ok('carpeta de fotos que no es https → 400', badL.status === 400);
+        await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, photos_link: 'https://drive.google.com/drive/folders/abc123' });
+        const badB = await call('PUT', '/api/coach/config', { coach_id: PANEL, brand: { name: 'Caro Fit', logo: 'data:image/svg+xml;base64,PHN2Zz4=' } });
+        ok('logo que no es una imagen png/jpeg/webp → 400', badB.status === 400);
+        const br = await call('PUT', '/api/coach/config', { coach_id: PANEL, brand: { name: 'Caro Fit Studio', color: '#ff4d57', logo: 'data:image/webp;base64,UklGRg==' } });
+        ok('el coach guarda su marca (color de la lista, en mayúsculas)', br.status === 200 && br.body.brand.name === 'Caro Fit Studio' && br.body.brand.color === '#FF4D57', br.body.brand);
+        await call('PUT', '/api/coach/config', { coach_id: PANEL, brand: { name: 'Caro Fit Studio', color: '#123456' } });
+        const cfgB = await call('GET', '/api/coach/config?coach_id=' + PANEL);
+        ok('un color fuera de la lista no se guarda', cfgB.body.brand.color === '', cfgB.body.brand);
+        await call('PUT', '/api/coach/config', { coach_id: PANEL, brand: { name: 'Caro Fit Studio', color: '#FF4D57', logo: 'data:image/webp;base64,UklGRg==' } });
+        const ck = await call('POST', '/api/shares/' + r.share_token + '/checkins', { photos: true });
+        ok('control con solo "subí fotos" → se guarda', ck.status === 201 && ck.body.checkin.photos === true, ck.body);
+        const shT = await call('GET', '/api/shares/' + r.share_token);
+        ok('el link del alumno trae metas, carpeta de fotos y la marca', shT.body.targets.kcal === 2300 && shT.body.targets.protein === 150 && shT.body.targets.note.includes('desayuno') && shT.body.photos_link.includes('drive.google.com') && shT.body.brand.name === 'Caro Fit Studio' && shT.body.brand.logo.startsWith('data:image/webp'), [shT.body.targets, shT.body.photos_link, shT.body.brand && shT.body.brand.name]);
+        await call('PUT', '/api/routines/' + r.id, { coach_id: PANEL, targets: null, photos_link: '' });
+        await call('PUT', '/api/coach/config', { coach_id: PANEL, brand: null });
+        const shT2 = await call('GET', '/api/shares/' + r.share_token);
+        ok('borrar metas, carpeta y marca los saca del link', shT2.body.targets === null && shT2.body.photos_link === '' && shT2.body.brand === null);
+    }
     const sh0 = await call('GET', '/api/shares/' + r.share_token);
     ok('el link del alumno trae las preguntas del coach y la ficha vacía', sh0.body.intake === null && sh0.body.intake_questions.length === 3);
     const noConsent = await call('POST', '/api/shares/' + r.share_token + '/intake', { goals: ['fuerza'], limitations: 'Hernia lumbar' });
@@ -722,7 +749,7 @@ let code, licToken;
 {
     console.log('\nTrials');
     const t1 = await call('POST', '/api/license/trial', { deviceId: 'devTrial', product: 'coach' });
-    ok('primer trial coach 200 (7 días)', t1.status === 200 && t1.body.trial === true && t1.body.days === 7, t1.body);
+    ok('primer trial coach 200 (10 días)', t1.status === 200 && t1.body.trial === true && t1.body.days === 10, t1.body);
     const t2 = await call('POST', '/api/license/trial', { deviceId: 'devTrial', product: 'coach' });
     ok('segundo trial mismo device → 409', t2.status === 409, t2.body);
     const t3 = await call('POST', '/api/license/trial', { deviceId: 'devTrial', product: 'premium' });

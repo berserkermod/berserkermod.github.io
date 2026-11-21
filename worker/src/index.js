@@ -68,7 +68,7 @@ const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // mayúsculas, sin O/
 const ERROR_TTL = 30 * 24 * 60 * 60;   // 30 días
 // 7 días para ambos: 3 días de premium no alcanzan para formar hábito (el valor
 // real —stats, plan nutricional, rutinas custom— se siente recién en la semana).
-const TRIAL_DAYS = { coach: 7, premium: 7 };
+const TRIAL_DAYS = { coach: 10, premium: 7 };   // Coach: 10 días para ver 2 controles semanales antes de decidir (20-nov-2026)
 
 // ── Límites contra abuso ──
 // Contexto: en Workers cada operación de KV cuenta como subrequest y el plan
@@ -744,6 +744,33 @@ function cleanBilling(b, prev) {
         note: str(b.note, 120) || '', paid: Array.isArray(prev && prev.paid) ? prev.paid : []
     };
 }
+// Metas de comida que pone el coach: calorías y proteína por día (no son planes de comida).
+function cleanTargets(t) {
+    if (!t || typeof t !== 'object') return null;
+    const kcal = num(t.kcal, 800, 6000), protein = num(t.protein, 20, 400);
+    if (kcal === null && protein === null) return null;
+    const out = {};
+    if (kcal !== null) out.kcal = Math.round(kcal);
+    if (protein !== null) out.protein = Math.round(protein);
+    const note = str(t.note, 160);
+    if (note) out.note = note;
+    out.at = nowISO();
+    return out;
+}
+// Marca del coach en el link de sus alumnos: nombre, un color de la lista y un logo chico
+// (la app lo achica a 256 px). Solo colores que se leen bien sobre el fondo de la app.
+const BRAND_COLORS = ['#00D4AA', '#FF4D57', '#4D9FFF', '#FFB020', '#B07CFF', '#FF7A3D', '#3DDC84'];
+function cleanBrand(b) {
+    if (!b || typeof b !== 'object') return null;
+    const name = str(b.name, 60) || '';
+    const c = String(b.color || '').toUpperCase();
+    const color = BRAND_COLORS.includes(c) ? c : '';
+    const logo = typeof b.logo === 'string' ? b.logo : '';
+    if (logo && !(logo.length <= 120000 && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/]+=*$/.test(logo))) return false;
+    if (!name && !color && !logo) return null;
+    return { name, color, logo };
+}
+function brandOf(cfg) { const b = cfg && cfg.brand; return b ? { name: b.name || '', color: b.color || '', logo: b.logo || '' } : null; }
 function billingLite(b) { return b ? { on: !!b.on, amount: b.amount, period: b.period, due: b.due } : null; }
 
 // ── Evaluación de ciclo (cada 4 semanas) ──
@@ -1037,7 +1064,19 @@ async function updateRoutine(req, env, url, id) {
     if (body.name) r.name = str(body.name, 80);
     if (body.plan) r.plan = cleanPlanLinks(body.plan);
     let chkChanged = false, accessChanged = false;
-    const billingTouched = body.billing !== undefined || !!body.billing_paid || !!body.billing_undo;
+    // Cobro, metas de comida y carpeta de fotos no cuentan como "tu coach actualizó tu rutina"
+    const billingTouched = body.billing !== undefined || !!body.billing_paid || !!body.billing_undo || body.targets !== undefined || body.photos_link !== undefined;
+    if (body.targets === null) delete r.targets;
+    else if (body.targets !== undefined) {
+        const tg = cleanTargets(body.targets);
+        if (!tg) return err('Datos inválidos', 400);
+        r.targets = tg;
+    }
+    if (body.photos_link !== undefined) {
+        const link = str(body.photos_link, 300) || '';
+        if (link && !LINK_RE.test(link)) return err('El link tiene que empezar con https://', 400);
+        if (link) r.photos_link = link; else delete r.photos_link;
+    }
     if (body.billing === null) delete r.billing;
     else if (body.billing !== undefined) {
         const b = cleanBilling(body.billing, r.billing);
@@ -1536,7 +1575,8 @@ async function getShare(env, token) {
     const pf = r.profile || {};
     return json({ routine: publicRoutine, edits, sessions, checkins, evals, videos, review, terms_v: (r.terms && r.terms.v) || '', chk_remind: chkRemindOf(r), intake: r.intake || null,
         intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [],
-        guest: !!pf.guest, access_until: pf.access_until || '', premium_seat: !!r.premium_seat, announce: announceRecent(cfg.announce) });
+        guest: !!pf.guest, access_until: pf.access_until || '', premium_seat: !!r.premium_seat, announce: announceRecent(cfg.announce),
+        targets: r.targets ? { kcal: r.targets.kcal || null, protein: r.targets.protein || null, note: r.targets.note || '' } : null, photos_link: r.photos_link || '', brand: brandOf(cfg) });
 }
 
 // Fecha real (no solo con forma de fecha) y dentro de una ventana razonable:
@@ -1658,7 +1698,8 @@ async function postCheckin(req, env, token) {
     if (habitsText) chk.habits_text = habitsText;
     const changeText = str(b.change_text, 300);
     if (b.change === true || changeText) { chk.change = true; if (changeText) chk.change_text = changeText; }
-    const filled = ['weight', 'energy', 'note', 'trained', 'ex_trouble', 'ex_text', 'sleep', 'recovery', 'meals', 'water', 'habits_text', 'change'];
+    if (b.photos === true) chk.photos = true;   // subió fotos nuevas a la carpeta del coach
+    const filled = ['weight', 'energy', 'note', 'trained', 'ex_trouble', 'ex_text', 'sleep', 'recovery', 'meals', 'water', 'habits_text', 'change', 'photos'];
     if (!filled.some((k) => chk[k] !== undefined)) return err('Control vacío', 400);
 
     const agg = (await kvGet(env, checkinsKey(idx.routineId))) || { items: [] };
@@ -1814,7 +1855,7 @@ async function getCoachConfig(env, url) {
     const cfg = (await kvGet(env, `coachcfg:${coachId}`)) || {};
     return json({ intake_questions: Array.isArray(cfg.intake_questions) ? cfg.intake_questions : [], terms_v: (cfg.terms && cfg.terms.v) || '',
         digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 },
-        left: leftRecent(cfg.left), invite: inviteOf(cfg), seats: seatCounts(cfg), announce: announceRecent(cfg.announce) });
+        left: leftRecent(cfg.left), invite: inviteOf(cfg), seats: seatCounts(cfg), announce: announceRecent(cfg.announce), brand: brandOf(cfg) });
 }
 const ANNOUNCE_DAYS = 14, ANNOUNCE_GAP_MS = 10 * 60000;
 function announceRecent(a) { return a && a.at && Date.now() - Date.parse(a.at) < ANNOUNCE_DAYS * 86400000 ? { id: a.id, text: a.text, at: a.at } : null; }
@@ -1873,6 +1914,12 @@ async function putCoachConfig(req, env, url) {
         cfg.digest = next;
         digestChanged = true;
     }
+    if (body.brand === null) delete cfg.brand;
+    else if (body.brand !== undefined) {
+        const br = cleanBrand(body.brand);
+        if (br === false) return err('Datos inválidos', 400);
+        if (br) cfg.brand = br; else delete cfg.brand;
+    }
     // Aviso a todos los alumnos: queda uno (el último) y lo ven en su link y su app durante 14 días.
     // Las notificaciones las pide la app alumno por alumno (POST /api/routines/{id}/announce).
     if (body.announce === null) delete cfg.announce;
@@ -1890,7 +1937,8 @@ async function putCoachConfig(req, env, url) {
         await callNotifier(env, 'digest:' + coachId, { op: 'digest-set', coachId, at });
     }
     return json({ ok: true, intake_questions: cfg.intake_questions || [], terms_v: (cfg.terms && cfg.terms.v) || '',
-        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg), seats: seatCounts(cfg) });
+        digest: cfg.digest ? { on: !!cfg.digest.on, hour: cfg.digest.hour } : { on: false, hour: 9 }, invite: inviteOf(cfg), seats: seatCounts(cfg),
+        announce: announceRecent(cfg.announce), brand: brandOf(cfg) });
 }
 
 // ── Términos de uso y reportes ──

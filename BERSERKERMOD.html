@@ -2358,8 +2358,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-42"></script>
-    <script src="core/i18n-data.js?v=2-42"></script>
+    <script src="core/calc.js?v=2-43"></script>
+    <script src="core/i18n-data.js?v=2-43"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2482,7 +2482,7 @@
                 home_greet_am: "Buenos días", home_greet_pm: "Buenas tardes", home_greet_eve: "Buenas noches",
                 home_streak_label: "RACHA DE ENTRENAMIENTO", home_streak_msg: "días consecutivos", home_streak_start: "¡Empezá tu racha hoy!",
                 home_stats_sess: "SESIONES", home_stats_vol: "VOLUMEN", home_stats_cardio: "CARDIO", home_stats_cals: "CALORÍAS",
-                home_today: "HOY TOCA", rm_students: "Mis alumnos", bl_title: "COBRO", bl_empty: "Anotá cuánto le cobrás y cuándo vence: te avisamos cuando esté por vencer o vencido.", bl_setup: "Anotar el cobro", bl_p_w1: "por semana", bl_p_w2: "cada 15 días", bl_p_m1: "por mes", bl_p_m3: "cada 3 meses", bl_p_m6: "cada 6 meses", bl_late: "Cuota vencida hace {n} días", bl_late1: "Cuota vencida hace 1 día", bl_today: "La cuota vence hoy", bl_tomorrow: "La cuota vence mañana", bl_soon: "La cuota vence en {n} días", bl_due_on: "Próximo vencimiento: {date}", bl_paused: "Avisos de cobro apagados", bl_paid_btn: "Pagó", bl_paid_done: "Pago anotado: el vencimiento pasó al período siguiente", bl_wa_btn: "Recordarle", bl_wa_text: "¡Hola {name}! Te recuerdo que el {date} vence la cuota {amount}. Avisame cuando la pagues. ¡Gracias!", bl_wa_text_late: "¡Hola {name}! Te recuerdo que la cuota {amount} venció el {date}. Avisame cuando la pagues. ¡Gracias!", bl_edit: "Editar", bl_history: "PAGOS ANOTADOS", bl_undo: "Deshacer el último pago", bl_undo_confirm: "¿Deshacer el último pago? El vencimiento vuelve a la fecha anterior.", bl_undo_done: "Pago deshecho", bl_private: "Solo lo ves vos: tu alumno no ve el cobro y la app no mueve plata.", bl_sheet_sub: "La app no cobra: es un anotador para que no se te pase ningún vencimiento.", bl_amount_ph: "Monto (opcional)", bl_every: "CADA CUÁNTO", bl_next_due: "PRÓXIMO VENCIMIENTO", bl_note_ph: "Nota (ej. transferencia, efectivo)", bl_alerts_on: "Avisarme cuando esté por vencer o vencido", bl_due_required: "Elegí la fecha de vencimiento", bl_save: "Guardar", bl_saved: "Cobro guardado", bl_delete: "Borrar el cobro", bl_delete_confirm: "¿Borrar el cobro y sus pagos anotados?", bl_deleted: "Cobro borrado", cs_active: "activos", cs_week: "cumplimiento 7 días", cs_review: "para revisar", cs_pay_late: "cobros vencidos", cs_pay_due: "cobros por vencer", an_btn: "Aviso a todos tus alumnos", an_title: "AVISO A TODOS TUS ALUMNOS", an_sub: "Lo ven en su link y en su app durante 14 días, y a los que tienen los avisos activados les llega una notificación.", an_ph: "Ej. El lunes es feriado: entrenamos el martes.", an_empty: "Escribí el aviso", an_send: "Publicar el aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificación enviada a {n} alumnos.", an_current: "Aviso actual", an_delete: "Borrar", an_delete_confirm: "¿Borrar el aviso? Deja de verse en el link y la app de tus alumnos.", an_deleted: "Aviso borrado", an_student_title: "AVISO DE TU COACH", an_ok: "Entendido", apierr_announce_wait: "Ya mandaste un aviso hace un rato. Probá en unos minutos.", coach_two_devices: "Tu código de Coach funciona en 2 dispositivos: abrí la app en la compu, ingresá el mismo código y manejá el panel desde ahí.", rm_mine: "Mi entrenamiento", coach_tools: "HERRAMIENTAS", hm_students_n: "{n} alumnos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} controles nuevos", hm_students_hint: "Revisá cómo vienen tus alumnos.", hm_open_panel: "Abrir el panel →", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
+                home_today: "HOY TOCA", rm_students: "Mis alumnos", bl_title: "COBRO", tg_title: "METAS DE COMIDA", tg_protein: "de proteína", tg_empty: "Poné cuántas calorías y cuánta proteína por día querés que coma: lo ve en su link y, si usa la app, su registro de comidas las toma solo.", tg_set: "Poner metas", tg_edit: "Editar metas", tg_sheet_sub: "Calorías y proteína por día (no es un plan de comidas). Podés dejar solo una de las dos.", tg_hint: "Con {kg} kg (su último control), para entrenar se recomiendan de {lo} a {hi} g de proteína por día (1,6 a 2,2 g por kilo).", tg_kcal_ph: "Calorías por día (ej. 2300)", tg_protein_ph: "Proteína en gramos por día (ej. 150)", tg_note_ph: "Nota (opcional)", tg_need: "Poné las calorías, la proteína o las dos", tg_saved: "Metas guardadas", tg_delete: "Borrar las metas", tg_deleted: "Metas borradas", tg_line: "Metas de tu coach: {v}", tg_from_coach: "Metas que te puso {name}", tg_student_title: "TUS METAS DE COMIDA", tg_student_sub: "Te las puso tu coach. Si usás la app con Premium, tu registro de comidas las toma solo.", ph_title: "FOTOS DE PROGRESO", ph_coach_has: "Tu alumno ve un botón para subir sus fotos a esta carpeta y puede marcar en el control que subió fotos nuevas. Las fotos quedan en tu carpeta, no en la app.", ph_coach_empty: "Pegá el link de una carpeta tuya (Google Drive o Google Fotos) compartida con tu alumno: le aparece un botón para subir sus fotos ahí. La app no guarda ninguna foto.", ph_set: "Pegar el link de la carpeta", ph_change: "Cambiar el link", ph_sheet_sub: "Creá una carpeta para este alumno, compartila con él con permiso para subir archivos y pegá acá el link.", ph_saved: "Carpeta guardada", ph_delete: "Sacar la carpeta", ph_deleted: "Carpeta sacada", ph_open_folder: "Abrir la carpeta", ph_upload_btn: "Subir mis fotos a la carpeta de mi coach", ph_student_body: "Sacate las fotos con la misma luz y la misma pose cada vez y subilas a la carpeta de tu coach. No pasan por la app.", chk_q_photos: "¿Subiste fotos nuevas a la carpeta de tu coach?", chk_photos_done: "Sí, subí fotos nuevas", coach_chk_photos: "Fotos", coach_chk_photos_yes: "subió fotos nuevas a la carpeta", br_btn: "Tu marca en el link de tus alumnos", br_btn_set: "Tu marca: {name}", br_title: "TU MARCA", br_sub: "Tu nombre de marca, un color y tu logo aparecen arriba en el link de tus alumnos.", br_preview_routine: "Rutina de ejemplo", br_name_ph: "Nombre de tu marca (ej. Rodrigo Training)", br_color: "COLOR", br_no_color: "Sin color", br_logo: "LOGO", br_logo_add: "Subir logo", br_logo_change: "Cambiar logo", br_logo_remove: "Sacar logo", br_logo_bad: "No se pudo usar esa imagen. Probá con un PNG o JPG.", br_saved: "Marca guardada", br_note: "El logo se achica en tu teléfono antes de guardarse. La plataforma sigue siendo BERSERKERMOD.", pg_share: "Compartir la comparación", pg_share_note: "La imagen se arma en tu teléfono y la mandás vos (por ejemplo, a tu coach por WhatsApp): no se sube a ningún lado.", bl_empty: "Anotá cuánto le cobrás y cuándo vence: te avisamos cuando esté por vencer o vencido.", bl_setup: "Anotar el cobro", bl_p_w1: "por semana", bl_p_w2: "cada 15 días", bl_p_m1: "por mes", bl_p_m3: "cada 3 meses", bl_p_m6: "cada 6 meses", bl_late: "Cuota vencida hace {n} días", bl_late1: "Cuota vencida hace 1 día", bl_today: "La cuota vence hoy", bl_tomorrow: "La cuota vence mañana", bl_soon: "La cuota vence en {n} días", bl_due_on: "Próximo vencimiento: {date}", bl_paused: "Avisos de cobro apagados", bl_paid_btn: "Pagó", bl_paid_done: "Pago anotado: el vencimiento pasó al período siguiente", bl_wa_btn: "Recordarle", bl_wa_text: "¡Hola {name}! Te recuerdo que el {date} vence la cuota {amount}. Avisame cuando la pagues. ¡Gracias!", bl_wa_text_late: "¡Hola {name}! Te recuerdo que la cuota {amount} venció el {date}. Avisame cuando la pagues. ¡Gracias!", bl_edit: "Editar", bl_history: "PAGOS ANOTADOS", bl_undo: "Deshacer el último pago", bl_undo_confirm: "¿Deshacer el último pago? El vencimiento vuelve a la fecha anterior.", bl_undo_done: "Pago deshecho", bl_private: "Solo lo ves vos: tu alumno no ve el cobro y la app no mueve plata.", bl_sheet_sub: "La app no cobra: es un anotador para que no se te pase ningún vencimiento.", bl_amount_ph: "Monto (opcional)", bl_every: "CADA CUÁNTO", bl_next_due: "PRÓXIMO VENCIMIENTO", bl_note_ph: "Nota (ej. transferencia, efectivo)", bl_alerts_on: "Avisarme cuando esté por vencer o vencido", bl_due_required: "Elegí la fecha de vencimiento", bl_save: "Guardar", bl_saved: "Cobro guardado", bl_delete: "Borrar el cobro", bl_delete_confirm: "¿Borrar el cobro y sus pagos anotados?", bl_deleted: "Cobro borrado", cs_active: "activos", cs_week: "cumplimiento 7 días", cs_review: "para revisar", cs_pay_late: "cobros vencidos", cs_pay_due: "cobros por vencer", an_btn: "Aviso a todos tus alumnos", an_title: "AVISO A TODOS TUS ALUMNOS", an_sub: "Lo ven en su link y en su app durante 14 días, y a los que tienen los avisos activados les llega una notificación.", an_ph: "Ej. El lunes es feriado: entrenamos el martes.", an_empty: "Escribí el aviso", an_send: "Publicar el aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificación enviada a {n} alumnos.", an_current: "Aviso actual", an_delete: "Borrar", an_delete_confirm: "¿Borrar el aviso? Deja de verse en el link y la app de tus alumnos.", an_deleted: "Aviso borrado", an_student_title: "AVISO DE TU COACH", an_ok: "Entendido", apierr_announce_wait: "Ya mandaste un aviso hace un rato. Probá en unos minutos.", coach_two_devices: "Tu código de Coach funciona en 2 dispositivos: abrí la app en la compu, ingresá el mismo código y manejá el panel desde ahí.", rm_mine: "Mi entrenamiento", coach_tools: "HERRAMIENTAS", hm_students_n: "{n} alumnos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} controles nuevos", hm_students_hint: "Revisá cómo vienen tus alumnos.", hm_open_panel: "Abrir el panel →", home_go_train: "IR A ENTRENAR →", home_missed: "¡Te extrañamos!", home_missed_msg: " días sin entrenar. ¡Hoy es un gran día para volver!",
                 routines_rec: "Plan Recomendado", routines_no_series: "No completaste ninguna serie", routines_saved_ok: "¡Entrenamiento Guardado! 🔥",
                 routines_day: "Día", routines_continue: "Continuar →", routines_back: "Atrás", routines_finish: "FINALIZAR ENTRENAMIENTO 🔥",
                 train_day: "DÍA DE ENTRENAMIENTO", train_exercise: "EJERCICIO", train_sel_ph: "Seleccionar ejercicio...", train_log: "REGISTRAR SERIE", train_prev: "Anterior: ",
@@ -2924,7 +2924,7 @@
                 home_greet_am: "Good morning", home_greet_pm: "Good afternoon", home_greet_eve: "Good evening",
                 home_streak_label: "TRAINING STREAK", home_streak_msg: "days in a row", home_streak_start: "Start your streak today!",
                 home_stats_sess: "SESSIONS", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIES",
-                home_today: "TODAY", rm_students: "My clients", bl_title: "PAYMENT", bl_empty: "Note how much you charge and when it's due: we'll let you know when it's coming up or overdue.", bl_setup: "Set up payment", bl_p_w1: "per week", bl_p_w2: "every 2 weeks", bl_p_m1: "per month", bl_p_m3: "every 3 months", bl_p_m6: "every 6 months", bl_late: "Payment overdue by {n} days", bl_late1: "Payment overdue by 1 day", bl_today: "Payment due today", bl_tomorrow: "Payment due tomorrow", bl_soon: "Payment due in {n} days", bl_due_on: "Next due date: {date}", bl_paused: "Payment alerts off", bl_paid_btn: "Paid", bl_paid_done: "Payment noted: the due date moved to the next period", bl_wa_btn: "Remind", bl_wa_text: "Hi {name}! Just a reminder that your {amount} payment is due on {date}. Let me know when you pay. Thanks!", bl_wa_text_late: "Hi {name}! Just a reminder that your {amount} payment was due on {date}. Let me know when you pay. Thanks!", bl_edit: "Edit", bl_history: "RECORDED PAYMENTS", bl_undo: "Undo last payment", bl_undo_confirm: "Undo the last payment? The due date goes back to the previous one.", bl_undo_done: "Payment undone", bl_private: "Only you see this: your client doesn't, and the app doesn't move money.", bl_sheet_sub: "The app doesn't charge: it's a log so you don't miss any due date.", bl_amount_ph: "Amount (optional)", bl_every: "HOW OFTEN", bl_next_due: "NEXT DUE DATE", bl_note_ph: "Note (e.g. bank transfer, cash)", bl_alerts_on: "Alert me when it's coming up or overdue", bl_due_required: "Pick the due date", bl_save: "Save", bl_saved: "Payment saved", bl_delete: "Delete payment", bl_delete_confirm: "Delete the payment and its recorded payments?", bl_deleted: "Payment deleted", cs_active: "active", cs_week: "7-day adherence", cs_review: "to review", cs_pay_late: "overdue payments", cs_pay_due: "payments due soon", an_btn: "Message all your clients", an_title: "MESSAGE ALL YOUR CLIENTS", an_sub: "They see it in their link and app for 14 days, and those with notifications on get one.", an_ph: "E.g. Monday is a holiday: we train on Tuesday.", an_empty: "Write the message", an_send: "Publish the message", an_sending: "Notifying {i} of {n}…", an_done: "Message published. Notification sent to {n} clients.", an_current: "Current message", an_delete: "Delete", an_delete_confirm: "Delete the message? It stops showing in your clients' link and app.", an_deleted: "Message deleted", an_student_title: "MESSAGE FROM YOUR COACH", an_ok: "Got it", apierr_announce_wait: "You already sent a message a moment ago. Try again in a few minutes.", coach_two_devices: "Your Coach code works on 2 devices: open the app on your computer, enter the same code and manage the panel from there.", rm_mine: "My training", coach_tools: "TOOLS", hm_students_n: "{n} clients", hm_review_n: "{n} to review", hm_review_none: "nothing to review", hm_chk_n: "{n} new check-ins", hm_students_hint: "See how your clients are doing.", hm_open_panel: "Open the panel →", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
+                home_today: "TODAY", rm_students: "My clients", bl_title: "PAYMENT", tg_title: "NUTRITION TARGETS", tg_protein: "of protein", tg_empty: "Set how many calories and how much protein per day you want them to eat: they see it in their link and, if they use the app, their food log uses it automatically.", tg_set: "Set targets", tg_edit: "Edit targets", tg_sheet_sub: "Calories and protein per day (not a meal plan). You can set just one of them.", tg_hint: "At {kg} kg (their last check-in), {lo} to {hi} g of protein per day is recommended for training (1.6 to 2.2 g per kg).", tg_kcal_ph: "Calories per day (e.g. 2300)", tg_protein_ph: "Protein in grams per day (e.g. 150)", tg_note_ph: "Note (optional)", tg_need: "Enter the calories, the protein or both", tg_saved: "Targets saved", tg_delete: "Delete targets", tg_deleted: "Targets deleted", tg_line: "Your coach's targets: {v}", tg_from_coach: "Targets set by {name}", tg_student_title: "YOUR NUTRITION TARGETS", tg_student_sub: "Set by your coach. If you use the app with Premium, your food log uses them automatically.", ph_title: "PROGRESS PHOTOS", ph_coach_has: "Your client sees a button to upload their photos to this folder and can mark in the check-in that they uploaded new ones. Photos stay in your folder, not in the app.", ph_coach_empty: "Paste the link to a folder of yours (Google Drive or Google Photos) shared with your client: they get a button to upload their photos there. The app doesn't store any photo.", ph_set: "Paste the folder link", ph_change: "Change the link", ph_sheet_sub: "Create a folder for this client, share it with upload permission and paste the link here.", ph_saved: "Folder saved", ph_delete: "Remove the folder", ph_deleted: "Folder removed", ph_open_folder: "Open the folder", ph_upload_btn: "Upload my photos to my coach's folder", ph_student_body: "Take your photos with the same light and pose each time and upload them to your coach's folder. They don't go through the app.", chk_q_photos: "Did you upload new photos to your coach's folder?", chk_photos_done: "Yes, I uploaded new photos", coach_chk_photos: "Photos", coach_chk_photos_yes: "uploaded new photos to the folder", br_btn: "Your brand on your clients' link", br_btn_set: "Your brand: {name}", br_title: "YOUR BRAND", br_sub: "Your brand name, a color and your logo appear at the top of your clients' link.", br_preview_routine: "Sample routine", br_name_ph: "Your brand name (e.g. Rodrigo Training)", br_color: "COLOR", br_no_color: "No color", br_logo: "LOGO", br_logo_add: "Upload logo", br_logo_change: "Change logo", br_logo_remove: "Remove logo", br_logo_bad: "That image couldn't be used. Try a PNG or JPG.", br_saved: "Brand saved", br_note: "The logo is resized on your phone before it's saved. The platform is still BERSERKERMOD.", pg_share: "Share the comparison", pg_share_note: "The image is made on your phone and you send it (for example, to your coach on WhatsApp): it isn't uploaded anywhere.", bl_empty: "Note how much you charge and when it's due: we'll let you know when it's coming up or overdue.", bl_setup: "Set up payment", bl_p_w1: "per week", bl_p_w2: "every 2 weeks", bl_p_m1: "per month", bl_p_m3: "every 3 months", bl_p_m6: "every 6 months", bl_late: "Payment overdue by {n} days", bl_late1: "Payment overdue by 1 day", bl_today: "Payment due today", bl_tomorrow: "Payment due tomorrow", bl_soon: "Payment due in {n} days", bl_due_on: "Next due date: {date}", bl_paused: "Payment alerts off", bl_paid_btn: "Paid", bl_paid_done: "Payment noted: the due date moved to the next period", bl_wa_btn: "Remind", bl_wa_text: "Hi {name}! Just a reminder that your {amount} payment is due on {date}. Let me know when you pay. Thanks!", bl_wa_text_late: "Hi {name}! Just a reminder that your {amount} payment was due on {date}. Let me know when you pay. Thanks!", bl_edit: "Edit", bl_history: "RECORDED PAYMENTS", bl_undo: "Undo last payment", bl_undo_confirm: "Undo the last payment? The due date goes back to the previous one.", bl_undo_done: "Payment undone", bl_private: "Only you see this: your client doesn't, and the app doesn't move money.", bl_sheet_sub: "The app doesn't charge: it's a log so you don't miss any due date.", bl_amount_ph: "Amount (optional)", bl_every: "HOW OFTEN", bl_next_due: "NEXT DUE DATE", bl_note_ph: "Note (e.g. bank transfer, cash)", bl_alerts_on: "Alert me when it's coming up or overdue", bl_due_required: "Pick the due date", bl_save: "Save", bl_saved: "Payment saved", bl_delete: "Delete payment", bl_delete_confirm: "Delete the payment and its recorded payments?", bl_deleted: "Payment deleted", cs_active: "active", cs_week: "7-day adherence", cs_review: "to review", cs_pay_late: "overdue payments", cs_pay_due: "payments due soon", an_btn: "Message all your clients", an_title: "MESSAGE ALL YOUR CLIENTS", an_sub: "They see it in their link and app for 14 days, and those with notifications on get one.", an_ph: "E.g. Monday is a holiday: we train on Tuesday.", an_empty: "Write the message", an_send: "Publish the message", an_sending: "Notifying {i} of {n}…", an_done: "Message published. Notification sent to {n} clients.", an_current: "Current message", an_delete: "Delete", an_delete_confirm: "Delete the message? It stops showing in your clients' link and app.", an_deleted: "Message deleted", an_student_title: "MESSAGE FROM YOUR COACH", an_ok: "Got it", apierr_announce_wait: "You already sent a message a moment ago. Try again in a few minutes.", coach_two_devices: "Your Coach code works on 2 devices: open the app on your computer, enter the same code and manage the panel from there.", rm_mine: "My training", coach_tools: "TOOLS", hm_students_n: "{n} clients", hm_review_n: "{n} to review", hm_review_none: "nothing to review", hm_chk_n: "{n} new check-ins", hm_students_hint: "See how your clients are doing.", hm_open_panel: "Open the panel →", home_go_train: "GO TRAIN →", home_missed: "We miss you!", home_missed_msg: " days without training. Today is a great day to come back!",
                 routines_rec: "Recommended Plan", routines_no_series: "No sets completed", routines_saved_ok: "Workout Saved! 🔥",
                 routines_day: "Day", routines_continue: "Continue →", routines_back: "Back", routines_finish: "FINISH WORKOUT 🔥",
                 train_day: "TRAINING DAY", train_exercise: "EXERCISE", train_sel_ph: "Select exercise...", train_log: "LOG SET", train_prev: "Previous: ",
@@ -3367,7 +3367,7 @@
                 home_greet_am: "Bom dia", home_greet_pm: "Boa tarde", home_greet_eve: "Boa noite",
                 home_streak_label: "SEQUÊNCIA DE TREINO", home_streak_msg: "dias seguidos", home_streak_start: "Comece sua sequência hoje!",
                 home_stats_sess: "SESSÕES", home_stats_vol: "VOLUME", home_stats_cardio: "CARDIO", home_stats_cals: "CALORIAS",
-                home_today: "HOJE VOCÊ TREINA", rm_students: "Meus alunos", bl_title: "COBRANÇA", bl_empty: "Anote quanto você cobra e quando vence: avisamos quando estiver perto de vencer ou vencido.", bl_setup: "Anotar a cobrança", bl_p_w1: "por semana", bl_p_w2: "a cada 15 dias", bl_p_m1: "por mês", bl_p_m3: "a cada 3 meses", bl_p_m6: "a cada 6 meses", bl_late: "Mensalidade vencida há {n} dias", bl_late1: "Mensalidade vencida há 1 dia", bl_today: "A mensalidade vence hoje", bl_tomorrow: "A mensalidade vence amanhã", bl_soon: "A mensalidade vence em {n} dias", bl_due_on: "Próximo vencimento: {date}", bl_paused: "Avisos de cobrança desligados", bl_paid_btn: "Pagou", bl_paid_done: "Pagamento anotado: o vencimento passou para o próximo período", bl_wa_btn: "Lembrar", bl_wa_text: "Oi {name}! Lembrando que a mensalidade {amount} vence em {date}. Me avisa quando pagar. Obrigado!", bl_wa_text_late: "Oi {name}! Lembrando que a mensalidade {amount} venceu em {date}. Me avisa quando pagar. Obrigado!", bl_edit: "Editar", bl_history: "PAGAMENTOS ANOTADOS", bl_undo: "Desfazer o último pagamento", bl_undo_confirm: "Desfazer o último pagamento? O vencimento volta para a data anterior.", bl_undo_done: "Pagamento desfeito", bl_private: "Só você vê: seu aluno não vê a cobrança e o app não movimenta dinheiro.", bl_sheet_sub: "O app não cobra: é um anotador para você não perder nenhum vencimento.", bl_amount_ph: "Valor (opcional)", bl_every: "A CADA QUANTO", bl_next_due: "PRÓXIMO VENCIMENTO", bl_note_ph: "Nota (ex. transferência, dinheiro)", bl_alerts_on: "Me avisar quando estiver perto de vencer ou vencido", bl_due_required: "Escolha a data de vencimento", bl_save: "Salvar", bl_saved: "Cobrança salva", bl_delete: "Apagar a cobrança", bl_delete_confirm: "Apagar a cobrança e os pagamentos anotados?", bl_deleted: "Cobrança apagada", cs_active: "ativos", cs_week: "cumprimento 7 dias", cs_review: "para revisar", cs_pay_late: "cobranças vencidas", cs_pay_due: "cobranças a vencer", an_btn: "Aviso para todos os seus alunos", an_title: "AVISO PARA TODOS OS SEUS ALUNOS", an_sub: "Eles veem no link e no app durante 14 dias, e quem tem os avisos ativados recebe uma notificação.", an_ph: "Ex. Segunda é feriado: treinamos na terça.", an_empty: "Escreva o aviso", an_send: "Publicar o aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificação enviada a {n} alunos.", an_current: "Aviso atual", an_delete: "Apagar", an_delete_confirm: "Apagar o aviso? Ele deixa de aparecer no link e no app dos seus alunos.", an_deleted: "Aviso apagado", an_student_title: "AVISO DO SEU COACH", an_ok: "Entendi", apierr_announce_wait: "Você já mandou um aviso há pouco. Tente em alguns minutos.", coach_two_devices: "Seu código de Coach funciona em 2 dispositivos: abra o app no computador, digite o mesmo código e use o painel de lá.", rm_mine: "Meu treino", coach_tools: "FERRAMENTAS", hm_students_n: "{n} alunos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} check-ins novos", hm_students_hint: "Veja como estão seus alunos.", hm_open_panel: "Abrir o painel →", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
+                home_today: "HOJE VOCÊ TREINA", rm_students: "Meus alunos", bl_title: "COBRANÇA", tg_title: "METAS DE ALIMENTAÇÃO", tg_protein: "de proteína", tg_empty: "Defina quantas calorias e quanta proteína por dia ele deve comer: ele vê no link e, se usar o app, o registro de refeições usa sozinho.", tg_set: "Definir metas", tg_edit: "Editar metas", tg_sheet_sub: "Calorias e proteína por dia (não é um plano alimentar). Você pode definir só uma das duas.", tg_hint: "Com {kg} kg (o último check-in), para treinar se recomendam de {lo} a {hi} g de proteína por dia (1,6 a 2,2 g por quilo).", tg_kcal_ph: "Calorias por dia (ex. 2300)", tg_protein_ph: "Proteína em gramas por dia (ex. 150)", tg_note_ph: "Nota (opcional)", tg_need: "Coloque as calorias, a proteína ou as duas", tg_saved: "Metas salvas", tg_delete: "Apagar as metas", tg_deleted: "Metas apagadas", tg_line: "Metas do seu coach: {v}", tg_from_coach: "Metas definidas por {name}", tg_student_title: "SUAS METAS DE ALIMENTAÇÃO", tg_student_sub: "Definidas pelo seu coach. Se você usa o app com Premium, o registro de refeições usa sozinho.", ph_title: "FOTOS DE PROGRESSO", ph_coach_has: "Seu aluno vê um botão para subir as fotos nesta pasta e pode marcar no check-in que subiu fotos novas. As fotos ficam na sua pasta, não no app.", ph_coach_empty: "Cole o link de uma pasta sua (Google Drive ou Google Fotos) compartilhada com o aluno: aparece um botão para ele subir as fotos lá. O app não guarda nenhuma foto.", ph_set: "Colar o link da pasta", ph_change: "Trocar o link", ph_sheet_sub: "Crie uma pasta para este aluno, compartilhe com permissão para enviar arquivos e cole o link aqui.", ph_saved: "Pasta salva", ph_delete: "Tirar a pasta", ph_deleted: "Pasta removida", ph_open_folder: "Abrir a pasta", ph_upload_btn: "Subir minhas fotos na pasta do meu coach", ph_student_body: "Tire as fotos com a mesma luz e a mesma pose toda vez e suba na pasta do seu coach. Elas não passam pelo app.", chk_q_photos: "Você subiu fotos novas na pasta do seu coach?", chk_photos_done: "Sim, subi fotos novas", coach_chk_photos: "Fotos", coach_chk_photos_yes: "subiu fotos novas na pasta", br_btn: "Sua marca no link dos seus alunos", br_btn_set: "Sua marca: {name}", br_title: "SUA MARCA", br_sub: "O nome da sua marca, uma cor e o seu logo aparecem no topo do link dos seus alunos.", br_preview_routine: "Rotina de exemplo", br_name_ph: "Nome da sua marca (ex. Rodrigo Training)", br_color: "COR", br_no_color: "Sem cor", br_logo: "LOGO", br_logo_add: "Subir logo", br_logo_change: "Trocar logo", br_logo_remove: "Tirar logo", br_logo_bad: "Não foi possível usar essa imagem. Tente um PNG ou JPG.", br_saved: "Marca salva", br_note: "O logo é reduzido no seu telefone antes de ser salvo. A plataforma continua sendo BERSERKERMOD.", pg_share: "Compartilhar a comparação", pg_share_note: "A imagem é montada no seu telefone e você envia (por exemplo, para o seu coach pelo WhatsApp): não é enviada para nenhum lugar.", bl_empty: "Anote quanto você cobra e quando vence: avisamos quando estiver perto de vencer ou vencido.", bl_setup: "Anotar a cobrança", bl_p_w1: "por semana", bl_p_w2: "a cada 15 dias", bl_p_m1: "por mês", bl_p_m3: "a cada 3 meses", bl_p_m6: "a cada 6 meses", bl_late: "Mensalidade vencida há {n} dias", bl_late1: "Mensalidade vencida há 1 dia", bl_today: "A mensalidade vence hoje", bl_tomorrow: "A mensalidade vence amanhã", bl_soon: "A mensalidade vence em {n} dias", bl_due_on: "Próximo vencimento: {date}", bl_paused: "Avisos de cobrança desligados", bl_paid_btn: "Pagou", bl_paid_done: "Pagamento anotado: o vencimento passou para o próximo período", bl_wa_btn: "Lembrar", bl_wa_text: "Oi {name}! Lembrando que a mensalidade {amount} vence em {date}. Me avisa quando pagar. Obrigado!", bl_wa_text_late: "Oi {name}! Lembrando que a mensalidade {amount} venceu em {date}. Me avisa quando pagar. Obrigado!", bl_edit: "Editar", bl_history: "PAGAMENTOS ANOTADOS", bl_undo: "Desfazer o último pagamento", bl_undo_confirm: "Desfazer o último pagamento? O vencimento volta para a data anterior.", bl_undo_done: "Pagamento desfeito", bl_private: "Só você vê: seu aluno não vê a cobrança e o app não movimenta dinheiro.", bl_sheet_sub: "O app não cobra: é um anotador para você não perder nenhum vencimento.", bl_amount_ph: "Valor (opcional)", bl_every: "A CADA QUANTO", bl_next_due: "PRÓXIMO VENCIMENTO", bl_note_ph: "Nota (ex. transferência, dinheiro)", bl_alerts_on: "Me avisar quando estiver perto de vencer ou vencido", bl_due_required: "Escolha a data de vencimento", bl_save: "Salvar", bl_saved: "Cobrança salva", bl_delete: "Apagar a cobrança", bl_delete_confirm: "Apagar a cobrança e os pagamentos anotados?", bl_deleted: "Cobrança apagada", cs_active: "ativos", cs_week: "cumprimento 7 dias", cs_review: "para revisar", cs_pay_late: "cobranças vencidas", cs_pay_due: "cobranças a vencer", an_btn: "Aviso para todos os seus alunos", an_title: "AVISO PARA TODOS OS SEUS ALUNOS", an_sub: "Eles veem no link e no app durante 14 dias, e quem tem os avisos ativados recebe uma notificação.", an_ph: "Ex. Segunda é feriado: treinamos na terça.", an_empty: "Escreva o aviso", an_send: "Publicar o aviso", an_sending: "Avisando {i} de {n}…", an_done: "Aviso publicado. Notificação enviada a {n} alunos.", an_current: "Aviso atual", an_delete: "Apagar", an_delete_confirm: "Apagar o aviso? Ele deixa de aparecer no link e no app dos seus alunos.", an_deleted: "Aviso apagado", an_student_title: "AVISO DO SEU COACH", an_ok: "Entendi", apierr_announce_wait: "Você já mandou um aviso há pouco. Tente em alguns minutos.", coach_two_devices: "Seu código de Coach funciona em 2 dispositivos: abra o app no computador, digite o mesmo código e use o painel de lá.", rm_mine: "Meu treino", coach_tools: "FERRAMENTAS", hm_students_n: "{n} alunos", hm_review_n: "{n} para revisar", hm_review_none: "nada para revisar", hm_chk_n: "{n} check-ins novos", hm_students_hint: "Veja como estão seus alunos.", hm_open_panel: "Abrir o painel →", home_go_train: "IR TREINAR →", home_missed: "Sentimos sua falta!", home_missed_msg: " dias sem treinar. Hoje é um ótimo dia para voltar!",
                 routines_rec: "Plano Recomendado", routines_no_series: "Nenhuma série completada", routines_saved_ok: "Treino Salvo! 🔥",
                 routines_day: "Dia", routines_continue: "Continuar →", routines_back: "Voltar", routines_finish: "FINALIZAR TREINO 🔥",
                 train_day: "DIA DE TREINO", train_exercise: "EXERCÍCIO", train_sel_ph: "Selecionar exercício...", train_log: "REGISTRAR SÉRIE", train_prev: "Anterior: ",
@@ -6708,7 +6708,7 @@
                 if (state.nutritionHistory.length > 5) state.nutritionHistory = state.nutritionHistory.slice(0, 5);
                 saveNutritionHistory();
             }
-            const macros = calcMacros(u);
+            const macros = myMacros(u);
             const plan = generateNutritionPlan(u, macros);
             state.nutritionPlan = plan;
             saveNutritionPlan();
@@ -11503,6 +11503,27 @@
             };
             card.appendChild(h('p', { className: 'fv-title' }, ico('camera', 'ico-accent'), ' ' + t('pg_title')));
             card.appendChild(body);
+            const shareCmp = async () => {
+                try {
+                    const load = (id) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = urls[id]; });
+                    const [a, b] = await Promise.all([load(leftId), load(rightId)]);
+                    const H = 900, wa = Math.round(a.width * H / a.height), wb = Math.round(b.width * H / b.height);
+                    const cv = document.createElement('canvas'); cv.width = wa + wb + 12; cv.height = H + 70;
+                    const g = cv.getContext('2d');
+                    g.fillStyle = '#0A0A0B'; g.fillRect(0, 0, cv.width, cv.height);
+                    g.drawImage(a, 0, 0, wa, H); g.drawImage(b, wa + 12, 0, wb, H);
+                    g.fillStyle = '#EDEDED'; g.font = '700 30px Inter, system-ui, sans-serif'; g.textBaseline = 'middle';
+                    const dt = (id) => ((photos.find(x => x.id === id) || {}).date || '').split('-').reverse().join('/');
+                    g.fillText(t('pg_before') + ' · ' + dt(leftId), 16, H + 35);
+                    g.fillText(t('pg_after') + ' · ' + dt(rightId), wa + 28, H + 35);
+                    const blob = await new Promise(res => cv.toBlob(res, 'image/jpeg', 0.88));
+                    const file = new File([blob], 'progreso.jpg', { type: 'image/jpeg' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) { try { await navigator.share({ files: [file], title: t('pg_title') }); } catch { } return; }
+                    const u = URL.createObjectURL(blob), lnk = document.createElement('a'); lnk.href = u; lnk.download = 'progreso.jpg'; lnk.click(); setTimeout(() => URL.revokeObjectURL(u), 4000);
+                } catch { flash(t('pg_unavailable'), 'var(--orange)'); }
+            };
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', style: { marginTop: '12px' }, onclick: shareCmp }, ico('share'), ' ' + t('pg_share')));
+            card.appendChild(h('p', { className: 'bm-note', style: { marginTop: '6px' } }, t('pg_share_note')));
             const btns = h('div', { style: { display: 'flex', gap: '8px', marginTop: '12px' } });
             btns.appendChild(h('button', { className: 'btn btn-danger', style: { flex: 1 }, onclick: async () => {
                 if (!confirm(t('pg_del_confirm'))) return;
@@ -12014,12 +12035,13 @@
 
             // TDEE & Nutrition (free: macros + strategy advice · premium: + meal distribution)
             if (u.wantsNutrition) {
-                const macros = calcMacros(u);
+                const macros = myMacros(u);
                 const { tdee, adj, targetCals, protein, carbs, fat } = macros;
 
                 const nc = h('div', { className: 'card card-accent fade-in' });
                 nc.appendChild(h('p', { className: 'label' }, t('prof_nutri_plan')));
                 nc.appendChild(h('p', { style: { fontSize: '24px', fontWeight: 900, marginBottom: '4px' } }, targetCals + t('unit_kcal_day')));
+                if (macros.byCoach) nc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--accent)', fontWeight: 700, marginBottom: '4px' } }, '🎯 ' + t('tg_from_coach').replace('{name}', macros.byCoach)));
                 nc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginBottom: u.tdeeAdaptive ? '4px' : '16px' } }, 'TDEE: ' + tdee + ' kcal' + (u.tdeeAdaptive ? ' (' + t('ci_from_data') + ')' : '') + ' · Ajuste: ' + (adj > 0 ? '+' : '') + adj));
                 if (u.tdeeAdaptive) {
                     nc.appendChild(h('button', { style: { fontSize: '11px', color: 'var(--text3)', background: 'none', border: 'none', textDecoration: 'underline', padding: 0, marginBottom: '14px', cursor: 'pointer' }, onclick: () => {
@@ -15509,7 +15531,7 @@
                 const totalCarbs = entries.reduce((a, e) => a + (e.carbs || 0), 0);
                 const totalFat = entries.reduce((a, e) => a + (e.fat || 0), 0);
                 // Daily target for the user's goal: the same numbers as the nutrition plan (not maintenance).
-                const goal = calcMacros(state.user);
+                const goal = myMacros(state.user);
                 const target = goal.targetCals;
 
                 // Macro summary chips: consumed / target, with a mini progress bar
@@ -16589,9 +16611,27 @@
         }
         // Una vez por semana, si los datos alcanzan y el gasto real se aleja 50 kcal o
         // más de lo que se usa hoy, propone ajustar. Nunca cambia nada solo.
+        // Metas de comida que puso el coach (si el alumno entrena la rutina de un coach en la app):
+        // reemplazan a las calculadas en el plan, el perfil y el registro de comidas.
+        function coachTargets() {
+            const r = (state.customRoutines || []).find(x => x && x.coach && !x.coach.gone && x.coach.targets && (x.coach.targets.kcal || x.coach.targets.protein));
+            return r ? Object.assign({ coachName: r.coach.coachName || '' }, r.coach.targets) : null;
+        }
+        function myMacros(u) {
+            const m = calcMacros(u), ct = coachTargets();
+            if (!ct) return m;
+            const kcal = ct.kcal || m.targetCals, protein = ct.protein || m.protein;
+            const fat = Math.max(40, Math.round(m.fat * kcal / (m.targetCals || kcal)));
+            const carbs = Math.max(50, Math.round((kcal - protein * 4 - fat * 9) / 4));
+            return Object.assign({}, m, { targetCals: kcal, protein, fat, carbs, byCoach: ct.coachName || 'Coach' });
+        }
+        function targetsText(tg) {
+            return [tg.kcal ? Number(tg.kcal).toLocaleString(appLocale()) + ' kcal' : '', tg.protein ? tg.protein + ' g ' + t('tg_protein') : ''].filter(Boolean).join(' · ');
+        }
         function renderCalorieCheckin(container) {
             const u = state.user;
             if (!u || !u.wantsNutrition || !isPremium()) return;
+            if (coachTargets()) return;   // las metas las pone el coach: no se sugiere otro ajuste
             if (u.tdeeCheckin && daysSince(u.tdeeCheckin) < 7) return;
             const a = adaptiveTDEE({ weights: loadBodyweight(), intakes: dailyIntakes(), formula: calcTDEE(u), today: todayStr() });
             const cur = maintenanceOf(u);
@@ -17138,6 +17178,9 @@
                     r.coach.vidReplyAt = lastReplyAt(j.videos);
                     const cr = lastChkReply(j.checkins); r.coach.chkReply = cr ? cr.reply : ''; r.coach.chkReplyAt = cr ? (cr.reply_at || '') : '';
                     r.coach.announce = j.announce ? { id: j.announce.id, text: j.announce.text, at: j.announce.at } : null;
+                    r.coach.targets = j.targets && (j.targets.kcal || j.targets.protein) ? { kcal: j.targets.kcal || null, protein: j.targets.protein || null, note: j.targets.note || '' } : null;
+                    r.coach.photosLink = safeLink(j.photos_link || '');
+                    r.coach.brandName = (j.brand && j.brand.name) || '';
                     r.coach.reviewAt = (j.review && j.review.updated_at) || '';
                     r.coach.syncedAt = Date.now();
                     changed = true;
@@ -17211,7 +17254,7 @@
         // Tarjeta arriba de la rutina vinculada
         function coachLinkedCard(r) {
             const c = h('div', { className: 'card fade-in perf-card' });
-            c.appendChild(h('p', { className: 'label' }, t('coach_card_title').replace('{name}', r.coach.coachName || 'Coach')));
+            c.appendChild(h('p', { className: 'label' }, t('coach_card_title').replace('{name}', r.coach.brandName || r.coach.coachName || 'Coach')));
             const unlinkBtn = () => h('button', { className: 'btn btn-secondary btn-sm', onclick: () => {
                 if (!confirm(t('coach_unlink_confirm'))) return;
                 delete r.coach; saveRoutines(); setPlanPref(null); renderRoutines();
@@ -17274,6 +17317,8 @@
                         h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { try { localStorage.setItem(announceSeenKey(r.coach.token), r.coach.announce.id); } catch { } renderRoutines(); } }, t('an_ok'))));
                 }
             }
+            if (!r.coach.gone && r.coach.targets) c.appendChild(h('p', { className: 'perf-body', style: { fontWeight: 700 } }, '🍽️ ' + t('tg_line').replace('{v}', targetsText(r.coach.targets))));
+            if (!r.coach.gone && r.coach.photosLink) c.appendChild(h('a', { className: 'btn btn-secondary btn-sm btn-full', href: r.coach.photosLink, target: '_blank', rel: 'noopener noreferrer', style: { textDecoration: 'none', marginBottom: '8px' } }, '📸 ' + t('ph_upload_btn')));
             if (!r.coach.gone && r.coach.chkReply) {
                 let crSeen = ''; try { crSeen = localStorage.getItem(chkReplySeenKey(r.coach.token)) || ''; } catch { }
                 const crNew = (r.coach.chkReplyAt || '') > crSeen;
@@ -17428,6 +17473,8 @@
             const tools = h('div', { style: { marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border)' } });
             tools.appendChild(h('p', { className: 'label' }, t('coach_tools')));
             tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openAnnounceSheet }, '📣 ' + t('an_btn')));
+            const brNow = state.coachCfg && state.coachCfg.brand;
+            tools.appendChild(h('button', { className: 'btn btn-secondary btn-full btn-sm', style: { marginBottom: '8px' }, onclick: openBrandSheet }, '🎨 ' + (brNow && brNow.name ? t('br_btn_set').replace('{name}', brNow.name) : t('br_btn'))));
             const ann = state.coachCfg && state.coachCfg.announce;
             if (ann) tools.appendChild(h('div', { style: { fontSize: '12px', color: 'var(--text2)', background: 'var(--sf2)', borderRadius: '10px', padding: '8px 10px', marginBottom: '8px', lineHeight: 1.45, overflowWrap: 'anywhere' } },
                 h('b', {}, t('an_current') + ' · ' + relativeTime(ann.at) + ': '), ann.text, ' ',
@@ -18000,6 +18047,169 @@
             c.appendChild(h('p', { style: { fontSize: '14px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, a.text));
             c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '6px' } }, relativeTime(a.at)));
             v.appendChild(c);
+        }
+
+        // ── Metas de comida que pone el coach (el alumno las ve en su link y su app) ──
+        function renderStudentTargets(v, routine, checkins) {
+            const tg = routine.targets;
+            const c = h('div', { className: 'card fade-in' });
+            c.appendChild(h('p', { className: 'label' }, '🍽️ ' + t('tg_title')));
+            if (tg && (tg.kcal || tg.protein)) {
+                c.appendChild(h('p', { style: { fontSize: '16px', fontWeight: 800, marginBottom: '4px' } }, targetsText(tg)));
+                if (tg.note) c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', marginBottom: '8px', overflowWrap: 'anywhere' } }, tg.note));
+            } else c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '8px' } }, t('tg_empty')));
+            c.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => openTargetsSheet(routine, checkins) }, t(tg ? 'tg_edit' : 'tg_set')));
+            v.appendChild(c);
+        }
+        function openTargetsSheet(routine, checkins) {
+            const tg = routine.targets || {};
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            card.appendChild(h('p', { className: 'label' }, '🍽️ ' + t('tg_title')));
+            card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('tg_sheet_sub')));
+            const w = ((checkins || []).find(c => c.weight) || {}).weight;
+            if (w) card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--accent)', lineHeight: 1.5, marginBottom: '10px' } },
+                t('tg_hint').replace('{kg}', Number(w).toLocaleString(appLocale(), { maximumFractionDigits: 1 })).replace('{lo}', Math.round(w * 1.6)).replace('{hi}', Math.round(w * 2.2))));
+            const kc = h('input', { className: 'input', type: 'number', inputmode: 'numeric', min: '800', max: '6000', placeholder: t('tg_kcal_ph'), style: { marginBottom: '8px' } });
+            if (tg.kcal) kc.value = String(tg.kcal);
+            const pr = h('input', { className: 'input', type: 'number', inputmode: 'numeric', min: '20', max: '400', placeholder: t('tg_protein_ph'), style: { marginBottom: '8px' } });
+            if (tg.protein) pr.value = String(tg.protein);
+            const nt = h('input', { className: 'input', maxlength: '160', placeholder: t('tg_note_ph'), style: { marginBottom: '12px' } });
+            nt.value = tg.note || '';
+            card.append(kc, pr, nt);
+            const put = async (targets, msg) => {
+                try { await api('PUT', '/api/routines/' + routine.id, { targets }); ov.remove(); flash(msg); await openStudentDetail(routine.id); }
+                catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
+            };
+            card.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: () => {
+                const k = parseInt(kc.value, 10), p = parseInt(pr.value, 10);
+                if (!(k >= 800 && k <= 6000) && !(p >= 20 && p <= 400)) { flash(t('tg_need'), 'var(--orange)'); return; }
+                put({ kcal: k >= 800 && k <= 6000 ? k : null, protein: p >= 20 && p <= 400 ? p : null, note: nt.value.trim() }, t('tg_saved'));
+            } }, t('bl_save')));
+            if (routine.targets) card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px', color: 'var(--red)' }, onclick: () => put(null, t('tg_deleted')) }, t('tg_delete')));
+            card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('btn_cancel')));
+            ov.appendChild(card);
+            document.body.appendChild(ov);
+        }
+        // ── Carpeta de fotos de progreso (Drive o Google Fotos del coach): no se guarda ninguna foto ──
+        function renderStudentPhotos(v, routine) {
+            const link = safeLink(routine.photos_link || '');
+            const c = h('div', { className: 'card fade-in' });
+            c.appendChild(h('p', { className: 'label' }, '📸 ' + t('ph_title')));
+            c.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '8px' } }, t(link ? 'ph_coach_has' : 'ph_coach_empty')));
+            const row = h('div', { className: 'perf-actions' });
+            if (link) row.appendChild(h('a', { className: 'btn btn-primary btn-sm', href: link, target: '_blank', rel: 'noopener noreferrer', style: { textDecoration: 'none' } }, '📂 ' + t('ph_open_folder')));
+            row.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => {
+                const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+                const card = h('div', { className: 'rup-sheet' });
+                card.appendChild(h('p', { className: 'label' }, '📸 ' + t('ph_title')));
+                card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('ph_sheet_sub')));
+                const inp = h('input', { className: 'input', type: 'url', placeholder: 'https://drive.google.com/…', style: { marginBottom: '12px' } });
+                inp.value = link;
+                card.appendChild(inp);
+                const put = async (val, msg) => {
+                    try { await api('PUT', '/api/routines/' + routine.id, { photos_link: val }); ov.remove(); flash(msg); await openStudentDetail(routine.id); }
+                    catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
+                };
+                card.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: () => {
+                    const val = inp.value.trim();
+                    if (!safeLink(val)) { flash(t('ex_video_bad'), 'var(--orange)'); return; }
+                    put(val, t('ph_saved'));
+                } }, t('bl_save')));
+                if (link) card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px', color: 'var(--red)' }, onclick: () => put('', t('ph_deleted')) }, t('ph_delete')));
+                card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('btn_cancel')));
+                ov.appendChild(card);
+                document.body.appendChild(ov);
+            } }, t(link ? 'ph_change' : 'ph_set')));
+            c.appendChild(row);
+            v.appendChild(c);
+        }
+        // Link del alumno: sus metas de comida y la carpeta de fotos de su coach
+        function renderAlumnoTargetsPhotos(v) {
+            const tg = state.alumnoTargets;
+            if (tg) {
+                const c = h('div', { className: 'alumno-routine-card', style: { padding: '16px', marginBottom: 0 } });
+                c.appendChild(h('p', { className: 'label' }, '🍽️ ' + t('tg_student_title')));
+                c.appendChild(h('p', { style: { fontSize: '16px', fontWeight: 800, marginBottom: '4px' } }, targetsText(tg)));
+                if (tg.note) c.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '4px', overflowWrap: 'anywhere' } }, tg.note));
+                c.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', lineHeight: 1.45 } }, t('tg_student_sub')));
+                v.appendChild(c);
+            }
+            if (state.alumnoPhotosLink) {
+                const c = h('div', { className: 'alumno-routine-card', style: { padding: '16px', marginBottom: 0 } });
+                c.appendChild(h('p', { className: 'label' }, '📸 ' + t('ph_title')));
+                c.appendChild(h('p', { style: { fontSize: '13px', color: 'var(--text2)', lineHeight: 1.5, marginBottom: '10px' } }, t('ph_student_body')));
+                c.appendChild(h('a', { className: 'btn btn-secondary btn-full', href: state.alumnoPhotosLink, target: '_blank', rel: 'noopener noreferrer', style: { textDecoration: 'none' } }, '📂 ' + t('ph_upload_btn')));
+                v.appendChild(c);
+            }
+        }
+        // ── Marca del coach en el link de sus alumnos: nombre, color y logo (achicado en el teléfono) ──
+        const BRAND_COLORS = ['#00D4AA', '#FF4D57', '#4D9FFF', '#FFB020', '#B07CFF', '#FF7A3D', '#3DDC84'];
+        function logoToDataUrl(file) {
+            return new Promise((res, rej) => {
+                const url = URL.createObjectURL(file), im = new Image();
+                im.onload = () => {
+                    const sc = Math.min(256 / im.width, 256 / im.height, 1), w = Math.max(1, Math.round(im.width * sc)), hh = Math.max(1, Math.round(im.height * sc));
+                    const cv = document.createElement('canvas'); cv.width = w; cv.height = hh;
+                    cv.getContext('2d').drawImage(im, 0, 0, w, hh);
+                    URL.revokeObjectURL(url);
+                    let d = cv.toDataURL('image/webp', 0.85);
+                    if (!/^data:image\/webp/.test(d)) d = cv.toDataURL('image/png');
+                    if (d.length > 120000) d = cv.toDataURL('image/jpeg', 0.8);
+                    if (d.length > 120000) { rej(new Error('big')); return; }
+                    res(d);
+                };
+                im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('img')); };
+                im.src = url;
+            });
+        }
+        function openBrandSheet() {
+            const cur = (state.coachCfg && state.coachCfg.brand) || {};
+            let name = cur.name || '', color = cur.color || '', logo = cur.logo || '';
+            const ov = h('div', { className: 'rup-overlay', onclick: (e) => { if (e.target === ov) ov.remove(); } });
+            const card = h('div', { className: 'rup-sheet' });
+            const draw = () => {
+                card.innerHTML = '';
+                card.appendChild(h('p', { className: 'label' }, '🎨 ' + t('br_title')));
+                card.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text3)', lineHeight: 1.5, marginBottom: '10px' } }, t('br_sub')));
+                // Vista previa del encabezado que ve el alumno
+                const pv = h('div', { className: 'alumno-banner', style: Object.assign({ marginBottom: '12px' }, color ? { boxShadow: 'inset 4px 0 0 ' + color } : {}) });
+                pv.appendChild(h('div', { className: 'alumno-banner-icon' }, logo ? h('img', { src: logo, alt: '', style: { width: '44px', height: '44px', borderRadius: '12px', objectFit: 'contain', display: 'block' } }) : '💪'));
+                pv.appendChild(h('div', { className: 'alumno-banner-text' }, h('div', { className: 'alumno-banner-title' }, t('br_preview_routine')), h('div', { className: 'alumno-banner-sub', style: color ? { color, fontWeight: 700 } : {} }, name ? name + ' · ' + ((state.user && state.user.name) || 'Coach') : t('alumno_banner_by') + ' ' + ((state.user && state.user.name) || 'Coach'))));
+                card.appendChild(pv);
+                const ni = h('input', { className: 'input', maxlength: '60', placeholder: t('br_name_ph'), style: { marginBottom: '10px' } });
+                ni.value = name; ni.oninput = () => { name = ni.value; };
+                ni.onchange = draw;
+                card.appendChild(ni);
+                card.appendChild(h('p', { className: 'label' }, t('br_color')));
+                const sw = h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' } });
+                [''].concat(BRAND_COLORS).forEach(cl => sw.appendChild(h('button', { title: cl || t('br_no_color'), onclick: () => { color = cl; draw(); },
+                    style: { width: '34px', height: '34px', borderRadius: '50%', background: cl || 'var(--sf2)', border: color === cl ? '3px solid var(--text)' : '2px solid var(--border)', fontSize: '12px', color: 'var(--text3)' } }, cl ? '' : '✕')));
+                card.appendChild(sw);
+                card.appendChild(h('p', { className: 'label' }, t('br_logo')));
+                const fi = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', style: { display: 'none' } });
+                fi.onchange = async () => {
+                    const f = fi.files && fi.files[0];
+                    if (!f) return;
+                    try { logo = await logoToDataUrl(f); draw(); } catch { flash(t('br_logo_bad'), 'var(--orange)'); }
+                };
+                const lr = h('div', { className: 'perf-actions', style: { marginBottom: '12px' } });
+                lr.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => fi.click() }, t(logo ? 'br_logo_change' : 'br_logo_add')));
+                if (logo) lr.appendChild(h('button', { className: 'btn btn-secondary btn-sm', onclick: () => { logo = ''; draw(); } }, t('br_logo_remove')));
+                card.append(fi, lr);
+                card.appendChild(h('button', { className: 'btn btn-primary btn-full', onclick: async () => {
+                    try {
+                        const r = await api('PUT', '/api/coach/config', { brand: { name: name.trim(), color, logo } });
+                        state.coachCfg = Object.assign(state.coachCfg || {}, { brand: r.brand || null });
+                        ov.remove(); flash(t('br_saved')); renderRoutines();
+                    } catch (e) { flash('⚠️ ' + e.message, 'var(--red)'); }
+                } }, t('bl_save')));
+                card.appendChild(h('button', { className: 'btn btn-secondary btn-full', style: { marginTop: '8px' }, onclick: () => ov.remove() }, t('btn_cancel')));
+                card.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '10px', lineHeight: 1.45 } }, t('br_note')));
+            };
+            draw();
+            ov.appendChild(card);
+            document.body.appendChild(ov);
         }
 
         function renderStudentFicha(v, routine) {
@@ -19622,6 +19832,7 @@
             if ((c.ex_trouble && c.ex_trouble.length) || c.ex_text) out.push({ label: '⚠️ ' + t('coach_chk_ex'), warn: true,
                 text: [(c.ex_trouble || []).join(', '), c.ex_text ? '"' + c.ex_text + '"' : ''].filter(Boolean).join(' · ') });
             if (c.change) out.push({ label: '⚠️ ' + t('coach_chk_change'), warn: true, text: c.change_text ? '"' + c.change_text + '"' : '—' });
+            if (c.photos) out.push({ label: '📸 ' + t('coach_chk_photos'), warn: false, text: t('coach_chk_photos_yes') });
             return out;
         }
 
@@ -19741,7 +19952,11 @@
             renderStudentInterest(v, routine);
             renderStudentAlerts(v, routine.alerts);
             renderStudentFicha(v, routine);
-            if (!(routine.profile && routine.profile.guest)) renderStudentBilling(v, routine);   // al huésped le cobra el hotel
+            if (!(routine.profile && routine.profile.guest)) {   // al huésped le cobra el hotel y no hay seguimiento largo
+                renderStudentBilling(v, routine);
+                renderStudentTargets(v, routine, checkins);
+                renderStudentPhotos(v, routine);
+            }
             renderStudentStay(v, routine, stay);
             const isGuest = !!(routine.profile && routine.profile.guest);
             if (!isGuest) {   // evaluaciones y balance van por ciclos de 4 semanas: no aplican a una estadía
@@ -19989,6 +20204,9 @@
                 state.alumnoSessions = sessions || [];
                 state.alumnoCheckins = checkins || [];
                 state.alumnoAnnounce = share.announce || null;
+                state.alumnoTargets = share.targets && (share.targets.kcal || share.targets.protein) ? share.targets : null;
+                state.alumnoPhotosLink = safeLink(share.photos_link || '');
+                state.alumnoBrand = share.brand || null;
                 state.alumnoLocalPlan = JSON.parse(JSON.stringify(routine.plan));
                 state.alumnoName = localStorage.getItem('bm-alumno-name-' + state.alumnoToken) || '';
                 renderAlumnoView();
@@ -20008,10 +20226,13 @@
 
             // Banner
             const banner = h('div', { className: 'alumno-banner' });
-            banner.appendChild(h('div', { className: 'alumno-banner-icon' }, '💪'));
+            const brand = state.alumnoBrand || {};
+            const logo = /^data:image\/(webp|png|jpeg);base64,/.test(brand.logo || '') ? brand.logo : '';
+            banner.appendChild(h('div', { className: 'alumno-banner-icon' }, logo ? h('img', { src: logo, alt: '', style: { width: '44px', height: '44px', borderRadius: '12px', objectFit: 'contain', display: 'block' } }) : '💪'));
+            if (brand.color) banner.style.boxShadow = 'inset 4px 0 0 ' + brand.color;
             const bt = h('div', { className: 'alumno-banner-text' });
             bt.appendChild(h('div', { className: 'alumno-banner-title' }, r.name));
-            bt.appendChild(h('div', { className: 'alumno-banner-sub' }, t('alumno_banner_by') + ' ' + (r.coach_name || 'Coach')));
+            bt.appendChild(h('div', { className: 'alumno-banner-sub', style: brand.color ? { color: brand.color, fontWeight: 700 } : {} }, brand.name ? brand.name + ' · ' + (r.coach_name || 'Coach') : t('alumno_banner_by') + ' ' + (r.coach_name || 'Coach')));
             banner.appendChild(bt);
             const nameInp = h('input', {
                 className: 'alumno-name-input',
@@ -20143,6 +20364,7 @@
             // Huésped (estadía corta): sin control semanal, avisos del control ni pase a la app
             if (!state.alumnoGuest && !crNew) renderAlumnoCheckin(v);
             if (ann && !annNew) renderAlumnoAnnounce(v, ann, false);
+            if (!state.alumnoGuest) renderAlumnoTargetsPhotos(v);
             renderAlumnoVideosCard(v);
             if (!state.alumnoGuest) {
                 renderAlumnoPushCard(v);
@@ -20395,6 +20617,17 @@
             card.appendChild(chBox);
             textIn('change_text', 'chk_change_ph', true, chBox);
             chBox.style.display = chAns === 'si' ? '' : 'none';
+            // Fotos de progreso (si el coach dejó una carpeta)
+            if (o.photosLink) {
+                ask('chk_q_photos');
+                const phRow = h('div', { style: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' } });
+                phRow.appendChild(h('a', { className: 'btn btn-secondary btn-sm', href: o.photosLink, target: '_blank', rel: 'noopener noreferrer', style: { textDecoration: 'none' } }, '📂 ' + t('ph_open_folder')));
+                const phChk = h('input', { type: 'checkbox', className: 'cyc-check' });
+                phChk.checked = !!d.photos;
+                phChk.onchange = () => { d.photos = phChk.checked; };
+                phRow.appendChild(h('label', { style: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' } }, phChk, t('chk_photos_done')));
+                card.appendChild(phRow);
+            }
             // Peso y mensaje
             ask('chk_extra');
             const wInp = h('input', { type: 'number', inputmode: 'decimal', step: '0.1', min: '20', className: 'input', placeholder: t('chk_weight'), style: { fontSize: '14px' } });
@@ -20420,6 +20653,7 @@
                 if (chAns === 'si') { payload.change = true; if (tx(d.change_text)) payload.change_text = tx(d.change_text); }
                 if (tx(wInp.value)) payload.weight = wInp.value;
                 if (tx(d.note)) payload.note = tx(d.note);
+                if (d.photos) payload.photos = true;
                 if (!Object.keys(payload).length) { flash(t('chk_empty'), 'var(--orange)'); return; }
                 send.disabled = true;
                 try {
@@ -20439,7 +20673,7 @@
             const mine = state.alumnoCheckins || [];
             const cur = mine.find(c => c.week === isoWeek(todayStr()));
             const open = () => openCheckinSheet({
-                token: state.alumnoToken, prev: cur, plan: state.alumnoLocalPlan || (state.alumnoData && state.alumnoData.plan),
+                token: state.alumnoToken, prev: cur, plan: state.alumnoLocalPlan || (state.alumnoData && state.alumnoData.plan), photosLink: state.alumnoPhotosLink,
                 trained: chkWeekCount(state.alumnoSessions), weight: (mine.find(c => c.weight) || {}).weight,
                 onSaved: (c) => { state.alumnoCheckins = [c].concat(mine.filter(x => x.week !== c.week)); renderAlumnoView(); }
             });
@@ -20487,7 +20721,7 @@
             const lastBw = bw.length ? bw[bw.length - 1] : null;
             const recentBw = lastBw && (Date.now() - new Date(lastBw.date + 'T12:00:00').getTime()) < 14 * 86400000 ? lastBw.kg : null;
             openCheckinSheet({
-                token: r.coach.token, prev: list.find(c => c.week === isoWeek(todayStr())), plan: r.plan, auto: true,
+                token: r.coach.token, prev: list.find(c => c.week === isoWeek(todayStr())), plan: r.plan, auto: true, photosLink: safeLink(sh.photos_link || ''),
                 trained: chkWeekCount(state.sessions), weight: recentBw || (list.find(c => c.weight) || {}).weight,
                 onSaved: (c) => { r.coach.chkWeek = c.week; saveRoutines(); renderRoutines(); }
             });

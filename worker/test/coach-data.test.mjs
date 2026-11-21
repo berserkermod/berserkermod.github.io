@@ -14,9 +14,9 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const BASE_COMMIT = '852caff';
-// Campos que se sumaron a propósito después de ese Worker (fase 2 del Coach, nov 2026): el viejo no los tiene
-const NEW_FIELDS = ['announce', 'plan_days', 'push_on', 'billing'];   // Worker publicado antes de esta obra (tanda 1 de la auditoría)
+const BASE_COMMIT = '852caff';   // Worker publicado antes de esta obra (tanda 1 de la auditoría)
+// Campos que se sumaron a propósito después de ese Worker (fases 2 y 3 del Coach, nov 2026): el viejo no los tiene
+const NEW_FIELDS = ['announce', 'plan_days', 'push_on', 'billing', 'targets', 'photos_link', 'brand'];
 const here = path.dirname(fileURLToPath(import.meta.url));
 
 let pass = 0, fail = 0, skipped = 0;
