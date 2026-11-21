@@ -19,7 +19,7 @@
             // La captura del hero, en el idioma de la página y pedida desde ya
             var l = document.createElement('link');
             l.rel = 'preload'; l.as = 'image'; l.setAttribute('fetchpriority', 'high');
-            l.href = 'img/landing/' + (lang === 'es' ? '' : lang + '/') + 'inicio.webp';
+            l.href = 'img/landing/' + (lang === 'es' ? '' : lang + '/') + 'inicio-v2.webp';
             document.head.appendChild(l);
             // Quien llega en inglés abre la app en inglés si todavía no eligió idioma.
             // Portugués no: en la app es Premium.
@@ -1286,7 +1286,7 @@
                 <div class="hero-visual reveal reveal-delay-2">
                     <div class="hero-phone phone-frame">
                         <div class="phone-screen">
-                            <img data-shot="inicio.webp" width="540" height="1169" fetchpriority="high" decoding="async" data-i18n-alt alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
+                            <img data-shot="inicio-v2.webp" width="540" height="1169" fetchpriority="high" decoding="async" data-i18n-alt alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
                         </div>
                     </div>
                 </div>
@@ -1336,22 +1336,22 @@
                 <article class="feat-card reveal reveal-delay-1">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-timer"/></svg></div>
                     <h3 class="feat-title" data-i18n>Registro sin fricción</h3>
-                    <p class="feat-desc" data-i18n>Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.</p>
+                    <p class="feat-desc" data-i18n>Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, en kilos o en libras, y si cerrás la app la sesión no se pierde.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-2">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-trend"/></svg></div>
                     <h3 class="feat-title" data-i18n>Te dice cuándo subir el peso</h3>
-                    <p class="feat-desc" data-i18n>Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM, te avisa cuando un ejercicio se estanca y cuando tu rendimiento baja. Semana de descarga y volumen ajustados solos&nbsp;<span class="tag-pro">Premium</span></p>
+                    <p class="feat-desc" data-i18n>Si completaste el rango de reps, te propone la carga de hoy con pesos que existen: 2,5 kg en la barra, la mancuerna siguiente o una placa en las máquinas. Si quedaste corto o volvés de un parate, te sugiere bajar. Récords, 1RM estimado y aviso cuando un ejercicio se estanca o tu rendimiento baja. Semana de descarga y volumen ajustados solos&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-3">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-body"/></svg></div>
                     <h3 class="feat-title" data-i18n>Mapa del cuerpo</h3>
-                    <p class="feat-desc" data-i18n>Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Más tu constancia de los últimos 6 meses. Fotos y medidas de progreso&nbsp;<span class="tag-pro">Premium</span></p>
+                    <p class="feat-desc" data-i18n>Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Tu constancia de los últimos 6 meses, tu racha de semanas y el progreso de cada ejercicio. Fotos y medidas de progreso&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-4">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-utensils"/></svg></div>
                     <h3 class="feat-title" data-i18n>Nutrición que cierra</h3>
-                    <p class="feat-desc" data-i18n>Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas por código de barras o con una foto de la etiqueta o del plato, plan de 7 días y ajuste semanal de calorías&nbsp;<span class="tag-pro">Premium</span></p>
+                    <p class="feat-desc" data-i18n>Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas con código de barras, buscador de productos o una foto de la etiqueta (revisás lo que leyó antes de guardarlo) o del plato; tus productos quedan guardados para la próxima. Plan de 7 días y ajuste semanal de calorías&nbsp;<span class="tag-pro">Premium</span></p>
                 </article>
                 <article class="feat-card reveal reveal-delay-5">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-book"/></svg></div>
@@ -1361,7 +1361,7 @@
                 <article class="feat-card reveal">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-heart"/></svg></div>
                     <h3 class="feat-title" data-i18n>Cardio sin vueltas</h3>
-                    <p class="feat-desc" data-i18n>26 deportes con cronómetro y calorías según tu peso y la intensidad. Queda aparte del entreno de pesas y suma en el balance del día.</p>
+                    <p class="feat-desc" data-i18n>26 deportes con cronómetro y calorías según tu peso y la intensidad, con distancia, ritmo, récords y meta semanal. Planes para empezar a correr o llegar a 10 km con una voz que te guía (la primera semana gratis; el resto, con Premium), y tus salidas del reloj se importan desde un archivo GPX o TCX.</p>
                 </article>
                 <article class="feat-card reveal reveal-delay-1">
                     <div class="feat-icon icon-tile"><svg class="i"><use href="#i-cloud"/></svg></div>
@@ -1393,28 +1393,28 @@
                         <div class="deepdive-mockup active" data-panel="0">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="entreno.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
+                                    <img data-shot="entreno-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="1">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="progresion.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 48,75 kg">
+                                    <img data-shot="progresion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 47,5 kg">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="2">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="mapa.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
+                                    <img data-shot="mapa-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="3">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="nutricion.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
+                                    <img data-shot="nutricion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
                                 </div>
                             </div>
                         </div>
@@ -1449,7 +1449,7 @@
                         <p class="deepdive-desc" data-i18n>Cada serie suma al músculo que entrena. Tocás uno y te dice cuántas series lleva en la semana y si está en el rango ideal para crecer.</p>
                         <ul class="deepdive-bullets">
                             <li data-i18n>Frente y espalda, 13 grupos musculares</li>
-                            <li data-i18n>Colores por rango: poco, medio, ideal, mucho</li>
+                            <li data-i18n>Colores por rango: poco, medio, ideal, alto</li>
                             <li data-i18n>Constancia de los últimos 6 meses</li>
                             <li data-i18n>Stats mensuales y anuales con Premium</li>
                         </ul>
@@ -1460,7 +1460,7 @@
                         <p class="deepdive-desc" data-i18n>Gratis: tus calorías y macros calculados para tu objetivo, con la estrategia explicada. Con Premium registrás lo que comés y ves el balance del día, contando el cardio.</p>
                         <ul class="deepdive-bullets">
                             <li data-i18n>Macros recomendados según tu objetivo</li>
-                            <li data-i18n>Código de barras o foto con IA (Premium)</li>
+                            <li data-i18n>Código de barras, buscador o foto con IA (Premium)</li>
                             <li data-i18n>Plan de 7 días con 5 comidas (Premium)</li>
                             <li data-i18n>Ajuste semanal según tu peso real (Premium)</li>
                         </ul>
@@ -1523,14 +1523,15 @@
                         <li data-i18n>Rutina automática según nivel, días y objetivo</li>
                         <li data-i18n>Prioridad muscular y registro del período</li>
                         <li data-i18n>Registro de series con descanso, superseries y calentamiento</li>
-                        <li data-i18n>Avisos de progresión, récords y 1RM estimado</li>
+                        <li data-i18n>Peso sugerido para hoy, récords y 1RM estimado</li>
                         <li data-i18n>Biblioteca de 37 ejercicios con video</li>
-                        <li data-i18n>Cardio: 26 deportes con kcal automáticas</li>
+                        <li data-i18n>Cardio: 26 deportes con ritmo, récords e importación GPX/TCX</li>
+                        <li data-i18n>La primera semana de los planes de running con voz</li>
                         <li data-i18n>Stats semanales, mapa del cuerpo y constancia</li>
                         <li data-i18n>Calorías y macros recomendados para tu objetivo</li>
                         <li data-i18n>Peso corporal con tendencia</li>
                         <li data-i18n>Copia en Google Drive o en archivo · rutina en PDF</li>
-                        <li data-i18n>Recordatorio diario · tema claro u oscuro</li>
+                        <li data-i18n>Recordatorio diario · tema claro u oscuro · kilos o libras</li>
                         <li data-i18n>Español + inglés</li>
                         <li class="muted" data-i18n>Sin registro de comidas ni escáner</li>
                         <li class="muted" data-i18n>Sin funciones de IA</li>
@@ -1547,13 +1548,15 @@
                     <span class="precio-badge" data-i18n>Prueba gratis</span>
                     <ul class="precio-features">
                         <li data-i18n><b>Todo lo del plan Free</b>, más:</li>
-                        <li data-i18n>Registro de comidas: código de barras o foto de la etiqueta o del plato con IA</li>
+                        <li data-i18n>Registro de comidas: código de barras, buscador de productos o foto de la etiqueta o del plato con IA</li>
+                        <li data-i18n>Tus productos escaneados guardados para la próxima, aun sin conexión</li>
                         <li data-i18n>Plan de comidas de 7 días con macros</li>
                         <li data-i18n>Ajuste semanal de calorías según tu peso real</li>
                         <li data-i18n>Ajuste por rendimiento: detecta la fatiga y te arma la semana de descarga</li>
                         <li data-i18n>Rutinas propias ilimitadas + <b>importar desde PDF</b> con IA</li>
                         <li data-i18n>La rutina de tu coach dentro de la app, con tu historial y tu progreso</li>
                         <li data-i18n>Fotos de progreso y medidas</li>
+                        <li data-i18n>Planes de running completos (5 y 10 km) con voz que te guía</li>
                         <li data-i18n>Stats mensuales, trimestrales y anuales</li>
                         <li data-i18n>Oracle IA · análisis personalizado de tu progreso</li>
                         <li data-i18n>Tu propio video o GIF por ejercicio</li>
@@ -1577,28 +1580,32 @@
                     <div class="coach-tag reveal"><svg class="i i-sm"><use href="#i-users"/></svg><span data-i18n>Plan Coach · Para entrenadores</span></div>
                     <h2 class="coach-title reveal reveal-delay-1" data-i18n>¿Sos entrenador?<br>Tus alumnos, una sola pantalla.</h2>
                     <p class="coach-desc reveal reveal-delay-2" data-i18n>
-                        Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Incluye todo Premium.
+                        Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Le respondés el control, llevás los cobros y la app te avisa a quién revisar. Incluye todo Premium.
                     </p>
                     <ul class="coach-features reveal reveal-delay-3">
                         <li data-i18n>Link único + QR por alumno · lo abre sin instalar nada</li>
                         <li data-i18n>El alumno registra kg y reps de cada serie</li>
                         <li data-i18n>Con Premium, el alumno entrena tu rutina dentro de la app y sus resultados te llegan igual</li>
                         <li data-i18n>Flechas de progreso por ejercicio, sesión a sesión</li>
-                        <li data-i18n>Control semanal: peso, energía y un mensaje para vos</li>
-                        <li data-i18n>Aviso de controles nuevos y de cambios en la rutina</li>
+                        <li data-i18n>Control semanal de 6 preguntas, y tu respuesta le llega al alumno</li>
+                        <li data-i18n>Alertas de quién no entrena, no carga o se estancó, y resumen del día</li>
+                        <li data-i18n>La app arma la base de la rutina según la ficha del alumno</li>
+                        <li data-i18n>Anotador de cobros con recordatorio por WhatsApp</li>
+                        <li data-i18n>Metas de comida por alumno, carpeta de fotos y avisos a todos</li>
+                        <li data-i18n>Tu logo y tu color en el link del alumno · tu panel en el celular y en la compu</li>
                         <li data-i18n>Sin costo extra por alumno</li>
                     </ul>
                     <div class="reveal reveal-delay-4">
                         <div id="coach-plans" style="margin:0 0 10px;max-width:420px"></div>
                         <button id="buy-coach-btn" class="btn btn-primary" onclick="comprarCoach()" disabled><span data-i18n>Comprar modo Coach</span> <span id="coach-price-label"></span></button>
                         <p id="coach-buy-msg" style="font-size:12px;color:var(--text3);margin-top:12px;min-height:16px"></p>
-                        <a href="BERSERKERMOD.html" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline" data-i18n>o probalo gratis primero →</a>
+                        <a href="BERSERKERMOD.html" style="display:inline-block;margin-top:4px;color:var(--text2);font-size:13px;text-decoration:underline" data-i18n>o probalo gratis 10 días →</a>
                     </div>
                 </div>
                 <div class="coach-visual reveal reveal-delay-2">
                     <div class="phone-frame">
                         <div class="phone-screen">
-                            <img data-shot="coach.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Lo que ve el coach de una alumna: control semanal con peso y energía, y sus sesiones con kg, reps y flechas de progreso">
+                            <img data-shot="coach-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Lo que ve el coach de una alumna: su control semanal con peso y energía, el lugar para responderle y sus sesiones con kg, reps y flechas de progreso">
                         </div>
                     </div>
                 </div>
@@ -1684,6 +1691,18 @@
                         Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo.
                     </div>
                 </details>
+                <details class="faq-item reveal">
+                    <summary class="faq-summary" data-i18n>¿Cómo sabe cuánto peso tengo que poner?</summary>
+                    <div class="faq-body" data-i18n>
+                        Usa la doble progresión: si completaste el tope del rango de reps en todas las series, te propone subir; si no, repetir el peso y sumar reps. El salto es uno que existe en el gimnasio (2,5 kg en la barra, la mancuerna siguiente o una placa en las máquinas) y, con pesos livianos, primero te pide 2 reps más. Si quedaste debajo del rango te sugiere bajar un escalón, y si volvés después de más de 4 semanas, arrancar con un 90 %. Si tu rutina tiene un día pesado y uno liviano, cada día se compara consigo mismo. Siempre es una sugerencia: el peso lo elegís vos.
+                    </div>
+                </details>
+                <details class="faq-item reveal">
+                    <summary class="faq-summary" data-i18n>¿Puedo usar libras en vez de kilos?</summary>
+                    <div class="faq-body" data-i18n>
+                        Sí. En <b>Perfil</b> elegís kilos o libras. Al cambiar, la app convierte todo lo que ya anotaste, y si volvés a la unidad de antes los números quedan exactos. Las sugerencias de peso suben de a 5 lb en la barra. Tu peso corporal sigue en kilos.
+                    </div>
+                </details>
                 <details class="faq-item reveal reveal-delay-1">
                     <summary class="faq-summary" data-i18n>¿Sirve si soy mujer?</summary>
                     <div class="faq-body" data-i18n>
@@ -1717,7 +1736,7 @@
                 <details class="faq-item reveal reveal-delay-5">
                     <summary class="faq-summary" data-i18n>¿Mis datos van a un servidor?</summary>
                     <div class="faq-body" data-i18n>
-                        <b>Tus entrenamientos, comidas y stats viven en tu teléfono</b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive</b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach</b>, la rutina que compartís, los kg y reps que registrás y el control semanal se guardan en nuestro servidor para que vos y tu entrenador los vean; las <b>funciones de IA</b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; y si activás el <b>recordatorio</b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href="privacy.html">política de privacidad</a>.
+                        <b>Tus entrenamientos, comidas y stats viven en tu teléfono</b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive</b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach</b>, la rutina que compartís, los kg y reps que registrás, el control semanal y las respuestas de tu entrenador se guardan en nuestro servidor para que los vean los dos; las <b>funciones de IA</b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; la <b>búsqueda de productos por nombre</b> pasa por nuestro servidor sin guardar quién buscó; y si activás el <b>recordatorio</b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href="privacy.html">política de privacidad</a>.
                     </div>
                 </details>
                 <details class="faq-item reveal reveal-delay-5">
@@ -1735,7 +1754,7 @@
                 <details class="faq-item reveal reveal-delay-6">
                     <summary class="faq-summary" data-i18n>¿Hay versión para entrenadores con alumnos?</summary>
                     <div class="faq-body" data-i18n>
-                        Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal con su peso, su energía y un mensaje. Vos ves sus sesiones con flechas de progreso y un aviso cuando hay algo nuevo. Sin costo extra por alumno.
+                        Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno (o dejás que la app arme la base según su ficha) y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal que podés responder. Vos ves sus sesiones con flechas de progreso, alertas de quién necesita una revisión y un anotador de cobros. Lo probás gratis 10 días y no hay costo extra por alumno.
                     </div>
                 </details>
             </div>
@@ -1816,16 +1835,16 @@
   "Del primer día al próximo récord, sin planillas ni cuentas. Lo marcado como <span class=\"tag-pro\">Premium<\/span> lo probás gratis 7 días.": ["From day one to your next PR, no spreadsheets, no math. Anything marked <span class=\"tag-pro\">Premium<\/span> you can try free for 7 days.", "Do primeiro dia ao próximo recorde, sem planilhas nem contas. O que estiver marcado como <span class=\"tag-pro\">Premium<\/span> você testa grátis por 7 dias."],
   "Rutina que se arma sola": ["A routine that builds itself", "Rotina que se monta sozinha"],
   "Registro sin fricción": ["Frictionless logging", "Registro sem atrito"],
-  "Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, y si cerrás la app la sesión no se pierde.": ["Tap ✓ and the rest timer starts, vibrating when it's done and keeping the screen on while you train. Supersets, warm-ups with the plates worked out, and if you close the app your session isn't lost.", "Toque em ✓ e o descanso começa, com vibração no final e a tela acesa enquanto você treina. Superséries, aquecimento com as anilhas calculadas, e se você fechar o app a sessão não se perde."],
+  "Tocás ✓ y arranca el descanso, con vibración al terminar y la pantalla encendida mientras entrenás. Superseries, calentamiento con los discos calculados, en kilos o en libras, y si cerrás la app la sesión no se pierde.": ["Tap ✓ and the rest timer starts, with a vibration when it ends and the screen kept on while you train. Supersets, warm-ups with the plates worked out for you, in kilos or pounds, and if you close the app the session isn't lost.", "Você toca ✓ e o descanso começa, com vibração no final e a tela acesa enquanto treina. Superséries, aquecimento com as anilhas já calculadas, em quilos ou libras, e se você fechar o app a sessão não se perde."],
   "Te dice cuándo subir el peso": ["Tells you when to add weight", "Avisa quando aumentar a carga"],
   "Mapa del cuerpo": ["Body map", "Mapa do corpo"],
-  "Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Más tu constancia de los últimos 6 meses. Fotos y medidas de progreso&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["This week's sets per muscle, front and back, with the ideal range for growth. Plus your consistency over the last 6 months. Progress photos and measurements&nbsp;<span class=\"tag-pro\">Premium<\/span>", "As séries da semana por músculo, de frente e de costas, com a faixa ideal para crescer. Mais sua constância dos últimos 6 meses. Fotos e medidas de progresso&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Las series de la semana por músculo, de frente y de espalda, con el rango ideal para crecer. Tu constancia de los últimos 6 meses, tu racha de semanas y el progreso de cada ejercicio. Fotos y medidas de progreso&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Your weekly sets per muscle, front and back, with the ideal range for growth. Your consistency over the last 6 months, your weekly streak and the progress of every exercise. Progress photos and measurements&nbsp;<span class=\"tag-pro\">Premium<\/span>", "As séries da semana por músculo, de frente e de costas, com a faixa ideal para crescer. Sua constância dos últimos 6 meses, sua sequência de semanas e o progresso de cada exercício. Fotos e medidas de progresso&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
   "Nutrición que cierra": ["Nutrition that adds up", "Nutrição que fecha a conta"],
-  "Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas por código de barras o con una foto de la etiqueta o del plato, plan de 7 días y ajuste semanal de calorías&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Calories and macros worked out for your goal, plus your body-weight trend. Food logging by barcode or with a photo of the label or the plate, a 7-day meal plan and weekly calorie adjustments&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Calorias e macros calculados para o seu objetivo, e seu peso com tendência. Registro de refeições por código de barras ou com foto do rótulo ou do prato, plano de 7 dias e ajuste semanal de calorias&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Calorías y macros calculados para tu objetivo, y tu peso con tendencia. Registro de comidas con código de barras, buscador de productos o una foto de la etiqueta (revisás lo que leyó antes de guardarlo) o del plato; tus productos quedan guardados para la próxima. Plan de 7 días y ajuste semanal de calorías&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Calories and macros worked out for your goal, plus your weight trend. Food logging with barcode scanning, product search or a photo of the nutrition label (you check what it read before saving it) or of your plate; your products stay saved for next time. 7-day meal plan and weekly calorie adjustment&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Calorias e macros calculados para o seu objetivo, e seu peso com tendência. Registro de refeições com código de barras, busca de produtos ou uma foto da tabela nutricional (você confere o que ele leu antes de salvar) ou do prato; seus produtos ficam salvos para a próxima. Plano de 7 dias e ajuste semanal de calorias&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
   "Biblioteca de 37 ejercicios": ["Library of 37 exercises", "Biblioteca de 37 exercícios"],
   "Técnica paso a paso, errores comunes, variaciones, RPE sugerido y un video de cada uno. Buscás por nombre o por músculo. Tu propio video o GIF por ejercicio&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Step-by-step technique, common mistakes, variations, suggested RPE and a video for each one. Search by name or by muscle. Your own video or GIF per exercise&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Técnica passo a passo, erros comuns, variações, RPE sugerido e um vídeo de cada um. Busque por nome ou por músculo. Seu próprio vídeo ou GIF por exercício&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
   "Cardio sin vueltas": ["Cardio, no fuss", "Cardio sem complicação"],
-  "26 deportes con cronómetro y calorías según tu peso y la intensidad. Queda aparte del entreno de pesas y suma en el balance del día.": ["26 sports with a timer and calories based on your weight and intensity. Kept separate from your lifting, but counted in your daily balance.", "26 esportes com cronômetro e calorias de acordo com seu peso e a intensidade. Fica separado da musculação e entra no balanço do dia."],
+  "26 deportes con cronómetro y calorías según tu peso y la intensidad, con distancia, ritmo, récords y meta semanal. Planes para empezar a correr o llegar a 10 km con una voz que te guía (la primera semana gratis; el resto, con Premium), y tus salidas del reloj se importan desde un archivo GPX o TCX.": ["26 sports with a stopwatch and calories based on your weight and intensity, plus distance, pace, records and a weekly goal. Plans to start running or reach 10 km with a voice that guides you (first week free; the rest with Premium), and you can import your watch's workouts from a GPX or TCX file.", "26 esportes com cronômetro e calorias conforme seu peso e a intensidade, com distância, ritmo, recordes e meta semanal. Planos para começar a correr ou chegar aos 10 km com uma voz que te guia (a primeira semana grátis; o resto, com Premium), e seus treinos do relógio entram por um arquivo GPX ou TCX."],
   "Tu historial, a salvo": ["Your history, safe", "Seu histórico, seguro"],
   "Sin cuenta ni contraseña: guardás una copia en tu propio Google Drive o en un archivo, y la restaurás en otro teléfono en un toque.": ["No account, no password: save a backup to your own Google Drive or to a file, and restore it on another phone in one tap.", "Sem conta nem senha: você salva um backup no seu próprio Google Drive ou em um arquivo e restaura em outro celular com um toque."],
   "Te recuerda entrenar": ["Reminds you to train", "Lembra você de treinar"],
@@ -1848,13 +1867,13 @@
   "Mirá qué músculos trabajaste": ["See which muscles you worked", "Veja quais músculos você treinou"],
   "Cada serie suma al músculo que entrena. Tocás uno y te dice cuántas series lleva en la semana y si está en el rango ideal para crecer.": ["Every set counts toward the muscle it trains. Tap one and it tells you how many sets it got this week and whether that's in the ideal range for growth.", "Cada série conta para o músculo que ela treina. Toque em um e ele mostra quantas séries teve na semana e se está na faixa ideal para crescer."],
   "Frente y espalda, 13 grupos musculares": ["Front and back, 13 muscle groups", "Frente e costas, 13 grupos musculares"],
-  "Colores por rango: poco, medio, ideal, mucho": ["Colors by range: low, medium, ideal, high", "Cores por faixa: pouco, médio, ideal, muito"],
+  "Colores por rango: poco, medio, ideal, alto": ["Colors by range: low, medium, ideal, high", "Cores por faixa: pouco, médio, ideal, alto"],
   "Constancia de los últimos 6 meses": ["Consistency over the last 6 months", "Constância dos últimos 6 meses"],
   "Stats mensuales y anuales con Premium": ["Monthly and yearly stats with Premium", "Estatísticas mensais e anuais com Premium"],
   "Nutrición con números, no a ojo": ["Nutrition by the numbers, not by eye", "Nutrição com números, não no olho"],
   "Gratis: tus calorías y macros calculados para tu objetivo, con la estrategia explicada. Con Premium registrás lo que comés y ves el balance del día, contando el cardio.": ["Free: your calories and macros worked out for your goal, with the strategy explained. With Premium you log what you eat and see the day's balance, cardio included.", "Grátis: suas calorias e macros calculados para o seu objetivo, com a estratégia explicada. Com Premium você registra o que come e vê o balanço do dia, contando o cardio."],
   "Macros recomendados según tu objetivo": ["Recommended macros for your goal", "Macros recomendados para o seu objetivo"],
-  "Código de barras o foto con IA (Premium)": ["Barcode or AI photo (Premium)", "Código de barras ou foto com IA (Premium)"],
+  "Código de barras, buscador o foto con IA (Premium)": ["Barcode, product search or AI photo (Premium)", "Código de barras, busca ou foto com IA (Premium)"],
   "Plan de 7 días con 5 comidas (Premium)": ["7-day plan with 5 meals (Premium)", "Plano de 7 dias com 5 refeições (Premium)"],
   "Ajuste semanal según tu peso real (Premium)": ["Weekly adjustment based on your real weight (Premium)", "Ajuste semanal de acordo com seu peso real (Premium)"],
   "Gratis para siempre.<br>Premium si querés más.": ["Free forever.<br>Premium if you want more.", "Grátis para sempre.<br>Premium se quiser mais."],
@@ -1865,14 +1884,15 @@
   "Para siempre. Sin tarjeta.": ["Forever. No card.", "Para sempre. Sem cartão."],
   "Rutina automática según nivel, días y objetivo": ["Automatic routine by level, days and goal", "Rotina automática por nível, dias e objetivo"],
   "Registro de series con descanso, superseries y calentamiento": ["Set logging with rest timer, supersets and warm-ups", "Registro de séries com descanso, superséries e aquecimento"],
-  "Avisos de progresión, récords y 1RM estimado": ["Progression alerts, PRs and estimated 1RM", "Avisos de progressão, recordes e 1RM estimado"],
+  "Peso sugerido para hoy, récords y 1RM estimado": ["Suggested weight for today, records and estimated 1RM", "Peso sugerido para hoje, recordes e 1RM estimado"],
   "Biblioteca de 37 ejercicios con video": ["Library of 37 exercises with video", "Biblioteca de 37 exercícios com vídeo"],
-  "Cardio: 26 deportes con kcal automáticas": ["Cardio: 26 sports with automatic kcal", "Cardio: 26 esportes com kcal automáticas"],
+  "Cardio: 26 deportes con ritmo, récords e importación GPX/TCX": ["Cardio: 26 sports with pace, records and GPX/TCX import", "Cardio: 26 esportes com ritmo, recordes e importação GPX/TCX"],
+  "La primera semana de los planes de running con voz": ["The first week of the voice-guided running plans", "A primeira semana dos planos de corrida com voz"],
   "Stats semanales, mapa del cuerpo y constancia": ["Weekly stats, body map and consistency", "Estatísticas semanais, mapa do corpo e constância"],
   "Calorías y macros recomendados para tu objetivo": ["Recommended calories and macros for your goal", "Calorias e macros recomendados para o seu objetivo"],
   "Peso corporal con tendencia": ["Body weight with trend", "Peso corporal com tendência"],
   "Copia en Google Drive o en archivo · rutina en PDF": ["Backup to Google Drive or a file · routine as PDF", "Backup no Google Drive ou em arquivo · rotina em PDF"],
-  "Recordatorio diario · tema claro u oscuro": ["Daily reminder · light or dark theme", "Lembrete diário · tema claro ou escuro"],
+  "Recordatorio diario · tema claro u oscuro · kilos o libras": ["Daily reminder · light or dark theme · kilos or pounds", "Lembrete diário · tema claro ou escuro · quilos ou libras"],
   "Español + inglés": ["Spanish + English", "Espanhol + inglês"],
   "Sin registro de comidas ni escáner": ["No food logging or scanner", "Sem registro de refeições nem scanner"],
   "Sin funciones de IA": ["No AI features", "Sem funções de IA"],
@@ -1883,11 +1903,13 @@
   "Probalo sin tarjeta · después planes de 1 a 12 meses": ["Try it with no card · then plans from 1 to 12 months", "Teste sem cartão · depois planos de 1 a 12 meses"],
   "Prueba gratis": ["Free trial", "Teste grátis"],
   "<b>Todo lo del plan Free<\/b>, más:": ["<b>Everything in Free<\/b>, plus:", "<b>Tudo do plano Free<\/b>, mais:"],
-  "Registro de comidas: código de barras o foto de la etiqueta o del plato con IA": ["Food logging: barcode, or an AI photo of the label or the plate", "Registro de refeições: código de barras ou foto do rótulo ou do prato com IA"],
+  "Registro de comidas: código de barras, buscador de productos o foto de la etiqueta o del plato con IA": ["Food logging: barcode, product search or an AI photo of the label or your plate", "Registro de refeições: código de barras, busca de produtos ou foto da tabela ou do prato com IA"],
+  "Tus productos escaneados guardados para la próxima, aun sin conexión": ["Your scanned products saved for next time, even offline", "Seus produtos escaneados salvos para a próxima, mesmo sem conexão"],
   "Plan de comidas de 7 días con macros": ["7-day meal plan with macros", "Plano de refeições de 7 dias com macros"],
   "Ajuste semanal de calorías según tu peso real": ["Weekly calorie adjustment based on your real weight", "Ajuste semanal de calorias de acordo com seu peso real"],
   "Rutinas propias ilimitadas + <b>importar desde PDF<\/b> con IA": ["Unlimited custom routines + <b>import from PDF<\/b> with AI", "Rotinas próprias ilimitadas + <b>importar de PDF<\/b> com IA"],
   "Fotos de progreso y medidas": ["Progress photos and measurements", "Fotos de progresso e medidas"],
+  "Planes de running completos (5 y 10 km) con voz que te guía": ["Full running plans (5K and 10K) with voice guidance", "Planos de corrida completos (5 e 10 km) com voz que te guia"],
   "Stats mensuales, trimestrales y anuales": ["Monthly, quarterly and yearly stats", "Estatísticas mensais, trimestrais e anuais"],
   "Oracle IA · análisis personalizado de tu progreso": ["Oracle AI · personalized analysis of your progress", "Oracle IA · análise personalizada do seu progresso"],
   "Tu propio video o GIF por ejercicio": ["Your own video or GIF per exercise", "Seu próprio vídeo ou GIF por exercício"],
@@ -1897,15 +1919,19 @@
   "Comprar Premium": ["Buy Premium", "Comprar Premium"],
   "Plan Coach · Para entrenadores": ["Coach plan · For coaches", "Plano Coach · Para treinadores"],
   "¿Sos entrenador?<br>Tus alumnos, una sola pantalla.": ["Are you a coach?<br>All your clients, one screen.", "Você é treinador?<br>Seus alunos, uma só tela."],
-  "Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Incluye todo Premium.": ["Forget spreadsheets and WhatsApp groups. Build each client's routine, send them a link and see how they train: what they lifted, how many reps they did and how they finished the week. Includes all of Premium.", "Esqueça as planilhas e os grupos de WhatsApp. Você monta a rotina de cada aluno, manda um link e vê como ele treina: que carga usou, quantas repetições fez e como chegou ao fim da semana. Inclui todo o Premium."],
+  "Olvidate de los Excels y los grupos de WhatsApp. Armás la rutina de cada alumno, le mandás un link y ves cómo entrena: qué cargó, cuántas reps hizo y cómo llegó a fin de semana. Le respondés el control, llevás los cobros y la app te avisa a quién revisar. Incluye todo Premium.": ["Forget spreadsheets and WhatsApp groups. Build each client's routine, send them a link and see how they train: what they lifted, how many reps they did and how they finished the week. Reply to their check-in, keep track of payments and let the app tell you who needs a look. Includes all of Premium.", "Esqueça as planilhas e os grupos de WhatsApp. Você monta a rotina de cada aluno, manda um link e vê como ele treina: que carga usou, quantas reps fez e como chegou ao fim da semana. Você responde o check-in, controla as cobranças e o app avisa quem revisar. Inclui todo o Premium."],
   "Link único + QR por alumno · lo abre sin instalar nada": ["Unique link + QR per client · opens with nothing to install", "Link único + QR por aluno · abre sem instalar nada"],
   "El alumno registra kg y reps de cada serie": ["Clients log kg and reps for every set", "O aluno registra kg e repetições de cada série"],
   "Flechas de progreso por ejercicio, sesión a sesión": ["Progress arrows per exercise, session to session", "Setas de progresso por exercício, sessão a sessão"],
-  "Control semanal: peso, energía y un mensaje para vos": ["Weekly check-in: weight, energy and a message for you", "Check-in semanal: peso, energia e uma mensagem para você"],
-  "Aviso de controles nuevos y de cambios en la rutina": ["Alerts for new check-ins and routine changes", "Aviso de novos check-ins e de mudanças na rotina"],
+  "Control semanal de 6 preguntas, y tu respuesta le llega al alumno": ["6-question weekly check-in, and your reply reaches the client", "Check-in semanal de 6 perguntas, e sua resposta chega ao aluno"],
+  "Alertas de quién no entrena, no carga o se estancó, y resumen del día": ["Alerts for who isn't training, logging or progressing, plus a daily summary", "Alertas de quem não treina, não registra ou estagnou, e resumo do dia"],
+  "La app arma la base de la rutina según la ficha del alumno": ["The app builds a starting routine from the client's intake form", "O app monta a base da rotina pela ficha do aluno"],
+  "Anotador de cobros con recordatorio por WhatsApp": ["Payment tracker with WhatsApp reminders", "Controle de cobranças com lembrete pelo WhatsApp"],
+  "Metas de comida por alumno, carpeta de fotos y avisos a todos": ["Nutrition targets per client, a photo folder and announcements to everyone", "Metas de alimentação por aluno, pasta de fotos e avisos para todos"],
+  "Tu logo y tu color en el link del alumno · tu panel en el celular y en la compu": ["Your logo and color on the client's link · your dashboard on phone and computer", "Seu logo e sua cor no link do aluno · seu painel no celular e no computador"],
   "Sin costo extra por alumno": ["No extra cost per client", "Sem custo extra por aluno"],
   "Comprar modo Coach": ["Buy Coach mode", "Comprar modo Coach"],
-  "o probalo gratis primero →": ["or try it free first →", "ou teste grátis primeiro →"],
+  "o probalo gratis 10 días →": ["or try it free for 10 days →", "ou teste grátis por 10 dias →"],
   "Privacidad": ["Privacy", "Privacidade"],
   "Tus datos son tuyos.<br>Punto.": ["Your data is yours.<br>Period.", "Seus dados são seus.<br>Ponto."],
   "En tu teléfono": ["On your phone", "No seu celular"],
@@ -1924,6 +1950,10 @@
   "App para iPhone y iPad. Mientras tanto, la web app anda en Safari: Compartir → Agregar a inicio.": ["An app for iPhone and iPad. In the meantime, the web app works in Safari: Share → Add to Home Screen.", "App para iPhone e iPad. Enquanto isso, o web app funciona no Safari: Compartilhar → Adicionar à Tela de Início."],
   "Lo que te estás preguntando": ["What you're probably wondering", "O que você deve estar se perguntando"],
   "¿Es realmente gratis?": ["Is it really free?", "É grátis mesmo?"],
+  "¿Cómo sabe cuánto peso tengo que poner?": ["How does it know how much weight I should use?", "Como ele sabe quanto peso eu devo usar?"],
+  "Usa la doble progresión: si completaste el tope del rango de reps en todas las series, te propone subir; si no, repetir el peso y sumar reps. El salto es uno que existe en el gimnasio (2,5 kg en la barra, la mancuerna siguiente o una placa en las máquinas) y, con pesos livianos, primero te pide 2 reps más. Si quedaste debajo del rango te sugiere bajar un escalón, y si volvés después de más de 4 semanas, arrancar con un 90 %. Si tu rutina tiene un día pesado y uno liviano, cada día se compara consigo mismo. Siempre es una sugerencia: el peso lo elegís vos.": ["It uses double progression: if you hit the top of the rep range on every set, it suggests going up; if not, keep the weight and add reps. The jump is one that exists in the gym (2.5 kg on the bar, the next dumbbell or one more plate on machines) and, with light weights, it first asks for 2 more reps. If you fell below the range it suggests dropping one step, and if you're back after more than 4 weeks, starting at about 90%. If your routine has a heavy day and a light day, each day is compared with itself. It's always a suggestion: you choose the weight.", "Ele usa a dupla progressão: se você chegou ao topo da faixa de reps em todas as séries, sugere subir; se não, manter o peso e somar reps. O salto é um que existe na academia (2,5 kg na barra, o próximo halter ou uma placa a mais nas máquinas) e, com pesos leves, primeiro pede 2 reps a mais. Se você ficou abaixo da faixa, sugere descer um degrau, e se voltar depois de mais de 4 semanas, começar com uns 90 %. Se sua rotina tem um dia pesado e um leve, cada dia é comparado consigo mesmo. É sempre uma sugestão: o peso quem escolhe é você."],
+  "¿Puedo usar libras en vez de kilos?": ["Can I use pounds instead of kilos?", "Posso usar libras em vez de quilos?"],
+  "Sí. En <b>Perfil<\/b> elegís kilos o libras. Al cambiar, la app convierte todo lo que ya anotaste, y si volvés a la unidad de antes los números quedan exactos. Las sugerencias de peso suben de a 5 lb en la barra. Tu peso corporal sigue en kilos.": ["Yes. In <b>Profile<\/b> you choose kilos or pounds. When you switch, the app converts everything you've already logged, and if you switch back the numbers stay exact. Weight suggestions go up 5 lb at a time on the bar. Your body weight stays in kilos.", "Sim. No <b>Perfil<\/b> você escolhe quilos ou libras. Ao trocar, o app converte tudo o que você já anotou, e se voltar à unidade anterior os números ficam exatos. As sugestões de peso sobem de 5 em 5 lb na barra. Seu peso corporal continua em quilos."],
   "Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo.": ["Yes. The Free version includes the automatic routine, set logging with the rest timer, progression alerts, the library, cardio, weekly stats with the body map, and your recommended calories and macros. Forever, no card. Premium adds food logging with the scanner and AI photos, the meal plan, Oracle AI, importing routines from PDF and more: try it free for 7 days, then buy whatever period you want (1 to 12 months). No automatic subscription: nothing renews or gets charged on its own.", "Sim. A versão Free inclui a rotina automática, o registro de séries com descanso, os avisos de progressão, a biblioteca, o cardio, as estatísticas semanais com o mapa do corpo e suas calorias e macros recomendados. Para sempre, sem cartão. O Premium acrescenta o registro de refeições com scanner e fotos com IA, o plano de refeições, o Oracle IA, importar rotinas de PDF e mais: você testa grátis por 7 dias e depois compra o período que quiser (1 a 12 meses). Sem assinatura automática: nada se renova nem é cobrado sozinho."],
   "¿Necesito Play Store o App Store?": ["Do I need the Play Store or the App Store?", "Preciso da Play Store ou da App Store?"],
   "¿Funciona offline?": ["Does it work offline?", "Funciona offline?"],
@@ -1933,13 +1963,13 @@
   "¿Necesito crear una cuenta?": ["Do I need to create an account?", "Preciso criar uma conta?"],
   "No. BERSERKERMOD <b>no tiene cuentas<\/b>: no te pedimos email ni contraseña, y todo se guarda en tu teléfono. Para cambiar de teléfono o tener una copia, en <b>Perfil<\/b> tocás <b>Guardar copia en Drive<\/b> (va a tu propio Google Drive) o <b>Exportar Datos<\/b> (descarga un archivo), y del otro lado la restaurás con <b>Restaurar desde Drive<\/b> o <b>Importar Datos<\/b>.": ["No. BERSERKERMOD <b>has no accounts<\/b>: we don't ask for an email or a password, and everything is stored on your phone. To switch phones or keep a backup, go to <b>Profile<\/b> and tap <b>Back up to Drive<\/b> (it goes to your own Google Drive) or <b>Export Data<\/b> (downloads a file), then restore it on the other phone with <b>Restore from Drive<\/b> or <b>Import Data<\/b>.", "Não. O BERSERKERMOD <b>não tem contas<\/b>: não pedimos e-mail nem senha, e tudo fica salvo no seu celular. Para trocar de celular ou ter um backup, em <b>Perfil<\/b> toque em <b>Salvar backup no Drive<\/b> (vai para o seu próprio Google Drive) ou <b>Exportar Dados<\/b> (baixa um arquivo), e no outro celular restaure com <b>Restaurar do Drive<\/b> ou <b>Importar Dados<\/b>."],
   "¿Mis datos van a un servidor?": ["Does my data go to a server?", "Meus dados vão para um servidor?"],
-  "<b>Tus entrenamientos, comidas y stats viven en tu teléfono<\/b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive<\/b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach<\/b>, la rutina que compartís, los kg y reps que registrás y el control semanal se guardan en nuestro servidor para que vos y tu entrenador los vean; las <b>funciones de IA<\/b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; y si activás el <b>recordatorio<\/b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href=\"privacy.html\">política de privacidad<\/a>.": ["<b>Your workouts, meals and stats live on your phone<\/b> and aren't uploaded to our server. The exceptions are features you turn on yourself: the <b>Drive backup<\/b> goes to your own Google account, not ours; in <b>Coach mode<\/b>, the routine you share, the kg and reps you log and the weekly check-in are stored on our server so you and your coach can both see them; the <b>AI features<\/b> (Oracle, PDF import and photos of labels or plates) process what you send and don't keep it; and if you turn on the <b>reminder<\/b>, we store your time zone so we can remind you at your local time. We never sell or share data. Full details in the <a href=\"privacy.html\">privacy policy<\/a> (in Spanish).", "<b>Seus treinos, refeições e estatísticas ficam no seu celular<\/b> e não são enviados ao nosso servidor. As exceções são funções que você mesmo ativa: o <b>backup no Drive<\/b> vai para a sua própria conta do Google, não para a nossa; no <b>modo Coach<\/b>, a rotina que você compartilha, os kg e repetições que registra e o check-in semanal ficam no nosso servidor para que você e seu treinador possam ver; as <b>funções de IA<\/b> (Oracle, importar PDF e as fotos de rótulos ou pratos) processam o que você envia e não guardam nada; e se você ativar o <b>lembrete<\/b>, guardamos seu fuso horário para avisar no seu horário. Nunca vendemos nem compartilhamos dados. Detalhes completos na <a href=\"privacy.html\">política de privacidade<\/a> (em espanhol)."],
+  "<b>Tus entrenamientos, comidas y stats viven en tu teléfono<\/b> y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la <b>copia en Drive<\/b> va a tu propia cuenta de Google, no a la nuestra; en el <b>modo Coach<\/b>, la rutina que compartís, los kg y reps que registrás, el control semanal y las respuestas de tu entrenador se guardan en nuestro servidor para que los vean los dos; las <b>funciones de IA<\/b> (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; la <b>búsqueda de productos por nombre<\/b> pasa por nuestro servidor sin guardar quién buscó; y si activás el <b>recordatorio<\/b>, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la <a href=\"privacy.html\">política de privacidad<\/a>.": ["<b>Your workouts, meals and stats live on your phone<\/b> and aren't uploaded to our server. The exceptions are features you turn on: the <b>Drive backup<\/b> goes to your own Google account, not ours; in <b>Coach mode<\/b>, the routine you share, the kg and reps you log, the weekly check-in and your coach's replies are stored on our server so both of you can see them; the <b>AI features<\/b> (Oracle, PDF import and label or plate photos) process what you send and don't keep it; <b>searching products by name<\/b> goes through our server without recording who searched; and if you turn on the <b>reminder<\/b>, we store your time zone to notify you at your local time. We never sell or share data. Full details in the <a href=\"privacy.html\">privacy policy<\/a>.", "<b>Seus treinos, refeições e estatísticas ficam no seu celular<\/b> e não vão para o nosso servidor. As exceções são funções que você ativa: a <b>cópia no Drive<\/b> vai para a sua própria conta Google, não para a nossa; no <b>modo Coach<\/b>, a rotina que você compartilha, os kg e reps que registra, o check-in semanal e as respostas do seu treinador ficam no nosso servidor para que os dois vejam; as <b>funções de IA<\/b> (Oracle, importar PDF e as fotos de tabelas ou pratos) processam o que você envia e não guardam; a <b>busca de produtos por nome<\/b> passa pelo nosso servidor sem registrar quem buscou; e se você ativar o <b>lembrete<\/b>, guardamos seu fuso horário para avisar no seu horário. Nunca vendemos nem compartilhamos dados. Detalhes completos na <a href=\"privacy.html\">política de privacidade<\/a>."],
   "¿Va a tener publicidad?": ["Will it have ads?", "Vai ter anúncios?"],
   "<b>No.<\/b> Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional: comprás el período que quieras y no se renueva solo.": ["<b>No.<\/b> Not in Free, not in Premium. Neither Google Play nor the App Store makes us show ads — that's our call, and the answer is no. If the app is good, there's no need to interrupt you with banners. Premium is optional: you buy whatever period you want and it doesn't renew on its own.", "<b>Não.<\/b> Nem no Free, nem no Premium. Nem o Google Play nem a App Store nos obrigam a mostrar anúncios — essa decisão é nossa, e a resposta é não. Se o app é bom, não precisa interromper você com banners. O Premium é opcional: você compra o período que quiser e ele não se renova sozinho."],
   "¿Qué pasa con mis datos si borro la app?": ["What happens to my data if I delete the app?", "O que acontece com meus dados se eu apagar o app?"],
   "Tus datos viven en el navegador de tu teléfono: si desinstalás la app o borrás los datos del navegador, se pierden. Por eso conviene tener una copia — <b>Guardar copia en Drive<\/b> o <b>Exportar Datos<\/b> en Perfil — y la app te lo recuerda cada tanto. Las fotos de progreso quedan solo en el teléfono y no entran en la copia.": ["Your data lives in your phone's browser: if you uninstall the app or clear the browser data, it's gone. That's why it's worth keeping a backup — <b>Back up to Drive<\/b> or <b>Export Data<\/b> in Profile — and the app reminds you every so often. Progress photos stay on your phone only and aren't included in the backup.", "Seus dados ficam no navegador do seu celular: se você desinstalar o app ou apagar os dados do navegador, eles se perdem. Por isso vale a pena ter um backup — <b>Salvar backup no Drive<\/b> ou <b>Exportar Dados<\/b> no Perfil — e o app lembra você de vez em quando. As fotos de progresso ficam só no celular e não entram no backup."],
   "¿Hay versión para entrenadores con alumnos?": ["Is there a version for coaches with clients?", "Tem versão para treinadores com alunos?"],
-  "Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal con su peso, su energía y un mensaje. Vos ves sus sesiones con flechas de progreso y un aviso cuando hay algo nuevo. Sin costo extra por alumno.": ["Yes, the Coach plan: built for coaches, and it includes all of Premium. Build each client's routine and send them a link + QR; they open it with nothing to install. Your client logs kg and reps for every set and sends you a weekly check-in with their weight, energy and a message. You see their sessions with progress arrows and get an alert when there's something new. No extra cost per client.", "Sim, o plano Coach: pensado para treinadores, e inclui todo o Premium. Você monta a rotina de cada aluno e manda um link + QR; ele abre sem instalar nada. O aluno registra kg e repetições de cada série e manda um check-in semanal com o peso, a energia e uma mensagem. Você vê as sessões com setas de progresso e recebe um aviso quando há algo novo. Sem custo extra por aluno."],
+  "Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno (o dejás que la app arme la base según su ficha) y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal que podés responder. Vos ves sus sesiones con flechas de progreso, alertas de quién necesita una revisión y un anotador de cobros. Lo probás gratis 10 días y no hay costo extra por alumno.": ["Yes, the Coach plan: built for coaches, and it includes all of Premium. Build each client's routine (or let the app build a starting point from their intake form) and send them a link + QR; they open it with nothing to install. Your client logs kg and reps for every set and sends you a weekly check-in you can reply to. You see their sessions with progress arrows, alerts for who needs a look and a payment tracker. Try it free for 10 days, with no extra cost per client.", "Sim, o plano Coach: pensado para treinadores, e inclui todo o Premium. Você monta a rotina de cada aluno (ou deixa o app montar a base pela ficha dele) e manda um link + QR; ele abre sem instalar nada. O aluno registra kg e reps de cada série e te manda um check-in semanal que você pode responder. Você vê as sessões com setas de progresso, alertas de quem precisa de uma revisão e um controle de cobranças. Teste grátis por 10 dias, sem custo extra por aluno."],
   "Dejá de buscar.<br><span class=\"accent\">Empezá a entrenar.<\/span>": ["Stop searching.<br><span class=\"accent\">Start training.<\/span>", "Pare de procurar.<br><span class=\"accent\">Comece a treinar.<\/span>"],
   "Mientras leés esto, otros ya van por el día 3 de su racha. Tu próximo PR está a un toque.": ["While you read this, others are already on day 3 of their streak. Your next PR is one tap away.", "Enquanto você lê isto, outros já estão no dia 3 da sequência. Seu próximo recorde está a um toque."],
   "Abrir BERSERKERMOD →": ["Open BERSERKERMOD →", "Abrir BERSERKERMOD →"],
@@ -1949,10 +1979,10 @@
   "Términos de uso": ["Terms of use (in Spanish)", "Termos de uso (em espanhol)"],
   "Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy": ["BERSERKERMOD home screen: weekly streak, sessions, volume, cardio and today's workout", "Início do BERSERKERMOD: sequência da semana, sessões, volume, cardio e o treino de hoje"],
   "Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27": ["Bench press logging: two sets checked off, today's suggested load and the rest timer at 1:27", "Registro do supino: duas séries marcadas, a carga sugerida para hoje e o descanso em 1:27"],
-  "Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 48,75 kg": ["Home screen with today's workout and a pending progression: overhead press from 45 to 48.75 kg", "Início com o treino de hoje e uma progressão pendente: desenvolvimento militar de 45 para 48,75 kg"],
+  "Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 47,5 kg": ["Home screen with today's workout and a pending progression: overhead press from 45 to 47.5 kg", "Início com o treino de hoje e uma progressão pendente: desenvolvimento militar de 45 para 47,5 kg"],
   "Mapa del cuerpo de frente y de espalda con las series de la semana por músculo": ["Front and back body map with this week's sets per muscle", "Mapa do corpo de frente e de costas com as séries da semana por músculo"],
   "Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico": ["Today's nutrition: calories and macros against the target, logged meals and calorie balance", "Alimentação do dia: calorias e macros contra a meta, refeições registradas e balanço calórico"],
-  "Lo que ve el coach de una alumna: control semanal con peso y energía, y sus sesiones con kg, reps y flechas de progreso": ["What the coach sees for a client: weekly check-in with weight and energy, and her sessions with kg, reps and progress arrows", "O que o treinador vê de uma aluna: check-in semanal com peso e energia, e as sessões com kg, repetições e setas de progresso"],
+  "Lo que ve el coach de una alumna: su control semanal con peso y energía, el lugar para responderle y sus sesiones con kg, reps y flechas de progreso": ["What the coach sees for a client: her weekly check-in with weight and energy, the box to reply and her sessions with kg, reps and progress arrows", "O que o treinador vê de uma aluna: o check-in semanal com peso e energia, o espaço para responder e as sessões com kg, repetições e setas de progresso"],
   "BERSERKERMOD inicio": ["BERSERKERMOD home", "BERSERKERMOD início"],
   "Navegación principal": ["Main navigation", "Navegação principal"],
   "Números del producto": ["Product numbers", "Números do produto"],
@@ -1996,7 +2026,7 @@
   "Todo esto es parte del plan Free. Tus calorías se calculan con tu sexo, edad, peso y altura, y desde el perfil cambiás tu objetivo, tus días, tu nivel o tu prioridad cuando quieras.": ["All of this is part of the Free plan. Your calories are calculated from your sex, age, weight and height, and from your profile you can change your goal, days, level or priority anytime.", "Tudo isso faz parte do plano Free. Suas calorias são calculadas com seu sexo, idade, peso e altura, e no perfil você muda objetivo, dias, nível ou prioridade quando quiser."],
   "¿Sirve si soy mujer?": ["Does it work for women?", "Serve para mulheres?"],
   "Sí. Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que los principios son los mismos. Podés priorizar <b>glúteos y piernas<\/b> y activar el <b>registro del período<\/b>, que te avisa si deja de venir. La rutina no cambia según la fase del ciclo: el mejor estudio hasta hoy, de 2026, no encontró ventaja en hacerlo. Todo esto es gratis.": ["Yes. Women gain muscle and strength at the same rate as men relative to where they start, so the principles are the same. You can prioritize <b>glutes and legs<\/b> and turn on the <b>period log<\/b>, which warns you if your period stops coming. Your routine does not change by cycle phase: the best study to date, from 2026, found no advantage in doing so. All of this is free.", "Sim. As mulheres ganham músculo e força na mesma proporção que os homens, então os princípios são os mesmos. Você pode priorizar <b>glúteos e pernas<\/b> e ativar o <b>registro da menstruação<\/b>, que avisa se ela parar de vir. A rotina não muda conforme a fase do ciclo: o melhor estudo até hoje, de 2026, não encontrou vantagem nisso. Tudo isso é grátis."],
-  "Si completaste el rango de reps, te propone la carga de hoy y la cargás con un toque. Detecta récords, estima tu 1RM, te avisa cuando un ejercicio se estanca y cuando tu rendimiento baja. Semana de descarga y volumen ajustados solos&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["Complete the rep range and it suggests today's load, filled in with one tap. It spots records, estimates your 1RM, and warns you when an exercise stalls and when your performance drops. Deload week and volume adjusted for you&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Se você completou a faixa de repetições, ele sugere a carga de hoje e você preenche com um toque. Detecta recordes, estima seu 1RM e avisa quando um exercício estagna e quando seu desempenho cai. Semana de descarga e volume ajustados sozinhos&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
+  "Si completaste el rango de reps, te propone la carga de hoy con pesos que existen: 2,5 kg en la barra, la mancuerna siguiente o una placa en las máquinas. Si quedaste corto o volvés de un parate, te sugiere bajar. Récords, 1RM estimado y aviso cuando un ejercicio se estanca o tu rendimiento baja. Semana de descarga y volumen ajustados solos&nbsp;<span class=\"tag-pro\">Premium<\/span>": ["If you completed the rep range, it suggests today's load using weights that actually exist: 2.5 kg on the bar, the next dumbbell or one more plate on machines. If you fell short or you're coming back from a break, it suggests going lighter. Records, estimated 1RM and an alert when a lift stalls or your performance drops. Deload week and volume adjusted for you&nbsp;<span class=\"tag-pro\">Premium<\/span>", "Se você completou a faixa de reps, ele sugere a carga de hoje com pesos que existem: 2,5 kg na barra, o próximo halter ou uma placa a mais nas máquinas. Se ficou abaixo ou está voltando de uma pausa, sugere baixar. Recordes, 1RM estimado e aviso quando um exercício estagna ou seu rendimento cai. Semana de deload e volume ajustados sozinhos&nbsp;<span class=\"tag-pro\">Premium<\/span>"],
   "Ajuste por rendimiento: detecta la fatiga y te arma la semana de descarga": ["Performance adjustment: spots fatigue and sets up your deload week", "Ajuste por desempenho: detecta a fadiga e monta sua semana de descarga"],
   "📲 Instalar app": ["📲 Install app", "📲 Instalar app"],
   "Tocá «Instalar app» y queda en tu pantalla de inicio como cualquier app: a pantalla completa, sin la barra del navegador y con el recordatorio diario. Funciona en Android y iPhone.": ["Tap “Install app” and it sits on your home screen like any other app: full screen, without the browser bar and with the daily reminder. Works on Android and iPhone.", "Toque em «Instalar app» e ele fica na sua tela inicial como qualquer app: em tela cheia, sem a barra do navegador e com o lembrete diário. Funciona no Android e no iPhone."],
