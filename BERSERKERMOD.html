@@ -2477,7 +2477,7 @@
                 draft_title: "Sesión sin guardar", draft_msg: "Quedó una sesión de entrenamiento libre sin guardar ({ex} ejercicios · {sets} series). ¿Qué querés hacer?", draft_save: "💾 Guardar sesión", draft_continue: "▶ Seguir entrenando", draft_discard: "🗑 Eliminar", draft_discarded: "Sesión descartada",
                 cardio_sel_sport: "SELECCIONAR DEPORTE", cardio_intensity: "INTENSIDAD", cardio_cals_burned: "kcal quemadas",
                 cardio_manual_title: "AGREGAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Agregar", cardio_manual_hint: "¿Te olvidaste de iniciar el cronómetro? Cargá los minutos y calculamos las kcal.", cardio_manual_invalid: "Ingresá los minutos", cardio_other_name: "Nombre del deporte",
-                stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA", stats_week_1: "semana", stats_week_n: "semanas",
+                stats_empty: "Registrá entrenamientos para ver estadísticas", stats_sessions: "SESIONES", stats_series: "SERIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "RACHA", stats_chart_kg: "Peso de trabajo por sesión ({unit})", stats_chart_reps: "Mejor serie por sesión, con tu peso (reps o segundos)", hist_more: "Ver más ({n} anteriores)", stats_week_1: "semana", stats_week_n: "semanas",
                 stats_series_group: "SERIES POR GRUPO MUSCULAR", stats_prog: "PROGRESO POR EJERCICIO", stats_records: "RÉCORDS PERSONALES", stats_max: "MÁX",
                 rel_now: "recién", rel_min: "hace {n}m", rel_hour: "hace {n}h", rel_day: "hace {n}d",
                 hist_summary: "{e} ej. · {s} series",
@@ -2919,7 +2919,7 @@
                 session_merge_title: "You already trained today", session_merge_msg: "We detected another session logged today. Do you want to add these exercises to the previous session, or save it as a separate one?", session_merge_yes: "➕ Add to previous", session_merge_no: "Save separately", draft_title: "Unsaved session", draft_msg: "You have an unsaved free workout ({ex} exercises · {sets} sets). What do you want to do?", draft_save: "💾 Save session", draft_continue: "▶ Keep training", draft_discard: "🗑 Discard", draft_discarded: "Session discarded", session_merged: "✓ Added to today's session",
                 cardio_sel_sport: "SELECT SPORT", cardio_intensity: "INTENSITY", cardio_cals_burned: "kcal burned",
                 cardio_manual_title: "ADD MANUALLY", cardio_manual_min: "Minutes", cardio_manual_add: "Add", cardio_manual_hint: "Forgot to start the timer? Enter the minutes and we'll calc the kcal.", cardio_manual_invalid: "Enter the minutes", cardio_other_name: "Sport name",
-                stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK", stats_week_1: "week", stats_week_n: "weeks",
+                stats_empty: "Log workouts to see stats", stats_sessions: "SESSIONS", stats_series: "SETS", stats_1rm: "EST. 1RM", stats_cardio_cal: "CARDIO CAL", stats_streak: "STREAK", stats_chart_kg: "Working weight per session ({unit})", stats_chart_reps: "Best set per session, bodyweight (reps or seconds)", hist_more: "Show more ({n} older)", stats_week_1: "week", stats_week_n: "weeks",
                 stats_series_group: "SETS BY MUSCLE GROUP", stats_prog: "PROGRESS BY EXERCISE", stats_records: "PERSONAL RECORDS", stats_max: "MAX",
                 rel_now: "just now", rel_min: "{n}m ago", rel_hour: "{n}h ago", rel_day: "{n}d ago",
                 hist_summary: "{e} ex. · {s} sets",
@@ -3362,7 +3362,7 @@
                 draft_title: "Sessão não salva", draft_msg: "Ficou um treino livre não salvo ({ex} exercícios · {sets} séries). O que deseja fazer?", draft_save: "💾 Salvar sessão", draft_continue: "▶ Continuar treinando", draft_discard: "🗑 Descartar", draft_discarded: "Sessão descartada",
                 cardio_sel_sport: "SELECIONAR ESPORTE", cardio_intensity: "INTENSIDADE", cardio_cals_burned: "kcal queimadas",
                 cardio_manual_title: "ADICIONAR MANUAL", cardio_manual_min: "Minutos", cardio_manual_add: "Adicionar", cardio_manual_hint: "Esqueceu de iniciar o cronômetro? Informe os minutos e calculamos as kcal.", cardio_manual_invalid: "Informe os minutos", cardio_other_name: "Nome do esporte",
-                stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA", stats_week_1: "semana", stats_week_n: "semanas",
+                stats_empty: "Registre treinos para ver as estatísticas", stats_sessions: "SESSÕES", stats_series: "SÉRIES", stats_1rm: "1RM EST.", stats_cardio_cal: "CARDIO CAL", stats_streak: "SEQUÊNCIA", stats_chart_kg: "Peso de trabalho por sessão ({unit})", stats_chart_reps: "Melhor série por sessão, com seu peso (reps ou segundos)", hist_more: "Ver mais ({n} anteriores)", stats_week_1: "semana", stats_week_n: "semanas",
                 stats_series_group: "SÉRIES POR GRUPO MUSCULAR", stats_prog: "PROGRESSO POR EXERCÍCIO", stats_records: "RECORDES PESSOAIS", stats_max: "MÁX",
                 rel_now: "agora", rel_min: "há {n}m", rel_hour: "há {n}h", rel_day: "há {n}d",
                 hist_summary: "{e} ex. · {s} séries",
@@ -11635,12 +11635,15 @@
             // nunca veía su gráfico.
             const dc = h('div', { className: 'card fade-in' });
             dc.appendChild(h('p', { className: 'label' }, t('stats_prog')));
-            const exStats = {}; // ejercicio → { n: sesiones con ese ejercicio, max: kg máx, grp }
+            // ejercicio → { n: sesiones, max: kg máx, grp, bw: siempre con su peso (0 kg) }
+            const exStats = {};
             state.sessions.forEach(s => (s.exercises || []).forEach(e => {
-                const kgs = (e.sets || []).map(st => st.kg || 0);
-                if (!kgs.some(k => k > 0)) return; // peso corporal: no hay curva de kg
-                const r = exStats[e.exercise] || (exStats[e.exercise] = { n: 0, max: 0, grp: getMuscleGroup(e.exercise) });
+                const sets = e.sets || [];
+                if (!sets.some(st => (parseInt(st.reps, 10) || 0) > 0)) return;
+                const kgs = sets.map(st => parseFloat(st.kg) || 0);
+                const r = exStats[e.exercise] || (exStats[e.exercise] = { n: 0, max: 0, grp: getMuscleGroup(e.exercise), bw: true });
                 r.n++; r.max = Math.max(r.max, ...kgs);
+                if (kgs.some(k => k > 0)) r.bw = false;
             }));
             const GROUP_ORDER = ['Pecho', 'Espalda', 'Piernas', 'Brazos', 'Core'];
             const rank = g => { const i = GROUP_ORDER.indexOf(g); return i < 0 ? 99 : i; };
@@ -11651,7 +11654,7 @@
                 const pills = h('div', { className: 'pills', style: { marginBottom: '10px' } });
                 groups.forEach(g => pills.appendChild(h('button', {
                     className: 'pill' + (state.statsGroup === g ? ' active' : ''), style: { fontSize: '10px' },
-                    onclick: () => { state.statsGroup = g; state.statsEx = ''; renderStats(); }
+                    onclick: () => { state.statsGroup = g; state.statsEx = ''; state.statsDay = ''; renderStats(); }
                 }, g.toUpperCase())));
                 dc.appendChild(pills);
 
@@ -11659,26 +11662,42 @@
                 // compuesto: press de banca antes que aperturas).
                 const allEx = Object.keys(exStats).filter(n => exStats[n].grp === state.statsGroup)
                     .sort((x, y) => exStats[y].n - exStats[x].n || exStats[y].max - exStats[x].max || x.localeCompare(y));
-                if (!allEx.includes(state.statsEx)) state.statsEx = allEx[0] || '';
+                if (!allEx.includes(state.statsEx)) { state.statsEx = allEx[0] || ''; state.statsDay = ''; }
 
                 const sel = h('select', {
                     className: 'input', style: { padding: '8px 12px', fontSize: '12px', marginBottom: '12px' },
-                    onchange: e => { state.statsEx = e.target.value; renderStats(); }
+                    onchange: e => { state.statsEx = e.target.value; state.statsDay = ''; renderStats(); }
                 });
                 allEx.forEach(ex => { const o = h('option', { value: ex }, ex); if (ex === state.statsEx) o.selected = true; sel.appendChild(o); });
                 dc.appendChild(sel);
 
-                const data = state.sessions.filter(s => (s.exercises || []).some(e => e.exercise === state.statsEx))
+                // Una fila por sesión: peso de trabajo (el más repetido: no manda un tipeo) y mejor serie en reps
+                const info = exStats[state.statsEx] || { bw: false };
+                const rowsAll = state.sessions.filter(s => (s.exercises || []).some(e => e.exercise === state.statsEx))
                     .sort((a, b) => a.date.localeCompare(b.date)).map(s => {
                         const ex = s.exercises.find(e => e.exercise === state.statsEx);
-                        const maxKg = Math.max(...ex.sets.map(st => st.kg));
-                        return {
-                            date: s.date.slice(5), maxKg,
-                            vol: ex.sets.reduce((a, st) => a + st.kg * st.reps, 0),
-                            rm: calc1RM(maxKg, ex.sets.find(st => st.kg === maxKg).reps)
-                        };
-                    });
-                if (data.length >= 2) dc.appendChild(renderChart(data, 'maxKg'));
+                        return { date: s.date.slice(5), day: s.day || '', kg: workingWeight(ex.sets), reps: Math.max(0, ...(ex.sets || []).map(st => parseInt(st.reps, 10) || 0)) };
+                    }).filter(r => info.bw ? r.reps > 0 : r.kg > 0);
+                // Mismo ejercicio en días con distinto peso (día pesado y liviano de las rutinas de
+                // fuerza): mezclados hacían serrucho. Una línea por día; arranca en el más pesado.
+                const byDay = {};
+                rowsAll.forEach(r => { (byDay[r.day] = byDay[r.day] || []).push(r); });
+                const avgKg = (l) => l.reduce((a, r) => a + r.kg, 0) / l.length;
+                const days = info.bw ? [] : Object.keys(byDay).filter(d => d && byDay[d].length >= 2).sort((a, b) => avgKg(byDay[b]) - avgKg(byDay[a]));
+                const split = days.length >= 2 && avgKg(byDay[days[0]]) > avgKg(byDay[days[days.length - 1]]) * 1.07;
+                if (split) {
+                    if (!days.includes(state.statsDay)) state.statsDay = days[0];
+                    const dp = h('div', { className: 'pills', style: { marginBottom: '8px' } });
+                    days.forEach(d => dp.appendChild(h('button', {
+                        className: 'pill' + (state.statsDay === d ? ' active' : ''), style: { fontSize: '10px' },
+                        onclick: () => { state.statsDay = d; renderStats(); }
+                    }, trD(d))));
+                    dc.appendChild(dp);
+                }
+                const data = split ? byDay[state.statsDay] : rowsAll;
+                dc.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', margin: '0 0 4px' } },
+                    info.bw ? t('stats_chart_reps') : t('stats_chart_kg').replace('{unit}', state.unit)));
+                if (data.length >= 2) dc.appendChild(renderChart(data, info.bw ? 'reps' : 'kg'));
                 else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_need_more')));
             } else dc.appendChild(h('p', { style: { color: 'var(--text3)', textAlign: 'center', padding: '1rem', fontSize: '12px' } }, t('stats_need_more')));
             v.appendChild(dc);
@@ -11737,7 +11756,8 @@
                 hc.appendChild(h('p', { className: 'label' }, t('stats_hist')));
 
                 const histLocale = state.lang === 'en' ? 'en-US' : state.lang === 'pt' ? 'pt-BR' : 'es-AR';
-                state.sessions.slice(0, 10).forEach((sess, idx) => {
+                const histLimit = state.histLimit || 10;
+                state.sessions.slice(0, histLimit).forEach((sess, idx) => {
                     // null = default (solo la más reciente abierta) · 'none' = todas cerradas
                     const expanded = state.histExpanded === null ? idx === 0 : state.histExpanded === sess.id;
                     const sc = h('div', { style: { padding: '12px 0', borderBottom: '1px solid var(--border)' } });
@@ -11779,7 +11799,7 @@
                         sess.exercises.forEach(ex => {
                             const erow = h('div', { style: { marginBottom: '4px', display: 'flex', justifyContent: 'space-between' } });
                             erow.appendChild(h('span', { style: { fontSize: '12px', fontWeight: 600, color: 'var(--text2)' } }, ex.exercise));
-                            const setsStr = (ex.sets || []).map(s => s.kg + 'kg x ' + s.reps).join(', ');
+                            const setsStr = (ex.sets || []).map(s => ((parseFloat(s.kg) || 0) > 0 ? fmtKg(s.kg) + state.unit + ' ' : '') + '× ' + s.reps).join(', ');
                             erow.appendChild(h('span', { style: { fontSize: '11px', color: 'var(--text3)', textAlign: 'right', flex: 1, marginLeft: '10px' } }, setsStr));
                             detail.appendChild(erow);
                         });
@@ -11788,6 +11808,11 @@
 
                     hc.appendChild(sc);
                 });
+                // Las más viejas también se pueden ver y editar (antes solo las últimas 10)
+                if (state.sessions.length > histLimit) {
+                    hc.appendChild(h('button', { className: 'btn btn-secondary btn-sm btn-full', style: { marginTop: '10px', minHeight: '36px' },
+                        onclick: () => { state.histLimit = histLimit + 10; renderStats(); } }, t('hist_more').replace('{n}', state.sessions.length - histLimit)));
+                }
                 v.appendChild(hc);
             }
         }
@@ -11917,7 +11942,7 @@
                     const t = document.createElementNS(ns, 'text');
                     t.setAttribute('x', p.x); t.setAttribute('y', p.y - 8); t.setAttribute('text-anchor', 'middle');
                     t.setAttribute('style', 'fill: var(--text)'); t.setAttribute('font-size', '11'); t.setAttribute('font-weight', '700');
-                    t.textContent = v; svg.appendChild(t);
+                    t.textContent = fmtKg(v); svg.appendChild(t);
                     lblX = p.x; lblV = v; lblEl = t;
                 }
                 if (data.length <= 8 || i % Math.ceil(data.length / 6) === 0) {
