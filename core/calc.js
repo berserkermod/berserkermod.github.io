@@ -269,11 +269,21 @@
     // Siguiente peso que existe: las mancuernas van a la próxima del escalón (22 → 24);
     // lo demás suma el escalón al peso que viene usando (respeta su propia grilla).
     function stepUp(kg, step, gear) {
-        if (gear === 'dumbbell') return r2(Math.floor(kg / step + 1e-9) * step + step);
+        if (gear === 'dumbbell') {
+            // Un peso que quedó fuera de la grilla (11 kg pasados a 24,5 lb) es la mancuerna de
+            // al lado (25): la siguiente de verdad es la otra (30), no medio kilo más.
+            var up = Math.floor(kg / step + 1e-9) * step + step;
+            if (up - kg < step / 2 - 1e-9) up += step;
+            return r2(up);
+        }
         return r2(kg + step);
     }
     function stepDown(kg, step, gear) {
-        if (gear === 'dumbbell') return r2(Math.ceil(kg / step - 1e-9) * step - step);
+        if (gear === 'dumbbell') {
+            var dn = Math.ceil(kg / step - 1e-9) * step - step;
+            if (kg - dn < step / 2 - 1e-9) dn -= step;
+            return r2(dn);
+        }
         return r2(kg - step);
     }
     // El peso que existe más cerca por debajo de `target`, partiendo de `from`.
@@ -340,6 +350,39 @@
         var kg = stepUp(w, step, gear), guard = 0;
         while (stepUp(kg, step, gear) - step / 2 <= target && guard++ < 20) kg = stepUp(kg, step, gear);
         return { newKg: kg, pct: Math.round((kg - w) / w * 100) };
+    }
+
+    // ── Unidad de las cargas (kg / lb) ─────────────────────────────────
+    // Pasar un peso de una unidad a la otra: libras de a 0,5 y kilos de a 0,25.
+    function convertLoad(v, from, to) {
+        var n = Number(v) || 0;
+        if (!(n > 0) || from === to) return n;
+        return to === 'lbs' ? Math.round(n * 2.20462 * 2) / 2 : Math.round(n / 2.20462 * 4) / 4;
+    }
+    // Convierte en el lugar todas las series del historial. Cada serie recuerda el valor y la
+    // unidad con que se anotó (orig / origUnit): ir y volver devuelve el número exacto, sin
+    // correrse por el redondeo. Si la serie se editó después, el valor editado pasa a ser el
+    // original. Devuelve cuántas series cambió.
+    function convertSessionsUnit(sessions, from, to) {
+        var n = 0;
+        if (from === to) return 0;
+        (sessions || []).forEach(function (s) {
+            ((s && s.exercises) || []).forEach(function (e) {
+                (e.sets || []).forEach(function (st) {
+                    if (!st) return;
+                    var kg = Number(st.kg) || 0;
+                    if (st.orig != null && st.origUnit) {
+                        var expect = st.origUnit === from ? Number(st.orig) : convertLoad(st.orig, st.origUnit, from);
+                        if (Math.abs(expect - kg) > 0.01) { st.orig = kg; st.origUnit = from; }
+                    } else { st.orig = kg; st.origUnit = from; }
+                    var next = st.origUnit === to ? Number(st.orig) : convertLoad(st.orig, st.origUnit, to);
+                    if (next !== kg) n++;
+                    st.kg = next;
+                    if (st.unit) st.unit = to;
+                });
+            });
+        });
+        return n;
     }
 
     // ── Peso corporal y gasto real ──────────────────────────────────────
@@ -1158,6 +1201,8 @@
         loadStep: loadStep,
         nextLoad: nextLoad,
         pushLoad: pushLoad,
+        convertLoad: convertLoad,
+        convertSessionsUnit: convertSessionsUnit,
         calcTDEE: calcTDEE,
         calcMacros: calcMacros,
         proteinWeight: proteinWeight,

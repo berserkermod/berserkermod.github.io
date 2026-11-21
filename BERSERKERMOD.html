@@ -2363,8 +2363,8 @@
     <!-- La versión en la URL tiene que coincidir con VERSION de sw.js (lo chequea test/release.test.mjs).
          El SW sirve calc.js desde caché: sin esto, la primera apertura tras publicar mezcla HTML nuevo
          (red) con calc.js viejo (caché) y la app se rompe si el HTML usa una función nueva. -->
-    <script src="core/calc.js?v=2-46"></script>
-    <script src="core/i18n-data.js?v=2-46"></script>
+    <script src="core/calc.js?v=2-47"></script>
+    <script src="core/i18n-data.js?v=2-47"></script>
     <script>
         // DEBUG_APP — true on localhost / LAN IPs / file://. False in production
         // (TWA, Cloudflare Pages, custom domain). Used to gate informational
@@ -2482,7 +2482,7 @@
                 hist_summary: "{e} ej. · {s} series",
                 stats_hist: "HISTORIAL DE ENTRENAMIENTO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sesión", stats_del_sess: "¿Eliminar esta sesión permanentemente?", stats_sess_upd: "✅ Sesión actualizada", stats_sess_del: "🗑️ Sesión eliminada",
                 prof_nutri_plan: "TU PLAN NUTRICIONAL", prof_tdee: "Gasto calórico diario (Mantenimiento)", prof_target: "Objetivo Diario", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carbohidratos", prof_fats: "Grasas",
-                prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Borrar todos los datos? Esta acción no se puede deshacer.",
+                prof_settings: "CONFIGURACIÓN", prof_theme: "Tema de la App", prof_unit: "Unidad de Peso", unit_hint: "Para lo que levantás. Al cambiarla se convierte todo lo que ya anotaste (tu peso corporal sigue en kg).", unit_now_kg: "Listo: tus pesos ahora están en kg", unit_now_lbs: "Listo: tus pesos ahora están en libras", prof_lang: "Idioma", prof_reset: "Resetear App", prof_reset_msg: "¿Borrar todos los datos? Esta acción no se puede deshacer.",
                 mg_pecho: "PECHO", mg_espalda: "ESPALDA", mg_piernas: "PIERNAS", mg_brazos: "BRAZOS", prof_devices: "DISPOSITIVOS",
                 home_greet_am: "Buenos días", home_greet_pm: "Buenas tardes", home_greet_eve: "Buenas noches",
                 home_streak_label: "RACHA DE ENTRENAMIENTO", home_streak_msg: "días consecutivos", home_streak_start: "¡Empezá tu racha hoy!",
@@ -2924,7 +2924,7 @@
                 hist_summary: "{e} ex. · {s} sets",
                 stats_hist: "TRAINING HISTORY", stats_edit: "✏️ Edit", stats_edit_sess: "Edit Session", stats_del_sess: "Delete this session permanently?", stats_sess_upd: "✅ Session updated", stats_sess_del: "🗑️ Session deleted",
                 prof_nutri_plan: "YOUR NUTRITION PLAN", prof_tdee: "Daily Energy Expenditure", prof_target: "Daily Target", prof_macros: "MACRONUTRIENTS", prof_protein: "Protein", prof_carbs: "Carbs", prof_fats: "Fats",
-                prof_settings: "SETTINGS", prof_theme: "App Theme", prof_unit: "Weight Unit", prof_lang: "Language", prof_reset: "Reset App", prof_reset_msg: "Are you sure you want to delete all data? This action cannot be undone.",
+                prof_settings: "SETTINGS", prof_theme: "App Theme", prof_unit: "Weight Unit", unit_hint: "For what you lift. Switching converts everything you already logged (your body weight stays in kg).", unit_now_kg: "Done: your weights are now in kg", unit_now_lbs: "Done: your weights are now in pounds", prof_lang: "Language", prof_reset: "Reset App", prof_reset_msg: "Are you sure you want to delete all data? This action cannot be undone.",
                 mg_pecho: "CHEST", mg_espalda: "BACK", mg_piernas: "LEGS", mg_brazos: "ARMS", prof_devices: "DEVICES",
                 home_greet_am: "Good morning", home_greet_pm: "Good afternoon", home_greet_eve: "Good evening",
                 home_streak_label: "TRAINING STREAK", home_streak_msg: "days in a row", home_streak_start: "Start your streak today!",
@@ -3367,7 +3367,7 @@
                 hist_summary: "{e} ex. · {s} séries",
                 stats_hist: "HISTÓRICO DE TREINO", stats_edit: "✏️ Editar", stats_edit_sess: "Editar Sessão", stats_del_sess: "Excluir esta sessão permanentemente?", stats_sess_upd: "✅ Sessão atualizada", stats_sess_del: "🗑️ Sessão excluída",
                 prof_nutri_plan: "SEU PLANO NUTRICIONAL", prof_tdee: "Gasto Calórico Diário", prof_target: "Meta Diária", prof_macros: "MACRONUTRIENTES", prof_protein: "Proteína", prof_carbs: "Carboidratos", prof_fats: "Gorduras",
-                prof_settings: "CONFIGURAÇÕES", prof_theme: "Tema do App", prof_unit: "Unidade de Peso", prof_lang: "Idioma", prof_reset: "Zerar App", prof_reset_msg: "Tem certeza de que deseja excluir todos os dados?",
+                prof_settings: "CONFIGURAÇÕES", prof_theme: "Tema do App", prof_unit: "Unidade de Peso", unit_hint: "Para o que você levanta. Ao trocar, tudo o que você já anotou é convertido (seu peso corporal continua em kg).", unit_now_kg: "Pronto: seus pesos agora estão em kg", unit_now_lbs: "Pronto: seus pesos agora estão em libras", prof_lang: "Idioma", prof_reset: "Zerar App", prof_reset_msg: "Tem certeza de que deseja excluir todos os dados?",
                 mg_pecho: "PEITO", mg_espalda: "COSTAS", mg_piernas: "PERNAS", mg_brazos: "BRAÇOS", prof_devices: "DISPOSITIVOS",
                 home_greet_am: "Bom dia", home_greet_pm: "Boa tarde", home_greet_eve: "Boa noite",
                 home_streak_label: "SEQUÊNCIA DE TREINO", home_streak_msg: "dias seguidos", home_streak_start: "Comece sua sequência hoje!",
@@ -4409,6 +4409,7 @@
             migrateSchema();
             try { state.user = JSON.parse(localStorage.getItem('bm-user')); } catch { state.user = null; }
             try { state.sessions = JSON.parse(localStorage.getItem('bm-sessions') || '[]'); } catch { state.sessions = []; }
+            try { state.unit = localStorage.getItem('bm-unit') === 'lbs' ? 'lbs' : 'kg'; } catch { state.unit = 'kg'; }
             try { state.cardioSessions = JSON.parse(localStorage.getItem('bm-cardio') || '[]'); } catch { state.cardioSessions = []; }
             loadCardioRun();
             loadRunGuided();
@@ -4526,6 +4527,23 @@
             } catch { }
         }
         function saveSessions() { try { localStorage.setItem('bm-sessions', JSON.stringify(state.sessions)); } catch { } }
+        // Unidad de las cargas (kg o lb), en Perfil. Se guarda y convierte todo lo anotado
+        // (historial y lo que esté a medio cargar), así nada se mezcla. Cada serie recuerda su
+        // valor original: ir y volver no lo corre (core/calc.js convertSessionsUnit).
+        function setTrainingUnit(u) {
+            const to = u === 'lbs' ? 'lbs' : 'kg', from = state.unit === 'lbs' ? 'lbs' : 'kg';
+            if (to === from) return;
+            convertSessionsUnit(state.sessions || [], from, to);
+            (state.sessionSets || []).forEach(e => (e.sets || []).forEach(st => { st.kg = convertLoad(st.kg, from, to); st.unit = to; }));
+            const rs = state.routineSession;
+            if (rs && rs.exercises) Object.values(rs.exercises).forEach(arr => (Array.isArray(arr) ? arr : []).forEach(st => {
+                if (st && st.kg !== '' && st.kg != null) st.kg = String(convertLoad(st.kg, from, to));
+            }));
+            state.unit = to;
+            try { localStorage.setItem('bm-unit', to); } catch { }
+            saveSessions(); saveTrainDraft(); if (rs && rs.date) saveRoutineDraft();
+            flash(t(to === 'lbs' ? 'unit_now_lbs' : 'unit_now_kg'));
+        }
         function saveCardio() { try { localStorage.setItem('bm-cardio', JSON.stringify(state.cardioSessions)); } catch { } }
         // Cronómetro de cardio en curso: se guarda en el teléfono para que no se pierda si el sistema
         // cierra la app en medio de la sesión (pasa seguido con la pantalla apagada).
@@ -7804,7 +7822,7 @@
             const weekCardio = state.cardioSessions.filter(s => daysSince(s.date) < 7);
             const weekCals = weekCardio.reduce((a, s) => a + (s.calories || 0), 0);
             const sg = h('div', { className: 'stats-grid fade-in' });
-            [{ l: t('home_stats_sess'), v: weekSess.length, c: 'var(--accent)' }, { l: t('home_stats_vol'), v: fmt(Math.round(weekVol / 1000)) + 't', c: 'var(--orange)' },
+            [{ l: t('home_stats_sess'), v: weekSess.length, c: 'var(--accent)' }, { l: t('home_stats_vol'), v: fmt(Math.round(weekVol / 1000)) + (state.unit === 'lbs' ? 'k lb' : 't'), c: 'var(--orange)' },
             { l: t('home_stats_cardio'), v: weekCardio.length, c: 'var(--red)' }, { l: t('home_stats_cals'), v: fmt(weekCals), c: 'var(--blue)' }
             ].forEach(({ l, v: val, c }) => {
                 const c2 = h('div', { className: 'card stat-card' });
@@ -8938,8 +8956,11 @@
                 fields.appendChild(f2);
                 // Kg (suggested)
                 const f3 = h('div', { className: 'ex-field' });
-                f3.appendChild(h('label', {}, t('ex_field_kg')));
-                f3.appendChild(h('input', { type: 'number', inputmode: 'decimal', value: ex.kg, placeholder: '—', oninput: e => ex.kg = e.target.value }));
+                f3.appendChild(h('label', {}, t('ex_field_kg') + (state.unit === 'lbs' ? ' (LB)' : '')));
+                f3.appendChild(h('input', { type: 'number', inputmode: 'decimal', value: planKgOf(ex) || (ex.kg || ''), placeholder: '—', oninput: e => {
+                    const n = parseFloat(String(e.target.value).replace(',', '.'));
+                    ex.kg = state.unit === 'lbs' && n > 0 ? String(Math.round(n / 2.20462 * 10) / 10) : e.target.value;
+                } }));
                 fields.appendChild(f3);
                 // RIR
                 const f4 = h('div', { className: 'ex-field' });
@@ -9283,17 +9304,7 @@
             const lc = h('div', { className: 'card fade-in' });
             const lt = h('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' } });
             lt.appendChild(h('p', { className: 'label', style: { margin: 0 } }, t('train_log')));
-            const ut = h('div', { style: { display: 'flex', background: 'var(--sf2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--border)' } });
-            ['kg', 'lbs'].forEach(u => {
-                ut.appendChild(h('button', {
-                    style: {
-                        padding: '5px 14px', minHeight: '32px', borderRadius: '16px', fontSize: '11px', fontWeight: 700, transition: 'all .15s',
-                        background: state.unit === u ? 'var(--accent)' : 'transparent', color: state.unit === u ? 'var(--bg)' : 'var(--text3)'
-                    },
-                    onclick: () => { state.unit = u; renderTrain(); }
-                }, u.toUpperCase()));
-            });
-            lt.appendChild(ut); lc.appendChild(lt);
+            lc.appendChild(lt);
 
             // Prev session hint
             if (state.selEx) {
@@ -9428,7 +9439,7 @@
                     const pe = s.exercises.find(e => e.exercise === ex.exercise);
                     if (pe) return Math.max(m, ...pe.sets.map(st => st.kg)); return m;
                 }, 0);
-                if (maxKg > prevMax && prevMax > 0) prs.push(trD(ex.exercise) + ' ' + maxKg + 'kg');
+                if (maxKg > prevMax && prevMax > 0) prs.push(trD(ex.exercise) + ' ' + fmtKg(maxKg) + state.unit);
             });
             return prs;
         }
@@ -10170,7 +10181,7 @@
             const totalVol = session.exercises.reduce((a, ex) => a + ex.sets.reduce((b, s) => b + (parseFloat(s.kg) || 0) * (parseInt(s.reps) || 0), 0), 0);
             const cW = Math.floor((W - PAD * 2 - 20) / 3), cH = 230, cGap = 10;
             [
-                { l: t('share_sum_volume'), v: fmt(Math.round(totalVol)) + ' kg' },
+                { l: t('share_sum_volume'), v: fmt(Math.round(totalVol)) + ' ' + state.unit },
                 { l: t('share_sum_sets'), v: String(totalSets) },
                 { l: t('share_sum_duration'), v: session.duration + ' min' }
             ].forEach((s, i) => {
@@ -10202,7 +10213,7 @@
                 ctx.textAlign = 'center'; ctx.font = '500 26px Inter, system-ui, sans-serif'; ctx.fillStyle = '#3A3A3E';
                 ctx.fillText(`${ex.sets.length} × ${parseInt(best?.reps) || 0} reps`, W / 2, ry + 34);
                 ctx.textAlign = 'right'; ctx.font = '800 36px Inter, system-ui, sans-serif'; ctx.fillStyle = '#00D4AA';
-                ctx.fillText(maxKg + ' kg', W - PAD, ry + 38);
+                ctx.fillText(fmtKg(maxKg) + ' ' + state.unit, W - PAD, ry + 38);
                 if (i < Math.min(session.exercises.length, 5) - 1) hline(ry + rowH - 4, '#1C1C1E');
             });
             if (session.exercises.length > 5) {
@@ -11597,12 +11608,14 @@
             const est1rm = getMax1RM();
             [{ l: t('stats_sessions'), v: periodSessions.length, c: 'var(--accent)' },
             { l: t('stats_series'), v: totalSets, c: 'var(--blue)' },
-            { l: t('stats_1rm'), v: est1rm ? est1rm + 'kg' : '—', c: 'var(--purple)' },
+            { l: t('stats_1rm'), v: est1rm ? fmtKg(est1rm.kg) + ' ' + state.unit : '—', c: 'var(--purple)', sub: est1rm ? trD(est1rm.name) : '' },
             { l: t('stats_cardio_cal'), v: fmt(totalCals), c: 'var(--red)' },
             { l: t('stats_streak'), v: calcStreak() + ' ' + (calcStreak() === 1 ? t('routines_day').toLowerCase() : t('routines_day').toLowerCase() + 's'), c: 'var(--accent)' }
-            ].forEach(({ l, v: val, c }) => {
+            ].forEach(({ l, v: val, c, sub }) => {
                 const c2 = h('div', { className: 'card stat-card' }); c2.appendChild(h('p', { className: 'stat-label' }, l));
-                c2.appendChild(h('p', { className: 'stat-val', style: { color: c, fontSize: '20px' } }, val + '')); sg.appendChild(c2);
+                c2.appendChild(h('p', { className: 'stat-val', style: { color: c, fontSize: '20px' } }, val + ''));
+                if (sub) c2.appendChild(h('p', { style: { fontSize: '11px', color: 'var(--text3)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, sub));
+                sg.appendChild(c2);
             });
             v.appendChild(sg);
 
@@ -11849,17 +11862,24 @@
             v.appendChild(card);
         }
 
+        // 1RM estimado de los básicos (sentadilla, press banca, peso muerto, press militar): la
+        // prensa o una máquina no se comparan (antes ganaba la prensa). Sin básicos, la mejor
+        // barra. Epley solo hasta 12 reps: más allá sobreestima (o es un tipeo).
+        const MAIN_LIFT_RE = /^(sentadilla|press banca plano|press banca|peso muerto|press militar)$|back squat|bench press|deadlift|overhead press/i;
         function getMax1RM() {
-            // Epley solo es válida hasta ~12 reps: más allá sobreestima salvajemente
-            // (una serie de 30kg×366 —tipeo o segundos anotados como reps— daría
-            // "396kg de 1RM"). Series de más de 12 reps no cuentan para la estimación.
-            let max = 0;
-            state.sessions.forEach(s => s.exercises.forEach(e => e.sets.forEach(st => {
-                const kg = parseFloat(st.kg) || 0, reps = parseInt(st.reps, 10) || 0;
-                if (kg <= 0 || reps <= 0 || reps > 12) return;
-                const rm = calc1RM(kg, reps); if (rm > max) max = rm;
-            })));
-            return max || 0;
+            let best = null, bestBar = null;
+            state.sessions.forEach(s => s.exercises.forEach(e => {
+                if (exerciseGear(e.exercise) !== 'barbell') return;
+                const main = MAIN_LIFT_RE.test(e.exercise) && !/rumano|romanian/i.test(e.exercise);
+                e.sets.forEach(st => {
+                    const kg = parseFloat(st.kg) || 0, reps = parseInt(st.reps, 10) || 0;
+                    if (kg <= 0 || reps <= 0 || reps > 12) return;
+                    const rm = calc1RM(kg, reps);
+                    if (main && (!best || rm > best.kg)) best = { kg: rm, name: e.exercise };
+                    if (!bestBar || rm > bestBar.kg) bestBar = { kg: rm, name: e.exercise };
+                });
+            }));
+            return best || bestBar;
         }
 
         function renderChart(data, key) {
@@ -12184,6 +12204,18 @@
             });
             thc.appendChild(thGrid);
             v.appendChild(thc);
+
+            // Unidad de las cargas: kg o lb (convierte lo anotado)
+            const uc = h('div', { className: 'card fade-in' });
+            uc.appendChild(h('p', { className: 'label' }, t('prof_unit').toUpperCase()));
+            uc.appendChild(h('p', { style: { fontSize: '12px', color: 'var(--text2)', margin: '4px 0 8px', lineHeight: 1.4 } }, t('unit_hint')));
+            const ug = h('div', { style: { display: 'flex', gap: '8px' } });
+            [['kg', 'kg'], ['lbs', 'lb']].forEach(([k, label]) => ug.appendChild(h('button', {
+                className: 'btn btn-sm' + (state.unit === k ? ' btn-primary' : ' btn-secondary'), style: { flex: 1, minHeight: '36px' },
+                onclick: () => { setTrainingUnit(k); renderProfile(); }
+            }, label)));
+            uc.appendChild(ug);
+            v.appendChild(uc);
 
             // Exercise Library card (replaces old "scanner" placeholder — Library is free for everyone)
             const libCard = h('div', { className: 'card fade-in' });
@@ -16659,11 +16691,16 @@
         // PROGRESSION BANNERS
         // ─────────────────────────────────────────
         function getPendingProgBanners() {
+            if (deloadActive()) return [];   // en la semana de descarga no se sube
+            // Con el peso fijado por el coach no se sugiere otro (igual que en la rutina)
+            const cr = activeCoachRoutine(), coachKg = new Set();
+            if (cr) (cr.plan || []).forEach(d => (d.exercises || []).forEach(e => { if (planKgOf(e) > 0) coachKg.add(e.name); }));
             const recentExercises = [...new Set(
                 state.sessions.slice(0, 20).flatMap(s => s.exercises.map(e => e.exercise))
             )];
             const dismissed = new Set(state.progHistory.map(h => h.exercise + '_' + h.suggestedKg));
             return recentExercises.map(ex => {
+                if (coachKg.has(ex)) return null;
                 const rec = checkProgression(ex);
                 if (!rec) return null;
                 const key = ex + '_' + rec.newKg;
@@ -16687,7 +16724,7 @@
             banners.forEach(({ exercise, rec }) => {
                 const banner = h('div', { className: 'prog-banner' });
                 const txt = h('div', { className: 'prog-banner-text' });
-                txt.appendChild(h('div', { className: 'prog-banner-ex' }, exercise));
+                txt.appendChild(h('div', { className: 'prog-banner-ex' }, trD(exercise)));
                 txt.appendChild(h('div', {}, fmtKg(rec.currentKg) + state.unit + ' → ' + fmtKg(rec.newKg) + state.unit + ' (+' + rec.pct + '%) · ' + t('n_days').replace('{n}', rec.diffDays)));
                 const btn = h('button', {
                     className: 'prog-banner-dismiss',

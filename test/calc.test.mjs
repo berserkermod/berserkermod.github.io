@@ -513,6 +513,8 @@ console.log('\nCarga sugerida (auditoría de progresión, nov 2026)');
     ok('escalón de mancuernas deducido del registro', dumbbellGrid(hist('Curl Mancuernas', top3(12.5))) === 2.5 && dumbbellGrid(hist('Curl Mancuernas', top3(14))) === 2 && dumbbellGrid([]) === 2 && seenStep(machHist, 'Jalón Polea', 'kg') === 4);
     r = nl('Press Banca Plano', '8-10', hist('Press Banca Plano', top3(135)), { unit: 'lbs' });
     ok('libras: 135 → 140', r.kind === 'up' && r.kg === 140, r);
+    r = nl('Elevaciones Laterales', '10-12', hist('Elevaciones Laterales', top3(24.5, 14)), { unit: 'lbs' });
+    ok('mancuernas en libras fuera de la grilla (24,5 lb): la siguiente es 30, no 25', r.kind === 'up' && r.kg === 30, r);
     // Mismo día del plan
     const hl = [...hist('Sentadilla', [[85, 8], [85, 8], [85, 8]], '2026-11-19', 'LOWER B'), ...hist('Sentadilla', [[100, 6], [100, 6], [100, 6], [100, 6]], '2026-11-17', 'LOWER A')];
     r = nl('Sentadilla', '4-6', hl, { day: 'LOWER A' });
@@ -545,6 +547,22 @@ console.log('\nCarga sugerida (auditoría de progresión, nov 2026)');
     // Empujón tras estancarse: a un peso que exista
     ok('empujón: 45 +7,5 % → 47,5 (no 48,75)', pushLoad(45, 0.075, 'barbell', 'kg', {}).newKg === 47.5 && pushLoad(45, 0.075, 'barbell', 'kg', {}).pct === 6);
     ok('empujón: 100 +5 % → 105; mancuernas 22 +10 % → 24; máquina 40 +10 % → 45', pushLoad(100, 0.05, 'barbell', 'kg', {}).newKg === 105 && pushLoad(22, 0.10, 'dumbbell', 'kg', { dbGrid: 2 }).newKg === 24 && pushLoad(40, 0.10, 'machine', 'kg', {}).newKg === 45);
+}
+
+console.log('\nUnidad de las cargas (kg / lb)');
+{
+    const { convertLoad, convertSessionsUnit } = calc;
+    ok('kg → lb de a 0,5 y lb → kg de a 0,25', convertLoad(100, 'kg', 'lbs') === 220.5 && convertLoad(62.5, 'kg', 'lbs') === 138 && convertLoad(135, 'lbs', 'kg') === 61.25 && convertLoad(0, 'kg', 'lbs') === 0 && convertLoad(80, 'kg', 'kg') === 80);
+    const mk = () => [{ date: '2026-11-18', exercises: [{ exercise: 'Press Banca Plano', sets: [{ kg: 62.5, reps: 10 }, { kg: 61.3, reps: 8 }, { kg: 0, reps: 12 }] }, { exercise: 'Curl', sets: [{ kg: 12, reps: 10, unit: 'kg' }] }] }];
+    const ss = mk();
+    convertSessionsUnit(ss, 'kg', 'lbs');
+    const a = ss[0].exercises[0].sets, c = ss[0].exercises[1].sets[0];
+    ok('a libras: 62,5 → 138, 0 sigue en 0 y la unidad anotada se actualiza', a[0].kg === 138 && a[2].kg === 0 && c.kg === 26.5 && c.unit === 'lbs', ss);
+    for (let i = 0; i < 5; i++) { convertSessionsUnit(ss, 'lbs', 'kg'); convertSessionsUnit(ss, 'kg', 'lbs'); }
+    convertSessionsUnit(ss, 'lbs', 'kg');
+    ok('ir y volver 5 veces devuelve los números exactos (61,3 no se corre)', a[0].kg === 62.5 && a[1].kg === 61.3 && c.kg === 12 && c.unit === 'kg', a);
+    const ed = mk(); convertSessionsUnit(ed, 'kg', 'lbs'); ed[0].exercises[0].sets[0].kg = 140; convertSessionsUnit(ed, 'lbs', 'kg');
+    ok('una serie editada en libras: el valor editado pasa a ser el original (140 lb → 63,5 kg)', ed[0].exercises[0].sets[0].kg === 63.5, ed[0].exercises[0].sets[0]);
 }
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
