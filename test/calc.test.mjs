@@ -584,5 +584,14 @@ console.log('\nCódigo de barras y Open Food Facts');
     ok('valores imposibles → incompleto', offToFood({ product_name: 'X', nutriments: { 'energy-kcal_100g': 4000, proteins_100g: 1, carbohydrates_100g: 1, fat_100g: 1 } }, 'es').complete === false);
 }
 
+console.log('\nEstadísticas: semanas para promediar');
+{
+    const { effectiveWeeks } = calc;
+    ok('anual con 10 semanas de historia → 10 semanas (no 52)', effectiveWeeks(365, '2026-09-13', '2026-11-21') === 10);
+    ok('trimestral con historia larga → el período entero (13 semanas)', Math.abs(effectiveWeeks(91.3, '2025-01-01', '2026-11-21') - 91.3 / 7) < 1e-9);
+    ok('recién empieza (3 días) → mínimo 1 semana', effectiveWeeks(30.4, '2026-11-19', '2026-11-21') === 1);
+    ok('sin primera fecha → el período', effectiveWeeks(182, null, '2026-11-21') === 26);
+}
+
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===\n');
 process.exit(fail === 0 ? 0 : 1);

@@ -6,7 +6,7 @@
 // Subirla cada vez que cambia un archivo que se sirve desde la caché (core/, íconos, fuentes,
 // img/, pdfjs/, manifest.json): si no, quien ya tiene la app sigue con el viejo para siempre.
 // test/release.test.mjs lo frena (guarda la huella de esos archivos en release-manifest.json).
-const VERSION = '2-48';
+const VERSION = '2-49';
 const CACHE = 'berserkermod-v' + VERSION;
 const NET_TIMEOUT_MS = 3000;   // más que esto esperando la red, y hay copia: se muestra la copia
 // Paths are relative to the SW's scope so the same shell list works both on

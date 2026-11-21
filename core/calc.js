@@ -352,6 +352,16 @@
         return { newKg: kg, pct: Math.round((kg - w) / w * 100) };
     }
 
+    // ── Estadísticas: semanas para promediar ───────────────────────────
+    // Las del período, pero si la historia empezó después, solo desde la primera actividad:
+    // con 10 semanas de uso, "anual" no divide por 52 (daba 4,6 series por semana en vez de 18).
+    // Mínimo 1 semana. firstDate y today en 'AAAA-MM-DD'.
+    function effectiveWeeks(periodDays, firstDate, today) {
+        var days = periodDays;
+        if (firstDate && today) days = Math.min(periodDays, dayNum(today) - dayNum(firstDate) + 1);
+        return Math.max(1, days / 7);
+    }
+
     // ── Unidad de las cargas (kg / lb) ─────────────────────────────────
     // Pasar un peso de una unidad a la otra: libras de a 0,5 y kilos de a 0,25.
     function convertLoad(v, from, to) {
@@ -1250,6 +1260,7 @@
         loadStep: loadStep,
         nextLoad: nextLoad,
         pushLoad: pushLoad,
+        effectiveWeeks: effectiveWeeks,
         convertLoad: convertLoad,
         convertSessionsUnit: convertSessionsUnit,
         validBarcode: validBarcode,
