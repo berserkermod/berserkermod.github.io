@@ -1,0 +1,50 @@
+# BERSERKERMOD
+
+> App de gimnasio gratis en español (también en inglés y portugués), hecha en Argentina. Te arma la rutina según tu nivel, tus días y tu objetivo, registrás tus series con el descanso automático y te dice cuándo subir el peso. Suma nutrición, cardio y un modo Coach para entrenadores personales con alumnos. Sin cuenta, sin publicidad y con los datos guardados en el teléfono.
+
+Es una PWA (Progressive Web App): se abre desde el navegador y se instala en Android, iPhone o la computadora sin pasar por una tienda. La versión de Google Play está en prueba cerrada y busca testers de Android.
+
+## Para quién es
+
+- Gente que entrena en el gimnasio y quiere una rutina armada, un registro rápido y saber cuándo subir el peso, sin pagar.
+- Principiantes que no saben qué rutina hacer: la app la arma sola.
+- Mujeres: permite priorizar glúteos y piernas y tiene registro del período (gratis).
+- Entrenadores personales que quieren pasar rutinas a sus alumnos y seguir su progreso (modo Coach).
+
+## Qué hace gratis (plan Free, para siempre y sin tarjeta)
+
+- Rutina automática según nivel, días disponibles y objetivo, con prioridad muscular.
+- Registro de series con descanso automático, superseries y calentamiento; kilos o libras.
+- Peso sugerido para cada día con doble progresión y saltos que existen en el gimnasio (barra, mancuerna siguiente, placa); baja un escalón si fallás y retoma al 90 % tras un parate.
+- Récords y 1RM estimado; progreso por ejercicio.
+- Biblioteca de 37 ejercicios con video.
+- Cardio: 26 deportes con ritmo, récords e importación GPX/TCX; primera semana de los planes de running con voz.
+- Estadísticas semanales, mapa del cuerpo y racha de semanas.
+- Calorías y macros recomendados para tu objetivo; peso corporal con tendencia.
+- Copia en tu propio Google Drive o en archivo; rutina en PDF; recordatorio diario.
+
+## Premium (opcional)
+
+Prueba gratis de 7 días y después se compra el período que quieras (de 1 a 12 meses). No es una suscripción: nada se renueva ni se debita solo. Suma registro de comidas con código de barras, buscador y fotos de la etiqueta o del plato con IA; plan de comidas de 7 días; ajuste semanal de calorías; detección de fatiga y semana de descarga; rutinas propias ilimitadas e importación de rutinas desde PDF con IA; fotos de progreso y medidas; planes de running completos (5 y 10 km); estadísticas mensuales, trimestrales y anuales; Oracle IA (análisis de tu progreso); portugués.
+
+## Modo Coach (para entrenadores)
+
+Incluye todo Premium. El entrenador arma la rutina de cada alumno (o deja que la app arme la base según su ficha) y se la manda con un link y un QR: el alumno la abre sin instalar nada, registra kilos y repeticiones y manda un control semanal que el entrenador responde. El panel muestra sesiones con flechas de progreso, alertas de quién necesita revisión, anotador de cobros, metas de comida, fotos y la marca del entrenador. Prueba gratis de 10 días y sin costo extra por alumno. Precios en pesos argentinos en la página.
+
+## Privacidad
+
+No hay cuentas: no pide email ni contraseña. Entrenamientos, comidas y estadísticas viven en el teléfono. Solo pasan por el servidor las funciones que activa el usuario (modo Coach, funciones de IA que procesan sin guardar, búsqueda de productos, recordatorio). No vende ni comparte datos.
+
+## Páginas
+
+- [Inicio en español](https://berserkermod.github.io/): qué hace, precios, modo Coach y preguntas frecuentes.
+- [English](https://berserkermod.github.io/en/): the same page in English.
+- [Português](https://berserkermod.github.io/pt/): a mesma página em português.
+- [Abrir la app](https://berserkermod.github.io/BERSERKERMOD.html): empezar gratis desde el navegador.
+- [Testers de Android](https://berserkermod.github.io/testers.html): sumarse a la prueba de Google Play.
+- [Política de privacidad](https://berserkermod.github.io/privacy.html)
+- [Términos de uso](https://berserkermod.github.io/terms.html)
+
+## In English
+
+BERSERKERMOD is a free gym app (PWA) made in Argentina, in Spanish, English and Portuguese. It builds your routine from your level, schedule and goal, logs your sets with an automatic rest timer and tells you when to add weight. It includes nutrition, cardio and a Coach mode for personal trainers. No account, no ads, data stays on your phone. Premium has a 7-day free trial and is bought per period with no auto-renewal; Coach has a 10-day free trial.

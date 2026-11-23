@@ -1,0 +1,36 @@
+# BERSERKERMOD: app de gimnasio gratis (PWA), hecha en Argentina.
+# Buscadores y asistentes de IA son bienvenidos, tanto para buscar como para entrenar modelos.
+# Lo único cerrado: el código y las pruebas del repositorio, y los links personales
+# (alumnos de un coach, pase de datos entre navegadores, vuelta de un pago).
+
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: GPTBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: DuckAssistBot
+User-agent: *
+Allow: /
+Disallow: /worker/
+Disallow: /test/
+Disallow: /tools/
+Disallow: /*?r=
+Disallow: /*&r=
+Disallow: /*?xfer=
+Disallow: /*&xfer=
+Disallow: /*?purchase=
+Disallow: /*&purchase=
+Disallow: /*?payment_id=
+Disallow: /*&payment_id=
+Disallow: /*?collection_id=
+Disallow: /*&collection_id=
+
+Sitemap: https://berserkermod.github.io/sitemap.xml

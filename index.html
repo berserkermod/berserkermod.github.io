@@ -11,30 +11,47 @@
             try { q = new URLSearchParams(location.search).get('lang') || ''; } catch (e) { }
             try { s = localStorage.getItem('bm-landing-lang') || ''; } catch (e) { }
             var nav = String((navigator.languages && navigator.languages[0]) || navigator.language || '').slice(0, 2).toLowerCase();
-            var lang = ok[q] ? q : ok[s] ? s : nav === 'es' ? 'es' : nav === 'pt' ? 'pt' : nav ? 'en' : 'es';
+            // /en/ y /pt/ son copias ya traducidas (para buscadores y asistentes de IA): su idioma manda.
+            // En la raíz (español), quien pide inglés o portugués (?lang=, el selector o el idioma del
+            // navegador) pasa a /en/ o /pt/ con el resto del link (vuelta del pago incluida).
+            // Los robots no: para ellos la raíz es la versión en español.
+            var forced = window.__bmForceLang;
+            var bot = /bot\/|crawl|spider|slurp|google|bing|yandex|baidu|duckduck|chatgpt|openai|claude|anthropic|perplexity|facebookexternalhit|lighthouse/i.test(navigator.userAgent || '');
+            var lang = forced || (ok[q] ? q : ok[s] ? s : bot ? 'es' : nav === 'es' ? 'es' : nav === 'pt' ? 'pt' : nav ? 'en' : 'es');
+            if (!forced && lang !== 'es') {
+                try {
+                    var u = new URL(location.href);
+                    u.searchParams.delete('lang');
+                    window.__bmLeaving = true;
+                    location.replace(lang + '/' + u.search + u.hash);
+                } catch (e) { window.__bmLeaving = false; }
+            }
             window.__bmLang = lang;
             var root = document.documentElement;
             root.lang = lang === 'en' ? 'en' : lang === 'pt' ? 'pt-BR' : 'es-AR';
-            if (lang !== 'es') root.classList.add('i18n-wait');
+            // Sin pintar mientras se traduce o se va a /en/, /pt/ (para no mostrar el español un instante)
+            if (lang !== 'es' && !forced) root.classList.add('i18n-wait');
             // La captura del hero, en el idioma de la página y pedida desde ya
-            var l = document.createElement('link');
-            l.rel = 'preload'; l.as = 'image'; l.setAttribute('fetchpriority', 'high');
-            l.href = 'img/landing/' + (lang === 'es' ? '' : lang + '/') + 'inicio-v2.webp';
-            document.head.appendChild(l);
+            if (!window.__bmLeaving) {
+                var l = document.createElement('link');
+                l.rel = 'preload'; l.as = 'image'; l.setAttribute('fetchpriority', 'high');
+                l.href = (window.__bmBase || '') + 'img/landing/' + (lang === 'es' ? '' : lang + '/') + 'inicio-v2.webp';
+                document.head.appendChild(l);
+            }
             // Quien llega en inglés abre la app en inglés si todavía no eligió idioma.
             // Portugués no: en la app es Premium.
             if (lang === 'en') try { if (!localStorage.getItem('bm-lang')) localStorage.setItem('bm-lang', 'en'); } catch (e) { }
         })();
     </script>
     <meta name="theme-color" content="#0A0A0B">
-    <title>BERSERKERMOD — Tu entrenador personal inteligente | Rutinas, registro, nutrición</title>
-    <meta name="description" content="Rutinas que se arman solas según tu nivel y objetivo, registro de series con descanso automático, avisos para subir el peso, mapa del cuerpo y macros. Biblioteca de 37 ejercicios. Modo Coach para entrenadores. Empezá gratis, sin cuenta y sin publicidad.">
+    <title>BERSERKERMOD: app de gimnasio gratis — rutinas, registro y nutrición</title>
+    <meta name="description" content="App de gimnasio gratis en español: te arma la rutina, registrás tus series y te dice cuándo subir el peso. Nutrición, cardio y modo Coach para entrenadores personales. Sin cuenta ni publicidad.">
     <meta name="author" content="BERSERKERMOD">
     <meta name="robots" content="index, follow">
 
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="BERSERKERMOD — Entrenador personal en tu teléfono">
-    <meta property="og:description" content="Rutinas que se arman solas, registro de series, avisos para subir el peso y macros. Modo Coach para entrenadores. Empezá gratis, sin cuenta.">
+    <meta property="og:title" content="BERSERKERMOD: app de gimnasio gratis — rutinas, registro y nutrición">
+    <meta property="og:description" content="App de gimnasio gratis en español: te arma la rutina, registrás tus series y te dice cuándo subir el peso. Nutrición, cardio y modo Coach para entrenadores personales. Sin cuenta ni publicidad.">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_AR">
     <meta property="og:locale:alternate" content="en_US">
@@ -45,14 +62,16 @@
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="BERSERKERMOD — Tu entrenador personal inteligente">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="BERSERKERMOD — Tu entrenador personal inteligente">
-    <meta name="twitter:description" content="Rutinas que se arman solas, registro de series, avisos para subir el peso y macros. Empezá gratis, sin cuenta.">
+    <meta name="twitter:title" content="BERSERKERMOD: app de gimnasio gratis — rutinas, registro y nutrición">
+    <meta name="twitter:description" content="App de gimnasio gratis en español: te arma la rutina, registrás tus series y te dice cuándo subir el peso. Nutrición, cardio y modo Coach para entrenadores personales. Sin cuenta ni publicidad.">
     <meta name="twitter:image" content="https://berserkermod.github.io/og-image.png">
 
-    <!-- Idiomas: es la misma página; el texto lo pone el script según ?lang= -->
-    <link rel="alternate" hreflang="es" href="https://berserkermod.github.io/?lang=es">
-    <link rel="alternate" hreflang="en" href="https://berserkermod.github.io/?lang=en">
-    <link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/?lang=pt">
+    <!-- Idiomas: español en la raíz; /en/ y /pt/ son copias ya traducidas que arma tools/landing-langs.mjs
+         (los robots de IA no ejecutan JavaScript). Quien llega acá en inglés o portugués pasa a su página. -->
+    <link rel="canonical" href="https://berserkermod.github.io/">
+    <link rel="alternate" hreflang="es" href="https://berserkermod.github.io/">
+    <link rel="alternate" hreflang="en" href="https://berserkermod.github.io/en/">
+    <link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/pt/">
     <link rel="alternate" hreflang="x-default" href="https://berserkermod.github.io/">
 
     <!-- PWA -->
@@ -65,23 +84,194 @@
     <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 
     <!-- Structured Data -->
-    <script type="application/ld+json">
+    <script type="application/ld+json" id="ld-main">{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "Organization",
+   "@id": "https://berserkermod.github.io/#org",
+   "name": "BERSERKERMOD",
+   "url": "https://berserkermod.github.io/",
+   "logo": "https://berserkermod.github.io/icon-512.png",
+   "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "AR"
+   }
+  },
+  {
+   "@type": "WebSite",
+   "@id": "https://berserkermod.github.io/#website",
+   "name": "BERSERKERMOD",
+   "url": "https://berserkermod.github.io/",
+   "inLanguage": [
+    "es",
+    "en",
+    "pt-BR"
+   ],
+   "publisher": {
+    "@id": "https://berserkermod.github.io/#org"
+   }
+  },
+  {
+   "@type": "SoftwareApplication",
+   "@id": "https://berserkermod.github.io/#app",
+   "name": "BERSERKERMOD",
+   "url": "https://berserkermod.github.io/",
+   "applicationCategory": "HealthApplication",
+   "applicationSubCategory": "Fitness",
+   "operatingSystem": "Android, iOS, Windows, macOS (PWA, web)",
+   "installUrl": "https://berserkermod.github.io/BERSERKERMOD.html",
+   "inLanguage": "es",
+   "description": "App de gimnasio gratis en español: te arma la rutina, registrás tus series y te dice cuándo subir el peso. Nutrición, cardio y modo Coach para entrenadores personales. Sin cuenta ni publicidad.",
+   "image": "https://berserkermod.github.io/icon-512.png",
+   "screenshot": [
+    "https://berserkermod.github.io/img/landing/inicio-v2.webp",
+    "https://berserkermod.github.io/img/landing/entreno-v2.webp",
+    "https://berserkermod.github.io/img/landing/progresion-v2.webp",
+    "https://berserkermod.github.io/img/landing/mapa-v2.webp",
+    "https://berserkermod.github.io/img/landing/nutricion-v2.webp",
+    "https://berserkermod.github.io/img/landing/coach-v2.webp"
+   ],
+   "featureList": [
+    "Rutina que se arma sola",
+    "Registro sin fricción",
+    "Te dice cuándo subir el peso",
+    "Mapa del cuerpo",
+    "Nutrición que cierra",
+    "Biblioteca de 37 ejercicios",
+    "Cardio sin vueltas",
+    "Tu historial, a salvo",
+    "Te recuerda entrenar"
+   ],
+   "isAccessibleForFree": true,
+   "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "ARS",
+    "description": "Plan Free gratis para siempre, sin tarjeta. Premium: 7 días de prueba gratis y después planes de 1 a 12 meses. Modo Coach para entrenadores: 10 días de prueba gratis. Sin renovación automática."
+   },
+   "publisher": {
+    "@id": "https://berserkermod.github.io/#org"
+   }
+  },
+  {
+   "@type": "WebPage",
+   "@id": "https://berserkermod.github.io/#page",
+   "url": "https://berserkermod.github.io/",
+   "name": "BERSERKERMOD: app de gimnasio gratis — rutinas, registro y nutrición",
+   "inLanguage": "es",
+   "isPartOf": {
+    "@id": "https://berserkermod.github.io/#website"
+   },
+   "about": {
+    "@id": "https://berserkermod.github.io/#app"
+   }
+  },
+  {
+   "@type": "FAQPage",
+   "@id": "https://berserkermod.github.io/#faq",
+   "inLanguage": "es",
+   "mainEntity": [
     {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "BERSERKERMOD",
-      "applicationCategory": "HealthApplication",
-      "operatingSystem": "Web, iOS, Android (PWA)",
-      "description": "Entrenador personal inteligente: rutinas automáticas, registro de entrenamientos, avisos de progresión, nutrición y modo Coach para entrenadores.",
-      "inLanguage": ["es", "en", "pt"],
-      "offers": {
-        "@type": "Offer",
-        "name": "Free",
-        "price": "0",
-        "priceCurrency": "USD"
-      }
+     "@type": "Question",
+     "name": "¿Es realmente gratis?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí. La versión Free incluye la rutina automática, el registro de series con descanso, los avisos de progresión, la biblioteca, el cardio, las stats semanales con el mapa del cuerpo y tus calorías y macros recomendados. Para siempre, sin tarjeta. Premium suma el registro de comidas con escáner y fotos con IA, el plan de comidas, Oracle IA, importar rutinas desde PDF y más: lo probás gratis 7 días y después comprás el período que quieras (1 a 12 meses). Sin suscripción automática: nada se te renueva ni se te debita solo."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Cómo sabe cuánto peso tengo que poner?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Usa la doble progresión: si completaste el tope del rango de reps en todas las series, te propone subir; si no, repetir el peso y sumar reps. El salto es uno que existe en el gimnasio (2,5 kg en la barra, la mancuerna siguiente o una placa en las máquinas) y, con pesos livianos, primero te pide 2 reps más. Si quedaste debajo del rango te sugiere bajar un escalón, y si volvés después de más de 4 semanas, arrancar con un 90 %. Si tu rutina tiene un día pesado y uno liviano, cada día se compara consigo mismo. Siempre es una sugerencia: el peso lo elegís vos."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Puedo usar libras en vez de kilos?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí. En Perfil elegís kilos o libras. Al cambiar, la app convierte todo lo que ya anotaste, y si volvés a la unidad de antes los números quedan exactos. Las sugerencias de peso suben de a 5 lb en la barra. Tu peso corporal sigue en kilos."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Sirve si soy mujer?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí. Las mujeres ganan músculo y fuerza en la misma proporción que los hombres, así que los principios son los mismos. Podés priorizar glúteos y piernas y activar el registro del período, que te avisa si deja de venir. La rutina no cambia según la fase del ciclo: el mejor estudio hasta hoy, de 2026, no encontró ventaja en hacerlo. Todo esto es gratis."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Necesito Play Store o App Store?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. BERSERKERMOD es una PWA (Progressive Web App). Entrás desde el navegador, tocás Instalar app y queda como cualquier otra app — con su ícono en el home, a pantalla completa, sin barra del navegador. Funciona igual en iPhone (Safari) y Android (Chrome). La versión de Google Play está en prueba: si tenés Android, podés sumarte como tester y bajarla desde la tienda."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Funciona offline?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí. Después de la primera carga, todo funciona sin internet: tus rutinas, tu historial y tus stats. La conexión solo se usa para buscar alimentos, para las funciones de IA, para la copia en Drive y para el modo Coach. Si te quedás sin datos, la app sigue andando."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿En iPhone funciona bien?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí, está probada en Safari de iPhone. Agregala a la pantalla de inicio (Compartir → Agregar a inicio) y se abre como cualquier app; así iOS también deja activar el recordatorio diario. El escáner de código de barras (Premium) también anda en Safari."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Necesito crear una cuenta?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. BERSERKERMOD no tiene cuentas: no te pedimos email ni contraseña, y todo se guarda en tu teléfono. Para cambiar de teléfono o tener una copia, en Perfil tocás Guardar copia en Drive (va a tu propio Google Drive) o Exportar Datos (descarga un archivo), y del otro lado la restaurás con Restaurar desde Drive o Importar Datos."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Mis datos van a un servidor?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Tus entrenamientos, comidas y stats viven en tu teléfono y no se suben a nuestro servidor. Las excepciones son funciones que activás vos: la copia en Drive va a tu propia cuenta de Google, no a la nuestra; en el modo Coach, la rutina que compartís, los kg y reps que registrás, el control semanal y las respuestas de tu entrenador se guardan en nuestro servidor para que los vean los dos; las funciones de IA (Oracle, importar PDF y las fotos de etiquetas o platos) procesan lo que mandás y no lo guardan; la búsqueda de productos por nombre pasa por nuestro servidor sin guardar quién buscó; y si activás el recordatorio, guardamos tu zona horaria para avisarte a tu hora. Nunca vendemos ni compartimos datos. Detalle completo en la política de privacidad."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Va a tener publicidad?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "No. Ni en Free, ni en Premium. Ni Google Play ni App Store nos obligan a poner publicidad — esa decisión es nuestra, y la respuesta es no. Si la app es buena, no hace falta interrumpirte con banners. Premium es opcional: comprás el período que quieras y no se renueva solo."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Qué pasa con mis datos si borro la app?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Tus datos viven en el navegador de tu teléfono: si desinstalás la app o borrás los datos del navegador, se pierden. Por eso conviene tener una copia — Guardar copia en Drive o Exportar Datos en Perfil — y la app te lo recuerda cada tanto. Las fotos de progreso quedan solo en el teléfono y no entran en la copia."
+     }
+    },
+    {
+     "@type": "Question",
+     "name": "¿Hay versión para entrenadores con alumnos?",
+     "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sí, el plan Coach: pensado para entrenadores, e incluye todo Premium. Armás la rutina de cada alumno (o dejás que la app arme la base según su ficha) y le mandás un link + QR; la abre sin instalar nada. El alumno registra kg y reps de cada serie y te manda un control semanal que podés responder. Vos ves sus sesiones con flechas de progreso, alertas de quién necesita una revisión y un anotador de cobros. Lo probás gratis 10 días y no hay costo extra por alumno."
+     }
     }
-    </script>
+   ]
+  }
+ ]
+}</script>
 
     <style>
         /* ============================================
@@ -1296,7 +1486,7 @@
         <section class="hero" id="hero">
             <div class="hero-inner">
                 <div class="hero-copy">
-                    <div class="hero-kicker reveal" data-i18n>Gratis para siempre · Premium sin renovación automática</div>
+                    <div class="hero-kicker reveal" data-i18n>App de gimnasio gratis · Premium sin renovación automática</div>
                     <h1 class="hero-title reveal reveal-delay-1" data-i18n>
                         Tu entrenador personal.<br>
                         En tu bolsillo. <span class="accent">Inteligente.</span>
@@ -1323,7 +1513,7 @@
                 <div class="hero-visual reveal reveal-delay-2">
                     <div class="hero-phone phone-frame">
                         <div class="phone-screen">
-                            <img data-shot="inicio-v2.webp" width="540" height="1169" fetchpriority="high" decoding="async" data-i18n-alt alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
+                            <img data-shot="inicio-v2.webp" src="img/landing/inicio-v2.webp" width="540" height="1169" fetchpriority="high" decoding="async" data-i18n-alt alt="Inicio de BERSERKERMOD: racha de la semana, sesiones, volumen, cardio y la rutina que toca hoy">
                         </div>
                     </div>
                 </div>
@@ -1430,28 +1620,28 @@
                         <div class="deepdive-mockup active" data-panel="0">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="entreno-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
+                                    <img data-shot="entreno-v2.webp" src="img/landing/entreno-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Registro del Press Banca: dos series marcadas, la carga sugerida para hoy y el descanso en 1:27">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="1">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="progresion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 47,5 kg">
+                                    <img data-shot="progresion-v2.webp" src="img/landing/progresion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Inicio con la rutina de hoy y una progresión pendiente: Press Militar de 45 a 47,5 kg">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="2">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="mapa-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
+                                    <img data-shot="mapa-v2.webp" src="img/landing/mapa-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Mapa del cuerpo de frente y de espalda con las series de la semana por músculo">
                                 </div>
                             </div>
                         </div>
                         <div class="deepdive-mockup" data-panel="3">
                             <div class="phone-frame">
                                 <div class="phone-screen">
-                                    <img data-shot="nutricion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
+                                    <img data-shot="nutricion-v2.webp" src="img/landing/nutricion-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Alimentación del día: calorías y macros contra el objetivo, comidas registradas y balance calórico">
                                 </div>
                             </div>
                         </div>
@@ -1642,7 +1832,7 @@
                 <div class="coach-visual reveal reveal-delay-2">
                     <div class="phone-frame">
                         <div class="phone-screen">
-                            <img data-shot="coach-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Lo que ve el coach de una alumna: su control semanal con peso y energía, el lugar para responderle y sus sesiones con kg, reps y flechas de progreso">
+                            <img data-shot="coach-v2.webp" src="img/landing/coach-v2.webp" width="540" height="1169" loading="lazy" decoding="async" data-i18n-alt alt="Lo que ve el coach de una alumna: su control semanal con peso y energía, el lugar para responderle y sus sesiones con kg, reps y flechas de progreso">
                         </div>
                     </div>
                 </div>
@@ -1854,7 +2044,7 @@
   "Para entrenadores": ["For coaches", "Para treinadores"],
   "FAQ": ["FAQ", "FAQ"],
   "Abrir app": ["Open app", "Abrir app"],
-  "Gratis para siempre · Premium sin renovación automática": ["Free forever · Premium never auto-renews", "Grátis para sempre · Premium sem renovação automática"],
+  "App de gimnasio gratis · Premium sin renovación automática": ["Free gym app · Premium never auto-renews", "App de academia grátis · Premium sem renovação automática"],
   "Tu entrenador personal.<br> En tu bolsillo. <span class=\"accent\">Inteligente.<\/span>": ["Your personal trainer.<br> In your pocket. <span class=\"accent\">Smart.<\/span>", "Seu personal trainer.<br> No seu bolso. <span class=\"accent\">Inteligente.<\/span>"],
   "Te arma la rutina según tu nivel, tus días y tu objetivo. Registrás cada serie con el descanso en marcha, te avisa cuándo subir el peso y te muestra qué músculos trabajaste en la semana. Sin instalar nada, sin cuenta y sin publicidad.": ["Builds your routine around your level, your schedule and your goal. Log every set with the rest timer running, get told when to add weight and see which muscles you worked this week. Nothing to install, no account, no ads.", "Monta sua rotina de acordo com seu nível, seus dias e seu objetivo. Você registra cada série com o descanso rodando, ele avisa quando aumentar a carga e mostra quais músculos você treinou na semana. Sem instalar nada, sem conta e sem anúncios."],
   "Empezar gratis →": ["Start free →", "Começar grátis →"],
@@ -2023,8 +2213,8 @@
   "BERSERKERMOD inicio": ["BERSERKERMOD home", "BERSERKERMOD início"],
   "Navegación principal": ["Main navigation", "Navegação principal"],
   "Números del producto": ["Product numbers", "Números do produto"],
-  "BERSERKERMOD — Tu entrenador personal inteligente | Rutinas, registro, nutrición": ["BERSERKERMOD — Your smart personal trainer | Routines, logging, nutrition", "BERSERKERMOD — Seu personal trainer inteligente | Rotinas, registro, nutrição"],
-  "Rutinas que se arman solas según tu nivel y objetivo, registro de series con descanso automático, avisos para subir el peso, mapa del cuerpo y macros. Biblioteca de 37 ejercicios. Modo Coach para entrenadores. Empezá gratis, sin cuenta y sin publicidad.": ["Routines that build themselves around your level and goal, set logging with an automatic rest timer, alerts for when to add weight, a body map and macros. A library of 37 exercises. Coach mode for trainers. Start free, no account, no ads.", "Rotinas que se montam sozinhas de acordo com seu nível e objetivo, registro de séries com descanso automático, avisos para aumentar a carga, mapa do corpo e macros. Biblioteca de 37 exercícios. Modo Coach para treinadores. Comece grátis, sem conta e sem anúncios."],
+  "BERSERKERMOD: app de gimnasio gratis — rutinas, registro y nutrición": ["BERSERKERMOD: free gym app — routines, workout log and nutrition", "BERSERKERMOD: app de academia grátis — rotinas, registro e nutrição"],
+  "App de gimnasio gratis en español: te arma la rutina, registrás tus series y te dice cuándo subir el peso. Nutrición, cardio y modo Coach para entrenadores personales. Sin cuenta ni publicidad.": ["Free gym app: it builds your routine, you log your sets and it tells you when to add weight. Nutrition, cardio and a Coach mode for personal trainers. No account, no ads.", "App de academia grátis: monta sua rotina, você registra suas séries e ele diz quando subir o peso. Nutrição, cardio e modo Coach para personal trainers. Sem conta e sem anúncios."],
   "Idioma": ["Language", "Idioma"],
   "Disponible muy pronto.": ["Available very soon.", "Disponível muito em breve."],
   "Compra directa muy pronto — mientras tanto, probalo gratis.": ["Direct purchase coming very soon — in the meantime, try it free.", "Compra direta muito em breve — enquanto isso, teste grátis."],
@@ -2100,7 +2290,7 @@
                 window.bmT = tr;
                 // Capturas de la app en el idioma de la página
                 document.querySelectorAll('img[data-shot]').forEach(function (img) {
-                    img.src = 'img/landing/' + (idx >= 0 ? lang + '/' : '') + img.getAttribute('data-shot');
+                    img.src = (window.__bmBase || '') + 'img/landing/' + (idx >= 0 ? lang + '/' : '') + img.getAttribute('data-shot');
                 });
                 if (idx >= 0) {
                     document.querySelectorAll('[data-i18n]').forEach(function (el) {
@@ -2117,17 +2307,16 @@
                 if (sel) {
                     sel.value = lang;
                     sel.addEventListener('change', function () {
-                        // Recarga con ?lang= (link para compartir) sin contar otra visita
+                        // Inglés y portugués tienen su página (/en/, /pt/); el español es la raíz. Sin contar otra visita.
                         try { localStorage.setItem('bm-landing-lang', sel.value); sessionStorage.setItem('bm-noview', '1'); } catch (e) { }
-                        var u = new URL(location.href);
-                        u.searchParams.set('lang', sel.value);
-                        location.replace(u.href);
+                        var base = window.__bmBase || '';
+                        location.replace(base + (sel.value === 'es' ? '?lang=es' : sel.value + '/') + location.hash);
                     });
                 }
             } catch (e) {
                 window.bmT = window.bmT || function (x) { return x; };
             } finally {
-                root.classList.remove('i18n-wait');
+                if (!window.__bmLeaving) root.classList.remove('i18n-wait');
             }
         })();
     </script>
@@ -2327,6 +2516,7 @@
             // Retorno de Mercado Pago: ?purchase=coach|premium&payment_id=...&status=approved
             // Recupera el código generado por el webhook y lo muestra en grande.
             (function handleReturn() {
+                if (window.__bmLeaving) return;
                 var q = new URLSearchParams(location.search);
                 var boughtProduct = q.get('purchase');
                 if (boughtProduct !== 'coach' && boughtProduct !== 'premium') return;
@@ -2365,7 +2555,7 @@
                         '<div style="font-size:20px;font-weight:900;margin-bottom:6px">' + T('¡Compra confirmada!') + '</div>' +
                         '<div style="font-size:13px;color:#A1A1A6;line-height:1.5;margin-bottom:18px">' + codeMsg + '</div>' +
                         '<div style="font-size:24px;font-weight:900;letter-spacing:.08em;background:#0A0A0B;border:1.5px dashed #00D4AA;color:#00D4AA;border-radius:12px;padding:16px;margin-bottom:18px;user-select:all">' + code + '</div>' +
-                        '<a href="BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">' + T('Abrir la app y activar →') + '</a>';
+                        '<a href="' + (window.__bmBase || '') + 'BERSERKERMOD.html" style="display:block;background:#00D4AA;color:#0A0A0B;font-weight:800;padding:13px;border-radius:12px;text-decoration:none;margin-bottom:8px">' + T('Abrir la app y activar →') + '</a>';
                 } else if (state === 'loading') {
                     html = '<div style="font-size:32px;margin-bottom:10px">⏳</div><div style="font-size:16px;font-weight:800">' + T('Confirmando tu pago…') + '</div>';
                 } else if (state === 'pending') {
@@ -2412,7 +2602,7 @@
         // n = idioma de la página. Cambiar de idioma recarga: esa vista no se cuenta otra vez.
         var again = false;
         try { again = sessionStorage.getItem('bm-noview') === '1'; sessionStorage.removeItem('bm-noview'); } catch (e) { }
-        if (!again) bmTrack('view', window.__bmLang || 'es');
+        if (!again && !window.__bmLeaving) bmTrack('view', window.__bmLang || 'es');
     } catch (e) { }
 })();
 </script>
@@ -2453,7 +2643,7 @@
         // El service worker (el mismo de la app) hace que Chrome ofrezca instalar desde
         // la primera visita y que la app abra al instante después.
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-            window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+            window.addEventListener('load', function () { navigator.serviceWorker.register((window.__bmBase || '') + 'sw.js').catch(function () { }); });
         }
     } catch (e) { }
 })();

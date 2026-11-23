@@ -37,6 +37,8 @@
          two SRI-pinned lazy libs (jsPDF, ZXing). img-src stays broad (https:)
          because exercise GIFs and QR codes are user/third-party URLs. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://berserkermod-api.berserkermod.workers.dev https://www.googleapis.com https://accounts.google.com/gsi/; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://accounts.google.com/gsi/; object-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self' blob:; worker-src 'self' blob:" />
+    <!-- La app no se indexa: en los buscadores aparece la landing (y los links de alumno, nunca) -->
+    <meta name="robots" content="noindex, follow" />
     <meta name="description"
         content="BERSERKERMOD — Tu entrenador personal inteligente. Rutinas personalizadas, cardio, nutrición y métricas profesionales." />
     <meta property="og:title" content="BERSERKERMOD — Tu entrenador personal inteligente" />

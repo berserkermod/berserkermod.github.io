@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://berserkermod.github.io/</loc>
+    <lastmod>2026-11-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://berserkermod.github.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://berserkermod.github.io/en/"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/pt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://berserkermod.github.io/"/>
+  </url>
+  <url>
+    <loc>https://berserkermod.github.io/en/</loc>
+    <lastmod>2026-11-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://berserkermod.github.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://berserkermod.github.io/en/"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/pt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://berserkermod.github.io/"/>
+  </url>
+  <url>
+    <loc>https://berserkermod.github.io/pt/</loc>
+    <lastmod>2026-11-22</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://berserkermod.github.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://berserkermod.github.io/en/"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://berserkermod.github.io/pt/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://berserkermod.github.io/"/>
+  </url>
+  <url>
+    <loc>https://berserkermod.github.io/testers.html</loc>
+    <lastmod>2026-11-22</lastmod>
+  </url>
+  <url>
+    <loc>https://berserkermod.github.io/privacy.html</loc>
+    <lastmod>2026-11-21</lastmod>
+  </url>
+  <url>
+    <loc>https://berserkermod.github.io/terms.html</loc>
+  </url>
+</urlset>
