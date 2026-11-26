@@ -1813,6 +1813,7 @@ const oracleBody = (token) => ({ token, lang: 'es', goal: 'muscle', findings: [{
     const det = await call('GET', '/api/routines/' + r.id + '?coach_id=' + C);
     const dr = det.body.review_draft;
     ok('el detalle ofrece armar el balance (12 semanas, 3 ciclos)', dr && dr.from === day(83) && dr.stats.weeks === 12 && dr.stats.cycles.length === 3 && det.body.review === null, dr && dr.stats.cycles);
+    ok('el cumplimiento del balance cuenta las 12 semanas, no un ciclo', dr.stats.planned === rec.plan.length * 12 && dr.stats.sessions === 48 && dr.stats.days === 84, { planned: dr.stats.planned, sessions: dr.stats.sessions, days: dr.stats.days, plan: rec.plan.length });
     const sq = dr.stats.exercises.find((e) => e.name === 'Sentadilla');
     ok('progresión desde la primera marca (60 kg), no desde la sesión 9', sq && sq.first.kg === 60 && sq.last.kg === 73.8 && sq.change === 23, sq);
     ok('cumplimiento total, volumen y series de las 48 sesiones', dr.stats.sessions === 48 && dr.stats.total_sets === 144 && dr.stats.total_volume > 0, [dr.stats.sessions, dr.stats.total_sets, dr.stats.total_volume]);

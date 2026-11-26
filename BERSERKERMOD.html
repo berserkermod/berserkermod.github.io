@@ -663,6 +663,11 @@
             width: 100%
         }
 
+        /* Un link con forma de botón (ej. "Subir mis fotos…"): sin esto quedaba en línea y, si el
+           texto ocupaba dos renglones, el fondo se partía en dos pedazos */
+        a.btn { display: inline-block; text-decoration: none }
+        a.btn-full { display: block }
+
         /* STAT CARDS */
         .stats-grid {
             display: grid;
@@ -1672,12 +1677,17 @@
         .share-base-input button { padding: 8px 12px; border-radius: 8px; background: var(--sf3); color: var(--text); font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
 
         /* ALUMNO MODE */
-        .alumno-banner { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
-        .alumno-banner-icon { font-size: 24px; flex-shrink: 0; }
-        .alumno-banner-text { flex: 1; }
-        .alumno-banner-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-        .alumno-banner-sub { font-size: 11px; opacity: .9; }
-        .alumno-name-input { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; width: 110px; }
+        /* Encabezado del link del alumno: rutina y coach arriba; su nombre y la semana en la fila de abajo
+           (en una sola fila, a 360 px el título quedaba en 4 renglones). No queda fijo: en el gimnasio
+           la pantalla es para la rutina. */
+        .alumno-banner { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+        .alumno-banner-icon { font-size: 26px; flex-shrink: 0; }
+        .alumno-banner-text { flex: 1; min-width: 0; }
+        .alumno-banner-title { font-size: 15px; font-weight: 800; line-height: 1.25; margin-bottom: 2px; }
+        .alumno-banner-sub { font-size: 12px; font-weight: 700; opacity: .92; }
+        .alumno-banner-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .alumno-banner-pill { font-size: 12px; font-weight: 800; color: #fff; background: rgba(0,0,0,.22); border-radius: 999px; padding: 6px 11px; }
+        .alumno-name-input { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25); color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; width: 130px; }
         .alumno-name-input::placeholder { color: rgba(255,255,255,.6); }
 
         .alumno-routine-card { background: var(--sf1); border-radius: 16px; padding: 20px; margin: 16px; border: 1.5px solid var(--border); }
@@ -2581,7 +2591,6 @@
                 alumno_banner_title: "Rutina de tu coach",
                 alumno_banner_by: "Por",
                 alumno_save_btn: "💾 Guardar cambios",
-                alumno_no_changes: "Sin cambios pendientes",
                 alumno_changes_saved: "✓ Cambios enviados al coach",
                 alumno_coach_updated: "🔄 Tu coach actualizó la rutina",
                 alumno_your_name: "Tu nombre",
@@ -2661,7 +2670,7 @@
                 rt_suggest_loaded: "cargado en las series",
                 share_sum_volume: "VOLUMEN", share_sum_sets: "SERIES", share_sum_duration: "DURACIÓN", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Racha semanal", home_week_record: "récord", home_week_progress: "esta semana {x}/{y} días", home_week_record_new: "¡Nuevo récord de racha semanal!",
-                alumno_trained_btn: "Entrené hoy", alumno_trained_done: "Entrenamiento de hoy registrado", alumno_trained_ok: "💪 ¡Registrado! Tu coach lo va a ver.", alumno_week_count: "Esta semana: {n} entrenamientos",
+                alumno_trained_btn: "Entrené hoy", alumno_trained_done: "Entrenamiento de hoy registrado", alumno_trained_ok: "💪 ¡Registrado! Tu coach lo va a ver.", alumno_week_count: "Esta semana: {n} entrenamientos", alumno_week_of: "Esta semana: {n} de {m} entrenamientos",
                 coach_adherence: "{n} esta semana", coach_last_session: "entrenó",
                 coach_sessions_title: "ACTIVIDAD DEL ALUMNO",
                 coach_no_sessions: "El alumno aún no registró entrenamientos",
@@ -3023,7 +3032,6 @@
                 alumno_banner_title: "Your coach's routine",
                 alumno_banner_by: "By",
                 alumno_save_btn: "💾 Save changes",
-                alumno_no_changes: "No pending changes",
                 alumno_changes_saved: "✓ Changes sent to coach",
                 alumno_coach_updated: "🔄 Your coach updated the routine",
                 alumno_your_name: "Your name",
@@ -3103,7 +3111,7 @@
                 rt_suggest_loaded: "loaded into sets",
                 share_sum_volume: "VOLUME", share_sum_sets: "SETS", share_sum_duration: "DURATION", share_sum_vs_prev: "VS LAST",
                 home_week_streak: "Weekly streak", home_week_record: "record", home_week_progress: "this week {x}/{y} days", home_week_record_new: "New weekly streak record!",
-                alumno_trained_btn: "I trained today", alumno_trained_done: "Today's workout logged", alumno_trained_ok: "💪 Logged! Your coach will see it.", alumno_week_count: "This week: {n} workouts",
+                alumno_trained_btn: "I trained today", alumno_trained_done: "Today's workout logged", alumno_trained_ok: "💪 Logged! Your coach will see it.", alumno_week_count: "This week: {n} workouts", alumno_week_of: "This week: {n} of {m} workouts",
                 coach_adherence: "{n} this week", coach_last_session: "trained",
                 coach_sessions_title: "STUDENT ACTIVITY",
                 coach_no_sessions: "The student hasn't logged workouts yet",
@@ -3466,7 +3474,6 @@
                 alumno_banner_title: "Rotina do seu coach",
                 alumno_banner_by: "Por",
                 alumno_save_btn: "💾 Salvar alterações",
-                alumno_no_changes: "Sem alterações pendentes",
                 alumno_changes_saved: "✓ Alterações enviadas ao coach",
                 alumno_coach_updated: "🔄 Seu coach atualizou a rotina",
                 alumno_your_name: "Seu nome",
@@ -3546,7 +3553,7 @@
                 rt_suggest_loaded: "carregado nas séries",
                 share_sum_volume: "VOLUME", share_sum_sets: "SÉRIES", share_sum_duration: "DURAÇÃO", share_sum_vs_prev: "VS ANTERIOR",
                 home_week_streak: "Sequência semanal", home_week_record: "recorde", home_week_progress: "esta semana {x}/{y} dias", home_week_record_new: "Novo recorde de sequência semanal!",
-                alumno_trained_btn: "Treinei hoje", alumno_trained_done: "Treino de hoje registrado", alumno_trained_ok: "💪 Registrado! Seu coach vai ver.", alumno_week_count: "Esta semana: {n} treinos",
+                alumno_trained_btn: "Treinei hoje", alumno_trained_done: "Treino de hoje registrado", alumno_trained_ok: "💪 Registrado! Seu coach vai ver.", alumno_week_count: "Esta semana: {n} treinos", alumno_week_of: "Esta semana: {n} de {m} treinos",
                 coach_adherence: "{n} esta semana", coach_last_session: "treinou",
                 coach_sessions_title: "ATIVIDADE DO ALUNO",
                 coach_no_sessions: "O aluno ainda não registrou treinos",
@@ -20389,27 +20396,33 @@
             const brand = state.alumnoBrand || {};
             const logo = /^data:image\/(webp|png|jpeg);base64,/.test(brand.logo || '') ? brand.logo : '';
             banner.appendChild(h('div', { className: 'alumno-banner-icon' }, logo ? h('img', { src: logo, alt: '', style: { width: '44px', height: '44px', borderRadius: '12px', objectFit: 'contain', display: 'block' } }) : '💪'));
-            if (brand.color) banner.style.boxShadow = 'inset 4px 0 0 ' + brand.color;
+            // Color de la marca: el fondo del encabezado en ese color, oscurecido para que el texto blanco
+            // se lea con cualquiera de BRAND_COLORS (sin color-mix, el navegador deja el degradé de siempre).
+            if (brand.color) banner.style.background = 'linear-gradient(135deg, color-mix(in srgb, ' + brand.color + ' 72%, #0A0A0B), color-mix(in srgb, ' + brand.color + ' 38%, #0A0A0B))';
             const bt = h('div', { className: 'alumno-banner-text' });
             bt.appendChild(h('div', { className: 'alumno-banner-title' }, r.name));
-            bt.appendChild(h('div', { className: 'alumno-banner-sub', style: brand.color ? { color: brand.color, fontWeight: 700 } : {} }, brand.name ? brand.name + ' · ' + (r.coach_name || 'Coach') : t('alumno_banner_by') + ' ' + (r.coach_name || 'Coach')));
+            const coachName = r.coach_name || 'Coach';
+            const sameName = brand.name && brand.name.trim().toLowerCase() === coachName.trim().toLowerCase();
+            bt.appendChild(h('div', { className: 'alumno-banner-sub' }, brand.name ? (sameName ? brand.name : brand.name + ' · ' + coachName) : t('alumno_banner_by') + ' ' + coachName));
             banner.appendChild(bt);
+            const row = h('div', { className: 'alumno-banner-row' });
             const nameInp = h('input', {
                 className: 'alumno-name-input',
                 placeholder: t('alumno_your_name'),
                 oninput: (e) => { state.alumnoName = e.target.value; localStorage.setItem('bm-alumno-name-' + state.alumnoToken, e.target.value); }
             });
             nameInp.value = state.alumnoName || '';
-            banner.appendChild(nameInp);
-            // Adherencia visible para el alumno (misma data que ve el coach)
-            const weekAgoISO = localDateStr(new Date(Date.now() - 7 * 86400000));
-            const weekN = (state.alumnoSessions || []).filter(s => s.date >= weekAgoISO).length;
-            if ((state.alumnoSessions || []).length) {
-                banner.appendChild(h('div', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--accent)', marginTop: '8px' } },
-                    '🔥 ' + t('alumno_week_count').replace('{n}', weekN)));
-            }
-            if (state.alumnoAccessUntil) banner.appendChild(h('div', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--text2)', marginTop: '8px' } },
+            row.appendChild(nameInp);
+            // Adherencia visible para el alumno: entrenamientos desde el lunes contra los días de su plan
+            const now = new Date();
+            const mondayISO = localDateStr(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() + 6) % 7));
+            const weekN = (state.alumnoSessions || []).filter(s => s.date >= mondayISO).length;
+            const planDays = Array.isArray(state.alumnoLocalPlan) ? state.alumnoLocalPlan.length : 0;
+            if (planDays >= 1 && planDays <= 7) row.appendChild(h('div', { className: 'alumno-banner-pill' }, '🔥 ' + t('alumno_week_of').replace('{n}', weekN).replace('{m}', planDays)));
+            else if ((state.alumnoSessions || []).length) row.appendChild(h('div', { className: 'alumno-banner-pill' }, '🔥 ' + t('alumno_week_count').replace('{n}', weekN)));
+            if (state.alumnoAccessUntil) row.appendChild(h('div', { className: 'alumno-banner-pill' },
                 t(state.alumnoGuest ? 'hg_until_guest' : 'hg_until').replace('{date}', perfDate(state.alumnoAccessUntil))));
+            banner.appendChild(row);
             v.appendChild(banner);
             // Orden (auditoría del Coach, nov 2026): en el gimnasio el alumno abre el link para ver su
             // rutina, que quedaba debajo de 4 tarjetas. Arriba va solo lo poco frecuente o lo nuevo del
@@ -20535,12 +20548,12 @@
             // Pending edits display
             const pendingCount = (state.alumnoPendingEdits || []).length;
             const footer = h('div', { style: { padding: '12px 16px calc(20px + env(safe-area-inset-bottom)) 16px' } });
-            footer.appendChild(h('button', {
+            // El botón aparece solo si cambió algún peso o repetición de la rutina (antes quedaba
+            // un "Sin cambios pendientes" apagado que confundía)
+            if (pendingCount > 0) footer.appendChild(h('button', {
                 className: 'btn btn-primary btn-full',
-                style: { opacity: pendingCount > 0 ? '1' : '.6' },
-                disabled: pendingCount === 0,
                 onclick: flushAlumnoEdits
-            }, pendingCount > 0 ? t('alumno_save_btn') + ' (' + pendingCount + ')' : t('alumno_no_changes')));
+            }, t('alumno_save_btn') + ' (' + pendingCount + ')'));
             const legal = h('div', { style: { textAlign: 'center', marginTop: '14px' } });
             legal.appendChild(legalLinks());
             legal.appendChild(reportLink(t('rp_btn_coach'), { about: 'coach', token: state.alumnoToken }));

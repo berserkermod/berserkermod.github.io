@@ -372,6 +372,9 @@ function normalize(steps, ignore = []) {
             return;
         }
         if (x && typeof x === 'object') {
+            // Cambio a propósito (26-nov-2026): el cumplimiento del balance cuenta todo el programa,
+            // no un ciclo de 28 días como el Worker de la comparación
+            if ((k === 'review' || k === 'review_draft') && x.stats) { delete x.stats.planned; delete x.stats.adherence; delete x.stats.days; }
             for (const kk of Object.keys(x)) {
                 if (ignore.includes(kk)) { delete x[kk]; continue; }
                 walk(x[kk], kk);

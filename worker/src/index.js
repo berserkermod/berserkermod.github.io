@@ -870,6 +870,11 @@ function programStats(r, sessions, checkins, from, to, today) {
     const st = evalStats(r, sessions, checkins, from, to, today);
     const planDays = Array.isArray(r.plan) ? r.plan.length : 0;
     st.weeks = Math.max(1, Math.ceil((dayDiff(from, to) + 1) / 7));
+    // evalStats mide un ciclo (tope 28 días): en el balance el cumplimiento es de todo el programa
+    // (antes decía "35 de 12 entrenamientos" a las 12 semanas)
+    st.days = Math.max(1, dayDiff(from, to) + 1);
+    st.planned = Math.round(planDays * st.days / 7);
+    st.adherence = st.planned ? Math.min(100, Math.round((st.sessions / st.planned) * 100)) : null;
     // Cumplimiento y ánimo de cada ciclo de 4 semanas
     st.cycles = [];
     const nCycles = Math.min(12, Math.max(1, Math.ceil((dayDiff(from, to) + 1) / 28)));
